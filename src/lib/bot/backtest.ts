@@ -72,7 +72,7 @@ export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[]
       if (weekend) close(bar.open, bar.time, "WEEKEND");
       else if (long ? bar.low <= pos.stop : bar.high >= pos.stop) close(pos.stop, endOfBar, pos.stop === pos.entry ? "BE" : "SL");
       else if (long ? bar.high >= pos.target : bar.low <= pos.target) close(pos.target, endOfBar, "TP");
-      else if (pos.stop !== pos.entry && (long ? bar.high >= pos.entry + pos.dist : bar.low <= pos.entry - pos.dist)) pos.stop = pos.entry;
+      else if (p.breakeven && pos.stop !== pos.entry && (long ? bar.high >= pos.entry + pos.dist : bar.low <= pos.entry - pos.dist)) pos.stop = pos.entry;
     }
   }
   const last = m15.at(-1);

@@ -21,10 +21,11 @@ const FIELDS: [string, string, string][] = [
   ["newsAfterMin", "Мэдээний дараа, мин", "5"], ["spread", "Spread, $", "0.05"], ["startBalance", "Эхлэх данс, $", "100"],
 ];
 
-export default async function BotPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const q = await searchParams;
+export default async function BotPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  // a checkbox paired with a hidden fallback arrives as two values; the last one wins
+  const q = Object.fromEntries(Object.entries(await searchParams).map(([k, v]) => [k, Array.isArray(v) ? v.at(-1) : v]));
   const { params, startBalance } = paramsFromQuery(q);
-  const values: Record<string, number> = { ...params, startBalance };
+  const values: Record<string, number | boolean> = { ...params, startBalance };
   const r = q.run ? await runBacktestFromDb(params, startBalance) : null;
   const s = r?.stats;
   return (
@@ -40,9 +41,13 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
           {FIELDS.map(([name, label, step]) => (
             <div key={name}>
               <label className="label" htmlFor={name}>{label}</label>
-              <input className="input" id={name} name={name} type="number" step={step} defaultValue={values[name]} />
+              <input className="input" id={name} name={name} type="number" step={step} defaultValue={Number(values[name])} />
             </div>
           ))}
+        </div>
+        <div className="flex flex-wrap gap-6 text-sm">
+          <label className="flex items-center gap-2"><input type="hidden" name="breakeven" value="0" /><input type="checkbox" name="breakeven" value="1" defaultChecked={params.breakeven} /> +1R-д stop-ыг орсон үнэ рүү зөөх</label>
+          <label className="flex items-center gap-2"><input type="checkbox" name="requireH1Agree" value="1" defaultChecked={params.requireH1Agree} /> 1 цагийн чарт мөн тохирсон байх</label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button className="btn">Backtest ажиллуулах</button>

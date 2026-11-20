@@ -39,6 +39,8 @@ export function paramsFromQuery(q: Record<string, string | undefined>): { params
       newsBeforeMin: num(q.newsBeforeMin, d.newsBeforeMin, 0, 600),
       newsAfterMin: num(q.newsAfterMin, d.newsAfterMin, 0, 600),
       spread: num(q.spread, d.spread, 0, 10),
+      breakeven: q.breakeven === undefined ? d.breakeven : q.breakeven !== "0",
+      requireH1Agree: q.requireH1Agree === undefined ? d.requireH1Agree : q.requireH1Agree === "1",
     },
   };
 }

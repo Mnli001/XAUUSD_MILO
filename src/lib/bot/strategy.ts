@@ -17,11 +17,14 @@ export type BotParams = {
   newsBeforeMin: number;
   newsAfterMin: number;
   spread: number; // USD, charged on entry
+  breakeven: boolean; // move the stop to entry at +1R
+  requireH1Agree: boolean; // the 1h score must point the same way too
 };
 
 export const DEFAULT_PARAMS: BotParams = {
   minBias: 40, sessionStartUb: 15, sessionEndUb: 1, atrMult: 1.5, rr: 2, riskPct: 0.5,
   maxTradesPerDay: 2, dailyLossPct: 1, maxDrawdownPct: 5, newsBeforeMin: 30, newsAfterMin: 60, spread: 0.3,
+  breakeven: true, requireH1Agree: false,
 };
 
 export function inSession(t: Date, p: BotParams): boolean {
@@ -40,8 +43,11 @@ export function directionFromScores(scores: Partial<Record<Timeframe, number | n
   const d = scores["1day"];
   const h4 = scores["4h"];
   if (!bias || d === null || d === undefined || h4 === null || h4 === undefined) return null;
-  if (bias.total >= p.minBias && d > 0 && h4 > 0) return "BUY";
-  if (bias.total <= -p.minBias && d < 0 && h4 < 0) return "SELL";
+  const h1 = scores["1h"];
+  const h1Up = !p.requireH1Agree || (h1 !== null && h1 !== undefined && h1 > 0);
+  const h1Down = !p.requireH1Agree || (h1 !== null && h1 !== undefined && h1 < 0);
+  if (bias.total >= p.minBias && d > 0 && h4 > 0 && h1Up) return "BUY";
+  if (bias.total <= -p.minBias && d < 0 && h4 < 0 && h1Down) return "SELL";
   return null;
 }
 
