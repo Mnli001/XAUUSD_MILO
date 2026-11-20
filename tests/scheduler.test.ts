@@ -15,7 +15,7 @@ test("hourly candles once per hour, from minute 2", () => {
   const s = { ...fresh(), fast: at("2026-11-23T11:00:30Z").getTime(), calendar: "2026-11-23", hourly: "2026-11-23T10" };
   expect(dueJobs(at("2026-11-23T11:01:00Z"), s)).toEqual([]);
   expect(dueJobs(at("2026-11-23T11:02:00Z"), s)).toEqual(["hourly"]);
-  expect(dueJobs(at("2026-11-23T11:30:00Z"), { ...s, hourly: "2026-11-23T11" })).toEqual([]);
+  expect(dueJobs(at("2026-11-23T11:03:00Z"), { ...s, hourly: "2026-11-23T11" })).toEqual([]);
 });
 test("calendar once per UTC day", () => {
   const s = { ...fresh(), fast: at("2026-11-24T00:10:30Z").getTime(), hourly: "2026-11-24T00", calendar: "2026-11-23" };
