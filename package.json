@@ -12,7 +12,8 @@
     "backfill": "tsx --env-file=.env scripts/backfill.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "check-fred": "tsx --env-file=.env scripts/check-fred.ts"
+    "check-fred": "tsx --env-file=.env scripts/check-fred.ts",
+    "db:deploy": "node scripts/migrate.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
