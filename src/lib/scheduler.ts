@@ -2,6 +2,11 @@ import { TwelveData } from "./data/twelveData";
 import { FredCalendar } from "./data/fredCalendar";
 import { ingestPrices } from "./ingest/prices";
 import { ingestCalendar } from "./ingest/calendar";
+import { runBackfill, needsBackfill } from "./ingest/backfill";
+import { recomputeSnapshot, SYMBOL } from "./ingest/prices";
+import { ensureAdmin } from "./users";
+import { db, schema } from "./db";
+import { and, count, eq } from "drizzle-orm";
 
 export type Job = "fast" | "hourly" | "calendar";
 /** When each job last started: fast = epoch ms, hourly = "YYYY-MM-DDTHH", calendar = "YYYY-MM-DD" (UTC). */
@@ -31,6 +36,21 @@ async function run(job: Job, now: Date): Promise<void> {
   if (!result.ok) console.warn(`[scheduler] ${job} failed: ${result.error}`);
 }
 
+/** First start on an empty database: create the admin, load the price history and three years of release dates. */
+export async function bootstrap(): Promise<void> {
+  const admin = await ensureAdmin(process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD);
+  console.log(`[bootstrap] admin: ${admin}`);
+  const priceKey = process.env.TWELVEDATA_API_KEY;
+  const [{ c }] = await db.select({ c: count() }).from(schema.candles).where(and(eq(schema.candles.symbol, SYMBOL), eq(schema.candles.timeframe, "15min")));
+  if (!priceKey || !needsBackfill(c)) return;
+  console.log("[bootstrap] loading price history, this takes about five minutes");
+  const { failed } = await runBackfill(new TwelveData(priceKey), { log: (l) => console.log(`[bootstrap] ${l}`) });
+  await recomputeSnapshot(SYMBOL, new Date());
+  const fredKey = process.env.FRED_API_KEY;
+  if (fredKey) console.log("[bootstrap] calendar", JSON.stringify(await ingestCalendar(new FredCalendar(fredKey), new Date(), 1100)));
+  console.log(failed.length ? `[bootstrap] finished, missing: ${failed.join(", ")}` : "[bootstrap] finished");
+}
+
 let started = false;
 
 /** In-process replacement for external cron services. Enabled with ENABLE_SCHEDULER=1 on an always-on server. */
@@ -56,6 +76,8 @@ export function startScheduler(): void {
     }
   };
   console.log("[scheduler] started");
-  setTimeout(tick, 15_000);
-  setInterval(tick, 60_000);
+  // history first, so the regular jobs do not compete with it for the provider's rate limit
+  bootstrap()
+    .catch((e) => console.error("[bootstrap] error", e))
+    .finally(() => { void tick(); setInterval(tick, 60_000); });
 }

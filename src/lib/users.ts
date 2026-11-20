@@ -36,3 +36,18 @@ export async function verifyCredentials(email: string, password: string): Promis
   if (!u) return null;
   return (await bcrypt.compare(password, u.passwordHash)) ? u : null;
 }
+
+/**
+ * Makes sure the configured admin account exists. Never changes an existing password;
+ * an existing account with that email is only promoted to ADMIN.
+ */
+export async function ensureAdmin(email: string | undefined, password: string | undefined): Promise<"created" | "exists" | "skipped" | "invalid"> {
+  if (!email || !password) return "skipped";
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    if (existing.role !== "ADMIN") await db.update(schema.users).set({ role: "ADMIN" }).where(eq(schema.users.id, existing.id));
+    return "exists";
+  }
+  const r = await createUser({ name: "Админ", email, password }, "ADMIN");
+  return r.error ? "invalid" : "created";
+}
