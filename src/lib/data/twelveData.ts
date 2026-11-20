@@ -24,9 +24,11 @@ export class TwelveData implements PriceProvider {
 
     let res: Response;
     try {
-      res = await fetch(`https://api.twelvedata.com/time_series?${q}`, { cache: "no-store" });
+      res = await fetch(`https://api.twelvedata.com/time_series?${q}`, { cache: "no-store", signal: AbortSignal.timeout(30_000) });
     } catch (e) {
-      throw new ProviderError(`Twelve Data руу холбогдож чадсангүй: ${(e as Error).message}`, 0);
+      const err = e as Error & { cause?: { code?: string; message?: string } };
+      const why = err.cause?.code ?? err.cause?.message ?? err.name;
+      throw new ProviderError(`Twelve Data руу холбогдож чадсангүй: ${err.message} (${why})`, 0);
     }
     let body: { status?: string; message?: string; values?: Row[] } | null = null;
     try {
