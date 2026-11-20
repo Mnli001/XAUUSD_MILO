@@ -1,8 +1,0 @@
-Task 11: Ruling: railway.json configures only the web service; cron services are documented in README because their config lives in the Railway dashboard — cost: three manual steps at deploy
-Task 11: Ruling: migrations at deploy run through scripts/migrate.mjs (runtime deps only) instead of drizzle-kit — cost: none
-Task 11: complete (3477839, tests: vitest run → 55/55, build ok, lint clean, HTTP smoke: admin 200 on all pages, locked user → /locked, non-admin → 404 on /admin, bad login rejected, cron 401 without secret)
-Final review: self-review (no fresh reviewer dispatched — platform rule: no subagents unless the user asks)
-Final: minor (deferred): no rate limit on login attempts
-Final: minor (deferred): weekend shows 'Хоцролттой' instead of a 'market closed' label
-Final: minor (deferred): delete trade has no confirmation step
-Final: minor (deferred): existing sessions stay valid after a password change
