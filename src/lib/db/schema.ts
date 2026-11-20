@@ -1,0 +1,83 @@
+import { pgTable, pgEnum, text, timestamp, doublePrecision, integer, jsonb, primaryKey, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
+
+const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
+const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
+const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
+
+export const roleEnum = pgEnum("role", ["USER", "ADMIN"]);
+export const directionEnum = pgEnum("direction", ["BUY", "SELL"]);
+export const impactEnum = pgEnum("impact", ["HIGH", "MEDIUM", "LOW"]);
+
+export const users = pgTable("users", {
+  id: id(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  role: roleEnum("role").notNull().default("USER"),
+  accessUntil: ts("access_until"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+});
+
+export const candles = pgTable("candles", {
+  symbol: text("symbol").notNull(),
+  timeframe: text("timeframe").notNull(),
+  time: ts("time").notNull(),
+  open: doublePrecision("open").notNull(),
+  high: doublePrecision("high").notNull(),
+  low: doublePrecision("low").notNull(),
+  close: doublePrecision("close").notNull(),
+}, (t) => [primaryKey({ columns: [t.symbol, t.timeframe, t.time] })]);
+
+export const biasSnapshots = pgTable("bias_snapshots", {
+  id: id(),
+  symbol: text("symbol").notNull(),
+  computedAt: ts("computed_at").notNull().defaultNow(),
+  total: doublePrecision("total").notNull(),
+  buyerPct: integer("buyer_pct").notNull(),
+  label: text("label").notNull(),
+  perTimeframe: jsonb("per_timeframe").notNull(),
+  levels: jsonb("levels"),
+  hourly: jsonb("hourly").notNull(),
+}, (t) => [index("bias_symbol_time").on(t.symbol, t.computedAt)]);
+
+export const economicEvents = pgTable("economic_events", {
+  id: id(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  country: text("country").notNull(),
+  impact: impactEnum("impact").notNull(),
+  time: ts("time").notNull(),
+  forecast: text("forecast"),
+  previous: text("previous"),
+  actual: text("actual"),
+  source: text("source").notNull(),
+}, (t) => [uniqueIndex("event_type_time").on(t.type, t.time), index("event_time").on(t.time)]);
+
+export const eventReactions = pgTable("event_reactions", {
+  type: text("type").primaryKey(),
+  n: integer("n").notNull(),
+  stats: jsonb("stats").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+export const trades = pgTable("trades", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull().default("XAUUSD"),
+  direction: directionEnum("direction").notNull(),
+  lots: doublePrecision("lots").notNull(),
+  entryPrice: doublePrecision("entry_price").notNull(),
+  exitPrice: doublePrecision("exit_price"),
+  stopLoss: doublePrecision("stop_loss"),
+  takeProfit: doublePrecision("take_profit"),
+  openedAt: ts("opened_at").notNull(),
+  closedAt: ts("closed_at"),
+  note: text("note"),
+  image: bytea("image"),
+  imageMime: text("image_mime"),
+}, (t) => [index("trade_user_opened").on(t.userId, t.openedAt)]);
+
+export type User = typeof users.$inferSelect;
+export type Trade = typeof trades.$inferSelect;
+export type EconomicEvent = typeof economicEvents.$inferSelect;
+export type Role = User["role"];
