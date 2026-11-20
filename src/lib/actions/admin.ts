@@ -44,3 +44,10 @@ export async function changePasswordAction(_prev: AdminState, form: FormData): P
   const r = await changePassword(user.id, String(form.get("current") ?? ""), String(form.get("next") ?? ""));
   return r.error ? r : { ok: "Нууц үг солигдлоо" };
 }
+
+export async function startPaperAction() {
+  const admin = await requireAdmin();
+  const { startPaper } = await import("../bot/paperDb");
+  await startPaper(admin.id, new Date());
+  revalidatePath("/admin/bot/paper");
+}

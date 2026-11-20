@@ -77,6 +77,12 @@ export const trades = pgTable("trades", {
   imageMime: text("image_mime"),
 }, (t) => [index("trade_user_opened").on(t.userId, t.openedAt)]);
 
+export const botState = pgTable("bot_state", {
+  id: text("id").primaryKey(), // "paper"
+  startedAt: ts("started_at").notNull(),
+  startBalance: doublePrecision("start_balance").notNull().default(10000),
+});
+
 export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;
 export type EconomicEvent = typeof economicEvents.$inferSelect;

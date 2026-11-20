@@ -32,7 +32,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold">Бот — backtest</h1>
-        <p className="text-sm text-zinc-400">Арилжааны дүрмийг баазад байгаа түүхэн дата дээр ажиллуулж шалгана. Жинхэнэ болон demo захиалга өгөхгүй.</p>
+        <p className="text-sm text-zinc-400">Арилжааны дүрмийг баазад байгаа түүхэн дата дээр ажиллуулж шалгана. Жинхэнэ болон demo захиалга өгөхгүй. <a href="/admin/bot/paper" className="text-amber-400">Цаасан арилжаа →</a></p>
       </div>
 
       <form className="card space-y-3">
