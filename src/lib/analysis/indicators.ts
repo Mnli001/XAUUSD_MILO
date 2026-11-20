@@ -80,3 +80,23 @@ export function swings(candles: Candle[]): { highs: number[]; lows: number[] } {
   }
   return { highs, lows };
 }
+
+/** Wilder ATR for every bar; NaN until `period` true ranges exist. Last value equals atr(candles). */
+export function atrSeries(candles: Candle[], period = 14): number[] {
+  const out = new Array<number>(candles.length).fill(NaN);
+  if (candles.length <= period) return out;
+  const tr = (i: number) => {
+    const c = candles[i];
+    const pc = candles[i - 1].close;
+    return Math.max(c.high - c.low, Math.abs(c.high - pc), Math.abs(c.low - pc));
+  };
+  let v = 0;
+  for (let i = 1; i <= period; i++) v += tr(i);
+  v /= period;
+  out[period] = v;
+  for (let i = period + 1; i < candles.length; i++) {
+    v = (v * (period - 1) + tr(i)) / period;
+    out[i] = v;
+  }
+  return out;
+}

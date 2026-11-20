@@ -13,6 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="font-bold text-amber-400">Админ</span>
           <Link href="/admin/users" className="text-zinc-300 hover:text-white">Хэрэглэгчид</Link>
           <Link href="/admin/events" className="text-zinc-300 hover:text-white">Мэдээ</Link>
+          <Link href="/admin/bot" className="text-zinc-300 hover:text-white">Бот</Link>
           <Link href="/today" className="ml-auto text-zinc-400 hover:text-white">← Систем рүү</Link>
         </nav>
       </header>
