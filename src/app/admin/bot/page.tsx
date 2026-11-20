@@ -12,7 +12,7 @@ const VERDICT: Record<Verdict, { title: string; body: string; cls: string }> = {
   MARGINAL: { title: "Зааг дээр", body: "Ашиг бага эсвэл уналт их. Бодит зардал (slippage, swap) нэмэгдэхэд алдагдал руу орж магадгүй.", cls: "border-amber-500/60 text-amber-300" },
   PROMISING: { title: "Боломжийн", body: "Өнгөрсөн дата дээр ашигтай гарсан. Энэ бол баталгаа биш: demo данс дээр бодит цагт шалгах дараагийн алхмын үндэслэл л юм.", cls: "border-emerald-500/60 text-emerald-300" },
 };
-const REASON: Record<ExitReason, string> = { TP: "Target", SL: "Stop", BE: "Тэг (breakeven)", WEEKEND: "Амралтын өмнө", END: "Түүхийн төгсгөл" };
+const REASON: Record<ExitReason, string> = { TP: "Target", SL: "Stop", BE: "Тэг (breakeven)", TIME: "Хугацаа дууссан", WEEKEND: "Амралтын өмнө", END: "Түүхийн төгсгөл" };
 
 const FIELDS: [string, string, string][] = [
   ["minBias", "Хамгийн бага оноо", "1"], ["atrMult", "Stop = ATR ×", "0.1"], ["rr", "Target = stop ×", "0.1"], ["riskPct", "Эрсдэл, %", "0.05"],

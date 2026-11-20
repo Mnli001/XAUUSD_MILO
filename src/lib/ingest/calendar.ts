@@ -31,10 +31,10 @@ export async function recomputeReactions(now: Date, symbol = SYMBOL): Promise<vo
 }
 
 /** Pulls release dates. Existing rows (including admin edits) are never overwritten. */
-export async function ingestCalendar(provider: CalendarProvider, now: Date): Promise<{ ok: boolean; stored: number; error?: string }> {
+export async function ingestCalendar(provider: CalendarProvider, now: Date, pastDays = 365): Promise<{ ok: boolean; stored: number; error?: string }> {
   let events: { type: string; time: Date }[];
   try {
-    events = await provider.fetchEvents(new Date(now.getTime() - 365 * DAY), new Date(now.getTime() + 60 * DAY));
+    events = await provider.fetchEvents(new Date(now.getTime() - pastDays * DAY), new Date(now.getTime() + 60 * DAY));
   } catch (e) {
     if (e instanceof ProviderError) return { ok: false, stored: 0, error: e.message };
     throw e;

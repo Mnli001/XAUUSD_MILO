@@ -15,7 +15,9 @@
     "check-fred": "tsx --env-file=.env scripts/check-fred.ts",
     "db:deploy": "node scripts/migrate.mjs",
     "backtest": "tsx --env-file=.env scripts/backtest.ts",
-    "variants": "tsx --env-file=.env scripts/variants.ts"
+    "variants": "tsx --env-file=.env scripts/variants.ts",
+    "ideas": "tsx --env-file=.env scripts/ideas.ts",
+    "calendar": "tsx --env-file=.env scripts/calendar.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

@@ -4,7 +4,9 @@ import { ubDateKey } from "../time";
 import { type BotParams, type Side, DEFAULT_PARAMS, inSession, inNewsWindow, directionFromScores, pullbackSignal, scoreSeries } from "./strategy";
 
 export type Signal = Side | null;
-export type ExitReason = "TP" | "SL" | "BE" | "WEEKEND" | "END";
+export type ExitReason = "TP" | "SL" | "BE" | "TIME" | "WEEKEND" | "END";
+/** An entry decided at a bar's close: stop and target as price distances, optional holding limit in 15-minute bars. */
+export type Order = { side: Side; stopDist: number; targetDist: number; maxBars?: number };
 export type SimTrade = {
   direction: Side; lots: number; entryPrice: number; exitPrice: number; stopLoss: number; // initial stop
   openedAt: Date; closedAt: Date; pnl: number; r: number; reason: ExitReason;
@@ -19,11 +21,11 @@ function nearWeekend(t: Date): boolean {
 }
 
 /**
- * Replays signals over 15-minute bars. signals[i] is decided at the close of bar i and filled at the
+ * Replays orders over 15-minute bars. orders[i] is decided at the close of bar i and filled at the
  * open of bar i + 1. Inside a bar the stop is checked before the target (pessimistic). The kill-switch
  * time is recorded, but the replay continues so the whole period can be judged.
  */
-export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[], p: BotParams, startBalance: number): SimResult {
+export function simulateOrders(m15: Candle[], orders: (Order | null)[], p: BotParams, startBalance: number): SimResult {
   const trades: SimTrade[] = [];
   let balance = startBalance;
   let peak = startBalance;
@@ -32,7 +34,7 @@ export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[]
   let day = "";
   let dayStartBalance = startBalance;
   let tradesToday = 0;
-  let pos: { side: Side; lots: number; entry: number; stop: number; initialStop: number; target: number; dist: number; openedAt: Date } | null = null;
+  let pos: { side: Side; lots: number; entry: number; stop: number; initialStop: number; target: number; dist: number; openedAt: Date; bars: number; maxBars?: number } | null = null;
 
   const close = (exit: number, at: Date, reason: ExitReason) => {
     if (!pos) return;
@@ -53,15 +55,15 @@ export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[]
     if (key !== day) { day = key; dayStartBalance = balance; tradesToday = 0; }
     const weekend = nearWeekend(bar.time);
 
-    // entry at this bar's open, from the signal decided on the previous bar
-    const sig = signals[i - 1];
-    if (!pos && sig && !weekend && tradesToday < p.maxTradesPerDay && balance - dayStartBalance > -(p.dailyLossPct / 100) * dayStartBalance) {
-      const dist = atr15[i - 1] * p.atrMult;
+    // entry at this bar's open, from the order decided on the previous bar
+    const order = orders[i - 1];
+    if (!pos && order && !weekend && tradesToday < p.maxTradesPerDay && balance - dayStartBalance > -(p.dailyLossPct / 100) * dayStartBalance) {
+      const dist = order.stopDist;
       const lots = Math.floor((((p.riskPct / 100) * balance) / (dist * CONTRACT_SIZE)) * 100) / 100;
-      if (Number.isFinite(dist) && dist > 0 && lots >= 0.01) {
-        const dir = sig === "BUY" ? 1 : -1;
+      if (Number.isFinite(dist) && dist > 0 && Number.isFinite(order.targetDist) && order.targetDist > 0 && lots >= 0.01) {
+        const dir = order.side === "BUY" ? 1 : -1;
         const entry = bar.open + dir * p.spread;
-        pos = { side: sig, lots, entry, stop: entry - dir * dist, initialStop: entry - dir * dist, target: entry + dir * dist * p.rr, dist, openedAt: bar.time };
+        pos = { side: order.side, lots, entry, stop: entry - dir * dist, initialStop: entry - dir * dist, target: entry + dir * order.targetDist, dist, openedAt: bar.time, bars: 0, maxBars: order.maxBars };
         tradesToday++;
       }
     }
@@ -70,9 +72,11 @@ export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[]
       const endOfBar = new Date(bar.time.getTime() + M15);
       const long = pos.side === "BUY";
       if (weekend) close(bar.open, bar.time, "WEEKEND");
+      else if (pos.maxBars !== undefined && pos.bars >= pos.maxBars) close(bar.open, bar.time, "TIME");
       else if (long ? bar.low <= pos.stop : bar.high >= pos.stop) close(pos.stop, endOfBar, pos.stop === pos.entry ? "BE" : "SL");
       else if (long ? bar.high >= pos.target : bar.low <= pos.target) close(pos.target, endOfBar, "TP");
       else if (p.breakeven && pos.stop !== pos.entry && (long ? bar.high >= pos.entry + pos.dist : bar.low <= pos.entry - pos.dist)) pos.stop = pos.entry;
+      if (pos) pos.bars++;
     }
   }
   const last = m15.at(-1);
@@ -80,10 +84,16 @@ export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[]
   return { trades, finalBalance: balance, maxDrawdownPct, killSwitchAt };
 }
 
+/** The original rule set: every signal uses an ATR stop and a fixed reward-to-risk target. */
+export function simulateTrades(m15: Candle[], signals: Signal[], atr15: number[], p: BotParams, startBalance: number): SimResult {
+  const orders = signals.map((side, i): Order | null => (side ? { side, stopDist: atr15[i] * p.atrMult, targetDist: atr15[i] * p.atrMult * p.rr } : null));
+  return simulateOrders(m15, orders, p, startBalance);
+}
+
 const STEP: Record<Timeframe, number> = { "15min": M15, "1h": 36e5, "4h": 4 * 36e5, "1day": 864e5 };
 
 /** For each decision time, the score of the newest candle of `tf` that has fully closed by then. */
-function alignClosed(decisionTimes: number[], candles: Candle[], scores: (number | null)[], tf: Timeframe): (number | null)[] {
+export function alignClosed(decisionTimes: number[], candles: Candle[], scores: (number | null)[], tf: Timeframe): (number | null)[] {
   const out: (number | null)[] = [];
   let j = -1;
   for (const t of decisionTimes) {
@@ -139,7 +149,7 @@ export function runBacktest(input: BacktestInput): BacktestResult {
   const startBalance = input.startBalance ?? 10_000;
   const { signals, readyFrom } = buildSignals({ ...input, params });
   const sim = simulateTrades(input.m15, signals, atrSeries(input.m15), params, startBalance);
-  const byReason: Record<ExitReason, number> = { TP: 0, SL: 0, BE: 0, WEEKEND: 0, END: 0 };
+  const byReason: Record<ExitReason, number> = { TP: 0, SL: 0, BE: 0, TIME: 0, WEEKEND: 0, END: 0 };
   const months = new Map<string, MonthRow>();
   for (const t of sim.trades) {
     byReason[t.reason]++;

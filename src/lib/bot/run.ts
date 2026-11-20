@@ -4,16 +4,21 @@ import { loadCandles, SYMBOL } from "../ingest/prices";
 import { runBacktest, type BacktestResult } from "./backtest";
 import { type BotParams, DEFAULT_PARAMS } from "./strategy";
 
-/** Runs the strategy over every stored candle. News = stored HIGH-impact events. */
-export async function runBacktestFromDb(params: BotParams = DEFAULT_PARAMS, startBalance = 10_000): Promise<BacktestResult> {
+/** Every stored candle plus the stored HIGH-impact event times. */
+export async function loadBacktestData() {
   const [m15, h1, h4, d1, events] = await Promise.all([
-    loadCandles(SYMBOL, "15min", 60_000),
-    loadCandles(SYMBOL, "1h", 20_000),
+    loadCandles(SYMBOL, "15min", 150_000),
+    loadCandles(SYMBOL, "1h", 40_000),
     loadCandles(SYMBOL, "4h", 10_000),
     loadCandles(SYMBOL, "1day", 3_000),
     db.select({ time: schema.economicEvents.time }).from(schema.economicEvents).where(eq(schema.economicEvents.impact, "HIGH")),
   ]);
-  return runBacktest({ m15, h1, h4, d1, news: events.map((e) => e.time), params, startBalance });
+  return { m15, h1, h4, d1, news: events.map((e) => e.time) };
+}
+
+/** Runs the strategy over every stored candle. News = stored HIGH-impact events. */
+export async function runBacktestFromDb(params: BotParams = DEFAULT_PARAMS, startBalance = 10_000): Promise<BacktestResult> {
+  return runBacktest({ ...(await loadBacktestData()), params, startBalance });
 }
 
 const num = (v: string | undefined, fallback: number, min: number, max: number) => {

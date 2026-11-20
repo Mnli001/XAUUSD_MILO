@@ -12,10 +12,10 @@ import { TIMEFRAMES, type Timeframe } from "../src/lib/analysis/indicators";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const PLAN: { tf: Timeframe; size: number; days: number }[] = [
-  { tf: "1day", size: 1000, days: 0 },
-  { tf: "4h", size: 3000, days: 0 },
-  { tf: "1h", size: 5000, days: 420 },
-  { tf: "15min", size: 5000, days: 365 },
+  { tf: "1day", size: 1500, days: 0 },
+  { tf: "4h", size: 5000, days: 0 },
+  { tf: "1h", size: 5000, days: 1100 },
+  { tf: "15min", size: 5000, days: 1100 },
 ];
 
 async function main() {
