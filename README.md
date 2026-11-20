@@ -46,13 +46,7 @@ npm run dev
 1. Шинэ project → GitHub repo-г холбоно, PostgreSQL нэмнэ.
 2. Web service-д дээрх хувьсагчдыг оруулна (`DATABASE_URL`-г Postgres-оос reference хийнэ). `railway.json` нь build, migration, start-ыг тохируулсан.
 3. Deploy болсны дараа нэг удаа: `railway run npm run seed`, `railway run npm run backfill`.
-4. Гурван cron service нэмнэ (тус бүр `curl` ажиллуулах жижиг service, `APP_URL` = сайтын хаяг):
-
-| Хуваарь | Команд |
-|---|---|
-| `*/5 * * * *` | `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/prices?scope=fast"` |
-| `2 * * * *` | `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/prices?scope=hourly"` |
-| `10 0 * * *` | `curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/calendar"` |
+4. Web service-д `ENABLE_SCHEDULER=1` хувьсагч нэмнэ. Ингэхэд сервер өөрөө 5 минут тутам 15 минутын лаа, цаг тутам 1ц / 4ц / өдрийн лаа, өдөрт нэг удаа мэдээний календарийг татна. Тусдаа cron service хэрэггүй. (`/api/cron/*` хаягууд гараар дуудахад хэвээр ажиллана.)
 
 Үнэгүй багцын хэрэглээ: өдөрт ойролцоогоор 360 хүсэлт (хязгаар 800).
 
