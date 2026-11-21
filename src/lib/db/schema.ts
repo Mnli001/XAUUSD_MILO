@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, text, timestamp, doublePrecision, integer, jsonb, primaryKey, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, boolean, text, timestamp, doublePrecision, integer, jsonb, primaryKey, index, uniqueIndex, customType } from "drizzle-orm/pg-core";
 
 const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
@@ -82,6 +82,31 @@ export const botState = pgTable("bot_state", {
   startedAt: ts("started_at").notNull(),
   startBalance: doublePrecision("start_balance").notNull().default(10000),
 });
+
+export const botLive = pgTable("bot_live", {
+  id: text("id").primaryKey(), // "main"
+  state: text("state").notNull().default("STOPPED"),
+  runId: text("run_id"),
+  closeAll: boolean("close_all").notNull().default(false),
+  config: jsonb("config").notNull(),
+  tokenHash: text("token_hash"),
+  startedAt: ts("started_at"),
+  stoppedAt: ts("stopped_at"),
+  stopReason: text("stop_reason"),
+  lastSeenAt: ts("last_seen_at"),
+  status: jsonb("status"),
+});
+
+export const botDeals = pgTable("bot_deals", {
+  ticket: text("ticket").primaryKey(),
+  runId: text("run_id"),
+  side: text("side").notNull(),
+  lots: doublePrecision("lots").notNull(),
+  openPrice: doublePrecision("open_price").notNull(),
+  closePrice: doublePrecision("close_price").notNull(),
+  profit: doublePrecision("profit").notNull(),
+  closeTime: ts("close_time").notNull(),
+}, (t) => [index("bot_deals_close_time").on(t.closeTime)]);
 
 export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;
