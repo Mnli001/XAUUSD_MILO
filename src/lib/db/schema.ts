@@ -84,7 +84,7 @@ export const botState = pgTable("bot_state", {
 });
 
 export const botLive = pgTable("bot_live", {
-  id: text("id").primaryKey(), // "main"
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }), // one bot per user
   state: text("state").notNull().default("STOPPED"),
   runId: text("run_id"),
   closeAll: boolean("close_all").notNull().default(false),
@@ -95,10 +95,11 @@ export const botLive = pgTable("bot_live", {
   stopReason: text("stop_reason"),
   lastSeenAt: ts("last_seen_at"),
   status: jsonb("status"),
-});
+}, (t) => [uniqueIndex("bot_live_token_hash").on(t.tokenHash)]);
 
 export const botDeals = pgTable("bot_deals", {
-  ticket: text("ticket").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  ticket: text("ticket").notNull(), // broker ticket; only unique per account
   runId: text("run_id"),
   side: text("side").notNull(),
   lots: doublePrecision("lots").notNull(),
@@ -106,7 +107,7 @@ export const botDeals = pgTable("bot_deals", {
   closePrice: doublePrecision("close_price").notNull(),
   profit: doublePrecision("profit").notNull(),
   closeTime: ts("close_time").notNull(),
-}, (t) => [index("bot_deals_close_time").on(t.closeTime)]);
+}, (t) => [primaryKey({ columns: [t.userId, t.ticket] }), index("bot_deals_user_close").on(t.userId, t.closeTime)]);
 
 export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;

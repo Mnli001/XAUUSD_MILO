@@ -1,91 +1,81 @@
-import { timingSafeEqual } from "node:crypto";
-import { desc, eq, gte, sql, sum } from "drizzle-orm";
+import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
+import { hasAccess } from "../access";
 import { type Command, type LiveConfig, type Report, DEFAULT_LIVE_CONFIG, commandFor, hashToken, newToken, parseConfig, reportSchema } from "./live";
 
-const ID = "main";
 export const ONLINE_WITHIN_MS = 15_000;
 
-async function assertAdmin(adminId: string) {
-  const a = await findUserById(adminId);
-  if (!a || a.role !== "ADMIN") throw new Error("Админ эрх шаардлагатай");
+/** A user's own bot row, created on first use. Callers check that the user may use the system. */
+export async function getLive(userId: string) {
+  await db.insert(schema.botLive).values({ userId, config: DEFAULT_LIVE_CONFIG }).onConflictDoNothing({ target: schema.botLive.userId });
+  const [row] = await db.select().from(schema.botLive).where(eq(schema.botLive.userId, userId));
+  return shape(row);
 }
+const shape = (row: typeof schema.botLive.$inferSelect) => ({ ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...(row.config as Partial<LiveConfig>) } });
 
-export async function getLive() {
-  await db.insert(schema.botLive).values({ id: ID, config: DEFAULT_LIVE_CONFIG }).onConflictDoNothing({ target: schema.botLive.id });
-  const [row] = await db.select().from(schema.botLive).where(eq(schema.botLive.id, ID));
-  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...(row.config as Partial<LiveConfig>) } };
-}
+const update = (userId: string, set: Partial<typeof schema.botLive.$inferInsert>) => db.update(schema.botLive).set(set).where(eq(schema.botLive.userId, userId));
 
-const update = (set: Partial<typeof schema.botLive.$inferInsert>) => db.update(schema.botLive).set(set).where(eq(schema.botLive.id, ID));
-
-export async function saveLiveConfig(adminId: string, input: unknown): Promise<{ error?: string }> {
-  await assertAdmin(adminId);
+export async function saveLiveConfig(userId: string, input: unknown): Promise<{ error?: string }> {
   const r = parseConfig(input);
   if (!r.config) return { error: r.error };
-  await getLive();
-  await update({ config: r.config });
+  await getLive(userId);
+  await update(userId, { config: r.config });
   return {};
 }
 
-export async function startBot(adminId: string, now: Date): Promise<void> {
-  await assertAdmin(adminId);
-  await getLive();
-  await update({ state: "RUNNING", runId: crypto.randomUUID(), closeAll: false, startedAt: now, stoppedAt: null, stopReason: null });
+export async function startBot(userId: string, now: Date): Promise<void> {
+  await getLive(userId);
+  await update(userId, { state: "RUNNING", runId: crypto.randomUUID(), closeAll: false, startedAt: now, stoppedAt: null, stopReason: null });
 }
 
 /** Stopping also asks the terminal to close the bot's open positions. */
-export async function stopBot(adminId: string, reason: string, now: Date): Promise<void> {
-  await assertAdmin(adminId);
-  await getLive();
-  await update({ state: "STOPPED", closeAll: true, stoppedAt: now, stopReason: reason });
+export async function stopBot(userId: string, reason: string, now: Date): Promise<void> {
+  await getLive(userId);
+  await update(userId, { state: "STOPPED", closeAll: true, stoppedAt: now, stopReason: reason });
 }
 
-export async function requestCloseAll(adminId: string): Promise<void> {
-  await assertAdmin(adminId);
-  await getLive();
-  await update({ closeAll: true });
+export async function requestCloseAll(userId: string): Promise<void> {
+  await getLive(userId);
+  await update(userId, { closeAll: true });
 }
 
 /** Returns the new token once; only its hash is kept. The previous token stops working. */
-export async function rotateToken(adminId: string): Promise<string> {
-  await assertAdmin(adminId);
-  await getLive();
+export async function rotateToken(userId: string): Promise<string> {
+  await getLive(userId);
   const token = newToken();
-  await update({ tokenHash: hashToken(token) });
+  await update(userId, { tokenHash: hashToken(token) });
   return token;
-}
-
-function tokenMatches(given: string, storedHash: string | null): boolean {
-  if (!given || !storedHash) return false;
-  const a = Buffer.from(hashToken(given));
-  const b = Buffer.from(storedHash);
-  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 /** One round trip with the terminal: store what it reports, answer with what it should do. null = rejected. */
 export async function handleSync(token: string, body: unknown, now: Date): Promise<Command | null> {
-  const live = await getLive();
-  if (!tokenMatches(token, live.tokenHash)) return null;
+  if (!token) return null;
+  // The token picks the bot: it is looked up by its hash, which is unique.
+  const [row] = await db.select().from(schema.botLive).where(eq(schema.botLive.tokenHash, hashToken(token)));
+  if (!row) return null;
+  const live = shape(row);
+  const owner = await findUserById(live.userId);
+  if (!owner) return null;
   const parsed = reportSchema.safeParse(body);
   if (!parsed.success) return null;
   const r: Report = parsed.data;
 
   if (r.deals.length) {
-    await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, runId: live.runId }))).onConflictDoNothing({ target: schema.botDeals.ticket });
+    await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, userId: live.userId, runId: live.runId }))).onConflictDoNothing({ target: [schema.botDeals.userId, schema.botDeals.ticket] });
   }
 
   let { state, closeAll, stopReason } = live;
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  const cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account);
+  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account);
+  if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
   const { deals: _deals, account, ...rest } = r;
   void _deals;
-  await update({ state, closeAll, stopReason, stoppedAt, lastSeenAt: now, status: { ...rest, account: { ...account, login: `••••${account.login.slice(-4)}` } } });
+  await update(live.userId, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, status: { ...rest, account: { ...account, login: `••••${account.login.slice(-4)}` } } });
   return cmd;
 }
 
@@ -93,12 +83,13 @@ type Status = Omit<Report, "deals">;
 export type LiveView = Awaited<ReturnType<typeof getLiveView>>;
 
 /** Everything the control page shows. */
-export async function getLiveView(now: Date) {
-  const live = await getLive();
+export async function getLiveView(userId: string, now: Date) {
+  const live = await getLive(userId);
+  const mine = eq(schema.botDeals.userId, userId);
   const status = live.status as Status | null;
-  const deals = await db.select().from(schema.botDeals).orderBy(desc(schema.botDeals.closeTime)).limit(50);
-  const [{ total }] = await db.select({ total: sum(schema.botDeals.profit) }).from(schema.botDeals).where(gte(schema.botDeals.closeTime, new Date(now.getTime() - 864e5)));
-  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.botDeals);
+  const deals = await db.select().from(schema.botDeals).where(mine).orderBy(desc(schema.botDeals.closeTime)).limit(50);
+  const [{ total }] = await db.select({ total: sum(schema.botDeals.profit) }).from(schema.botDeals).where(and(mine, gte(schema.botDeals.closeTime, new Date(now.getTime() - 864e5))));
+  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.botDeals).where(mine);
   return {
     state: live.state,
     stopReason: live.stopReason,

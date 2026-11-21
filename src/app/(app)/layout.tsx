@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 const NAV = [
   ["/today", "Өнөөдөр"], ["/chart", "Чарт"], ["/news", "Мэдээ"],
-  ["/journal", "Журнал"], ["/performance", "Гүйцэтгэл"], ["/settings", "Тохиргоо"],
+  ["/journal", "Журнал"], ["/performance", "Гүйцэтгэл"], ["/bot", "Бот"], ["/settings", "Тохиргоо"],
 ] as const;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
