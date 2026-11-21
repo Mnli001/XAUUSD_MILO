@@ -124,6 +124,17 @@ int CountPositions()
    return(n);
   }
 
+// Нийт нээлттэй лот. Netting дансанд олон захиалга нэг позиц болж нийлдэг тул
+// арилжааны тоогоор биш, лотын нийлбэрээр хязгаарлана.
+double TotalVolume()
+  {
+   double v = 0.0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+      if(IsMine(PositionGetTicket(i)))
+         v += PositionGetDouble(POSITION_VOLUME);
+   return(v);
+  }
+
 double FloatingPnl()
   {
    double p = 0.0;
@@ -262,6 +273,7 @@ void TryEnter()
    if(TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(CountPositions() >= gMaxPos) return;
+   if(TotalVolume() + gLots > gLots * gMaxPos + 1e-8) return;     // netting дансанд ч нийт лот хэтрэхгүй
    if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return;
    if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
 
