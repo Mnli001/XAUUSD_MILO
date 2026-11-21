@@ -120,6 +120,8 @@ export async function getLiveView(now: Date) {
     signal: status?.signal ?? null,
     reason: status?.reason ?? null,
     runPnl: status?.runPnl ?? null,
+    plannedSeconds: status?.plannedSeconds ?? null,
+    elapsedSeconds: status?.elapsedSeconds ?? null,
     positions: status?.positions ?? [],
     deals,
     dealCount: n,

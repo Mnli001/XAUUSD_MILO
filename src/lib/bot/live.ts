@@ -1,7 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 
-/** What the owner sets on the web. Lot size is theirs to choose; there is no daily limit. */
+/**
+ * What the owner sets on the web. Lot size is theirs to choose; there is no daily limit.
+ * How long a run lasts is not a setting: the robot works that out itself from volatility.
+ */
 export type LiveConfig = {
   lots: number;
   maxPositions: number; // how many positions the bot may hold at once
@@ -9,11 +12,10 @@ export type LiveConfig = {
   tpAtr: number; // target distance in ATR(14, M1)
   profitTarget: number | null; // stop the run after this profit, USD
   maxLoss: number | null; // stop the run after this loss, USD
-  maxSeconds: number | null; // stop the run after this long
   allowReal: boolean; // trade on a real account as well as demo
 };
 
-export const DEFAULT_LIVE_CONFIG: LiveConfig = { lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, maxSeconds: null, allowReal: false };
+export const DEFAULT_LIVE_CONFIG: LiveConfig = { lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: false };
 
 const blank = (v: unknown) => (v === "" || v === undefined || v === null ? null : v);
 const positive = (msg: string) => z.coerce.number({ message: msg }).finite().positive(msg);
@@ -25,7 +27,6 @@ const configSchema = z.object({
   tpAtr: positive("Target 0-ээс их байх ёстой").max(50),
   profitTarget: optionalPositive("Ашгийн зорилт 0-ээс их байх ёстой"),
   maxLoss: optionalPositive("Алдагдлын хязгаар 0-ээс их байх ёстой"),
-  maxSeconds: z.preprocess(blank, z.coerce.number().int().min(1, "Хугацаа дор хаяж 1 секунд").max(86_400).nullable()),
   allowReal: z.preprocess((v) => v === true || v === "on" || v === "1" || v === "true", z.boolean()),
 });
 
@@ -39,12 +40,12 @@ export type LiveState = { state: "RUNNING" | "STOPPED"; runId: string | null; cl
 /** Flat on purpose: the terminal reads it with simple key lookups. 0 means "no limit". */
 export type Command = {
   state: "RUNNING" | "STOPPED"; runId: string; closeAll: boolean; reason: string;
-  lots: number; maxPositions: number; slAtr: number; tpAtr: number; profitTarget: number; maxLoss: number; maxSeconds: number;
+  lots: number; maxPositions: number; slAtr: number; tpAtr: number; profitTarget: number; maxLoss: number;
 };
 
 export function commandFor(s: LiveState, account: { mode: AccountMode }): Command {
   const c = s.config;
-  const base = { runId: s.runId ?? "", lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0, maxSeconds: c.maxSeconds ?? 0 };
+  const base = { runId: s.runId ?? "", lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
   return { ...base, state: "RUNNING", closeAll: false, reason: "" };
@@ -66,5 +67,7 @@ export const reportSchema = z.object({
   positions: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, sl: num, tp: num, profit: num })).max(300),
   deals: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, closePrice: num, profit: num, closeTime: z.coerce.date() })).max(200),
   finished: z.string().max(40),
+  plannedSeconds: num.optional(), // the run length the robot worked out; 0 until its first trade
+  elapsedSeconds: num.optional(),
 });
 export type Report = z.infer<typeof reportSchema>;

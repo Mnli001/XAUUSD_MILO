@@ -12,7 +12,7 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, ...o,
 });
 
 beforeEach(async () => {
@@ -40,14 +40,14 @@ test("sync needs the right token", async () => {
   expect(await handleSync(old, report(), now)).toBeNull(); // rotating invalidates the old one
 });
 test("start, sync, stop", async () => {
-  expect((await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "5", slAtr: "1.5", tpAtr: "2", profitTarget: "40", maxSeconds: "60" })).error).toBeUndefined();
+  expect((await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "5", slAtr: "1.5", tpAtr: "2", profitTarget: "40" })).error).toBeUndefined();
   await startBot(admin.id, now);
   const cmd = (await handleSync(token, report(), now))!;
-  expect(cmd).toMatchObject({ state: "RUNNING", lots: 0.3, maxPositions: 5, profitTarget: 40, maxSeconds: 60, closeAll: false });
+  expect(cmd).toMatchObject({ state: "RUNNING", lots: 0.3, maxPositions: 5, profitTarget: 40, closeAll: false });
   expect(cmd.runId).toBeTruthy();
 
   const v = await getLiveView(new Date(now.getTime() + 3000));
-  expect(v).toMatchObject({ state: "RUNNING", online: true, signal: "BUY", reason: "EMA9>EMA21", balance: 10000, equity: 10012.5, accountMode: "DEMO", accountLogin: "••••4567", symbol: "XAUUSDm", runPnl: 12.5 });
+  expect(v).toMatchObject({ state: "RUNNING", online: true, signal: "BUY", reason: "EMA9>EMA21", balance: 10000, equity: 10012.5, accountMode: "DEMO", accountLogin: "••••4567", symbol: "XAUUSDm", runPnl: 12.5, plannedSeconds: 360, elapsedSeconds: 42 });
   expect(v.positions).toHaveLength(1);
   expect((await getLiveView(new Date(now.getTime() + 60_000))).online).toBe(false); // terminal went quiet
 
@@ -94,4 +94,11 @@ test("the sync route answers 401 without a token and 200 with one", async () => 
   const ok = await call({ "x-bot-token": token });
   expect(ok.status).toBe(200);
   expect(await ok.json()).toMatchObject({ state: "STOPPED" });
+});
+
+test("reports from a robot that does not send its timing are still accepted", async () => {
+  const { plannedSeconds: _p, elapsedSeconds: _e, ...old } = report();
+  void _p; void _e;
+  expect(await handleSync(token, old, now)).toMatchObject({ state: "STOPPED" });
+  expect(await getLiveView(now)).toMatchObject({ plannedSeconds: null, elapsedSeconds: null });
 });

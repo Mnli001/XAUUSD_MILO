@@ -10,7 +10,8 @@ type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> &
 
 const STOP_REASON: Record<string, string> = {
   MANUAL: "гараар зогсоосон", TARGET: "ашгийн зорилтод хүрсэн", MAX_LOSS: "алдагдлын хязгаарт хүрсэн",
-  TIME: "хугацаа дууссан", REAL_NOT_ALLOWED: "жинхэнэ данс зөвшөөрөгдөөгүй",
+  TIME: "ботын тооцсон хугацаа дууссан", REVERSAL: "чиглэл эргэсэн", NO_SIGNAL: "30 минутад дохио гараагүй",
+  REAL_NOT_ALLOWED: "жинхэнэ данс зөвшөөрөгдөөгүй",
 };
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
@@ -85,6 +86,11 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           <p className="mt-1 text-sm text-zinc-300">{v.reason || "Роботоос мэдээлэл ирээгүй"}</p>
           <p className="mt-2 text-xs text-zinc-500">{v.symbol ?? "—"} · bid {v.bid ?? "—"} · ask {v.ask ?? "—"}</p>
           {running && <p className={`mt-2 font-mono ${tone(v.runPnl)}`}>Энэ удаагийн үр дүн: {money(v.runPnl)}</p>}
+          {running && (
+            <p className="mt-1 text-sm text-zinc-400">
+              {v.plannedSeconds ? `Ботын тооцсон хугацаа: ${Math.round(v.plannedSeconds)} сек · өнгөрсөн ${Math.round(v.elapsedSeconds ?? 0)} сек` : "Эхний арилжаагаа хүлээж байна — хугацааг орсны дараа тооцно"}
+            </p>
+          )}
         </div>
 
         <form action={cfgAction} className="card space-y-3">
@@ -94,7 +100,6 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               ["lots", "Лот (арилжаа бүрт)", c.lots, "0.01"], ["maxPositions", "Зэрэг нээх арилжаа", c.maxPositions, "1"],
               ["slAtr", "Stop loss (ATR ×)", c.slAtr, "0.1"], ["tpAtr", "Take profit (ATR ×)", c.tpAtr, "0.1"],
               ["profitTarget", "Ашиг $… хүрвэл зогс", c.profitTarget ?? "", "1"], ["maxLoss", "Алдагдал $… хүрвэл зогс", c.maxLoss ?? "", "1"],
-              ["maxSeconds", "… секундын дараа зогс", c.maxSeconds ?? "", "1"],
             ] as [string, string, number | string, string][]).map(([name, label, val, step]) => (
               <div key={name}>
                 <label className="label" htmlFor={name}>{label}</label>
@@ -106,7 +111,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-1" />
             <span>Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх <span className="block text-xs text-zinc-500">Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.</span></span>
           </label>
-          <p className="text-xs text-zinc-400">Энэ тохиргоогоор хамгийн ихдээ {(c.lots * c.maxPositions).toFixed(2)} лот нээгдэнэ: алт $1 хөдлөхөд ±{money(exposure)}, $10 хөдлөхөд ±{money(exposure * 10)}. Хоосон орхисон зогсох нөхцөл үйлчлэхгүй.</p>
+          <p className="text-xs text-zinc-400">Энэ тохиргоогоор хамгийн ихдээ {(c.lots * c.maxPositions).toFixed(2)} лот нээгдэнэ: алт $1 хөдлөхөд ±{money(exposure)}, $10 хөдлөхөд ±{money(exposure * 10)}. Хоосон орхисон зогсох нөхцөл үйлчлэхгүй. Хэр удаан ажиллахаа бот өөрөө тооцно.</p>
           {cfgState.error && <p role="alert" className="text-sm text-red-400">{cfgState.error}</p>}
           {cfgState.ok && <p role="status" className="text-sm text-emerald-400">{cfgState.ok}</p>}
           <button className="btn" disabled={running || cfgPending}>{running ? "Ажиллаж байх үед өөрчлөхгүй" : "Хадгалах"}</button>

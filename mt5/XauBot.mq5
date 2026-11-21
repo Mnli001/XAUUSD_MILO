@@ -25,7 +25,7 @@ int    hEmaFast = INVALID_HANDLE, hEmaSlow = INVALID_HANDLE, hEmaTrend = INVALID
 string gState = "STOPPED";
 string gRunId = "";
 double gLots = 0.01, gSlAtr = 1.5, gTpAtr = 2.0, gTarget = 0.0, gMaxLoss = 0.0;
-int    gMaxPos = 1, gMaxSeconds = 0;
+int    gMaxPos = 1;
 bool   gCloseAll = false;
 
 // роботын өөрийн төлөв
@@ -36,6 +36,11 @@ string   gSignal = "NONE";
 string   gReason = "";
 datetime gLastEntry = 0;
 datetime gLastSyncOk = 0;
+datetime gFirstEntry = 0;          // энэ удаагийн анхны арилжаа
+string   gRunSide = "";            // энэ удаа ямар чиглэлд ажиллаж байгаа
+int      gPlannedSeconds = 0;      // ботын өөрөө тооцсон ажиллах хугацаа
+
+#define WAIT_FOR_SIGNAL_SECONDS 1800 // 30 минутад дохио гарахгүй бол зогсоно
 string   gLinkStatus = "холбогдоогүй";
 
 //+------------------------------------------------------------------+
@@ -210,6 +215,22 @@ void Finish(const string reason)
    Print("XauBot: ажиллагаа дууслаа — ", reason);
   }
 
+// Хэр удаан ажиллахаа бот өөрөө тооцно.
+// Үнэ санамсаргүй алхалттай төстэй хөдөлдөг тул d зайг туулах хугацаа d-ийн квадраттай пропорциональ:
+// M1 ATR нь 1 минутын дундаж хөдөлгөөн, target нь tpAtr × ATR → ойролцоогоор tpAtr² минут.
+// Түүнийг 1.5 дахин нөөцтэй авч, 30 секундээс 15 минутын хооронд барина.
+int PlanSeconds()
+  {
+   double s = gTpAtr * gTpAtr * 60.0 * 1.5;
+   return((int)MathMax(30.0, MathMin(900.0, MathRound(s))));
+  }
+
+int ElapsedSeconds()
+  {
+   if(gFirstEntry <= 0) return(0);
+   return((int)(TimeCurrent() - gFirstEntry));
+  }
+
 void ManageRun()
   {
    if(gState != "RUNNING" || gFinished != "") return;
@@ -219,9 +240,15 @@ void ManageRun()
       return;
      }
    double pnl = RunPnl();
-   if(gTarget > 0 && pnl >= gTarget)         { Finish("TARGET");   return; }
-   if(gMaxLoss > 0 && pnl <= -gMaxLoss)      { Finish("MAX_LOSS"); return; }
-   if(gMaxSeconds > 0 && (TimeCurrent() - gRunStart) >= gMaxSeconds) { Finish("TIME"); return; }
+   if(gTarget > 0 && pnl >= gTarget)    { Finish("TARGET");   return; }
+   if(gMaxLoss > 0 && pnl <= -gMaxLoss) { Finish("MAX_LOSS"); return; }
+   if(gFirstEntry <= 0)
+     {
+      if(TimeCurrent() - gRunStart >= WAIT_FOR_SIGNAL_SECONDS) Finish("NO_SIGNAL");
+      return;
+     }
+   if(gSignal != "NONE" && gSignal != gRunSide) { Finish("REVERSAL"); return; }   // чиглэл эргэлээ
+   if(ElapsedSeconds() >= gPlannedSeconds)      { Finish("TIME");     return; }   // тооцсон хугацаа дууслаа
   }
 
 //+------------------------------------------------------------------+
@@ -230,6 +257,7 @@ void ManageRun()
 void TryEnter()
   {
    if(gState != "RUNNING" || gFinished != "" || gSignal == "NONE") return;
+   if(gRunSide != "" && gSignal != gRunSide) return;                // нэг удаад нэг чиглэлд л ажиллана
    if(RealBlocked()) return;
    if(TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
@@ -263,7 +291,17 @@ void TryEnter()
 
    gLastEntry = TimeCurrent();                                   // амжилтгүй болсон ч дараагийн оролдлогыг хүлээлгэнэ
    if(!ok)
+     {
       Print("XauBot: захиалга амжилтгүй — ", trade.ResultRetcodeDescription());
+      return;
+     }
+   if(gFirstEntry <= 0)                                          // энэ удаагийн анхны арилжаа: чиглэл, хугацааг тогтооно
+     {
+      gFirstEntry = TimeCurrent();
+      gRunSide = gSignal;
+      gPlannedSeconds = PlanSeconds();
+      Print("XauBot: ", gRunSide, " чиглэлд ", (string)gPlannedSeconds, " секунд ажиллахаар тооцлоо");
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -378,7 +416,7 @@ void Sync()
                  ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\"},\"symbol\":\"" + _Symbol + "\",\"bid\":" +
                  Num(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits) + ",\"ask\":" + Num(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits) +
                  ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + gReason + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
-                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\"}";
+                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + "}";
 
    uchar data[];
    int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
@@ -412,7 +450,6 @@ void Sync()
    gTpAtr      = JNum(body, "tpAtr");
    gTarget     = JNum(body, "profitTarget");
    gMaxLoss    = JNum(body, "maxLoss");
-   gMaxSeconds = (int)JNum(body, "maxSeconds");
 
    if(state == "RUNNING" && runId != "" && runId != gActiveRunId)   // шинэ ажиллагаа эхэллээ
      {
@@ -420,6 +457,9 @@ void Sync()
       gRunStart = TimeCurrent();
       gFinished = "";
       gLastEntry = 0;
+      gFirstEntry = 0;
+      gRunSide = "";
+      gPlannedSeconds = 0;
       Print("XauBot: Start — лот ", Num(gLots, 2), ", зэрэг ", (string)gMaxPos);
      }
    if(state != "RUNNING" && gState == "RUNNING")
@@ -441,6 +481,8 @@ void ShowStatus()
    s += "Дохио: " + gSignal + " — " + gReason + "\n";
    s += "Нээлттэй: " + (string)CountPositions() + " / " + (string)gMaxPos + " · лот " + Num(gLots, 2);
    if(gState == "RUNNING") s += " · энэ удаа: " + Num(RunPnl(), 2);
+   if(gState == "RUNNING" && gFirstEntry > 0) s += "\nХугацаа: " + (string)ElapsedSeconds() + " / " + (string)gPlannedSeconds + " сек (" + gRunSide + ")";
+   if(gState == "RUNNING" && gFirstEntry <= 0) s += "\nЭхний дохиог хүлээж байна";
    if(RealBlocked()) s += "\nЖИНХЭНЭ ДАНС: AllowRealAccount унтраалттай тул арилжаа хийхгүй";
    Comment(s);
   }
