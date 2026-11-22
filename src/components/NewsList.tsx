@@ -28,21 +28,22 @@ export function NewsList({ events, reactions, now }: { events: EconomicEvent[]; 
     <div className="space-y-4">
       {[...days].map(([day, list]) => (
         <section key={day} className="card">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">{day} · {WEEKDAYS[ubWeekday(list[0].time)]}</h2>
+          <h2 className="mb-1 flex items-baseline gap-2 text-sm font-medium text-zinc-200">{WEEKDAYS[ubWeekday(list[0].time)]}<span className="font-mono text-xs font-normal text-zinc-500">{day}</span></h2>
           <ul className="divide-y divide-zinc-800">
             {list.map((e) => (
               <li key={e.id} className={e.time < now ? "opacity-60" : ""}>
                 <details>
-                  <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 py-2">
-                    <span className="font-mono">{formatUbTime(e.time)}</span>
-                    <span className={`h-2.5 w-2.5 rounded-full ${IMPACT[e.impact][0]}`} title={`Нөлөөлөл: ${IMPACT[e.impact][1]}`} />
-                    <span className="font-medium">{e.title}</span>
-                    <span className="text-xs text-zinc-500">{e.country} · {IMPACT[e.impact][1]}</span>
-                    <span className="ml-auto text-xs text-zinc-400">
-                      Таамаг {e.forecast ?? "—"} · Өмнөх {e.previous ?? "—"} · Бодит {e.actual ?? "—"}
+                  <summary className="grid cursor-pointer grid-cols-[3.25rem_1fr] gap-x-3 gap-y-1 py-3 sm:grid-cols-[3.25rem_1fr_auto] sm:items-center">
+                    <span className="font-mono text-zinc-200">{formatUbTime(e.time)}</span>
+                    <span className="min-w-0">
+                      <span className="font-medium">{e.title}</span>
+                      <span className="ml-2 inline-flex items-center gap-1.5 align-middle text-xs whitespace-nowrap text-zinc-500"><span aria-hidden className={`h-2 w-2 rounded-full ${IMPACT[e.impact][0]}`} />{e.country}, нөлөө {IMPACT[e.impact][1].toLowerCase()}</span>
+                    </span>
+                    <span className="col-start-2 grid grid-cols-3 gap-x-4 font-mono text-xs text-zinc-400 sm:col-start-3 sm:flex">
+                      {([["Таамаг", e.forecast], ["Өмнөх", e.previous], ["Бодит", e.actual]] as const).map(([k, val]) => <span key={k} className="whitespace-nowrap"><span className="text-zinc-500">{k}</span> {val ?? "—"}</span>)}
                     </span>
                   </summary>
-                  <div className="pb-3 pl-2">
+                  <div className="pb-3 pl-[4rem]">
                     <p className="mb-1 text-xs text-zinc-500">Өмнөх ийм мэдээний дараа алт хэрхэн хөдөлсөн бэ (сүүлийн 12 сар):</p>
                     <ReactionRows stats={reactions.get(e.type)} />
                   </div>

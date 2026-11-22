@@ -12,8 +12,8 @@ export default async function NewsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Мэдээний календарь</h1>
-        <p className="text-sm text-zinc-400">Дараагийн 14 хоног · цаг Улаанбаатарын цагаар · мөр дээр дарж түүхэн хариу үйлдлийг харна</p>
+        <h1 className="page-title">Мэдээний календарь</h1>
+        <p className="mt-1 max-w-prose text-sm text-zinc-400">Дараагийн 14 хоног, Улаанбаатарын цагаар. Мөр дээр дарвал өмнө нь ийм мэдээний дараа алт хэрхэн хөдөлснийг харуулна.</p>
       </div>
       <NewsList events={events} reactions={reactions} now={now} />
     </div>

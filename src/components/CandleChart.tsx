@@ -19,10 +19,10 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
     let cancelled = false;
     const chart = createChart(el, {
       autoSize: true,
-      layout: { background: { color: "transparent" }, textColor: "#a1a1aa" },
-      grid: { vertLines: { color: "#27272a" }, horzLines: { color: "#27272a" } },
-      timeScale: { timeVisible: true, borderColor: "#3f3f46" },
-      rightPriceScale: { borderColor: "#3f3f46" },
+      layout: { background: { color: "transparent" }, textColor: "#a59e8c", fontFamily: "'Golos Text Variable', system-ui, sans-serif" },
+      grid: { vertLines: { color: "#221f17" }, horzLines: { color: "#221f17" } },
+      timeScale: { timeVisible: true, borderColor: "#3d382c" },
+      rightPriceScale: { borderColor: "#3d382c" },
     });
     setStatus("loading");
     fetch(`/api/candles?tf=${tf}&limit=500`)
@@ -31,16 +31,16 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
         if (cancelled) return;
         if (candles.length === 0) return setStatus("empty");
         const t = (ms: number) => (Math.floor(ms / 1000) + UB_SHIFT) as UTCTimestamp;
-        const series = chart.addSeries(CandlestickSeries, { upColor: "#10b981", downColor: "#ef4444", borderVisible: false, wickUpColor: "#10b981", wickDownColor: "#ef4444" });
+        const series = chart.addSeries(CandlestickSeries, { upColor: "#2ea878", downColor: "#d44b3f", borderVisible: false, wickUpColor: "#2ea878", wickDownColor: "#d44b3f" });
         series.setData(candles.map((c) => ({ time: t(c.time), open: c.open, high: c.high, low: c.low, close: c.close })));
         const closes = candles.map((c) => c.close);
-        for (const [period, color] of [[20, "#fbbf24"], [50, "#60a5fa"], [200, "#c084fc"]] as const) {
+        for (const [period, color] of [[20, "#e3b44b"], [50, "#6ea8e0"], [200, "#b58ad6"]] as const) {
           const values = ema(closes, period);
           const line = chart.addSeries(LineSeries, { color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
           line.setData(candles.map((c, i) => ({ time: t(c.time), value: values[i] })).filter((p) => !Number.isNaN(p.value)));
         }
         if (levels) {
-          for (const [title, price, color] of [["R1", levels.r1, "#ef4444"], ["Pivot", levels.p, "#a1a1aa"], ["S1", levels.s1, "#10b981"]] as const) {
+          for (const [title, price, color] of [["R1", levels.r1, "#d44b3f"], ["Pivot", levels.p, "#a59e8c"], ["S1", levels.s1, "#2ea878"]] as const) {
             series.createPriceLine({ price, title, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true });
           }
         }
@@ -52,15 +52,15 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
   }, [tf, levels]);
 
   return (
-    <div className="card">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+    <div className="card px-2 sm:px-5">
+      <div className="mb-3 flex flex-wrap items-center gap-2 px-2 sm:px-0">
         {TFS.map(([v, label]) => (
           <button key={v} onClick={() => setTf(v)} aria-pressed={tf === v}
-            className={`rounded-lg px-3 py-1 text-sm ${tf === v ? "bg-amber-500 text-zinc-950" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
+            className={`min-h-10 min-w-12 rounded-lg px-3 text-sm ${tf === v ? "bg-amber-500 font-semibold text-zinc-950" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
         ))}
-        <span className="ml-auto text-xs text-zinc-500"><span className="text-amber-400">EMA20</span> · <span className="text-blue-400">EMA50</span> · <span className="text-purple-400">EMA200</span> · цаг УБ-аар</span>
+        <span className="flex w-full flex-wrap gap-x-3 text-xs text-zinc-500 sm:ml-auto sm:w-auto"><span className="text-amber-400">EMA20</span><span className="text-[#6ea8e0]">EMA50</span><span className="text-[#b58ad6]">EMA200</span><span>цаг УБ-аар</span></span>
       </div>
-      <div className="relative h-[480px]">
+      <div className="relative h-[58dvh] max-h-[620px] min-h-[340px]">
         <div ref={ref} className="absolute inset-0" />
         {status !== "ok" && (
           <div className="absolute inset-0 flex items-center justify-center text-zinc-500">

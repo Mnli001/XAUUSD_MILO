@@ -14,14 +14,41 @@ export default async function JournalPage() {
   const trades = await listTrades(user.id);
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Арилжааны журнал</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">Арилжааны журнал</h1>
         <Link href="/journal/new" className="btn">Арилжаа нэмэх</Link>
       </div>
       {trades.length === 0 ? (
         <div className="card text-zinc-400">Одоогоор арилжаа бүртгээгүй байна. “Арилжаа нэмэх” товчоор эхний арилжаагаа оруулаарай.</div>
       ) : (
-        <div className="card overflow-x-auto p-0">
+        <>
+        <ul className="space-y-2.5 md:hidden">
+          {trades.map((t) => {
+            const pnl = tradePnl(t);
+            const r = tradeR(t);
+            return (
+              <li key={t.id} className="card pb-1.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className={`font-semibold ${t.direction === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{t.direction === "BUY" ? "Buy" : "Sell"} <span className="font-mono font-normal text-zinc-300">{t.lots} лот</span></span>
+                  <span className={`font-mono text-lg font-semibold ${pnl === null ? "text-amber-400" : pnlClass(pnl)}`}>{pnl === null ? "нээлттэй" : usd(pnl)}</span>
+                </div>
+                <div className="mt-1 flex items-baseline justify-between gap-3 font-mono text-sm text-zinc-400">
+                  <span>{t.entryPrice} → {t.exitPrice ?? "…"}</span>
+                  <span>{r === null ? "" : `${r.toFixed(2)}R`}</span>
+                </div>
+                {t.note && <p className="mt-2 line-clamp-2 text-sm text-zinc-300">{t.note}{t.imageMime && " 📎"}</p>}
+                <div className="mt-2 flex items-center justify-between gap-3 border-t border-zinc-800 pt-0.5 text-sm">
+                  <span className="font-mono text-xs text-zinc-500">{formatUbDateTime(t.openedAt)}</span>
+                  <span className="flex items-center gap-1">
+                    <Link href={`/journal/${t.id}`} className="flex min-h-11 items-center px-2 text-amber-400">Засах</Link>
+                    <form action={deleteTradeAction}><input type="hidden" name="id" value={t.id} /><button className="min-h-11 px-2 text-red-400">Устгах</button></form>
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="table-card hidden md:block">
           <table className="w-full">
             <thead><tr>{["Нээсэн (УБ)", "Чиглэл", "Лот", "Орсон", "Гарсан", "P&L", "R", "Тэмдэглэл", ""].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
             <tbody>
@@ -51,6 +78,7 @@ export default async function JournalPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

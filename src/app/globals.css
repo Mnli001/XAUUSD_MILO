@@ -1,14 +1,58 @@
 @import "tailwindcss";
 
+/*
+ * One warm, low-chroma dark ramp and a metallic gold, so every page reads as the same
+ * instrument. The Tailwind names are kept (zinc, amber, emerald, red) and re-tuned here.
+ */
+@theme {
+  --font-sans: "Golos Text Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --font-mono: "Golos Text Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+
+  --color-zinc-50: #f7f5ee;
+  --color-zinc-100: #efece2;
+  --color-zinc-200: #e2ddcf;
+  --color-zinc-300: #cbc5b4;
+  --color-zinc-400: #a59e8c;
+  --color-zinc-500: #8a8372;
+  --color-zinc-600: #5c5646;
+  --color-zinc-700: #3d382c;
+  --color-zinc-800: #29251c;
+  --color-zinc-900: #16140f;
+  --color-zinc-950: #0d0c09;
+
+  --color-amber-200: #f4dc9c;
+  --color-amber-300: #edcb73;
+  --color-amber-400: #e3b44b;
+  --color-amber-500: #d6a233;
+
+  --color-emerald-400: #4cc493;
+  --color-emerald-500: #2ea878;
+  --color-red-300: #f29a90;
+  --color-red-400: #ec6d61;
+  --color-red-500: #d44b3f;
+}
+
 :root { color-scheme: dark; }
-body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; }
+html { -webkit-text-size-adjust: 100%; }
+body { font-family: var(--font-sans); font-feature-settings: "ss01"; }
+/* Prices and counts line up in columns without switching typeface. */
+.font-mono { font-variant-numeric: tabular-nums lining-nums; letter-spacing: 0; }
+:focus-visible { outline: 2px solid var(--color-amber-400); outline-offset: 2px; border-radius: 6px; }
+summary { list-style: none; }
+summary::-webkit-details-marker { display: none; }
 
 @layer components {
-  .card { @apply rounded-xl border border-zinc-800 bg-zinc-900/60 p-4; }
-  .btn { @apply inline-flex items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-50; }
-  .btn-ghost { @apply inline-flex items-center justify-center rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800; }
-  .input { @apply w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-amber-500; }
-  .label { @apply mb-1 block text-xs font-medium text-zinc-400; }
-  .th { @apply px-3 py-2 text-left text-xs font-medium text-zinc-400; }
-  .td { @apply px-3 py-2 text-sm; }
+  .card { @apply rounded-2xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5; }
+  .card-title { @apply mb-3 text-sm font-medium text-zinc-400; }
+  .page-title { @apply text-xl font-semibold tracking-tight sm:text-2xl; }
+  .btn { @apply inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-500 px-4 text-sm font-semibold text-zinc-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-10; }
+  .btn-ghost { @apply inline-flex min-h-11 items-center justify-center rounded-lg border border-zinc-700 px-3.5 text-sm text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-10; }
+  /* 16px on phones so iOS does not zoom the page when a field is focused. */
+  .input { @apply min-h-11 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-base text-zinc-100 outline-none transition-colors placeholder:text-zinc-600 focus:border-amber-400 disabled:opacity-60 sm:min-h-10 sm:text-sm; }
+  .label { @apply mb-1.5 block text-xs font-medium text-zinc-400; }
+  .th { @apply px-2 py-2.5 sm:px-3 text-left text-xs font-medium whitespace-nowrap text-zinc-500 first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5; }
+  .td { @apply px-2 py-2.5 sm:px-3 text-sm first:pl-4 last:pr-4 sm:first:pl-5 sm:last:pr-5; }
+  /* A table that fills its card edge to edge and scrolls sideways when it must. */
+  .table-card { @apply overflow-x-auto rounded-2xl border border-zinc-800 bg-zinc-900; }
+  .chip { @apply inline-flex items-center gap-1 rounded-md border border-zinc-800 px-2 py-1 text-sm; }
 }

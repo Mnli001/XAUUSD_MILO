@@ -10,8 +10,8 @@ export function EquityCurve({ points }: { points: { value: number }[] }) {
   const last = values.at(-1)!;
   return (
     <svg viewBox={`0 -6 ${W} ${H + 12}`} className="h-48 w-full" role="img" aria-label={`Нийт P&L-ийн муруй, эцсийн утга ${last.toFixed(2)} доллар`} preserveAspectRatio="none">
-      <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="#3f3f46" strokeDasharray="4 4" />
-      <polyline fill="none" strokeWidth="2" stroke={last >= 0 ? "#10b981" : "#ef4444"} points={values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} vectorEffect="non-scaling-stroke" />
+      <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="#3d382c" strokeDasharray="4 4" />
+      <polyline fill="none" strokeWidth="2" stroke={last >= 0 ? "#2ea878" : "#d44b3f"} points={values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

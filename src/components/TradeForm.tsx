@@ -8,16 +8,16 @@ export type TradeFormValues = { id?: string; direction: "BUY" | "SELL"; lots: st
 
 export function TradeForm({ initial }: { initial: TradeFormValues }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveTradeAction, {});
-  const num = (name: keyof TradeFormValues, label: string, required = false) => (
+  const num = (name: keyof TradeFormValues, label: string, required = false, placeholder?: string) => (
     <div>
       <label className="label" htmlFor={name}>{label}</label>
-      <input className="input" id={name} name={name} type="number" step="any" min="0" inputMode="decimal" required={required} defaultValue={initial[name] as string} />
+      <input className="input" id={name} name={name} type="number" step="any" min="0" inputMode="decimal" required={required} placeholder={placeholder} defaultValue={initial[name] as string} />
     </div>
   );
   return (
     <form action={action} className="card max-w-2xl space-y-4">
       {initial.id && <input type="hidden" name="id" value={initial.id} />}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="label" htmlFor="direction">Чиглэл</label>
           <select className="input" id="direction" name="direction" defaultValue={initial.direction}>
@@ -27,14 +27,14 @@ export function TradeForm({ initial }: { initial: TradeFormValues }) {
         </div>
         {num("lots", "Лот", true)}
         {num("entryPrice", "Орсон үнэ", true)}
-        {num("exitPrice", "Гарсан үнэ (нээлттэй бол хоосон)")}
+        {num("exitPrice", "Гарсан үнэ", false, "хоосон = нээлттэй")}
         {num("stopLoss", "Stop loss")}
         {num("takeProfit", "Take profit")}
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <label className="label" htmlFor="openedAt">Нээсэн огноо, цаг (УБ)</label>
           <input className="input" id="openedAt" name="openedAt" type="datetime-local" required defaultValue={initial.openedAt} />
         </div>
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <label className="label" htmlFor="closedAt">Хаасан огноо, цаг (УБ)</label>
           <input className="input" id="closedAt" name="closedAt" type="datetime-local" defaultValue={initial.closedAt} />
         </div>
@@ -45,11 +45,11 @@ export function TradeForm({ initial }: { initial: TradeFormValues }) {
       </div>
       <div>
         <label className="label" htmlFor="image">Зураг (PNG, JPEG, WebP · 2MB хүртэл){initial.hasImage ? " — шинийг сонговол хуучныг солино" : ""}</label>
-        <input className="input" id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" />
+        <input className="input py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-zinc-800 file:px-3 file:py-1.5 file:text-sm file:text-zinc-200" id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" />
       </div>
       {state.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
       <div className="flex gap-3">
-        <button className="btn" disabled={pending}>{pending ? "Хадгалж байна…" : "Хадгалах"}</button>
+        <button className="btn max-sm:flex-1" disabled={pending}>{pending ? "Хадгалж байна…" : "Хадгалах"}</button>
         <Link href="/journal" className="btn-ghost">Болих</Link>
       </div>
     </form>

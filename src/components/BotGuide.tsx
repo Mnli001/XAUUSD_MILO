@@ -1,6 +1,6 @@
 /** Step-by-step: how a user connects their own MetaTrader 5 to their own bot page. */
 export function BotGuide({ origin, hasToken, online }: { origin: string; hasToken: boolean; online: boolean }) {
-  const code = "rounded bg-zinc-800 px-1.5 py-0.5";
+  const code = "rounded bg-zinc-800 px-1.5 py-0.5 break-all";
   const steps: [string, React.ReactNode][] = [
     ["MetaTrader 5-аа бэлдэх", <>Windows компьютер дээрээ MT5-г нээж, өөрийн дансаар нэвтэрнэ. Эхлээд заавал <strong>demo</strong> дансаар туршаарай.</>],
     ["Роботын файлыг татаж, MT5-д хуулах", <>
@@ -15,8 +15,8 @@ export function BotGuide({ origin, hasToken, online }: { origin: string; hasToke
   ];
   return (
     <details className="card" open={!online}>
-      <summary className="cursor-pointer text-sm font-medium text-zinc-200">Заавар: MT5-аа холбох, ботыг ашиглах</summary>
-      <ol className="mt-3 space-y-3">
+      <summary className="flex min-h-6 cursor-pointer items-center justify-between gap-3 text-sm font-medium text-zinc-100">Заавар: MT5-аа холбох, ботыг ашиглах<svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform [details[open]_&]:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></summary>
+      <ol className="mt-4 max-w-3xl space-y-4">
         {steps.map(([title, body], i) => (
           <li key={title} className="flex gap-3 text-sm">
             <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-mono text-xs text-amber-400">{i + 1}</span>
@@ -25,7 +25,7 @@ export function BotGuide({ origin, hasToken, online }: { origin: string; hasToke
         ))}
       </ol>
       <h3 className="mt-5 text-sm font-medium text-zinc-200">Ашиглах</h3>
-      <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">
+      <ul className="mt-2 max-w-3xl list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">
         <li><strong>Тохиргоо</strong>: арилжаа бүрийн лот, зэрэг нээх арилжааны тоо, stop/target-ийг өөрөө тавина. Лотын дээд хязгаар байхгүй тул хуудсан дээрх “алт $1 хөдлөхөд ±…” тооцоог харж сонгоорой.</li>
         <li><strong>Start bot</strong>: бот дохио гармагц өөрөө BUY эсвэл SELL орж, хэр удаан ажиллахаа өөрөө тооцоод, хугацаа дуусах, зорилтод хүрэх эсвэл чиглэл эргэхэд арилжаагаа хааж өөрөө зогсоно.</li>
         <li><strong>Stop</strong>: хүссэн үедээ дарж ботыг зогсооно. Нээлттэй арилжаанууд хаагдана. <strong>Бүгдийг хаах</strong> нь ботыг зогсоохгүйгээр арилжаануудыг хаана.</li>

@@ -58,33 +58,33 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             MT5: {v.online ? "холбогдсон" : v.lastSeenAt ? "холболт тасарсан" : "холбогдоогүй"}{stale ? " · самбар шинэчлэгдэхгүй байна" : ""}
           </span>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           {([
             ["Данс", v.accountMode ? `${v.accountMode === "REAL" ? "Жинхэнэ" : "Demo"} ${v.accountLogin ?? ""}` : "—", real ? "text-red-300" : undefined],
             ["Balance", money(v.balance)],
             ["Equity", money(v.equity)],
             ["Сүүлийн 24ц", money(v.pnl24h), tone(v.pnl24h)],
           ] as [string, string, string?][]).map(([k, val, cls]) => (
-            <div key={k}><div className="text-xs text-zinc-400">{k}</div><div className={`font-mono font-semibold ${cls ?? ""}`}>{val}</div></div>
+            <div key={k} className="min-w-0"><div className="text-xs text-zinc-400">{k}</div><div className={`truncate font-mono font-semibold sm:text-lg ${cls ?? ""}`}>{val}</div></div>
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <form action={startBotAction}><button className="btn" disabled={running || !v.hasToken}>Start bot</button></form>
-          <form action={stopBotAction}><button className="btn-ghost" disabled={!running}>Stop</button></form>
-          <form action={closeAllAction}><button className="btn-ghost text-red-300" disabled={v.positions.length === 0}>Бүгдийг хаах</button></form>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <form action={startBotAction} className="max-sm:flex-1"><button className="btn w-full px-6" disabled={running || !v.hasToken}>Start bot</button></form>
+          <form action={stopBotAction} className="max-sm:flex-1"><button className="btn-ghost w-full px-6" disabled={!running}>Stop</button></form>
+          <form action={closeAllAction} className="max-sm:w-full"><button className="btn-ghost w-full text-red-300" disabled={v.positions.length === 0}>Бүгдийг хаах</button></form>
           {v.closeAllPending && <span className="self-center text-xs text-amber-400">Арилжаануудыг хааж байна…</span>}
         </div>
         {!v.online && <p className="mt-3 text-xs text-amber-400">MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.</p>}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <div className="card">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">Одоо</h2>
-          <div className={`text-2xl font-semibold ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-300"}`}>
+          <h2 className="card-title">Одоо</h2>
+          <div className={`text-3xl font-semibold tracking-tight ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-300"}`}>
             {v.signal === "BUY" ? "BUY" : v.signal === "SELL" ? "SELL" : v.signal === "NONE" ? "Хүлээж байна" : "—"}
           </div>
           <p className="mt-1 text-sm text-zinc-300">{v.reason || "Роботоос мэдээлэл ирээгүй"}</p>
-          <p className="mt-2 text-xs text-zinc-500">{v.symbol ?? "—"} · bid {v.bid ?? "—"} · ask {v.ask ?? "—"}</p>
+          <p className="mt-2 font-mono text-xs text-zinc-500">{v.symbol ?? "—"}, bid {v.bid ?? "—"}, ask {v.ask ?? "—"}</p>
           {running && <p className={`mt-2 font-mono ${tone(v.runPnl)}`}>Энэ удаагийн үр дүн: {money(v.runPnl)}</p>}
           {running && (
             <p className="mt-1 text-sm text-zinc-400">
@@ -108,43 +108,43 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             ))}
           </div>
           <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-1" />
+            <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх <span className="block text-xs text-zinc-500">Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.</span></span>
           </label>
-          <p className="text-xs text-zinc-400">Энэ тохиргоогоор хамгийн ихдээ {(c.lots * c.maxPositions).toFixed(2)} лот нээгдэнэ: алт $1 хөдлөхөд ±{money(exposure)}, $10 хөдлөхөд ±{money(exposure * 10)}. Хоосон орхисон зогсох нөхцөл үйлчлэхгүй. Хэр удаан ажиллахаа бот өөрөө тооцно.</p>
+          <p className="text-xs leading-relaxed text-zinc-400">Энэ тохиргоогоор хамгийн ихдээ {(c.lots * c.maxPositions).toFixed(2)} лот нээгдэнэ: алт $1 хөдлөхөд ±{money(exposure)}, $10 хөдлөхөд ±{money(exposure * 10)}. Хоосон орхисон зогсох нөхцөл үйлчлэхгүй. Хэр удаан ажиллахаа бот өөрөө тооцно.</p>
           {cfgState.error && <p role="alert" className="text-sm text-red-400">{cfgState.error}</p>}
           {cfgState.ok && <p role="status" className="text-sm text-emerald-400">{cfgState.ok}</p>}
           <button className="btn" disabled={running || cfgPending}>{running ? "Ажиллаж байх үед өөрчлөхгүй" : "Хадгалах"}</button>
         </form>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="card overflow-x-auto">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">Нээлттэй арилжаа ({v.positions.length})</h2>
-          {v.positions.length === 0 ? <p className="text-sm text-zinc-500">Алга</p> : (
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="table-card">
+          <h2 className="px-4 pt-4 text-sm font-medium text-zinc-400 sm:px-5 sm:pt-5">Нээлттэй арилжаа ({v.positions.length})</h2>
+          {v.positions.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500 sm:px-5">Алга</p> : (
             <table className="w-full">
-              <thead><tr>{["", "Лот", "Орсон", "SL", "TP", "P&L"].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
+              <thead><tr>{["", "Лот", "Орсон", "SL", "TP", "P&L"].map((h) => <th key={h} className={`th ${h === "SL" || h === "TP" ? "hidden sm:table-cell" : ""} ${h === "P&L" ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
               <tbody>{v.positions.map((p) => (
                 <tr key={p.ticket} className="border-t border-zinc-800">
                   <td className={`td ${p.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{p.side}</td>
                   <td className="td font-mono">{p.lots}</td><td className="td font-mono">{p.openPrice}</td>
-                  <td className="td font-mono">{p.sl || "—"}</td><td className="td font-mono">{p.tp || "—"}</td>
-                  <td className={`td font-mono ${tone(p.profit)}`}>{money(p.profit)}</td>
+                  <td className="td hidden font-mono sm:table-cell">{p.sl || "—"}</td><td className="td hidden font-mono sm:table-cell">{p.tp || "—"}</td>
+                  <td className={`td text-right font-mono ${tone(p.profit)}`}>{money(p.profit)}</td>
                 </tr>))}</tbody>
             </table>
           )}
         </div>
-        <div className="card overflow-x-auto">
-          <h2 className="mb-2 text-sm font-medium text-zinc-400">Арилжааны түүх (сүүлийн 50 · нийт {v.dealCount})</h2>
-          {v.deals.length === 0 ? <p className="text-sm text-zinc-500">Хаагдсан арилжаа алга</p> : (
+        <div className="table-card">
+          <h2 className="px-4 pt-4 text-sm font-medium text-zinc-400 sm:px-5 sm:pt-5">Арилжааны түүх <span className="text-zinc-500">(сүүлийн 50, нийт {v.dealCount})</span></h2>
+          {v.deals.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500 sm:px-5">Хаагдсан арилжаа алга</p> : (
             <table className="w-full">
-              <thead><tr>{["Хаагдсан (УБ)", "", "Лот", "Орсон", "Гарсан", "P&L"].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
+              <thead><tr>{["Хаагдсан (УБ)", "", "Лот", "Орсон", "Гарсан", "P&L"].map((h) => <th key={h} className={`th ${h === "Орсон" || h === "Гарсан" ? "hidden sm:table-cell" : ""} ${h === "P&L" ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
               <tbody>{v.deals.map((d) => (
                 <tr key={d.ticket} className="border-t border-zinc-800">
                   <td className="td whitespace-nowrap font-mono">{ubTime(d.closeTime)}</td>
                   <td className={`td ${d.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{d.side}</td>
-                  <td className="td font-mono">{d.lots}</td><td className="td font-mono">{d.openPrice}</td><td className="td font-mono">{d.closePrice}</td>
-                  <td className={`td font-mono ${tone(d.profit)}`}>{money(d.profit)}</td>
+                  <td className="td font-mono">{d.lots}</td><td className="td hidden font-mono sm:table-cell">{d.openPrice}</td><td className="td hidden font-mono sm:table-cell">{d.closePrice}</td>
+                  <td className={`td text-right font-mono ${tone(d.profit)}`}>{money(d.profit)}</td>
                 </tr>))}</tbody>
             </table>
           )}
@@ -153,9 +153,10 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
 
       <form action={tokAction} className="card space-y-2">
         <h2 className="text-sm font-medium text-zinc-400">MT5 роботыг холбох</h2>
-        <p className="text-sm text-zinc-300">Роботын тохиргоонд энэ хаягийг оруулна: <code className="rounded bg-zinc-800 px-1.5 py-0.5">{syncUrl}</code></p>
+        <p className="text-sm text-zinc-300">Роботын тохиргоонд энэ хаягийг оруулна:</p>
+        <code className="block rounded-lg bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
         {tokState.token ? (
-          <p className="text-sm">Шинэ токен (дахин харагдахгүй, одоо хуулж ав): <code className="break-all rounded bg-zinc-800 px-1.5 py-0.5 text-amber-300">{tokState.token}</code></p>
+          <p className="text-sm">Шинэ токен (дахин харагдахгүй, одоо хуулж ав): <code className="mt-1 block rounded-lg bg-zinc-950 px-3 py-2 break-all text-amber-300 select-all">{tokState.token}</code></p>
         ) : (
           <p className="text-sm text-zinc-400">{v.hasToken ? "Токен үүссэн. Шинийг үүсгэвэл хуучин нь хүчингүй болж, роботод шинийг оруулах хэрэгтэй." : "Токен үүсээгүй. Эхлээд токен үүсгэнэ."}</p>
         )}

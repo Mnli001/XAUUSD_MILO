@@ -13,13 +13,37 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   const now = new Date();
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Хэрэглэгчид</h1>
+      <h1 className="page-title">Хэрэглэгчид</h1>
       <form className="flex max-w-md gap-2">
         <input className="input" name="q" defaultValue={q} placeholder="Имэйлээр хайх" aria-label="Имэйлээр хайх" />
         <button className="btn-ghost">Хайх</button>
       </form>
       {users.length === 0 ? <div className="card text-zinc-400">Хэрэглэгч олдсонгүй.</div> : (
-        <div className="card overflow-x-auto p-0">
+        <>
+        <ul className="space-y-3 md:hidden">
+          {users.map((u) => {
+            const active = hasAccess(u, now);
+            return (
+              <li key={u.id} className="card">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate font-medium">{u.name}{u.role === "ADMIN" && <span className="ml-2 text-xs text-amber-400">админ</span>}</span>
+                  <span className={`shrink-0 text-sm ${active ? "text-emerald-400" : "text-zinc-500"}`}>{active ? "Идэвхтэй" : "Идэвхгүй"}</span>
+                </div>
+                <div className="truncate text-sm text-zinc-400">{u.email}</div>
+                <div className="mt-1 font-mono text-xs text-zinc-500">Эрх дуусах: {u.role === "ADMIN" ? "хугацаагүй" : u.accessUntil ? formatUbDateTime(u.accessUntil) : "—"}</div>
+                {u.role !== "ADMIN" && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {[30, 90].map((d) => (
+                      <form key={d} action={grantAction}><input type="hidden" name="userId" value={u.id} /><input type="hidden" name="days" value={d} /><button className="btn-ghost w-full">+{d} хоног</button></form>
+                    ))}
+                    <form action={revokeAction}><input type="hidden" name="userId" value={u.id} /><button className="btn-ghost w-full text-red-400">Эрх хаах</button></form>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="table-card hidden md:block">
           <table className="w-full">
             <thead><tr>{["Нэр", "Имэйл", "Бүртгүүлсэн", "Эрх дуусах", "Төлөв", ""].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>
             <tbody>
@@ -48,6 +72,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

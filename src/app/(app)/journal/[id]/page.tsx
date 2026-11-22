@@ -15,7 +15,7 @@ export default async function EditTradePage({ params }: { params: Promise<{ id: 
   const s = (v: number | null) => (v === null ? "" : String(v));
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Арилжаа засах</h1>
+      <h1 className="page-title">Арилжаа засах</h1>
       {t.imageMime && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/api/trades/${t.id}/image`} alt="Арилжааны зураг" className="max-h-80 rounded-lg border border-zinc-800" />

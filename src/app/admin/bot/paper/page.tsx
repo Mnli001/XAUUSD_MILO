@@ -89,7 +89,7 @@ export default async function PaperPage() {
 
           {r.closed.length > 0 && (
             <>
-              <div className="card"><h2 className="mb-2 text-sm font-medium text-zinc-400">Цаасан дансны муруй</h2><EquityCurve points={r.closed.reduce<{ value: number }[]>((a, t) => [...a, { value: (a.at(-1)?.value ?? 0) + t.pnl }], [])} /></div>
+              <div className="card"><h2 className="card-title">Цаасан дансны муруй</h2><EquityCurve points={r.closed.reduce<{ value: number }[]>((a, t) => [...a, { value: (a.at(-1)?.value ?? 0) + t.pnl }], [])} /></div>
               <div className="card overflow-x-auto p-0">
                 <table className="w-full">
                   <thead><tr>{["Нээсэн (УБ)", "Чиглэл", "Лот", "Орсон", "Stop", "Гарсан", "Шалтгаан", "P&L", "R"].map((h) => <th key={h} className="th">{h}</th>)}</tr></thead>

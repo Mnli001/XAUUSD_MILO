@@ -87,17 +87,17 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
 
               {s.count > 0 && (
                 <>
-                  <div className="card"><h2 className="mb-2 text-sm font-medium text-zinc-400">Дансны муруй (P&L)</h2><EquityCurve points={s.equity} /></div>
+                  <div className="card"><h2 className="card-title">Дансны муруй (P&L)</h2><EquityCurve points={s.equity} /></div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="card">
-                      <h2 className="mb-2 text-sm font-medium text-zinc-400">Сараар</h2>
+                      <h2 className="card-title">Сараар</h2>
                       <table className="w-full">
                         <thead><tr><th className="th">Сар</th><th className="th">Арилжаа</th><th className="th">P&L</th></tr></thead>
                         <tbody>{r.months.map((m) => <tr key={m.month} className="border-t border-zinc-800"><td className="td font-mono">{m.month}</td><td className="td font-mono">{m.trades}</td><td className={`td font-mono ${pnlClass(m.pnl)}`}>{usd(m.pnl)}</td></tr>)}</tbody>
                       </table>
                     </div>
                     <div className="card">
-                      <h2 className="mb-2 text-sm font-medium text-zinc-400">Хэрхэн хаагдсан</h2>
+                      <h2 className="card-title">Хэрхэн хаагдсан</h2>
                       <table className="w-full">
                         <tbody>{(Object.keys(REASON) as ExitReason[]).map((k) => <tr key={k} className="border-t border-zinc-800 first:border-t-0"><td className="td">{REASON[k]}</td><td className="td font-mono">{r.byReason[k]}</td></tr>)}</tbody>
                       </table>

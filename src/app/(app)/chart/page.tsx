@@ -9,7 +9,7 @@ export default async function ChartPage() {
   const snap = await getTodaySnapshot(SYMBOL, new Date());
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">XAUUSD чарт</h1>
+      <h1 className="page-title">Алтны чарт</h1>
       <CandleChart levels={snap.levels} />
     </div>
   );
