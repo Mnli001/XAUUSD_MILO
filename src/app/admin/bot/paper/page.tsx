@@ -31,7 +31,7 @@ export default async function PaperPage() {
   return (
     <div className="space-y-4">
       <div>
-        <Link href="/admin/bot" className="text-sm text-zinc-400 hover:text-white">← Бот</Link>
+        <Link href="/admin/bot" className="text-sm text-zinc-400 hover:text-zinc-50">← Бот</Link>
         <h1 className="mt-1 text-xl font-semibold">Бот — цаасан арилжаа</h1>
         <p className="text-sm text-zinc-400">“Азийн хүрээний breakout + өдрийн тренд” дүрмийг шинэ дата дээр бодит цагт шалгана. Мөнгө оролцохгүй, захиалга хаашаа ч илгээгдэхгүй.</p>
       </div>

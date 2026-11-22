@@ -1,3 +1,4 @@
+import { cache } from "react";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { redirect, notFound } from "next/navigation";
@@ -31,12 +32,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
-/** The signed-in user read fresh from the database, or null. */
-export async function getSessionUser(): Promise<User | null> {
+/** The signed-in user read fresh from the database (once per request), or null. */
+export const getSessionUser = cache(async (): Promise<User | null> => {
   const session = await auth();
   const id = session?.user?.id;
   return id ? findUserById(id) : null;
-}
+});
 
 /** Signed in AND has access; otherwise redirects to /login or /locked. */
 export async function requireUser(): Promise<User> {

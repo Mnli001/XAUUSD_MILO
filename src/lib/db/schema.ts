@@ -17,6 +17,11 @@ export const users = pgTable("users", {
   accessUntil: ts("access_until"),
   telegramChatId: text("telegram_chat_id"), // where setup signals are sent
   telegramLinkCode: text("telegram_link_code"), // one-time code the user presses Start with
+  signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
+  signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
+  locale: text("locale").notNull().default("mn"),
+  theme: text("theme").notNull().default("dark"),
+  timeZone: text("time_zone").notNull().default("Asia/Ulaanbaatar"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 

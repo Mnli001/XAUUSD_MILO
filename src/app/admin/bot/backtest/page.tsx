@@ -31,7 +31,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
   return (
     <div className="space-y-4">
       <div>
-        <a href="/admin/bot" className="text-sm text-zinc-400 hover:text-white">← Бот</a>
+        <a href="/admin/bot" className="text-sm text-zinc-400 hover:text-zinc-50">← Бот</a>
         <h1 className="mt-1 text-xl font-semibold">Бот — backtest</h1>
         <p className="text-sm text-zinc-400">Арилжааны дүрмийг баазад байгаа түүхэн дата дээр ажиллуулж шалгана. Жинхэнэ болон demo захиалга өгөхгүй. <a href="/admin/bot/paper" className="text-amber-400">Цаасан арилжаа →</a></p>
       </div>

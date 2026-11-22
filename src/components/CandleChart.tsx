@@ -56,7 +56,7 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
       <div className="mb-3 flex flex-wrap items-center gap-2 px-2 sm:px-0">
         {TFS.map(([v, label]) => (
           <button key={v} onClick={() => setTf(v)} aria-pressed={tf === v}
-            className={`min-h-10 min-w-12 rounded-lg px-3 text-sm ${tf === v ? "bg-amber-500 font-semibold text-zinc-950" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
+            className={`min-h-10 min-w-12 rounded-lg px-3 text-sm ${tf === v ? "bg-[var(--accent-bg)] font-semibold text-[var(--accent-fg)]" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
         ))}
         <span className="flex w-full flex-wrap gap-x-3 text-xs text-zinc-500 sm:ml-auto sm:w-auto"><span className="text-amber-400">EMA20</span><span className="text-[#6ea8e0]">EMA50</span><span className="text-[#b58ad6]">EMA200</span><span>цаг УБ-аар</span></span>
       </div>

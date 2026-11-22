@@ -1,18 +1,36 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/golos-text";
 import "./globals.css";
+import { PrefsProvider } from "@/components/PrefsProvider";
+import { getPrefs, getT } from "@/lib/prefs.server";
 
-export const metadata: Metadata = {
-  title: "XAU Analytics — алтны зах зээлийн шинжилгээ",
-  description: "Алтны (XAUUSD) чиглэл, цагийн магадлал, мэдээний календарь, арилжааны журнал.",
-};
+const DARK = "#0d0c09";
+const LIGHT = "#f6f3ea";
 
-export const viewport: Viewport = { themeColor: "#0d0c09", viewportFit: "cover", colorScheme: "dark" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: t("XAU Analytics — алтны зах зээлийн шинжилгээ", "XAU Analytics — gold market analysis"),
+    description: t("Алтны (XAUUSD) чиглэл, цагийн магадлал, мэдээний календарь, арилжааны журнал.", "Gold (XAUUSD) direction, hourly odds, the news calendar and a trade journal."),
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export async function generateViewport(): Promise<Viewport> {
+  const { theme } = await getPrefs();
+  return {
+    viewportFit: "cover",
+    colorScheme: theme === "system" ? "dark light" : theme,
+    themeColor: theme === "system" ? [{ media: "(prefers-color-scheme: light)", color: LIGHT }, { media: "(prefers-color-scheme: dark)", color: DARK }] : theme === "light" ? LIGHT : DARK,
+  };
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const prefs = await getPrefs();
   return (
-    <html lang="mn">
-      <body className="min-h-dvh bg-zinc-950 text-zinc-100 antialiased">{children}</body>
+    <html lang={prefs.locale} data-theme={prefs.theme}>
+      <body className="min-h-dvh bg-zinc-950 text-zinc-100 antialiased">
+        <PrefsProvider prefs={prefs}>{children}</PrefsProvider>
+      </body>
     </html>
   );
 }
