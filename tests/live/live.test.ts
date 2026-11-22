@@ -23,7 +23,7 @@ test("a stopped bot tells the terminal to stop, and passes on a close-all reques
 });
 test("a running bot sends its settings as flat numbers", () => {
   const c = commandFor({ state: "RUNNING", runId: "r1", closeAll: false, config: cfg({ lots: 0.5, maxPositions: 4, profitTarget: 100 }) }, demo);
-  expect(c).toEqual({ state: "RUNNING", runId: "r1", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "" });
+  expect(c).toEqual({ state: "RUNNING", runId: "r1", lang: "mn", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "" });
 });
 test("a real account is traded only when the owner switched that on", () => {
   const state = { state: "RUNNING" as const, runId: "r1", closeAll: false };
@@ -101,5 +101,14 @@ describe("the Asian breakout tool", () => {
     const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
     for (const v of [undefined, 1, 2]) expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, v)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
     expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "REAL" }, 3)).toMatchObject({ state: "STOPPED", reason: "REAL_NOT_ALLOWED" });
+  });
+});
+
+describe("the robot's language", () => {
+  const state = { state: "RUNNING" as const, runId: "r", closeAll: false, config: DEFAULT_LIVE_CONFIG };
+  test("the command tells the robot which language to show, Mongolian unless told otherwise", () => {
+    expect(commandFor(state, { mode: "DEMO" }, 4).lang).toBe("mn");
+    expect(commandFor(state, { mode: "DEMO" }, 4, "en").lang).toBe("en");
+    expect(commandFor({ ...state, state: "STOPPED" }, { mode: "DEMO" }, 4, "en").lang).toBe("en");
   });
 });

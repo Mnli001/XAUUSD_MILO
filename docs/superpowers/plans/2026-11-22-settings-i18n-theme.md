@@ -36,6 +36,15 @@ journal CSV export, time zone and account deletion.
 
 ## Order
 
-1. Foundation (done, committed) 2. Translation of pages/components/lib (in progress)
-3. Settings page 4. Time zone pass (grep `УБ`, `formatUb`) 5. Admin pages 6. Robot 7. Verify
-in a browser in both languages and both themes, then push.
+All done on 2026-11-22: web pushed as `f8f5a8f`, then the robot. Checked in a browser on the
+demo data in English + light and Mongolian + dark, on desktop and phone widths, and with the
+zone set to London (hours, rule text, trade entry and the CSV all followed it).
+
+Left as it was on purpose: admin pages stay in Ulaanbaatar time (labelled); the research
+scripts' names and server logs stay Mongolian (`// i18n-ok`).
+
+Robot v2.40 (`ROBOT_VERSION 4`): `L("mn", "en")` around every message, `Language` input
+(follow the web / Монгол / English), bilingual input labels, and two display-only fixes (no
+scalper lines under the Asian tool; "weekend, market closed" from the PC clock when no gold
+quote has arrived for an hour). Compiled in MetaEditor with 0 errors, 0 warnings. Not yet
+re-run in the Strategy Tester by the user.

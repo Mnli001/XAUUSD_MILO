@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { mnT, type T } from "../i18n";
+import { mnT, type Locale, type T } from "../i18n";
 import { z } from "zod";
 
 /**
@@ -77,6 +77,7 @@ export type LiveState = { state: "RUNNING" | "STOPPED"; runId: string | null; cl
 /** Flat on purpose: the terminal reads it with simple key lookups. 0 means "no limit". */
 export type Command = {
   state: "RUNNING" | "STOPPED"; runId: string; closeAll: boolean; reason: string; mode: BotMode;
+  lang: Locale; // the language the robot shows its chart text in (robot v2.40 and newer)
   lots: number; maxPositions: number; slAtr: number; tpAtr: number; profitTarget: number; maxLoss: number;
 };
 
@@ -85,14 +86,14 @@ export const BASKET_ROBOT_VERSION = 2;
 export const ASIAN_ROBOT_VERSION = 3;
 export const minRobotVersion = (mode: BotMode) => (mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
-export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number): Command {
+export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn"): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
   const base = c.mode === "ASIAN"
-    ? { runId: s.runId ?? "", mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
+    ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
     : basket
-    ? { runId: s.runId ?? "", mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
-    : { runId: s.runId ?? "", mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
+    ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
+    : { runId: s.runId ?? "", lang, mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
   if ((robotVersion ?? 1) < minRobotVersion(c.mode)) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };

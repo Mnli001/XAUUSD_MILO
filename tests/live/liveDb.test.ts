@@ -141,3 +141,10 @@ test("the basket tool runs end to end: saved, started, refused on an old robot f
   expect(await handleSync(token, report({ version: 2 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
   expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 2, config: { mode: "BASKET", basket: { count: 8 } } });
 });
+
+test("the robot is told its owner's language", async () => {
+  expect((await handleSync(userToken, report(), now))!.lang).toBe("mn");
+  await db.execute(sql`UPDATE users SET locale = 'en' WHERE id = ${user.id}`);
+  expect((await handleSync(userToken, report(), now))!.lang).toBe("en");
+  expect((await handleSync(token, report(), now))!.lang).toBe("mn"); // the other user's robot is unaffected
+});
