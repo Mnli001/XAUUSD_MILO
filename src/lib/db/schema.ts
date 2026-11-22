@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: roleEnum("role").notNull().default("USER"),
   accessUntil: ts("access_until"),
+  telegramChatId: text("telegram_chat_id"), // where setup signals are sent
+  telegramLinkCode: text("telegram_link_code"), // one-time code the user presses Start with
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -108,6 +110,20 @@ export const botDeals = pgTable("bot_deals", {
   profit: doublePrecision("profit").notNull(),
   closeTime: ts("close_time").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.ticket] }), index("bot_deals_user_close").on(t.userId, t.closeTime)]);
+
+/** A setup that became active: recorded once, then sent to linked users. */
+export const signals = pgTable("signals", {
+  id: id(),
+  key: text("key").notNull().unique(), // one signal per setup occurrence
+  setupId: text("setup_id").notNull(),
+  name: text("name").notNull(),
+  side: text("side").notNull(),
+  entry: doublePrecision("entry").notNull(),
+  stop: doublePrecision("stop").notNull(),
+  target: doublePrecision("target").notNull(),
+  sentTo: integer("sent_to").notNull().default(0),
+  createdAt: ts("created_at").notNull(),
+}, (t) => [index("signals_created").on(t.createdAt)]);
 
 export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;

@@ -3,6 +3,10 @@ import type { SetupHistory } from "@/lib/setup/setups";
 import { getNextHighEvent } from "@/lib/events";
 import { formatUbDateTime, formatUbTime } from "@/lib/time";
 import { SetupChart } from "@/components/SetupChart";
+import { TelegramCard } from "@/components/TelegramCard";
+import { requireUser } from "@/lib/auth";
+import { listSignals } from "@/lib/signals";
+import { telegramConfigured } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Setup — XAU Analytics" };
@@ -37,7 +41,8 @@ function Record({ title, h }: { title: string; h: SetupHistory }) {
 
 export default async function SetupPage() {
   const now = new Date();
-  const [view, next] = await Promise.all([getSetups(now), getNextHighEvent(now)]);
+  const user = await requireUser();
+  const [view, next, signals] = await Promise.all([getSetups(now), getNextHighEvent(now), listSignals(15)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
   return (
     <div className="space-y-4">
@@ -97,6 +102,29 @@ export default async function SetupPage() {
           </section>
         );
       })}
+
+      <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} />
+
+      <section className="table-card">
+        <h2 className="px-4 pt-4 text-sm font-medium text-zinc-400 sm:px-5 sm:pt-5">Сүүлийн дохионууд</h2>
+        {signals.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500 sm:px-5">Одоогоор дохио гараагүй. Setup идэвхжих бүрд энд бүртгэгдэнэ.</p> : (
+          <table className="w-full">
+            <thead><tr>{["Гарсан (УБ)", "", "Дүрэм", "Орох", "Stop", "Target"].map((h) => <th key={h} className={`th ${h === "Дүрэм" ? "hidden sm:table-cell" : ""} ${h === "Stop" || h === "Target" || h === "Орох" ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
+            <tbody>
+              {signals.map((g) => (
+                <tr key={g.id} className="border-t border-zinc-800">
+                  <td className="td font-mono whitespace-nowrap text-zinc-400">{formatUbDateTime(g.createdAt).slice(5)}</td>
+                  <td className={`td font-semibold ${g.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{g.side}</td>
+                  <td className="td hidden sm:table-cell">{g.name}</td>
+                  <td className="td text-right font-mono">{px(g.entry)}</td>
+                  <td className="td text-right font-mono text-red-400">{px(g.stop)}</td>
+                  <td className="td text-right font-mono text-emerald-400">{px(g.target)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
 
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
         Түүхэн үр дүн нь хадгалагдсан лаанууд дээр ({view.historyFrom ? `${formatUbDateTime(view.historyFrom).slice(0, 10)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Энэ хоёр дүрмийн аль нь ч урьдчилан тавьсан шалгуурыг (шалгах хэсэгт дундаж R ≥ 0.1, profit factor ≥ 1.2) бүрэн даваагүй. Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.

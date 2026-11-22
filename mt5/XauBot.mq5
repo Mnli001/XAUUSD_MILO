@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.00"
+#property version   "2.10"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -17,6 +17,19 @@ input long   MagicNumber          = 20261121; // Энэ роботын арил�
 input int    SyncSeconds          = 1;        // Вэбтэй холбогдох давтамж (секунд)
 input int    EntryCooldownSeconds = 5;        // Хоёр арилжааны хоорондох хамгийн бага зай (секунд)
 input int    MaxSpreadPoints      = 600;      // Spread үүнээс их бол орохгүй (point)
+
+// Strategy Tester дотор вэбтэй холбогдох боломжгүй тул тохиргоог эндээс авна.
+// Нэг ажиллагаа дуусмагц TesterRestartSeconds-ийн дараа дахин "Start" дарсантай адил шинээр эхэлнэ.
+enum ENUM_XAU_TOOL { TOOL_SCALPER = 0, TOOL_BASKET = 1 };
+input group "Strategy Tester (зөвхөн backtest-д хэрэглэгдэнэ)"
+input ENUM_XAU_TOOL TesterTool    = TOOL_SCALPER; // Хэрэгсэл
+input double TesterLots           = 0.01;     // Лот (арилжаа бүрт)
+input int    TesterCount          = 3;        // Зэрэг нээх арилжааны тоо
+input double TesterSlAtr          = 1.5;      // Scalper: stop loss (ATR x)
+input double TesterTpAtr          = 2.0;      // Scalper: take profit (ATR x)
+input double TesterProfit         = 0.0;      // Нийт ашиг $ хүрвэл хаах (Багцад заавал)
+input double TesterLoss           = 0.0;      // Нийт алдагдал $ хүрвэл хаах (Багцад заавал)
+input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (секунд)
 
 CTrade trade;
 int    hEmaFast = INVALID_HANDLE, hEmaSlow = INVALID_HANDLE, hEmaTrend = INVALID_HANDLE, hRsi = INVALID_HANDLE, hAtr = INVALID_HANDLE;
@@ -45,6 +58,9 @@ int      gPlannedSeconds = 0;      // ботын өөрөө тооцсон аж�
 
 #define WAIT_FOR_SIGNAL_SECONDS 1800 // 30 минутад дохио гарахгүй бол зогсоно
 string   gLinkStatus = "холбогдоогүй";
+bool     gTester = false;          // Strategy Tester дотор ажиллаж байна
+datetime gTesterStoppedAt = 0;
+int      gTesterRuns = 0;
 bool     gClosing = false;         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
 
 //+------------------------------------------------------------------+
@@ -60,11 +76,30 @@ int OnInit()
       Print("XauBot: индикатор үүсгэж чадсангүй");
       return(INIT_FAILED);
      }
-   if(StringLen(BotToken) == 0)
+   if(StringLen(BotToken) == 0 && !MQLInfoInteger(MQL_TESTER))
       Print("XauBot: BotToken хоосон байна — вэб самбар дээр токен үүсгээд энд оруулна уу");
    trade.SetExpertMagicNumber(MagicNumber);
    trade.SetDeviationInPoints(50);
    trade.SetTypeFillingBySymbol(_Symbol);
+   gTester = (bool)MQLInfoInteger(MQL_TESTER);
+   if(gTester)
+     {
+      gMode    = (TesterTool == TOOL_BASKET) ? "BASKET" : "SCALPER";
+      gLots    = TesterLots;
+      gMaxPos  = MathMax(1, TesterCount);
+      gSlAtr   = TesterSlAtr;
+      gTpAtr   = TesterTpAtr;
+      gTarget  = TesterProfit;
+      gMaxLoss = TesterLoss;
+      gLinkStatus = "Strategy Tester";
+      if(gMode == "BASKET" && (gTarget <= 0 || gMaxLoss <= 0))
+        {
+         Print("XauBot: Багцыг турших бол TesterProfit, TesterLoss хоёуланг 0-ээс их тавина");
+         return(INIT_PARAMETERS_INCORRECT);
+        }
+      BeginRun("tester-1");
+      gState = "RUNNING";
+     }
    EventSetTimer(MathMax(1, SyncSeconds));
    return(INIT_SUCCEEDED);
   }
@@ -88,6 +123,41 @@ void RetryClose()
    CloseAllMine();
   }
 
+// Шинэ ажиллагаа: тоолуур, чиглэл, хугацааг эхнээс нь
+void BeginRun(const string runId)
+  {
+   gActiveRunId = runId;
+   gRunStart = TimeCurrent();
+   gFinished = "";
+   gClosing = false;
+   gLastEntry = 0;
+   gFirstEntry = 0;
+   gRunSide = "";
+   gPlannedSeconds = 0;
+  }
+
+// Strategy Tester: дууссан ажиллагааг хааж, хэсэг хүлээгээд дахин эхлүүлнэ
+void TesterStep()
+  {
+   if(!gTester) return;
+   if(gState == "RUNNING")
+     {
+      if(gFinished != "" && CountPositions() == 0)
+        {
+         gState = "STOPPED";
+         gFinished = "";
+         gTesterStoppedAt = TimeCurrent();
+         gTesterRuns++;
+        }
+      return;
+     }
+   if(TimeCurrent() - gTesterStoppedAt >= TesterRestartSeconds)
+     {
+      BeginRun("tester-" + (string)(gTesterRuns + 1));
+      gState = "RUNNING";
+     }
+  }
+
 void OnTimer()
   {
    RetryClose();
@@ -99,6 +169,7 @@ void OnTimer()
 
 void OnTick()
   {
+   TesterStep();
    RetryClose();
    EvaluateSignal();
    ManageRun();
@@ -293,7 +364,7 @@ void TryBasket()
    if(gFirstEntry > 0) return;                                   // багц аль хэдийн нээгдсэн
    if(gTarget <= 0 || gMaxLoss <= 0) { gReason = "Багцын ашиг, алдагдлын дүн тохируулаагүй"; return; }
    if(RealBlocked()) return;
-   if(TimeLocal() - gLastSyncOk > 30) return;
+   if(!gTester && TimeLocal() - gLastSyncOk > 30) return;
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return;
    if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
@@ -346,7 +417,7 @@ void TryEnter()
    if(gMode == "BASKET") { TryBasket(); return; }
    if(gRunSide != "" && gSignal != gRunSide) return;                // нэг удаад нэг чиглэлд л ажиллана
    if(RealBlocked()) return;
-   if(TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
+   if(!gTester && TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(CountPositions() >= gMaxPos) return;
    if(TotalVolume() + gLots > gLots * gMaxPos + 1e-8) return;     // netting дансанд ч нийт лот хэтрэхгүй
@@ -494,6 +565,7 @@ string DealsJson()
 //+------------------------------------------------------------------+
 void Sync()
   {
+   if(gTester) return;                                           // tester дотор вэб рүү хандахгүй
    if(StringLen(BotToken) == 0)
      {
       gLinkStatus = "BotToken оруулаагүй";
@@ -543,14 +615,7 @@ void Sync()
 
    if(state == "RUNNING" && runId != "" && runId != gActiveRunId)   // шинэ ажиллагаа эхэллээ
      {
-      gActiveRunId = runId;
-      gRunStart = TimeCurrent();
-      gFinished = "";
-      gClosing = false;
-      gLastEntry = 0;
-      gFirstEntry = 0;
-      gRunSide = "";
-      gPlannedSeconds = 0;
+      BeginRun(runId);
       Print("XauBot: Start (", gMode, ") — лот ", Num(gLots, 2), ", арилжаа ", (string)gMaxPos);
      }
    if(state != "RUNNING" && gState == "RUNNING")

@@ -38,3 +38,37 @@ export function BotGuide({ origin, hasToken, online }: { origin: string; hasToke
     </details>
   );
 }
+
+/** How to replay the robot over past ticks in MetaTrader's own Strategy Tester. */
+export function BacktestGuide() {
+  const code = "rounded bg-zinc-800 px-1.5 py-0.5";
+  const steps: [string, React.ReactNode][] = [
+    ["Strategy Tester нээх", <>MT5 дээр <strong>View → Strategy Tester</strong> (Ctrl+R). Гарсан самбараас <strong>Single</strong> тестийг сонгоно.</>],
+    ["Тохиргоо", <><strong>Expert</strong>: XauBot. <strong>Symbol</strong>: XAUUSD, <span className={code}>M1</span>. <strong>Date</strong>: Custom period, эхлээд сүүлийн 3 сар. <strong>Modelling</strong>: <span className={code}>Every tick based on real ticks</span>. <strong>Deposit</strong>: өөрийн ашиглах дүн (жишээ нь 1000 USD).</>],
+    ["Роботын тохиргоо (Inputs таб)", <><span className={code}>TesterTool</span>: Scalper эсвэл Basket. <span className={code}>TesterLots</span>, <span className={code}>TesterCount</span> нь лот, арилжааны тоо. Scalper-т <span className={code}>TesterSlAtr</span>, <span className={code}>TesterTpAtr</span>. Багцад <span className={code}>TesterProfit</span>, <span className={code}>TesterLoss</span> хоёрыг заавал 0-ээс их тавина. Бусад мөрийг хөндөхгүй.</>],
+    ["Start дарах", <>Анх удаа брокероос tick татах тул хэдэн минут болно. Тест дотор робот вэбтэй холбогдохгүй: нэг ажиллагаа дуусмагц <span className={code}>TesterRestartSeconds</span> секундийн дараа дахин Start дарсантай адил өөрөө эхэлнэ.</>],
+    ["Үр дүнг унших", <><strong>Backtest</strong> таб дээр: <strong>Total Net Profit</strong> (нийт дүн), <strong>Profit Factor</strong> (ашиг ÷ алдагдал), <strong>Maximal Drawdown</strong> (хамгийн их уналт), <strong>Total Trades</strong>. <strong>Graph</strong> таб дээр дансны муруй харагдана.</>],
+  ];
+  return (
+    <details className="card">
+      <summary className="flex min-h-6 cursor-pointer items-center justify-between gap-3 text-sm font-medium text-zinc-100">Заавар: ботыг өнгөрсөн датан дээр шалгах (backtest)<svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform [details[open]_&]:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></summary>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">Жинхэнэ мөнгө тавихаас өмнө роботыг MT5-ийн Strategy Tester дээр брокерын бодит tick, spread-ээр тоглуулж үзнэ. Роботын v2.10 ба түүнээс шинэ файл хэрэгтэй.</p>
+      <ol className="mt-4 max-w-3xl space-y-4">
+        {steps.map(([title, body], i) => (
+          <li key={title} className="flex gap-3 text-sm">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-mono text-xs text-amber-400">{i + 1}</span>
+            <div><div className="font-medium text-zinc-100">{title}</div><div className="mt-0.5 leading-relaxed text-zinc-300">{body}</div></div>
+          </li>
+        ))}
+      </ol>
+      <h3 className="mt-5 text-sm font-medium text-zinc-200">Юуг сайн үр дүн гэх вэ</h3>
+      <ul className="mt-2 max-w-3xl list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">
+        <li>Дор хаяж 200 арилжаа гарсан байх. Цөөн арилжааны үр дүн тохиолдлынх байж болно.</li>
+        <li>Profit Factor 1.2-оос дээш, Maximal Drawdown таны тэвчих хэмжээнд.</li>
+        <li>Өөр хоёр хугацаанд (жишээ нь сүүлийн 3 сар, түүний өмнөх 3 сар) хоёуланд нь ашигтай гарах. Нэгд нь л сайн бол найдваргүй.</li>
+        <li>Тохиргоог үр дүн сайхан болтол олон дахин өөрчилж болохгүй: тэгвэл өнгөрсөнд тааруулсан болохоос ирээдүйд ажиллах баталгаа болохгүй. Нэг хугацаан дээр тохируулаад, огт хөндөөгүй өөр хугацаан дээр шалгана.</li>
+        <li>Тест сайн гарсан ч жинхэнэ данс руу шууд биш, эхлээд demo дээр хэд хоног ажиллуулна.</li>
+      </ul>
+    </details>
+  );
+}

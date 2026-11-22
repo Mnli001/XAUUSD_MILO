@@ -5,6 +5,7 @@ import { ingestCalendar } from "./ingest/calendar";
 import { runBackfill, needsBackfill } from "./ingest/backfill";
 import { recomputeSnapshot, SYMBOL } from "./ingest/prices";
 import { ensureAdmin } from "./users";
+import { emitSignals } from "./signals";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
 
@@ -34,6 +35,11 @@ async function run(job: Job, now: Date): Promise<void> {
   if (!priceKey) return;
   const result = await ingestPrices(new TwelveData(priceKey), { tfs: job === "fast" ? ["15min"] : ["1h", "4h", "1day"], now });
   if (!result.ok) console.warn(`[scheduler] ${job} failed: ${result.error}`);
+  // fresh 15-minute candles may have completed a setup: tell the people who asked to be told
+  if (job === "fast" && result.ok) {
+    const sent = await emitSignals(now);
+    if (sent) console.log(`[scheduler] signals: ${sent} new`);
+  }
 }
 
 /** First start on an empty database: create the admin, load the price history and three years of release dates. */
