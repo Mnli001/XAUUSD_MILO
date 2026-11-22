@@ -7,7 +7,7 @@ const real = { mode: "REAL" as const };
 test("config accepts any positive lot size and has no daily limit", () => {
   const r = parseConfig({ lots: "25", maxPositions: "11", slAtr: "1.5", tpAtr: "2", profitTarget: "", maxLoss: "", allowReal: "on" });
   expect(r.error).toBeUndefined();
-  expect(r.config).toEqual({ mode: "SCALPER", basket: DEFAULT_LIVE_CONFIG.basket, lots: 25, maxPositions: 11, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: true });
+  expect(r.config).toEqual({ mode: "SCALPER", basket: DEFAULT_LIVE_CONFIG.basket, rule: DEFAULT_LIVE_CONFIG.rule, lots: 25, maxPositions: 11, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: true });
   expect(Object.keys(DEFAULT_LIVE_CONFIG)).not.toContain("dailyLossPct");
   expect(Object.keys(DEFAULT_LIVE_CONFIG)).not.toContain("maxSeconds"); // the robot works out its own duration
 });
@@ -81,5 +81,25 @@ describe("the basket tool", () => {
     const base = { account: { login: "1", mode: "DEMO", balance: 1, equity: 1 }, symbol: "X", bid: 1, ask: 1, signal: "NONE", reason: "", runPnl: 0, positions: [], deals: [], finished: "" };
     expect(reportSchema.safeParse({ ...base, version: 2 }).success).toBe(true);
     expect(reportSchema.safeParse(base).success).toBe(true);
+  });
+});
+
+describe("the Asian breakout tool", () => {
+  test("it has one setting, the lot size, and keeps the other tools' settings", () => {
+    const basket = parseConfig({ mode: "BASKET", bLots: "0.02", bCount: "10", bProfit: "5", bLoss: "12" }).config!;
+    const r = parseConfig({ mode: "ASIAN", rLots: "0.03", allowReal: "" }, basket);
+    expect(r.config).toMatchObject({ mode: "ASIAN", rule: { lots: 0.03 }, basket: { count: 10 }, lots: 0.01 });
+    expect(parseConfig({ mode: "ASIAN", rLots: "0" }).error).toBeTruthy();
+    expect(parseConfig({ mode: "ASIAN", rLots: "" }).error).toBeTruthy();
+    expect(parseConfig({ lots: "0.1", maxPositions: "2", slAtr: "1", tpAtr: "2" }).config).toMatchObject({ rule: DEFAULT_LIVE_CONFIG.rule });
+  });
+  test("the terminal is told to run the rule with one position and no money stops", () => {
+    const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, 3)).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.03, maxPositions: 1, profitTarget: 0, maxLoss: 0 });
+  });
+  test("it needs the robot file that carries the rule", () => {
+    const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
+    for (const v of [undefined, 1, 2]) expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, v)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "REAL" }, 3)).toMatchObject({ state: "STOPPED", reason: "REAL_NOT_ALLOWED" });
   });
 });

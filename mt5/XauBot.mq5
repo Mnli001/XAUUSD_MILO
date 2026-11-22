@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.20"
+#property version   "2.30"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -52,7 +52,7 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 2             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
+#define ROBOT_VERSION 3             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
 
 // роботын өөрийн төлөв
 string   gActiveRunId = "";
@@ -90,7 +90,9 @@ int OnInit()
    hEmaTrend = iMA(_Symbol, PERIOD_M5, 50, 0, MODE_EMA, PRICE_CLOSE);
    hRsi      = iRSI(_Symbol, PERIOD_M1, 7, PRICE_CLOSE);
    hAtr      = iATR(_Symbol, PERIOD_M1, 14);
-   if(hEmaFast == INVALID_HANDLE || hEmaSlow == INVALID_HANDLE || hEmaTrend == INVALID_HANDLE || hRsi == INVALID_HANDLE || hAtr == INVALID_HANDLE)
+   hD1Fast   = iMA(_Symbol, PERIOD_D1, 20, 0, MODE_EMA, PRICE_CLOSE);   // Азийн breakout-ын өдрийн тренд
+   hD1Slow   = iMA(_Symbol, PERIOD_D1, 50, 0, MODE_EMA, PRICE_CLOSE);
+   if(hEmaFast == INVALID_HANDLE || hEmaSlow == INVALID_HANDLE || hEmaTrend == INVALID_HANDLE || hRsi == INVALID_HANDLE || hAtr == INVALID_HANDLE || hD1Fast == INVALID_HANDLE || hD1Slow == INVALID_HANDLE)
      {
       Print("XauBot: индикатор үүсгэж чадсангүй");
       return(INIT_FAILED);
@@ -113,8 +115,6 @@ int OnInit()
       gLinkStatus = "Strategy Tester";
       if(TesterTool >= TOOL_ASIAN)
         {
-         hD1Fast  = iMA(_Symbol, PERIOD_D1, 20, 0, MODE_EMA, PRICE_CLOSE);
-         hD1Slow  = iMA(_Symbol, PERIOD_D1, 50, 0, MODE_EMA, PRICE_CLOSE);
          hH1Ema20 = iMA(_Symbol, PERIOD_H1, 20, 0, MODE_EMA, PRICE_CLOSE);
          hH1Ema50 = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
          hH1Rsi   = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
@@ -173,6 +173,7 @@ void BeginRun(const string runId)
    gFirstEntry = 0;
    gRunSide = "";
    gPlannedSeconds = 0;
+   gRuleLastBar = 0;                                             // Азийн breakout-ын төлөвийг шинээр уншина
   }
 
 // Strategy Tester: дууссан ажиллагааг хааж, хэсэг хүлээгээд дахин эхлүүлнэ
@@ -200,6 +201,14 @@ void TesterStep()
 void OnTimer()
   {
    if(IsRuleTool()) return;
+   if(gMode == "ASIAN")
+     {
+      RetryClose();
+      LiveAsianStep();
+      Sync();
+      ShowStatus();
+      return;
+     }
    RetryClose();
    EvaluateSignal();
    ManageRun();
@@ -210,6 +219,7 @@ void OnTimer()
 void OnTick()
   {
    if(IsRuleTool()) { RuleStep(); return; }
+   if(gMode == "ASIAN") { RetryClose(); LiveAsianStep(); return; }
    TesterStep();
    RetryClose();
    EvaluateSignal();
@@ -545,7 +555,7 @@ double RuleLots()
    double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
    double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
    if(step <= 0) step = 0.01;
-   double lots = MathFloor(TesterLots / step + 1e-9) * step;
+   double lots = MathFloor((gTester ? TesterLots : gLots) / step + 1e-9) * step;
    if(lots < vmin) return(0.0);
    if(lots > vmax) lots = vmax;
    return(NormalizeDouble(lots, 2));
@@ -667,6 +677,108 @@ void RuleStep()
       RuleOpen(dir, 1.5 * atr, MathAbs(e20 - price), TimeCurrent() + 12 * 3600);
       return;
      }
+  }
+
+//+------------------------------------------------------------------+
+//| Азийн breakout бодит цагт (вэбээс Start дарсан үед)               |
+//| Tester дээр шалгасан Дүрэм 1-тэй ижил шийдвэр. Төлөвөө түүхээс    |
+//| уншдаг тул MT5 дахин ассан ч өдрийн арилжаагаа давхар нээхгүй.    |
+//+------------------------------------------------------------------+
+bool RuleTradedSince(const datetime from)
+  {
+   if(!HistorySelect(from, TimeCurrent() + 60)) return(false);
+   for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = HistoryDealGetTicket(i);
+      if(t == 0) continue;
+      if(HistoryDealGetString(t, DEAL_SYMBOL) != _Symbol) continue;
+      if(HistoryDealGetInteger(t, DEAL_MAGIC) != MagicNumber) continue;
+      if(HistoryDealGetInteger(t, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
+      if(HistoryDealGetString(t, DEAL_COMMENT) == "xau-rule") return(true);
+     }
+   return(false);
+  }
+
+// Дүрмийн арилжааг нээсэн өдрийнх нь 20:00 UTC-д хаана
+void AsianTimeExit()
+  {
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0 || !IsMine(ticket)) continue;
+      if(PositionGetString(POSITION_COMMENT) != "xau-rule") continue;
+      datetime opened = (datetime)PositionGetInteger(POSITION_TIME);
+      datetime utc = opened - ServerUtcOffset(opened) * 3600;
+      MqlDateTime u;
+      TimeToStruct(utc, u);
+      datetime exitAt = opened - (u.hour * 3600 + u.min * 60 + u.sec) + 20 * 3600;
+      if(TimeCurrent() >= exitAt) trade.PositionClose(ticket);
+     }
+  }
+
+void LiveAsianStep()
+  {
+   AsianTimeExit();
+   datetime bar = iTime(_Symbol, PERIOD_M15, 0);
+   if(bar == gRuleLastBar) return;                               // шинэ M15 лаа нээгдэхэд л шийднэ
+   gRuleLastBar = bar;
+   gSignal = "NONE";
+   datetime closed = iTime(_Symbol, PERIOD_M15, 1);
+   if(closed <= 0) { gReason = "Лааны дата ачаалж байна"; return; }
+   datetime utc = closed - ServerUtcOffset(closed) * 3600;
+   MqlDateTime u;
+   TimeToStruct(utc, u);
+   if(u.day_of_week == 0 || u.day_of_week == 6) { gReason = "Амралтын өдөр, зах хаалттай"; return; }
+   datetime dayStart = closed - (u.hour * 3600 + u.min * 60 + u.sec);   // UTC 00:00, серверийн цагаар
+   int trend = DailyTrend();
+   string trendText = (trend > 0) ? "өдрийн тренд дээш" : ((trend < 0) ? "өдрийн тренд доош" : "өдрийн тренд тодорхойгүй");
+   if(u.hour < 7) { gReason = "Азийн хүрээ бүрдэж байна · " + trendText; return; }
+
+   MqlRates r[];
+   int n = CopyRates(_Symbol, PERIOD_M15, dayStart, closed, r);
+   if(n <= 0) { gReason = "Лааны дата ачаалж байна"; return; }
+   double hi = 0.0, lo = 0.0;
+   int rangeBars = 0;
+   bool earlier = false, fresh = false;
+   for(int i = 0; i < n; i++)
+     {
+      if(r[i].time < dayStart) continue;
+      if(r[i].time < dayStart + 7 * 3600)
+        {
+         if(rangeBars == 0) { hi = r[i].high; lo = r[i].low; }
+         else { hi = MathMax(hi, r[i].high); lo = MathMin(lo, r[i].low); }
+         rangeBars++;
+         continue;
+        }
+      if(r[i].time >= dayStart + 16 * 3600) break;
+      bool outside = (trend > 0 && r[i].close > hi) || (trend < 0 && r[i].close < lo);
+      if(!outside) continue;
+      if(r[i].time == closed) fresh = true; else earlier = true;
+     }
+   if(rangeBars < 20) { gReason = "Азийн хүрээний дата дутуу"; return; }
+   string rangeText = "Хүрээ " + Num(lo, 2) + "-" + Num(hi, 2) + " · " + trendText;
+   if(trend == 0) { gReason = rangeText; return; }
+   if(RuleTradedSince(dayStart)) { gReason = rangeText + " · өнөөдрийн арилжаа хийгдсэн"; return; }
+   if(u.hour >= 16) { gReason = rangeText + " · орох цонх хаагдсан"; return; }
+   if(earlier) { gReason = rangeText + " · breakout өмнө нь гарсан, өнөөдөр орохгүй"; return; }
+   if(!fresh) { gReason = rangeText + " · breakout хүлээж байна"; return; }
+
+   // Саяхан хаагдсан лаа хүрээнээс трендийн чиглэлд гарлаа
+   if(gState != "RUNNING") { gReason = rangeText + " · breakout гарсан, бот зогссон байсан"; return; }
+   if(CountPositions() > 0) return;
+   if(RealBlocked()) { gReason = "Жинхэнэ данс зөвшөөрөгдөөгүй"; return; }
+   if(TimeLocal() - gLastSyncOk > 30) { gReason = "Вэбтэй холбоо тасарсан тул орсонгүй"; return; }
+   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) { gReason = "Algo Trading унтраалттай тул орсонгүй"; return; }
+   double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double dist = MathAbs(price - (hi + lo) / 2.0);
+   if(RuleOpen(trend, dist, dist * 2.0, dayStart + 20 * 3600))
+     {
+      gSignal = (trend > 0) ? "BUY" : "SELL";
+      gReason = rangeText + " · хүрээнээс гарлаа, орлоо";
+      Print("XauBot: Азийн breakout — ", gSignal, " лот ", Num(RuleLots(), 2));
+     }
+   else
+      gReason = rangeText + " · захиалга амжилтгүй: " + trade.ResultRetcodeDescription();
   }
 
 //+------------------------------------------------------------------+
@@ -817,7 +929,9 @@ void Sync()
    gTarget     = JNum(body, "profitTarget");
    gMaxLoss    = JNum(body, "maxLoss");
    string mode = JStr(body, "mode");
-   gMode       = (mode == "BASKET") ? "BASKET" : "SCALPER";
+   string newMode = (mode == "BASKET") ? "BASKET" : ((mode == "ASIAN") ? "ASIAN" : "SCALPER");
+   if(newMode != gMode) gRuleLastBar = 0;
+   gMode       = newMode;
 
    if(state == "RUNNING" && runId != "" && runId != gActiveRunId)   // шинэ ажиллагаа эхэллээ
      {
@@ -840,7 +954,7 @@ void ShowStatus()
   {
    string s = "XauBot · " + AccountModeStr() + " данс · вэб: " + gLinkStatus + "\n";
    s += "Төлөв: " + (gState == "RUNNING" ? (gFinished == "" ? "АЖИЛЛАЖ БАЙНА" : "дуусгаж байна (" + gFinished + ")") : "зогссон") + "\n";
-   s += "Хэрэгсэл: " + (gMode == "BASKET" ? "Багц" : "Scalper") + "\n";
+   s += "Хэрэгсэл: " + (gMode == "BASKET" ? "Багц" : (gMode == "ASIAN" ? "Азийн breakout" : "Scalper")) + "\n";
    s += "Дохио: " + gSignal + " — " + gReason + "\n";
    s += "Нээлттэй: " + (string)CountPositions() + " / " + (string)gMaxPos + " · лот " + Num(gLots, 2);
    if(gState == "RUNNING") s += " · энэ удаа: " + Num(RunPnl(), 2);

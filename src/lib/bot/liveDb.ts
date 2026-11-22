@@ -14,7 +14,7 @@ export async function getLive(userId: string) {
 }
 const shape = (row: typeof schema.botLive.$inferSelect) => {
   const stored = row.config as Partial<LiveConfig>;
-  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...stored, basket: { ...DEFAULT_LIVE_CONFIG.basket, ...stored.basket } } };
+  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...stored, basket: { ...DEFAULT_LIVE_CONFIG.basket, ...stored.basket }, rule: { ...DEFAULT_LIVE_CONFIG.rule, ...stored.rule } } };
 };
 
 const update = (userId: string, set: Partial<typeof schema.botLive.$inferInsert>) => db.update(schema.botLive).set(set).where(eq(schema.botLive.userId, userId));

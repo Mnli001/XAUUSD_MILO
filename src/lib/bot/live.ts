@@ -5,12 +5,15 @@ import { z } from "zod";
  * What the owner sets on the web. Lot size is theirs to choose; there is no daily limit.
  * How long a run lasts is not a setting: the robot works that out itself from volatility.
  */
-export type BotMode = "SCALPER" | "BASKET";
+export type BotMode = "SCALPER" | "BASKET" | "ASIAN";
+/** The Asian range breakout: the rule decides entry, stop, target and exit; the owner only sets the lot. */
+export type RuleConfig = { lots: number };
 /** The basket tool: open `count` trades at once, close them all together at a total profit or a total loss. */
 export type BasketConfig = { lots: number; count: number; profit: number; loss: number };
 export type LiveConfig = {
   mode: BotMode; // which tool Start runs
   basket: BasketConfig;
+  rule: RuleConfig;
   lots: number;
   maxPositions: number; // how many positions the bot may hold at once
   slAtr: number; // stop distance in ATR(14, M1)
@@ -21,7 +24,7 @@ export type LiveConfig = {
 };
 
 export const DEFAULT_BASKET: BasketConfig = { lots: 0.01, count: 5, profit: 5, loss: 10 };
-export const DEFAULT_LIVE_CONFIG: LiveConfig = { mode: "SCALPER", basket: DEFAULT_BASKET, lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: false };
+export const DEFAULT_LIVE_CONFIG: LiveConfig = { mode: "SCALPER", basket: DEFAULT_BASKET, rule: { lots: 0.01 }, lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: false };
 
 const blank = (v: unknown) => (v === "" || v === undefined || v === null ? null : v);
 const positive = (msg: string) => z.coerce.number({ message: msg }).finite().positive(msg);
@@ -46,9 +49,17 @@ const basketSchema = z.object({
   allowReal: configSchema.shape.allowReal,
 });
 
+const ruleSchema = z.object({ rLots: positive("Лот 0-ээс их тоо байх ёстой"), allowReal: configSchema.shape.allowReal });
+
 /** Each tool has its own form; saving one keeps the other's settings from `current`. */
 export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG): { config?: LiveConfig; error?: string } {
-  const mode: BotMode = (input as { mode?: unknown } | null)?.mode === "BASKET" ? "BASKET" : "SCALPER";
+  const asked = (input as { mode?: unknown } | null)?.mode;
+  const mode: BotMode = asked === "BASKET" || asked === "ASIAN" ? asked : "SCALPER";
+  if (mode === "ASIAN") {
+    const r = ruleSchema.safeParse(input);
+    if (!r.success) return { error: r.error.issues[0].message };
+    return { config: { ...current, mode, allowReal: r.data.allowReal, rule: { lots: r.data.rLots } } };
+  }
   if (mode === "BASKET") {
     const r = basketSchema.safeParse(input);
     if (!r.success) return { error: r.error.issues[0].message };
@@ -56,7 +67,7 @@ export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_C
     return { config: { ...current, mode, allowReal, basket: { lots: bLots, count: bCount, profit: bProfit!, loss: bLoss! } } };
   }
   const r = configSchema.safeParse(input);
-  return r.success ? { config: { ...r.data, mode, basket: current.basket } } : { error: r.error.issues[0].message };
+  return r.success ? { config: { ...r.data, mode, basket: current.basket, rule: current.rule } } : { error: r.error.issues[0].message };
 }
 
 export type AccountMode = "DEMO" | "REAL" | "CONTEST";
@@ -67,18 +78,22 @@ export type Command = {
   lots: number; maxPositions: number; slAtr: number; tpAtr: number; profitTarget: number; maxLoss: number;
 };
 
-/** The first robot file that knows the basket tool. Older files would run it as the scalper. */
+/** The first robot file that knows each tool. Older files would run it as the scalper. */
 export const BASKET_ROBOT_VERSION = 2;
+export const ASIAN_ROBOT_VERSION = 3;
+export const minRobotVersion = (mode: BotMode) => (mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
 export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
-  const base = basket
+  const base = c.mode === "ASIAN"
+    ? { runId: s.runId ?? "", mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
+    : basket
     ? { runId: s.runId ?? "", mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
     : { runId: s.runId ?? "", mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
-  if (basket && (robotVersion ?? 1) < BASKET_ROBOT_VERSION) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
+  if ((robotVersion ?? 1) < minRobotVersion(c.mode)) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
   return { ...base, state: "RUNNING", closeAll: false, reason: "" };
 }
 

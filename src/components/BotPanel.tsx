@@ -17,7 +17,9 @@ const STOP_REASON: Record<string, string> = {
 const TOOLS = [
   ["SCALPER", "Scalper", "Нэг нэгээр орно. Арилжаа бүр өөрийн stop, target-тай. Хэр удаан ажиллахаа бот өөрөө тооцно."],
   ["BASKET", "Багц", "Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана."],
+  ["ASIAN", "Азийн breakout", "Өдөрт нэг арилжаа: Азийн хүрээнээс өдрийн трендийн чиглэлд гарахад орно. Stop, target, хаах цагийг дүрэм өөрөө тогтооно."],
 ] as const;
+const MIN_ROBOT: Record<string, number> = { SCALPER: 1, BASKET: 2, ASIAN: 3 };
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
 const ubTime = (iso: string) => new Date(new Date(iso).getTime() + 8 * 36e5).toISOString().slice(5, 19).replace("T", " ");
@@ -44,9 +46,10 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const c = v.config;
   const [tool, setTool] = useState(c.mode);
   const basket = tool === "BASKET";
-  const exposure = (basket ? c.basket.lots * c.basket.count : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
+  const asian = tool === "ASIAN";
+  const exposure = (basket ? c.basket.lots * c.basket.count : asian ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
   const spread = v.bid !== null && v.ask !== null && v.ask > v.bid ? v.ask - v.bid : null;
-  const oldRobot = v.robotVersion === null ? v.online : v.robotVersion < 2;
+  const oldRobot = (v.robotVersion ?? (v.online ? 1 : MIN_ROBOT[tool])) < MIN_ROBOT[tool];
   const savedTool = TOOLS.find(([id]) => id === c.mode)![1];
 
   return (
@@ -102,7 +105,10 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               {v.positions.length > 0 ? `Багц нээлттэй. ${money(c.basket.profit)} ашигт хүрвэл эсвэл ${money(-c.basket.loss)} алдагдалд хүрвэл бүгдийг зэрэг хаана.` : "Дохио хүлээж байна. Гармагц багцыг бүхэлд нь нээнэ."}
             </p>
           )}
-          {running && c.mode !== "BASKET" && (
+          {running && c.mode === "ASIAN" && (
+            <p className="mt-1 text-sm text-zinc-400">{v.positions.length > 0 ? "Арилжаа нээлттэй. Stop, target эсвэл 04:00 (УБ) цагт хаагдана." : "Дүрэм ажиллаж байна: өдөр бүр 15:00–00:00 (УБ) цагт breakout хүлээнэ. Stop дартал зогсохгүй."}</p>
+          )}
+          {running && c.mode === "SCALPER" && (
             <p className="mt-1 text-sm text-zinc-400">
               {v.plannedSeconds ? `Ботын тооцсон хугацаа: ${Math.round(v.plannedSeconds)} сек · өнгөрсөн ${Math.round(v.elapsedSeconds ?? 0)} сек` : "Эхний арилжаагаа хүлээж байна — хугацааг орсны дараа тооцно"}
             </p>
@@ -112,7 +118,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         <form action={cfgAction} className="card space-y-3">
           <h2 className="text-sm font-medium text-zinc-400">Хэрэгсэл ба тохиргоо</h2>
           <input type="hidden" name="mode" value={tool} />
-          <div role="radiogroup" aria-label="Ботын хэрэгсэл" className="grid grid-cols-2 gap-2">
+          <div role="radiogroup" aria-label="Ботын хэрэгсэл" className="grid gap-2 sm:grid-cols-3">
             {TOOLS.map(([id, name, about]) => (
               <button key={id} type="button" role="radio" aria-checked={tool === id} disabled={running} onClick={() => setTool(id)}
                 className={`rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tool === id ? "border-amber-400 bg-amber-400/10" : "border-zinc-700 hover:bg-zinc-800"}`}>
@@ -121,13 +127,15 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               </button>
             ))}
           </div>
-          {basket && oldRobot && (
+          {oldRobot && (
             <p role="alert" className="rounded-lg border border-amber-400/50 px-3 py-2 text-xs leading-relaxed text-amber-200">
-              MT5 дээрх роботын файл хуучин тул Багц ажиллахгүй. <a className="underline" href="/api/bot/download?file=ex5">Шинэ XauBot.ex5</a>-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.
+              MT5 дээрх роботын файл хуучин тул энэ хэрэгсэл ажиллахгүй. <a className="underline" href="/api/bot/download?file=ex5">Шинэ XauBot.ex5</a>-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.
             </p>
           )}
           <div className="grid grid-cols-2 items-end gap-3" key={tool}>
-            {((basket ? [
+            {((asian ? [
+              ["rLots", "Лот", c.rule.lots, "0.01"],
+            ] : basket ? [
               ["bLots", "Лот (арилжаа бүрт)", c.basket.lots, "0.01"], ["bCount", "Арилжааны тоо (зэрэг)", c.basket.count, "1"],
               ["bProfit", "Ашиг $… болмогц хаах", c.basket.profit, "0.5"], ["bLoss", "Алдагдал $… болвол хаах", c.basket.loss, "0.5"],
             ] : [
@@ -145,7 +153,12 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх <span className="block text-xs text-zinc-500">Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.</span></span>
           </label>
-          {basket ? (
+          {asian ? (
+            <p className="text-xs leading-relaxed text-zinc-400">
+              Өдөрт хамгийн ихдээ нэг арилжаа, {c.rule.lots.toFixed(2)} лотоор: алт $1 хөдлөхөд ±{money(exposure)}. Хүрээ 08:00–15:00 (УБ); 15:00–00:00 цагт өдрийн трендийн чиглэлд хүрээнээс гарч хаагдсан эхний 15 минутын лаагаар орно. Stop хүрээний дунд, target 2 дахин хол, 04:00-д хаана.
+              {" "}MT5-ийн Strategy Tester дээр хоёр жилд шалгасан: 2024.11–2025.11-д Profit Factor 1.59 (146 арилжаа, уналт 5.6%), 2025.11–2026.11-д 1.43 (120 арилжаа, уналт 16–22%). 0.01 лотод нэг арилжааны дундаж алдагдал $12–26 байсан. Өнгөрсөн үр дүн ирээдүйг батлахгүй; эхлээд demo дээр ажиллуул. MT5 ба компьютер асаалттай үед л ажиллана.
+            </p>
+          ) : basket ? (
             <p className="text-xs leading-relaxed text-zinc-400">
               Хадгалсан тохиргоогоор {c.basket.count} арилжаа, нийт {(c.basket.lots * c.basket.count).toFixed(2)} лот зэрэг нээгдэнэ: алт $1 хөдлөхөд ±{money(exposure)}.
               {" "}Ашигт хүрэхийн тулд алт ойролцоогоор ${(c.basket.profit / exposure + (spread ?? 0)).toFixed(2)} таатай тийш, алдагдлын хязгаарт хүрэхэд ${Math.max(c.basket.loss / exposure - (spread ?? 0), 0).toFixed(2)} эсрэг тийш хөдөлнө
