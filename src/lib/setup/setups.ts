@@ -51,31 +51,32 @@ export function asianSetup(m15: Candle[], dailyScore: number | null, news: Date[
   if (!band || range.length < ASIAN_MIN_BARS) return off("Өнөөдрийн хүрээний дата дутуу", "Азийн сессийн 15 минутын лаа хангалттай ирээгүй тул өнөөдөр энэ setup-ыг тооцохгүй.", { band, checks });
 
   const mid = (band.high + band.low) / 2;
-  const breakout = bars.find((b) => { const h = b.time.getUTCHours(); return h >= 7 && h < 16 && (b.close > band.high || b.close < band.low); });
+  if (!trend) return off("Өдрийн тренд тодорхойгүй", "Энэ дүрэм зөвхөн өдрийн трендийн чиглэлд breakout авдаг. Тренд тодортол хүлээнэ.", { band, checks });
+  const dir = trend === "BUY" ? 1 : -1;
+  const sideWord = trend === "BUY" ? "дээш" : "доош";
+  // Exactly what the replay does: a close on the wrong side, or inside a news window, is passed over and the rule keeps waiting.
+  const breakout = bars.find((b) => {
+    const h = b.time.getUTCHours();
+    return h >= 7 && h < 16 && (trend === "BUY" ? b.close > band.high : b.close < band.low) && !inNewsWindow(new Date(b.time.getTime() + M15), news, PARAMS);
+  });
   if (breakout) {
-    const side: Side = breakout.close > band.high ? "BUY" : "SELL";
-    const dir = side === "BUY" ? 1 : -1;
-    const done = [...checks, { label: `Хүрээнээс ${side === "BUY" ? "дээш" : "доош"} хаагдсан`, ok: true }];
-    if (side !== trend) return off("Breakout гарсан ч алгаслаа", `Үнэ хүрээнээс ${side === "BUY" ? "дээш" : "доош"} гарсан боловч өдрийн тренд ${trend ? "эсрэг чиглэлтэй" : "тодорхойгүй"} байна. Энэ дүрэм өдөрт нэг л breakout авдаг.`, { band, checks: [...done, { label: "Тренд breakout-тай нэг чиглэлд", ok: false }] });
-    if (inNewsWindow(new Date(breakout.time.getTime() + M15), news, PARAMS)) return off("Breakout мэдээний үеэр гарсан", "Чухал мэдээний өмнөх 30, дараах 60 минутад гарсан breakout-ыг энэ дүрэм авдаггүй.", { band, checks: [...done, { label: "Мэдээний цонхноос гадуур", ok: false }] });
+    const done = [...checks, { label: `Хүрээнээс ${sideWord} хаагдсан (мэдээний цонхноос гадуур)`, ok: true }];
     if (hour >= 20) return off("Өнөөдрийн setup дууссан", "Энэ дүрмийн арилжаа 04:00 (УБ) цагт хаагддаг. Маргаашийн хүрээг хүлээнэ.", { band, checks: done });
     const dist = Math.abs(breakout.close - mid);
     return {
-      status: "ACTIVE", side, band, checks: [...done, { label: "Тренд breakout-тай нэг чиглэлд", ok: true }],
-      headline: `${side}: хүрээнээс ${side === "BUY" ? "дээш" : "доош"} гарлаа`,
-      detail: `15 минутын лаа ${px(breakout.close)} дээр хүрээний гадна хаагдсан. Stop нь хүрээний дунд, target нь stop-оос ${ASIAN_RR} дахин хол. 04:00 (УБ) гэхэд хүрээгүй бол хаана.`,
+      status: "ACTIVE", side: trend, band, checks: done,
+      headline: `${trend}: хүрээнээс ${sideWord} гарлаа`,
+      detail: `15 минутын лаа ${px(breakout.close)} дээр хүрээний гадна, трендийн чиглэлд хаагдсан. Stop нь хүрээний дунд, target нь stop-оос ${ASIAN_RR} дахин хол. 04:00 (УБ) гэхэд хүрээгүй бол хаана.`,
       entry: breakout.close, stop: mid, target: breakout.close + dir * dist * ASIAN_RR,
     };
   }
   if (hour >= 16) return off("Өнөөдөр breakout гараагүй", "Орох цонх 00:00 (УБ) цагт хаагдсан. Маргаашийн хүрээг хүлээнэ.", { band, checks });
-  if (!trend) return off("Өдрийн тренд тодорхойгүй", "Энэ дүрэм зөвхөн өдрийн трендийн чиглэлд breakout авдаг. Тренд тодортол хүлээнэ.", { band, checks });
   const level = trend === "BUY" ? band.high : band.low;
-  const dir = trend === "BUY" ? 1 : -1;
   const dist = Math.abs(level - mid);
   return {
-    status: "WATCH", side: trend, band, checks: [...checks, { label: `Хүрээнээс ${trend === "BUY" ? "дээш" : "доош"} хаагдсан`, ok: false }],
-    headline: `${trend} боломж: ${px(level)}-${trend === "BUY" ? "аас дээш" : "аас доош"} хаагдвал`,
-    detail: `15 минутын лаа ${px(level)}-${trend === "BUY" ? "аас дээш" : "аас доош"} хаагдвал ${trend} орох scenario. Stop хүрээний дунд (${px(mid)}), target ойролцоогоор ${px(level + dir * dist * ASIAN_RR)}. Бодит түвшин хаагдсан үнээс тооцогдоно. Цонх 00:00 (УБ) хүртэл.`,
+    status: "WATCH", side: trend, band, checks: [...checks, { label: `Хүрээнээс ${sideWord} хаагдсан (мэдээний цонхноос гадуур)`, ok: false }],
+    headline: `${trend} боломж: ${px(level)}-аас ${sideWord} хаагдвал`,
+    detail: `15 минутын лаа ${px(level)}-аас ${sideWord} хаагдвал ${trend} орох scenario. Эсрэг тал руу гарсан хаалтыг авахгүй. Stop хүрээний дунд (${px(mid)}), target ойролцоогоор ${px(level + dir * dist * ASIAN_RR)}. Бодит түвшин хаагдсан үнээс тооцогдоно. Цонх 00:00 (УБ) хүртэл.`,
     entry: level, stop: mid, target: level + dir * dist * ASIAN_RR,
   };
 }

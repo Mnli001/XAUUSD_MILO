@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.10"
+#property version   "2.20"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -20,7 +20,15 @@ input int    MaxSpreadPoints      = 600;      // Spread үүнээс их бол
 
 // Strategy Tester дотор вэбтэй холбогдох боломжгүй тул тохиргоог эндээс авна.
 // Нэг ажиллагаа дуусмагц TesterRestartSeconds-ийн дараа дахин "Start" дарсантай адил шинээр эхэлнэ.
-enum ENUM_XAU_TOOL { TOOL_SCALPER = 0, TOOL_BASKET = 1 };
+enum ENUM_XAU_TOOL
+  {
+   TOOL_SCALPER  = 0, // Scalper
+   TOOL_BASKET   = 1, // Багц
+   TOOL_ASIAN    = 2, // Дүрэм 1: Азийн хүрээний breakout + өдрийн тренд
+   TOOL_LONDON   = 3, // Дүрэм 2: Лондон нээлтийн эхний цагийн breakout
+   TOOL_PULLBACK = 4, // Дүрэм 3: Өдрийн тренд дагасан 1 цагийн буцалт
+   TOOL_FADE     = 5  // Дүрэм 4: Хэт холдсон үнийн эсрэг (1 цаг)
+  };
 input group "Strategy Tester (зөвхөн backtest-д хэрэглэгдэнэ)"
 input ENUM_XAU_TOOL TesterTool    = TOOL_SCALPER; // Хэрэгсэл
 input double TesterLots           = 0.01;     // Лот (арилжаа бүрт)
@@ -30,6 +38,8 @@ input double TesterTpAtr          = 2.0;      // Scalper: take profit (ATR x)
 input double TesterProfit         = 0.0;      // Нийт ашиг $ хүрвэл хаах (Багцад заавал)
 input double TesterLoss           = 0.0;      // Нийт алдагдал $ хүрвэл хаах (Багцад заавал)
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (секунд)
+input int    ServerUtcOffsetWinter = 2;       // Дүрэм 1-4: серверийн цаг UTC-ээс хэдэн цагаар түрүүлдэг (өвөл)
+input bool   ServerDstEurope      = true;     // Дүрэм 1-4: сервер Европын зуны цаг мөрддөг
 
 CTrade trade;
 int    hEmaFast = INVALID_HANDLE, hEmaSlow = INVALID_HANDLE, hEmaTrend = INVALID_HANDLE, hRsi = INVALID_HANDLE, hAtr = INVALID_HANDLE;
@@ -61,7 +71,16 @@ string   gLinkStatus = "холбогдоогүй";
 bool     gTester = false;          // Strategy Tester дотор ажиллаж байна
 datetime gTesterStoppedAt = 0;
 int      gTesterRuns = 0;
-bool     gClosing = false;         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
+bool     gClosing = false;
+
+// Дүрэм 1-4-ийн төлөв (зөвхөн Strategy Tester)
+int      hD1Fast = INVALID_HANDLE, hD1Slow = INVALID_HANDLE, hH1Ema20 = INVALID_HANDLE, hH1Ema50 = INVALID_HANDLE, hH1Rsi = INVALID_HANDLE, hH1Atr = INVALID_HANDLE;
+datetime gRuleLastBar = 0;         // сүүлд шалгасан M15 лаа
+int      gRuleDay = -1;            // UTC өдөр
+bool     gRuleTraded = false;      // өнөөдөр орсон эсэх
+double   gRangeHigh = 0.0, gRangeLow = 0.0;
+int      gRangeBars = 0;
+datetime gRuleExitAt = 0;          // нээлттэй арилжааг энэ цагт хаана         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -92,6 +111,20 @@ int OnInit()
       gTarget  = TesterProfit;
       gMaxLoss = TesterLoss;
       gLinkStatus = "Strategy Tester";
+      if(TesterTool >= TOOL_ASIAN)
+        {
+         hD1Fast  = iMA(_Symbol, PERIOD_D1, 20, 0, MODE_EMA, PRICE_CLOSE);
+         hD1Slow  = iMA(_Symbol, PERIOD_D1, 50, 0, MODE_EMA, PRICE_CLOSE);
+         hH1Ema20 = iMA(_Symbol, PERIOD_H1, 20, 0, MODE_EMA, PRICE_CLOSE);
+         hH1Ema50 = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
+         hH1Rsi   = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
+         hH1Atr   = iATR(_Symbol, PERIOD_H1, 14);
+         if(hD1Fast == INVALID_HANDLE || hD1Slow == INVALID_HANDLE || hH1Ema20 == INVALID_HANDLE || hH1Ema50 == INVALID_HANDLE || hH1Rsi == INVALID_HANDLE || hH1Atr == INVALID_HANDLE)
+            return(INIT_FAILED);
+         gMode = "RULE";
+         EventSetTimer(MathMax(1, SyncSeconds));
+         return(INIT_SUCCEEDED);
+        }
       if(gMode == "BASKET" && (gTarget <= 0 || gMaxLoss <= 0))
         {
          Print("XauBot: Багцыг турших бол TesterProfit, TesterLoss хоёуланг 0-ээс их тавина");
@@ -112,6 +145,12 @@ void OnDeinit(const int reason)
    if(hEmaTrend != INVALID_HANDLE) IndicatorRelease(hEmaTrend);
    if(hRsi      != INVALID_HANDLE) IndicatorRelease(hRsi);
    if(hAtr      != INVALID_HANDLE) IndicatorRelease(hAtr);
+   if(hD1Fast   != INVALID_HANDLE) IndicatorRelease(hD1Fast);
+   if(hD1Slow   != INVALID_HANDLE) IndicatorRelease(hD1Slow);
+   if(hH1Ema20  != INVALID_HANDLE) IndicatorRelease(hH1Ema20);
+   if(hH1Ema50  != INVALID_HANDLE) IndicatorRelease(hH1Ema50);
+   if(hH1Rsi    != INVALID_HANDLE) IndicatorRelease(hH1Rsi);
+   if(hH1Atr    != INVALID_HANDLE) IndicatorRelease(hH1Atr);
    Comment("");
   }
 
@@ -160,6 +199,7 @@ void TesterStep()
 
 void OnTimer()
   {
+   if(IsRuleTool()) return;
    RetryClose();
    EvaluateSignal();
    ManageRun();
@@ -169,6 +209,7 @@ void OnTimer()
 
 void OnTick()
   {
+   if(IsRuleTool()) { RuleStep(); return; }
    TesterStep();
    RetryClose();
    EvaluateSignal();
@@ -460,6 +501,171 @@ void TryEnter()
       gRunSide = gSignal;
       gPlannedSeconds = PlanSeconds();
       Print("XauBot: ", gRunSide, " чиглэлд ", (string)gPlannedSeconds, " секунд ажиллахаар тооцлоо");
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Дүрэм 1-4: урьдчилан тогтоосон дүрмүүд, зөвхөн Strategy Tester    |
+//| Бүгд хаагдсан лаагаар шийднэ, өдөрт нэг арилжаа, тогтмол лот.     |
+//+------------------------------------------------------------------+
+bool IsRuleTool() { return(gTester && TesterTool >= TOOL_ASIAN); }
+
+datetime LastSundayOf(const int year, const int mon)
+  {
+   MqlDateTime d;
+   ZeroMemory(d);
+   d.year = year; d.mon = mon; d.day = 31;                       // 3, 10-р сар хоёулаа 31 хоногтой
+   datetime t = StructToTime(d);
+   MqlDateTime w;
+   TimeToStruct(t, w);
+   return(t - w.day_of_week * 86400);
+  }
+
+int ServerUtcOffset(const datetime serverTime)
+  {
+   if(!ServerDstEurope) return(ServerUtcOffsetWinter);
+   MqlDateTime s;
+   TimeToStruct(serverTime, s);
+   datetime from = LastSundayOf(s.year, 3) + 3 * 3600;
+   datetime to   = LastSundayOf(s.year, 10) + 3 * 3600;
+   return((serverTime >= from && serverTime < to) ? ServerUtcOffsetWinter + 1 : ServerUtcOffsetWinter);
+  }
+
+// Сүүлд хаагдсан өдрийн тренд: D1 EMA20 нь EMA50-аас дээш бол +1, доош бол -1
+int DailyTrend()
+  {
+   double f = Buf(hD1Fast, 1), sl = Buf(hD1Slow, 1);
+   if(f == EMPTY_VALUE || sl == EMPTY_VALUE) return(0);
+   return(f > sl ? 1 : (f < sl ? -1 : 0));
+  }
+
+double RuleLots()
+  {
+   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   if(step <= 0) step = 0.01;
+   double lots = MathFloor(TesterLots / step + 1e-9) * step;
+   if(lots < vmin) return(0.0);
+   if(lots > vmax) lots = vmax;
+   return(NormalizeDouble(lots, 2));
+  }
+
+// dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай.
+bool RuleOpen(const int dir, const double slDist, const double tpDist, const datetime exitAt)
+  {
+   double lots = RuleLots();
+   if(lots <= 0) return(false);
+   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return(false);
+   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   if(slDist <= minDist || tpDist <= minDist) return(false);
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   bool ok = false;
+   if(dir > 0)
+      ok = trade.Buy(lots, _Symbol, 0.0, NormalizeDouble(ask - slDist, _Digits), NormalizeDouble(ask + tpDist, _Digits), "xau-rule");
+   else
+      ok = trade.Sell(lots, _Symbol, 0.0, NormalizeDouble(bid + slDist, _Digits), NormalizeDouble(bid - tpDist, _Digits), "xau-rule");
+   if(ok)
+     {
+      gRuleTraded = true;
+      gRuleExitAt = exitAt;
+     }
+   return(ok);
+  }
+
+void RangeAdd(const double h, const double l)
+  {
+   if(gRangeBars == 0) { gRangeHigh = h; gRangeLow = l; }
+   else { gRangeHigh = MathMax(gRangeHigh, h); gRangeLow = MathMin(gRangeLow, l); }
+   gRangeBars++;
+  }
+
+void RuleStep()
+  {
+   if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
+     {
+      CloseAllMine();                                            // барих хугацаа дууслаа
+      if(CountPositions() == 0) gRuleExitAt = 0;
+     }
+   datetime bar = iTime(_Symbol, PERIOD_M15, 0);
+   if(bar == gRuleLastBar) return;                               // шинэ M15 лаа нээгдэхэд л шийднэ
+   gRuleLastBar = bar;
+   datetime closed = iTime(_Symbol, PERIOD_M15, 1);              // саяхан хаагдсан лаа
+   if(closed <= 0) return;
+   int offset = ServerUtcOffset(closed);
+   datetime utc = closed - offset * 3600;
+   MqlDateTime u;
+   TimeToStruct(utc, u);
+   if(u.day_of_year != gRuleDay)
+     {
+      gRuleDay = u.day_of_year;
+      gRuleTraded = false;
+      gRangeBars = 0;
+     }
+   if(u.day_of_week == 0 || u.day_of_week == 6) return;
+   double h = iHigh(_Symbol, PERIOD_M15, 1), l = iLow(_Symbol, PERIOD_M15, 1), c = iClose(_Symbol, PERIOD_M15, 1);
+   datetime dayStartServer = closed - (u.hour * 3600 + u.min * 60 + u.sec);   // UTC 00:00, серверийн цагаар
+   double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+
+   if(TesterTool == TOOL_ASIAN)
+     {
+      // Хүрээ: 00:00-07:00 UTC. 07:00-16:00 UTC-д өдрийн трендийн чиглэлд хүрээнээс гарч хаагдсан эхний лаа.
+      // Stop: хүрээний дунд. Target: stop-оос 2 дахин хол. 20:00 UTC-д хаана.
+      if(u.hour < 7) { RangeAdd(h, l); return; }
+      if(gRuleTraded || gRangeBars < 20 || u.hour >= 16 || CountPositions() > 0) return;
+      int trend = DailyTrend();
+      int dir = (trend > 0 && c > gRangeHigh) ? 1 : ((trend < 0 && c < gRangeLow) ? -1 : 0);
+      if(dir == 0) return;
+      double dist = MathAbs(price - (gRangeHigh + gRangeLow) / 2.0);
+      RuleOpen(dir, dist, dist * 2.0, dayStartServer + 20 * 3600);
+      return;
+     }
+   if(TesterTool == TOOL_LONDON)
+     {
+      // Хүрээ: 07:00-08:00 UTC (Лондон нээлтийн эхний цаг). 08:00-11:00 UTC-д хүрээнээс гарч хаагдсан эхний лаа, аль ч чиглэлд.
+      // Stop: хүрээний нөгөө тал. Target: stop-оос 1.5 дахин хол. 15:00 UTC-д хаана.
+      if(u.hour < 7) return;
+      if(u.hour == 7) { RangeAdd(h, l); return; }
+      if(gRuleTraded || gRangeBars < 4 || u.hour >= 11 || CountPositions() > 0) return;
+      int dir = (c > gRangeHigh) ? 1 : ((c < gRangeLow) ? -1 : 0);
+      if(dir == 0) return;
+      double dist = (dir > 0) ? price - gRangeLow : gRangeHigh - price;
+      RuleOpen(dir, dist, dist * 1.5, dayStartServer + 15 * 3600);
+      return;
+     }
+
+   // Дүрэм 3, 4 нь 1 цагийн лаа хаагдахад шийднэ
+   if(u.min != 45) return;
+   if(gRuleTraded || CountPositions() > 0) return;
+   if(u.hour < 7 || u.hour >= 20) return;                        // Лондон, Нью-Йоркийн цагт л
+   if(u.day_of_week == 5 && u.hour >= 16) return;                // баасан гарагийн оройд шинээр орохгүй
+   double e20 = Buf(hH1Ema20, 1), e50 = Buf(hH1Ema50, 1), rs = Buf(hH1Rsi, 1), atr = Buf(hH1Atr, 1);
+   if(e20 == EMPTY_VALUE || e50 == EMPTY_VALUE || rs == EMPTY_VALUE || atr == EMPTY_VALUE || atr <= 0) return;
+   double h1Low = iLow(_Symbol, PERIOD_H1, 1), h1High = iHigh(_Symbol, PERIOD_H1, 1), h1Close = iClose(_Symbol, PERIOD_H1, 1);
+
+   if(TesterTool == TOOL_PULLBACK)
+     {
+      // Өдрийн тренд дээш, 1 цагийн EMA20 > EMA50, лаа EMA20-д хүрч буцаад дээр нь хаагдсан, RSI(14) > 50 бол BUY (доош трендэд эсрэгээр).
+      // Stop 1.5 ATR, target 3 ATR, 24 цагийн дотор хаана.
+      int trend = DailyTrend();
+      int dir = 0;
+      if(trend > 0 && e20 > e50 && h1Low <= e20 && h1Close > e20 && rs > 50) dir = 1;
+      if(trend < 0 && e20 < e50 && h1High >= e20 && h1Close < e20 && rs < 50) dir = -1;
+      if(dir == 0) return;
+      RuleOpen(dir, 1.5 * atr, 3.0 * atr, TimeCurrent() + 24 * 3600);
+      return;
+     }
+   if(TesterTool == TOOL_FADE)
+     {
+      // Үнэ 1 цагийн EMA20-оос 2 ATR-аас илүү холдож, RSI(14) 25-аас доош бол BUY (75-аас дээш бол SELL).
+      // Stop 1.5 ATR, target нь EMA20 руу буцах зай, 12 цагийн дотор хаана.
+      int dir = 0;
+      if(h1Close < e20 - 2.0 * atr && rs < 25) dir = 1;
+      if(h1Close > e20 + 2.0 * atr && rs > 75) dir = -1;
+      if(dir == 0) return;
+      RuleOpen(dir, 1.5 * atr, MathAbs(e20 - price), TimeCurrent() + 12 * 3600);
+      return;
      }
   }
 

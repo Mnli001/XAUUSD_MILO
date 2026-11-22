@@ -29,10 +29,17 @@ describe("Asian range breakout", () => {
     const bars = day({ 30: { high: 4007, close: 4006 } }, 34);
     expect(asianSetup(bars, 30, [], at(8, 30))).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4006, stop: 4000, target: 4018 });
   });
-  test("a breakout against the trend, or during news, is skipped", () => {
+  test("a close outside the range against the trend is not the entry: the rule keeps waiting for the trend's side", () => {
+    const bars = day({ 30: { low: 3993, close: 3994 } }, 34); // closed below the range while the daily trend is up
+    expect(asianSetup(bars, 30, [], at(8, 30))).toMatchObject({ status: "WATCH", side: "BUY", entry: 4002 });
+    const later = day({ 30: { low: 3993, close: 3994 }, 40: { high: 4007, close: 4006 } }, 44);
+    expect(asianSetup(later, 30, [], at(11))).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4006 });
+  });
+  test("a breakout inside a news window is passed over, and the next close outside the range after it is taken", () => {
     const bars = day({ 30: { high: 4007, close: 4006 } }, 34);
-    expect(asianSetup(bars, -30, [], at(8, 30))).toMatchObject({ status: "OFF", entry: null });
-    expect(asianSetup(bars, 30, [at(7, 45)], at(8, 30))).toMatchObject({ status: "OFF", entry: null });
+    expect(asianSetup(bars, 30, [at(7, 45)], at(8, 30))).toMatchObject({ status: "WATCH", side: "BUY" });
+    const later = day({ 30: { high: 4007, close: 4006 }, 36: { high: 4009, close: 4008 } }, 40); // 09:00 bar closes 09:15, past the 60 minutes
+    expect(asianSetup(later, 30, [at(7, 45)], at(10))).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4008, stop: 4000, target: 4024 });
   });
   test("the window closes at 16:00 UTC and a trade is flat by 20:00 UTC", () => {
     expect(asianSetup(day({}, 70), 30, [], at(17)).status).toBe("OFF");
