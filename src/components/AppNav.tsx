@@ -6,6 +6,7 @@ import { logoutAction } from "@/lib/actions/session";
 
 const MAIN = [
   ["/today", "Өнөөдөр", "M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8L17 7M7 17l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"],
+  ["/setup", "Setup", "M12 2.5v4m0 11v4M2.5 12h4m11 0h4M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 3.5v2"],
   ["/chart", "Чарт", "M7 4v3m0 8v5M5 7h4v8H5zM17 3v5m0 7v6M15 8h4v7h-4z"],
   ["/news", "Мэдээ", "M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8h3m-3 3h6"],
   ["/journal", "Журнал", "M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Zm0 0v14a2 2 0 0 0 2 2M10 9h5m-5 4h5"],
@@ -67,12 +68,12 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
       </header>
 
       <nav aria-label="Доод цэс" className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-5">
+        <div className="mx-auto grid max-w-xl grid-cols-6">
           {MAIN.map(([href, label, d]) => {
             const on = isCurrent(path, href);
             return (
               <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[11px] ${on ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"}`}>
+                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[10.5px] ${on ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"}`}>
                 <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
                 {label}
               </Link>

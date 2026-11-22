@@ -92,8 +92,10 @@ export const IDEAS: Idea[] = [
   { name: "Мэдээний дараах хөдөлгөөний эсрэг", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 1, fade: true }) },
 ];
 
-/** Runs every idea over the whole history and splits its trades at the same point in time. */
-export function compareIdeas(input: Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] }, ideas: Idea[] = IDEAS): { rows: VariantRow[]; from: Date | null; splitAt: Date | null; to: Date | null } {
+type IdeaInput = Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] };
+
+/** Everything an idea reads, aligned to 15-minute decision times, and the first bar where the trend scores exist. */
+export function ideaContext(input: IdeaInput): { ctx: Context; ready: number } {
   const { m15, h4, d1, news } = input;
   const decisions = m15.map((c) => c.time.getTime() + M15);
   const ctx: Context = {
@@ -103,16 +105,28 @@ export function compareIdeas(input: Omit<BacktestInput, "params" | "h1"> & { h1?
     daily: alignClosed(decisions, d1, scoreSeries(d1), "1day"),
     h4: alignClosed(decisions, h4, scoreSeries(h4), "4h"),
   };
+  return { ctx, ready: m15.findIndex((_, i) => ctx.daily[i] !== null && ctx.h4[i] !== null) };
+}
+
+/** One idea replayed over the whole history, from the first bar where it could be judged. */
+export function ideaTrades({ ctx, ready }: { ctx: Context; ready: number }, { params, build }: Idea, startBalance = 10_000) {
+  const orders = build(ctx).map((o, i) => (ready >= 0 && i >= ready ? o : null));
+  return simulateOrders(ctx.m15, orders, params, startBalance).trades;
+}
+
+/** Runs every idea over the whole history and splits its trades at the same point in time. */
+export function compareIdeas(input: IdeaInput, ideas: Idea[] = IDEAS): { rows: VariantRow[]; from: Date | null; splitAt: Date | null; to: Date | null } {
+  const { m15 } = input;
+  const prepared = ideaContext(input);
   // every idea is judged over the same window: from the first bar where the trend scores exist
-  const ready = m15.findIndex((_, i) => ctx.daily[i] !== null && ctx.h4[i] !== null);
+  const { ready } = prepared;
   const from = ready >= 0 ? m15[ready].time : null;
   const to = m15.at(-1)?.time ?? null;
   const splitAt = from && to ? new Date(from.getTime() + (to.getTime() - from.getTime()) * TRAIN_FRACTION) : null;
-  const rows = ideas.map(({ name, params, build }) => {
-    const orders = build(ctx).map((o, i) => (ready >= 0 && i >= ready ? o : null));
-    const { trades } = simulateOrders(m15, orders, params, startBalanceFor(input));
+  const rows = ideas.map((idea) => {
+    const trades = ideaTrades(prepared, idea, startBalanceFor(input));
     return {
-      name, params,
+      name: idea.name, params: idea.params,
       train: segmentStats(trades.filter((t) => splitAt !== null && t.openedAt < splitAt)),
       test: segmentStats(trades.filter((t) => splitAt === null || t.openedAt >= splitAt)),
     };

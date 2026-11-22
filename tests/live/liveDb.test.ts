@@ -131,3 +131,13 @@ test("reports from a robot that does not send its timing are still accepted", as
   expect(await handleSync(token, old, now)).toMatchObject({ state: "STOPPED" });
   expect(await getLiveView(admin.id, now)).toMatchObject({ plannedSeconds: null, elapsedSeconds: null });
 });
+
+test("the basket tool runs end to end: saved, started, refused on an old robot file, reported", async () => {
+  expect((await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" })).error).toBeUndefined();
+  await startBot(admin.id, now);
+  expect(await handleSync(token, report(), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+  expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "OLD_ROBOT" });
+  await startBot(admin.id, now);
+  expect(await handleSync(token, report({ version: 2 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
+  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 2, config: { mode: "BASKET", basket: { count: 8 } } });
+});

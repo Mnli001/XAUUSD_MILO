@@ -5,8 +5,8 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "1.00"
-#property description "Web-controlled scalper. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
+#property version   "2.00"
+#property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
 
@@ -27,6 +27,9 @@ string gRunId = "";
 double gLots = 0.01, gSlAtr = 1.5, gTpAtr = 2.0, gTarget = 0.0, gMaxLoss = 0.0;
 int    gMaxPos = 1;
 bool   gCloseAll = false;
+string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
+
+#define ROBOT_VERSION 2             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
 
 // роботын өөрийн төлөв
 string   gActiveRunId = "";
@@ -42,6 +45,7 @@ int      gPlannedSeconds = 0;      // ботын өөрөө тооцсон аж�
 
 #define WAIT_FOR_SIGNAL_SECONDS 1800 // 30 минутад дохио гарахгүй бол зогсоно
 string   gLinkStatus = "холбогдоогүй";
+bool     gClosing = false;         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
 
 //+------------------------------------------------------------------+
 int OnInit()
@@ -76,8 +80,17 @@ void OnDeinit(const int reason)
    Comment("");
   }
 
+// Нэг удаагийн хаалт амжилтгүй болж арилжаа үлдвэл дуустал нь дахин хаана.
+void RetryClose()
+  {
+   if(!gClosing) return;
+   if(CountPositions() == 0) { gClosing = false; return; }
+   CloseAllMine();
+  }
+
 void OnTimer()
   {
+   RetryClose();
    EvaluateSignal();
    ManageRun();
    Sync();
@@ -86,6 +99,7 @@ void OnTimer()
 
 void OnTick()
   {
+   RetryClose();
    EvaluateSignal();
    ManageRun();
    TryEnter();
@@ -222,6 +236,7 @@ void EvaluateSignal()
 void Finish(const string reason)
   {
    gFinished = reason;
+   gClosing = true;
    CloseAllMine();
    Print("XauBot: ажиллагаа дууслаа — ", reason);
   }
@@ -258,6 +273,13 @@ void ManageRun()
       if(TimeCurrent() - gRunStart >= WAIT_FOR_SIGNAL_SECONDS) Finish("NO_SIGNAL");
       return;
      }
+   if(gMode == "BASKET")
+     {
+      // Багц зөвхөн нийт ашиг, нийт алдагдлаар хаагдана (дээрх хоёр шалгалт).
+      // Бүх арилжаа өөр шалтгаанаар (аваарын stop) хаагдсан бол ажиллагааг дуусгана.
+      if(CountPositions() == 0) Finish(pnl >= 0 ? "TARGET" : "MAX_LOSS");
+      return;
+     }
    if(gSignal != "NONE" && gSignal != gRunSide) { Finish("REVERSAL"); return; }   // чиглэл эргэлээ
    if(ElapsedSeconds() >= gPlannedSeconds)      { Finish("TIME");     return; }   // тооцсон хугацаа дууслаа
   }
@@ -265,9 +287,63 @@ void ManageRun()
 //+------------------------------------------------------------------+
 //| Арилжаа нээх                                                     |
 //+------------------------------------------------------------------+
+// Багц: дохио гармагц тохируулсан тооны арилжааг нэг дор нээнэ. Нэг ажиллагаанд нэг л багц.
+void TryBasket()
+  {
+   if(gFirstEntry > 0) return;                                   // багц аль хэдийн нээгдсэн
+   if(gTarget <= 0 || gMaxLoss <= 0) { gReason = "Багцын ашиг, алдагдлын дүн тохируулаагүй"; return; }
+   if(RealBlocked()) return;
+   if(TimeLocal() - gLastSyncOk > 30) return;
+   if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
+   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return;
+   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
+
+   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   if(step <= 0) step = 0.01;
+   double lots = MathFloor(gLots / step + 1e-9) * step;
+   if(lots < vmin) { gReason = "Лот брокерын доод хэмжээнээс бага байна"; return; }
+   if(lots > vmax) lots = vmax;
+   lots = NormalizeDouble(lots, 2);
+
+   // Аваарын stop: робот, компьютер унтарсан үед л ажиллах ёстой тул нийт алдагдлын хязгаараас 2 дахин хол тавина.
+   double contract = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);
+   if(contract <= 0) contract = 100.0;
+   double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   double slDist = MathMax(2.0 * gMaxLoss / (lots * gMaxPos * contract) + spread, minDist + spread);
+
+   string side = gSignal;
+   int opened = 0;
+   for(int i = 0; i < gMaxPos; i++)
+     {
+      bool ok = false;
+      if(side == "BUY")
+         ok = trade.Buy(lots, _Symbol, 0.0, NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK) - slDist, _Digits), 0.0, "xau-basket");
+      else
+         ok = trade.Sell(lots, _Symbol, 0.0, NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID) + slDist, _Digits), 0.0, "xau-basket");
+      if(ok) opened++;
+      else
+        {
+         Print("XauBot: багцын захиалга амжилтгүй — ", trade.ResultRetcodeDescription());
+         break;                                                  // брокер татгалзвал үлдсэнийг оролдохгүй
+        }
+     }
+   gLastEntry = TimeCurrent();
+   if(opened > 0)
+     {
+      gFirstEntry = TimeCurrent();
+      gRunSide = side;
+      gPlannedSeconds = 0;                                       // багцад хугацааны хязгаар байхгүй
+      Print("XauBot: багц нээгдлээ — ", side, " ", (string)opened, " / ", (string)gMaxPos, " арилжаа, лот ", Num(lots, 2));
+     }
+  }
+
 void TryEnter()
   {
    if(gState != "RUNNING" || gFinished != "" || gSignal == "NONE") return;
+   if(gMode == "BASKET") { TryBasket(); return; }
    if(gRunSide != "" && gSignal != gRunSide) return;                // нэг удаад нэг чиглэлд л ажиллана
    if(RealBlocked()) return;
    if(TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
@@ -428,7 +504,7 @@ void Sync()
                  ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\"},\"symbol\":\"" + _Symbol + "\",\"bid\":" +
                  Num(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits) + ",\"ask\":" + Num(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits) +
                  ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + gReason + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
-                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + "}";
+                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION + "}";
 
    uchar data[];
    int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
@@ -462,17 +538,20 @@ void Sync()
    gTpAtr      = JNum(body, "tpAtr");
    gTarget     = JNum(body, "profitTarget");
    gMaxLoss    = JNum(body, "maxLoss");
+   string mode = JStr(body, "mode");
+   gMode       = (mode == "BASKET") ? "BASKET" : "SCALPER";
 
    if(state == "RUNNING" && runId != "" && runId != gActiveRunId)   // шинэ ажиллагаа эхэллээ
      {
       gActiveRunId = runId;
       gRunStart = TimeCurrent();
       gFinished = "";
+      gClosing = false;
       gLastEntry = 0;
       gFirstEntry = 0;
       gRunSide = "";
       gPlannedSeconds = 0;
-      Print("XauBot: Start — лот ", Num(gLots, 2), ", зэрэг ", (string)gMaxPos);
+      Print("XauBot: Start (", gMode, ") — лот ", Num(gLots, 2), ", арилжаа ", (string)gMaxPos);
      }
    if(state != "RUNNING" && gState == "RUNNING")
       Print("XauBot: Stop");
@@ -490,10 +569,12 @@ void ShowStatus()
   {
    string s = "XauBot · " + AccountModeStr() + " данс · вэб: " + gLinkStatus + "\n";
    s += "Төлөв: " + (gState == "RUNNING" ? (gFinished == "" ? "АЖИЛЛАЖ БАЙНА" : "дуусгаж байна (" + gFinished + ")") : "зогссон") + "\n";
+   s += "Хэрэгсэл: " + (gMode == "BASKET" ? "Багц" : "Scalper") + "\n";
    s += "Дохио: " + gSignal + " — " + gReason + "\n";
    s += "Нээлттэй: " + (string)CountPositions() + " / " + (string)gMaxPos + " · лот " + Num(gLots, 2);
    if(gState == "RUNNING") s += " · энэ удаа: " + Num(RunPnl(), 2);
-   if(gState == "RUNNING" && gFirstEntry > 0) s += "\nХугацаа: " + (string)ElapsedSeconds() + " / " + (string)gPlannedSeconds + " сек (" + gRunSide + ")";
+   if(gState == "RUNNING" && gMode == "BASKET" && gFirstEntry > 0) s += "\nБагц (" + gRunSide + "): +" + Num(gTarget, 2) + " хүрвэл эсвэл -" + Num(gMaxLoss, 2) + " хүрвэл бүгдийг хаана";
+   if(gState == "RUNNING" && gMode != "BASKET" && gFirstEntry > 0) s += "\nХугацаа: " + (string)ElapsedSeconds() + " / " + (string)gPlannedSeconds + " сек (" + gRunSide + ")";
    if(gState == "RUNNING" && gFirstEntry <= 0) s += "\nЭхний дохиог хүлээж байна";
    if(RealBlocked()) s += "\nЖИНХЭНЭ ДАНС: AllowRealAccount унтраалттай тул арилжаа хийхгүй";
    Comment(s);

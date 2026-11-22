@@ -1,0 +1,106 @@
+import { getSetups, type Setup } from "@/lib/setup/build";
+import type { SetupHistory } from "@/lib/setup/setups";
+import { getNextHighEvent } from "@/lib/events";
+import { formatUbDateTime, formatUbTime } from "@/lib/time";
+import { SetupChart } from "@/components/SetupChart";
+
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Setup — XAU Analytics" };
+
+const STATUS: Record<Setup["status"], [string, string]> = {
+  ACTIVE: ["Идэвхтэй", "border-emerald-400/60 bg-emerald-400/10 text-emerald-400"],
+  WATCH: ["Ажиглах", "border-amber-400/60 bg-amber-400/10 text-amber-300"],
+  FORMING: ["Бүрдэж байна", "border-zinc-600 text-zinc-300"],
+  OFF: ["Одоо алга", "border-zinc-700 text-zinc-500"],
+};
+const px = (v: number | null) => (v === null ? "—" : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+function Record({ title, h }: { title: string; h: SetupHistory }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 text-xs text-zinc-400"><span>{title}</span><span className="font-mono">{h.n} арилжаа</span></div>
+      {h.winPct === null ? (
+        <p className="mt-1 text-sm text-zinc-500">Дата хангалтгүй (30-аас цөөн арилжаа)</p>
+      ) : (
+        <>
+          <div className="mt-1.5 flex h-2 overflow-hidden rounded-full bg-red-500/60" role="img" aria-label={`${h.winPct}% ашигтай хаагдсан`}><div className="bg-emerald-500" style={{ width: `${h.winPct}%` }} /></div>
+          <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-sm">
+            <span className="text-zinc-100">{h.winPct}% ашигтай</span>
+            <span className={h.avgR! > 0 ? "text-emerald-400" : h.avgR! < 0 ? "text-red-400" : "text-zinc-300"}>дундаж {h.avgR! > 0 ? "+" : ""}{h.avgR!.toFixed(2)}R</span>
+            <span className="text-zinc-400">PF {h.profitFactor === null ? "—" : h.profitFactor.toFixed(2)}</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default async function SetupPage() {
+  const now = new Date();
+  const [view, next] = await Promise.all([getSetups(now), getNextHighEvent(now)]);
+  const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="page-title">Setup</h1>
+        <p className="mt-1 max-w-prose text-sm text-zinc-400">Хоёр тогтсон дүрмийг одоогийн зах дээр уншиж, орох боломж бүрдэж байгаа эсэх, хаанаас орж, хаана stop, target тавихыг зургаар харуулна. Дүрэм бүрийн хажууд түүхэнд яг энэ дүрэм ямар үр дүн өгснийг тавьсан.</p>
+        <p className="mt-2 font-mono text-xs text-zinc-500">
+          {view.lastCandleAt ? `Сүүлийн лаа ${formatUbDateTime(view.lastCandleAt)} (УБ), үнэ хэдэн минут хоцорно` : "Лааны дата ачаалж байна"}
+          {next && <span className="ml-3 text-amber-400">Дараагийн чухал мэдээ {formatUbTime(next.time)}: {next.title}</span>}
+        </p>
+      </div>
+
+      {view.setups.map((s) => {
+        const [label, tone] = STATUS[s.status];
+        const rr = s.entry !== null && s.stop !== null && s.target !== null && s.entry !== s.stop ? Math.abs(s.target - s.entry) / Math.abs(s.entry - s.stop) : null;
+        return (
+          <section key={s.id} className="card">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-semibold text-zinc-50">{s.name}</h2>
+                  <span className={`rounded-md border px-2 py-0.5 text-xs font-medium ${tone}`}>{label}</span>
+                </div>
+                <p className={`mt-3 text-xl font-semibold tracking-tight ${s.status === "OFF" ? "text-zinc-300" : s.side === "BUY" ? "text-emerald-400" : s.side === "SELL" ? "text-red-400" : "text-zinc-100"}`}>{s.headline}</p>
+                <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-zinc-300">{s.detail}</p>
+
+                {s.entry !== null && (
+                  <dl className="mt-4 grid grid-cols-4 gap-2 text-sm">
+                    {([["Орох", px(s.entry), "text-amber-300"], ["Stop", px(s.stop), "text-red-400"], ["Target", px(s.target), "text-emerald-400"], ["R:R", rr === null ? "—" : `1 : ${rr.toFixed(1)}`, "text-zinc-100"]] as const).map(([k, v, c]) => (
+                      <div key={k} className="rounded-lg border border-zinc-800 px-2 py-1.5"><dt className="text-xs text-zinc-500">{k}</dt><dd className={`truncate font-mono font-semibold ${c}`}>{v}</dd></div>
+                    ))}
+                  </dl>
+                )}
+
+                {s.checks.length > 0 && (
+                  <ul className="mt-4 space-y-1.5 text-sm">
+                    {s.checks.map((c) => (
+                      <li key={c.label} className={`flex items-start gap-2 ${c.ok ? "text-zinc-200" : "text-zinc-500"}`}>
+                        <span aria-hidden className={`mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border text-[9px] ${c.ok ? "border-emerald-400 bg-emerald-400/15 text-emerald-400" : "border-zinc-600"}`}>{c.ok ? "✓" : ""}</span>
+                        <span>{c.label}<span className="sr-only">{c.ok ? " (биелсэн)" : " (биелээгүй)"}</span></span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="min-w-0"><SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} /></div>
+            </div>
+
+            <div className="mt-5 grid gap-x-8 gap-y-4 border-t border-zinc-800 pt-4 sm:grid-cols-2">
+              <Record title="Түүхэн үр дүн, бүх хугацаа" h={s.history} />
+              <Record title="Сүүлийн 12 сар" h={s.recent} />
+            </div>
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer text-zinc-400 hover:text-zinc-200">Дүрмийг бүтнээр нь унших</summary>
+              <p className="mt-2 max-w-prose leading-relaxed text-zinc-300">{s.rule}</p>
+            </details>
+          </section>
+        );
+      })}
+
+      <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
+        Түүхэн үр дүн нь хадгалагдсан лаанууд дээр ({view.historyFrom ? `${formatUbDateTime(view.historyFrom).slice(0, 10)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Энэ хоёр дүрмийн аль нь ч урьдчилан тавьсан шалгуурыг (шалгах хэсэгт дундаж R ≥ 0.1, profit factor ≥ 1.2) бүрэн даваагүй. Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.
+      </p>
+    </div>
+  );
+}

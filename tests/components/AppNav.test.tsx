@@ -16,10 +16,10 @@ test("the section you are in is marked as current, in both the top bar and the p
     expect(within(nav).getByRole("link", { name: "Өнөөдөр" })).not.toHaveAttribute("aria-current");
   }
 });
-test("the phone tab bar has five destinations and the rest live in the account menu", () => {
+test("the phone tab bar has six destinations and the rest live in the account menu", () => {
   path = "/today";
   render(<AppNav name="Ану" isAdmin={false} />);
-  expect(within(screen.getByRole("navigation", { name: "Доод цэс" })).getAllByRole("link")).toHaveLength(5);
+  expect(within(screen.getByRole("navigation", { name: "Доод цэс" })).getAllByRole("link")).toHaveLength(6);
   expect(screen.queryByRole("menu")).toBeNull(); // closed until asked for
   fireEvent.click(screen.getByRole("button", { name: /Ану/ }));
   const menu = screen.getByRole("menu");

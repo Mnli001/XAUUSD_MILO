@@ -12,14 +12,16 @@ export async function getLive(userId: string) {
   const [row] = await db.select().from(schema.botLive).where(eq(schema.botLive.userId, userId));
   return shape(row);
 }
-const shape = (row: typeof schema.botLive.$inferSelect) => ({ ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...(row.config as Partial<LiveConfig>) } });
+const shape = (row: typeof schema.botLive.$inferSelect) => {
+  const stored = row.config as Partial<LiveConfig>;
+  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...stored, basket: { ...DEFAULT_LIVE_CONFIG.basket, ...stored.basket } } };
+};
 
 const update = (userId: string, set: Partial<typeof schema.botLive.$inferInsert>) => db.update(schema.botLive).set(set).where(eq(schema.botLive.userId, userId));
 
 export async function saveLiveConfig(userId: string, input: unknown): Promise<{ error?: string }> {
-  const r = parseConfig(input);
+  const r = parseConfig(input, (await getLive(userId)).config);
   if (!r.config) return { error: r.error };
-  await getLive(userId);
   await update(userId, { config: r.config });
   return {};
 }
@@ -69,7 +71,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account);
+  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version);
   if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
@@ -111,6 +113,7 @@ export async function getLiveView(userId: string, now: Date) {
     signal: status?.signal ?? null,
     reason: status?.reason ?? null,
     runPnl: status?.runPnl ?? null,
+    robotVersion: status?.version ?? null,
     plannedSeconds: status?.plannedSeconds ?? null,
     elapsedSeconds: status?.elapsedSeconds ?? null,
     positions: status?.positions ?? [],
