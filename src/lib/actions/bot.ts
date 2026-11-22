@@ -2,15 +2,17 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "../auth";
 import { saveLiveConfig, startBot, stopBot, requestCloseAll, rotateToken } from "../bot/liveDb";
+import { getT } from "../prefs.server";
 
 export type BotFormState = { error?: string; ok?: string; token?: string };
 
 export async function saveBotConfigAction(_prev: BotFormState, form: FormData): Promise<BotFormState> {
   const user = await requireUser();
-  const r = await saveLiveConfig(user.id, Object.fromEntries(form));
+  const t = await getT();
+  const r = await saveLiveConfig(user.id, Object.fromEntries(form), t);
   if (r.error) return r;
   revalidatePath("/bot");
-  return { ok: "Тохиргоо хадгалагдлаа" };
+  return { ok: t("Тохиргоо хадгалагдлаа", "Settings saved") };
 }
 
 export async function startBotAction() {

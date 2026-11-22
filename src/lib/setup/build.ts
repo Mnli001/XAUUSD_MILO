@@ -5,6 +5,7 @@ import { IDEAS, ideaContext, ideaTrades } from "../bot/ideas";
 import { loadBacktestData } from "../bot/run";
 import { loadCandles, SYMBOL } from "../ingest/prices";
 import { type SetupHistory, type SetupNow, asianSetup, dipSetup, historyOf } from "./setups";
+import { MN_VIEWER, type Viewer } from "../viewer";
 
 export type Setup = SetupNow & {
   id: "asian-breakout" | "trend-dip";
@@ -39,7 +40,8 @@ async function getRecords(now: Date): Promise<Records> {
 }
 
 /** Both setups read against the latest stored candles (closed bars only), each with its rule's replayed record. */
-export async function getSetups(now: Date): Promise<SetupsView> {
+export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<SetupsView> {
+  const { t, ub, zone } = v;
   const [rec, m15, h4, d1, events] = await Promise.all([
     getRecords(now),
     loadCandles(SYMBOL, "15min", 700),
@@ -52,14 +54,14 @@ export async function getSetups(now: Date): Promise<SetupsView> {
   const { ctx } = ideaContext({ m15: closed, h4, d1, news });
   const last = closed.length - 1;
   const at = <T,>(series: T[], fallback: T) => (last >= 0 ? series[last] : fallback);
-  const asian = asianSetup(closed.slice(-200), at(ctx.daily, null), news, now);
-  const dip = dipSetup(closed.slice(-200), { rsi: at(ctx.rsi15, NaN), atr: at(ctx.atr15, NaN), daily: at(ctx.daily, null), h4: at(ctx.h4, null) }, news, now);
+  const asian = asianSetup(closed.slice(-200), at(ctx.daily, null), news, now, v);
+  const dip = dipSetup(closed.slice(-200), { rsi: at(ctx.rsi15, NaN), atr: at(ctx.atr15, NaN), daily: at(ctx.daily, null), h4: at(ctx.h4, null) }, news, now, v);
   return {
     setups: [
-      { ...asian, id: "asian-breakout", name: "Азийн хүрээний breakout", history: rec.rows[0].all, recent: rec.rows[0].recent,
-        rule: "08:00–15:00 (УБ) цагийн хамгийн өндөр, нам үнэ хүрээг тогтооно. 15:00–00:00 цагт хүрээнээс гарсан эхний 15 минутын хаалтыг, өдрийн трендийн чиглэлд л дагана. Stop хүрээний дунд, target stop-оос 2 дахин хол, 04:00 гэхэд хаана. Өдөрт нэг арилжаа." },
-      { ...dip, id: "trend-dip", name: "Тренд доторх уналтыг авах", history: rec.rows[1].all, recent: rec.rows[1].recent,
-        rule: "Өдөр, 4 цагийн тренд нэг чиглэлд байхад 15 минутын RSI 30-аас доош орвол BUY (тренд доош бол RSI 70-аас дээш гарахад SELL). Stop 2 ATR, target 1.5 ATR, 8 цагийн дотор хаана." },
+      { ...asian, id: "asian-breakout", name: t("Азийн хүрээний breakout", "Asian range breakout"), history: rec.rows[0].all, recent: rec.rows[0].recent,
+        rule: t(`${ub("08:00")}–${ub("15:00")} (${zone}) цагийн хамгийн өндөр, нам үнэ хүрээг тогтооно. ${ub("15:00")}–${ub("00:00")} цагт хүрээнээс гарсан эхний 15 минутын хаалтыг, өдрийн трендийн чиглэлд л дагана. Stop хүрээний дунд, target stop-оос 2 дахин хол, ${ub("04:00")} гэхэд хаана. Өдөрт нэг арилжаа.`, `The highest and lowest price between ${ub("08:00")} and ${ub("15:00")} (${zone}) set the range. Between ${ub("15:00")} and ${ub("00:00")}, the first 15-minute close outside the range is followed, only in the direction of the daily trend. The stop is the middle of the range, the target is twice as far as the stop, and the trade is closed by ${ub("04:00")}. One trade a day.`) },
+      { ...dip, id: "trend-dip", name: t("Тренд доторх уналтыг авах", "Buy the dip within the trend"), history: rec.rows[1].all, recent: rec.rows[1].recent,
+        rule: t("Өдөр, 4 цагийн тренд нэг чиглэлд байхад 15 минутын RSI 30-аас доош орвол BUY (тренд доош бол RSI 70-аас дээш гарахад SELL). Stop 2 ATR, target 1.5 ATR, 8 цагийн дотор хаана.", "When the daily and 4-hour trends point the same way and the 15-minute RSI drops below 30, BUY (when the trend is down and RSI rises above 70, SELL). Stop 2 ATR, target 1.5 ATR, closed within 8 hours.") },
     ],
     candles: m15.slice(-CHART_BARS),
     lastCandleAt: m15.at(-1)?.time ?? null,

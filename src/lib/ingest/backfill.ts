@@ -37,20 +37,20 @@ export async function runBackfill(
         const candles = await withRetry(() => provider.fetchCandles(SYMBOL, tf, { outputsize: size, endDate }), {
           attempts,
           delayMs: retryDelayMs,
-          onRetry: (n, e) => log(`  ${tf}: ${(e as Error).message} — дахин оролдоно (${n}/${attempts - 1})`),
+          onRetry: (n, e) => log(`  ${tf}: ${(e as Error).message} — дахин оролдоно (${n}/${attempts - 1})`), // i18n-ok: server log, machine reply or research-script name
         });
         total += await upsertCandles(SYMBOL, tf, candles);
-        log(`  ${tf}: ${total} лаа…`);
+        log(`  ${tf}: ${total} лаа…`); // i18n-ok: server log, machine reply or research-script name
         if (sleepMs > 0) await sleep(sleepMs);
         if (days === 0 || candles.length < size || candles[0].time.getTime() <= stopAt) break;
         endDate = candles[0].time;
       }
       stored[tf] = total;
-      log(`${tf}: ${total} лаа хадгаллаа`);
+      log(`${tf}: ${total} лаа хадгаллаа`); // i18n-ok: server log, machine reply or research-script name
     } catch (e) {
       stored[tf] = total;
       failed.push(tf);
-      log(`${tf}: АМЖИЛТГҮЙ (${total} лаа хадгалагдсан) — ${(e as Error).message}`);
+      log(`${tf}: АМЖИЛТГҮЙ (${total} лаа хадгалагдсан) — ${(e as Error).message}`); // i18n-ok: server log, machine reply or research-script name
     }
   }
   return { stored, failed };

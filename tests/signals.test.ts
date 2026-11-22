@@ -63,3 +63,25 @@ test("a failed send does not stop the others or lose the signal", async () => {
   expect(await emitSignals(now, { view: view([setup()]), send: flaky })).toBe(1);
   expect((await listSignals(10))[0].sentTo).toBe(1);
 });
+
+test("a user who paused signals, or muted this setup, is skipped; the others still get it", async () => {
+  await db.execute(sql`UPDATE users SET signals_paused = true WHERE telegram_chat_id = '111'`);
+  await db.execute(sql`UPDATE users SET signals_muted = 'asian-breakout' WHERE telegram_chat_id = '999'`);
+  const dip = setup({ id: "trend-dip", name: "Тренд доторх уналтыг авах" });
+  expect(await emitSignals(now, { view: view([setup(), dip]), send })).toBe(2);
+  expect(sent.map((s) => s.chatId)).toEqual(["999"]); // only the dip, only to the user who muted the other one
+  expect(sent[0].text).toContain("Тренд доторх уналтыг авах");
+});
+test("each user gets the message in their own language", async () => {
+  await db.execute(sql`UPDATE users SET locale = 'en', time_zone = 'Europe/London' WHERE telegram_chat_id = '999'`);
+  const english = setup({ name: "Asian range breakout", checks: [{ label: "Asian range complete (07:00 London)", ok: true }] });
+  const asked: string[] = [];
+  const viewFor = async (v: { locale: string; timeZone: string }) => { asked.push(`${v.locale} ${v.timeZone}`); return view([english]); };
+  expect(await emitSignals(now, { view: view([setup()]), viewFor, send })).toBe(1);
+  expect(asked).toEqual(["en Europe/London"]); // the default reading is reused for everyone else
+  const byChat = Object.fromEntries(sent.map((s) => [s.chatId, s.text]));
+  expect(byChat["111"]).toContain("Баталгаажсан нөхцөл:");
+  expect(byChat["111"]).toContain("Азийн хүрээ бүрдсэн (15:00 УБ)");
+  for (const part of ["Asian range breakout", "Entry: around 4006.00", "Conditions met:", "Asian range complete (07:00 London)", "152 trades, 34.1% profitable", "not financial advice"]) expect(byChat["999"]).toContain(part);
+  expect(byChat["999"]).not.toMatch(/[Ѐ-ӿ]/);
+});

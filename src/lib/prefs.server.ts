@@ -4,6 +4,7 @@ import { getSessionUser } from "./auth";
 import { translator, type T } from "./i18n";
 import { COOKIE, parseLocale, parseTheme, parseTimeZone, type Prefs } from "./prefs";
 import { prefsOf } from "./prefsDb";
+import { viewer, type Viewer } from "./viewer";
 
 const YEAR = 60 * 60 * 24 * 365;
 
@@ -27,3 +28,5 @@ export async function rememberPrefs(p: Partial<Prefs>): Promise<void> {
   if (p.theme) c.set(COOKIE.theme, p.theme, opts);
   if (p.timeZone) c.set(COOKIE.timeZone, p.timeZone, opts);
 }
+
+export const getViewer = cache(async (): Promise<Viewer> => viewer(await getPrefs()));

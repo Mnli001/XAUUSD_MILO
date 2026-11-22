@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { mnT, type T } from "../i18n";
 import { z } from "zod";
 
 /**
@@ -31,42 +32,43 @@ const positive = (msg: string) => z.coerce.number({ message: msg }).finite().pos
 const optionalPositive = (msg: string) => z.preprocess(blank, positive(msg).nullable());
 /** A broker will not take an unlimited number of orders in one burst. */
 export const MAX_BASKET_COUNT = 100;
-const configSchema = z.object({
-  lots: positive("Лот 0-ээс их тоо байх ёстой"),
-  maxPositions: z.coerce.number().int("Арилжааны тоо бүхэл тоо байх ёстой").min(1, "Дор хаяж 1 арилжаа").max(200, "Ихдээ 200 арилжаа"),
-  slAtr: positive("Stop 0-ээс их байх ёстой").max(50),
-  tpAtr: positive("Target 0-ээс их байх ёстой").max(50),
-  profitTarget: optionalPositive("Ашгийн зорилт 0-ээс их байх ёстой"),
-  maxLoss: optionalPositive("Алдагдлын хязгаар 0-ээс их байх ёстой"),
-  allowReal: z.preprocess((v) => v === true || v === "on" || v === "1" || v === "true", z.boolean()),
+const allowReal = z.preprocess((v) => v === true || v === "on" || v === "1" || v === "true", z.boolean());
+const configSchema = (t: T) => z.object({
+  lots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
+  maxPositions: z.coerce.number().int(t("Арилжааны тоо бүхэл тоо байх ёстой", "Number of trades must be a whole number")).min(1, t("Дор хаяж 1 арилжаа", "At least 1 trade")).max(200, t("Ихдээ 200 арилжаа", "At most 200 trades")),
+  slAtr: positive(t("Stop 0-ээс их байх ёстой", "Stop must be above 0")).max(50),
+  tpAtr: positive(t("Target 0-ээс их байх ёстой", "Target must be above 0")).max(50),
+  profitTarget: optionalPositive(t("Ашгийн зорилт 0-ээс их байх ёстой", "Profit target must be above 0")),
+  maxLoss: optionalPositive(t("Алдагдлын хязгаар 0-ээс их байх ёстой", "Loss limit must be above 0")),
+  allowReal,
 });
 
-const basketSchema = z.object({
-  bLots: positive("Лот 0-ээс их тоо байх ёстой"),
-  bCount: z.coerce.number().int("Арилжааны тоо бүхэл тоо байх ёстой").min(1, "Дор хаяж 1 арилжаа").max(MAX_BASKET_COUNT, `Ихдээ ${MAX_BASKET_COUNT} арилжаа`),
-  bProfit: z.preprocess(blank, positive("Хаах ашгийн дүн ($) 0-ээс их байх ёстой").nullable()).refine((v) => v !== null, "Хаах ашгийн дүнг ($) оруулна уу"),
-  bLoss: z.preprocess(blank, positive("Хаах алдагдлын дүн ($) 0-ээс их байх ёстой").nullable()).refine((v) => v !== null, "Хаах алдагдлын дүнг ($) оруулна уу"),
-  allowReal: configSchema.shape.allowReal,
+const basketSchema = (t: T) => z.object({
+  bLots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
+  bCount: z.coerce.number().int(t("Арилжааны тоо бүхэл тоо байх ёстой", "Number of trades must be a whole number")).min(1, t("Дор хаяж 1 арилжаа", "At least 1 trade")).max(MAX_BASKET_COUNT, t(`Ихдээ ${MAX_BASKET_COUNT} арилжаа`, `At most ${MAX_BASKET_COUNT} trades`)),
+  bProfit: z.preprocess(blank, positive(t("Хаах ашгийн дүн ($) 0-ээс их байх ёстой", "The closing profit ($) must be above 0")).nullable()).refine((v) => v !== null, t("Хаах ашгийн дүнг ($) оруулна уу", "Enter the closing profit ($)")),
+  bLoss: z.preprocess(blank, positive(t("Хаах алдагдлын дүн ($) 0-ээс их байх ёстой", "The closing loss ($) must be above 0")).nullable()).refine((v) => v !== null, t("Хаах алдагдлын дүнг ($) оруулна уу", "Enter the closing loss ($)")),
+  allowReal,
 });
 
-const ruleSchema = z.object({ rLots: positive("Лот 0-ээс их тоо байх ёстой"), allowReal: configSchema.shape.allowReal });
+const ruleSchema = (t: T) => z.object({ rLots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")), allowReal });
 
 /** Each tool has its own form; saving one keeps the other's settings from `current`. */
-export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG): { config?: LiveConfig; error?: string } {
+export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
   const asked = (input as { mode?: unknown } | null)?.mode;
   const mode: BotMode = asked === "BASKET" || asked === "ASIAN" ? asked : "SCALPER";
   if (mode === "ASIAN") {
-    const r = ruleSchema.safeParse(input);
+    const r = ruleSchema(t).safeParse(input);
     if (!r.success) return { error: r.error.issues[0].message };
     return { config: { ...current, mode, allowReal: r.data.allowReal, rule: { lots: r.data.rLots } } };
   }
   if (mode === "BASKET") {
-    const r = basketSchema.safeParse(input);
+    const r = basketSchema(t).safeParse(input);
     if (!r.success) return { error: r.error.issues[0].message };
     const { bLots, bCount, bProfit, bLoss, allowReal } = r.data;
     return { config: { ...current, mode, allowReal, basket: { lots: bLots, count: bCount, profit: bProfit!, loss: bLoss! } } };
   }
-  const r = configSchema.safeParse(input);
+  const r = configSchema(t).safeParse(input);
   return r.success ? { config: { ...r.data, mode, basket: current.basket, rule: current.rule } } : { error: r.error.issues[0].message };
 }
 

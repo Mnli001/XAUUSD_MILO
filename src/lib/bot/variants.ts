@@ -9,19 +9,19 @@ const v = (name: string, o: Partial<BotParams> = {}): Variant => ({ name, params
  * after seeing the numbers is how a backtest gets fitted to the past.
  */
 export const VARIANTS: Variant[] = [
-  v("Анхны дүрэм"),
-  v("Тэг рүү зөөхгүй", { breakeven: false }),
-  v("Зөвхөн Нью-Йорк (21–01)", { sessionStartUb: 21, sessionEndUb: 1 }),
-  v("Зөвхөн Лондон (15–21)", { sessionStartUb: 15, sessionEndUb: 21 }),
-  v("Өндөр босго (оноо 60)", { minBias: 60 }),
-  v("1ц мөн тохирсон", { requireH1Agree: true }),
+  v("Анхны дүрэм"), // i18n-ok: server log, machine reply or research-script name
+  v("Тэг рүү зөөхгүй", { breakeven: false }), // i18n-ok: server log, machine reply or research-script name
+  v("Зөвхөн Нью-Йорк (21–01)", { sessionStartUb: 21, sessionEndUb: 1 }), // i18n-ok: server log, machine reply or research-script name
+  v("Зөвхөн Лондон (15–21)", { sessionStartUb: 15, sessionEndUb: 21 }), // i18n-ok: server log, machine reply or research-script name
+  v("Өндөр босго (оноо 60)", { minBias: 60 }), // i18n-ok: server log, machine reply or research-script name
+  v("1ц мөн тохирсон", { requireH1Agree: true }), // i18n-ok: server log, machine reply or research-script name
   v("Target 1.5×", { rr: 1.5 }),
   v("Target 3×", { rr: 3 }),
-  v("Өргөн stop (ATR×2)", { atrMult: 2 }),
-  v("Нарийн stop (ATR×1)", { atrMult: 1 }),
-  v("Тэг рүү зөөхгүй + target 3×", { breakeven: false, rr: 3 }),
-  v("Тэг рүү зөөхгүй + Нью-Йорк", { breakeven: false, sessionStartUb: 21, sessionEndUb: 1 }),
-  v("Оноо 60 + 1ц тохирсон + тэг рүү зөөхгүй", { minBias: 60, requireH1Agree: true, breakeven: false }),
+  v("Өргөн stop (ATR×2)", { atrMult: 2 }), // i18n-ok: server log, machine reply or research-script name
+  v("Нарийн stop (ATR×1)", { atrMult: 1 }), // i18n-ok: server log, machine reply or research-script name
+  v("Тэг рүү зөөхгүй + target 3×", { breakeven: false, rr: 3 }), // i18n-ok: server log, machine reply or research-script name
+  v("Тэг рүү зөөхгүй + Нью-Йорк", { breakeven: false, sessionStartUb: 21, sessionEndUb: 1 }), // i18n-ok: server log, machine reply or research-script name
+  v("Оноо 60 + 1ц тохирсон + тэг рүү зөөхгүй", { minBias: 60, requireH1Agree: true, breakeven: false }), // i18n-ok: server log, machine reply or research-script name
 ];
 
 export type SegmentStats = { n: number; winRate: number | null; profitFactor: number | null; avgR: number | null; totalR: number; maxDrawdownR: number };

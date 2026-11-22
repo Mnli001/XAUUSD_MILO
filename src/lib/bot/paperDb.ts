@@ -15,7 +15,7 @@ export async function getPaperStart(): Promise<Date | null> {
 /** Starts the forward test. The start time is set once; calling again returns the original time. */
 export async function startPaper(adminId: string, now: Date): Promise<Date> {
   const admin = await findUserById(adminId);
-  if (!admin || admin.role !== "ADMIN") throw new Error("Админ эрх шаардлагатай");
+  if (!admin || admin.role !== "ADMIN") throw new Error("Админ эрх шаардлагатай"); // i18n-ok: never reaches a page, the caller is checked first
   await db.insert(schema.botState).values({ id: ID, startedAt: now }).onConflictDoNothing({ target: schema.botState.id });
   return (await getPaperStart())!;
 }

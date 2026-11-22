@@ -2,6 +2,7 @@ import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
 import { hasAccess } from "../access";
+import { mnT, type T } from "../i18n";
 import { type Command, type LiveConfig, type Report, DEFAULT_LIVE_CONFIG, commandFor, hashToken, newToken, parseConfig, reportSchema } from "./live";
 
 export const ONLINE_WITHIN_MS = 15_000;
@@ -19,8 +20,8 @@ const shape = (row: typeof schema.botLive.$inferSelect) => {
 
 const update = (userId: string, set: Partial<typeof schema.botLive.$inferInsert>) => db.update(schema.botLive).set(set).where(eq(schema.botLive.userId, userId));
 
-export async function saveLiveConfig(userId: string, input: unknown): Promise<{ error?: string }> {
-  const r = parseConfig(input, (await getLive(userId)).config);
+export async function saveLiveConfig(userId: string, input: unknown, t: T = mnT): Promise<{ error?: string }> {
+  const r = parseConfig(input, (await getLive(userId)).config, t);
   if (!r.config) return { error: r.error };
   await update(userId, { config: r.config });
   return {};

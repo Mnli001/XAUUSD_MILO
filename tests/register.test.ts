@@ -24,3 +24,12 @@ test("verifyCredentials accepts the right password only", async () => {
   expect(await verifyCredentials("a@x.mn", "wrong-password")).toBeNull();
   expect(await verifyCredentials("nobody@x.mn", "password1")).toBeNull();
 });
+
+test("a new account starts with the visitor's language, theme and time zone, and is answered in that language", async () => {
+  const { enT } = await import("@/lib/i18n");
+  const prefs = { locale: "en" as const, theme: "light" as const, timeZone: "Europe/London" };
+  expect(await registerUser(fd({ name: "Z", email: "z@x.mn", password: "password1" }), enT, prefs)).toEqual({});
+  const [u] = await db.select().from(schema.users).where(eq(schema.users.email, "z@x.mn"));
+  expect(u).toMatchObject({ locale: "en", theme: "light", timeZone: "Europe/London" });
+  expect((await registerUser(fd({ name: "Z", email: "z@x.mn", password: "password1" }), enT, prefs)).error).toBe("This email is already registered");
+});

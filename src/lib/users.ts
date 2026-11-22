@@ -3,13 +3,14 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import type { User } from "./db/schema";
+import { mnT, type T } from "./i18n";
 
 export const normaliseEmail = (s: string) => s.trim().toLowerCase();
 
-const registerSchema = z.object({
-  name: z.string().trim().min(1, "Нэрээ оруулна уу").max(80),
-  email: z.string().email("Имэйл хаяг буруу байна").max(200),
-  password: z.string().min(8, "Нууц үг 8-аас дээш тэмдэгттэй байх ёстой").max(200),
+const registerSchema = (t: T) => z.object({
+  name: z.string().trim().min(1, t("Нэрээ оруулна уу", "Enter your name")).max(80),
+  email: z.string().email(t("Имэйл хаяг буруу байна", "Invalid email address")).max(200),
+  password: z.string().min(8, t("Нууц үг 8-аас дээш тэмдэгттэй байх ёстой", "Password must be 8 characters or more")).max(200),
 });
 
 export async function findUserByEmail(email: string): Promise<User | null> {
@@ -22,11 +23,11 @@ export async function findUserById(id: string): Promise<User | null> {
   return u ?? null;
 }
 
-export async function createUser(input: { name: unknown; email: unknown; password: unknown }, role: "USER" | "ADMIN" = "USER"): Promise<{ error?: string }> {
-  const parsed = registerSchema.safeParse({ ...input, email: typeof input.email === "string" ? normaliseEmail(input.email) : input.email });
+export async function createUser(input: { name: unknown; email: unknown; password: unknown }, role: "USER" | "ADMIN" = "USER", t: T = mnT): Promise<{ error?: string }> {
+  const parsed = registerSchema(t).safeParse({ ...input, email: typeof input.email === "string" ? normaliseEmail(input.email) : input.email });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { name, email, password } = parsed.data;
-  if (await findUserByEmail(email)) return { error: "Энэ имэйл бүртгэлтэй байна" };
+  if (await findUserByEmail(email)) return { error: t("Энэ имэйл бүртгэлтэй байна", "This email is already registered") };
   await db.insert(schema.users).values({ name, email, passwordHash: await bcrypt.hash(password, 10), role });
   return {};
 }
@@ -48,6 +49,6 @@ export async function ensureAdmin(email: string | undefined, password: string | 
     if (existing.role !== "ADMIN") await db.update(schema.users).set({ role: "ADMIN" }).where(eq(schema.users.id, existing.id));
     return "exists";
   }
-  const r = await createUser({ name: "Админ", email, password }, "ADMIN");
+  const r = await createUser({ name: "Админ", email, password }, "ADMIN"); // i18n-ok: a stored name the admin can change
   return r.error ? "invalid" : "created";
 }

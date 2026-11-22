@@ -3,12 +3,31 @@ import { useEffect, useRef, useState } from "react";
 import { createChart, CandlestickSeries, LineSeries, type UTCTimestamp } from "lightweight-charts";
 import { ema, type Timeframe } from "@/lib/analysis/indicators";
 import type { Levels } from "@/lib/snapshot";
+import { useViewer } from "./PrefsProvider";
+import type { T } from "@/lib/i18n";
+import { zoneShiftMs } from "@/lib/time";
 
-const TFS: [Timeframe, string][] = [["15min", "15м"], ["1h", "1ц"], ["4h", "4ц"], ["1day", "Өдөр"]];
-const UB_SHIFT = 8 * 3600; // the chart renders timestamps as UTC, so shift to show UB time
+const tfs = (t: T): [Timeframe, string][] => [["15min", t("15м", "15m")], ["1h", t("1ц", "1h")], ["4h", t("4ц", "4h")], ["1day", t("Өдөр", "Day")]];
 type Row = { time: number; open: number; high: number; low: number; close: number };
 
+/** Changes whenever the page switches between dark and light, so the canvas can be redrawn in the new colours. */
+function useThemeTick(): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setTick((n) => n + 1);
+    const seen = new MutationObserver(bump);
+    seen.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const device = window.matchMedia("(prefers-color-scheme: light)");
+    device.addEventListener("change", bump);
+    return () => { seen.disconnect(); device.removeEventListener("change", bump); };
+  }, []);
+  return tick;
+}
+
 export function CandleChart({ levels }: { levels: Levels | null }) {
+  const { t, zone, timeZone } = useViewer();
+  const TFS = tfs(t);
+  const themeTick = useThemeTick();
   const ref = useRef<HTMLDivElement>(null);
   const [tf, setTf] = useState<Timeframe>("1h");
   const [status, setStatus] = useState<"loading" | "empty" | "error" | "ok">("loading");
@@ -17,12 +36,16 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
     const el = ref.current;
     if (!el) return;
     let cancelled = false;
+    // The chart paints on a canvas, so it takes the theme's colours as values rather than classes.
+    const css = getComputedStyle(document.documentElement);
+    const c = (name: string) => css.getPropertyValue(name).trim();
+    const up = c("--color-emerald-500"), down = c("--color-red-500"), muted = c("--color-zinc-400"), edge = c("--color-zinc-700");
     const chart = createChart(el, {
       autoSize: true,
-      layout: { background: { color: "transparent" }, textColor: "#a59e8c", fontFamily: "'Golos Text Variable', system-ui, sans-serif" },
-      grid: { vertLines: { color: "#221f17" }, horzLines: { color: "#221f17" } },
-      timeScale: { timeVisible: true, borderColor: "#3d382c" },
-      rightPriceScale: { borderColor: "#3d382c" },
+      layout: { background: { color: "transparent" }, textColor: muted, fontFamily: "'Golos Text Variable', system-ui, sans-serif" },
+      grid: { vertLines: { color: c("--chart-grid") }, horzLines: { color: c("--chart-grid") } },
+      timeScale: { timeVisible: true, borderColor: edge },
+      rightPriceScale: { borderColor: edge },
     });
     setStatus("loading");
     fetch(`/api/candles?tf=${tf}&limit=500`)
@@ -30,17 +53,17 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
       .then(({ candles }: { candles: Row[] }) => {
         if (cancelled) return;
         if (candles.length === 0) return setStatus("empty");
-        const t = (ms: number) => (Math.floor(ms / 1000) + UB_SHIFT) as UTCTimestamp;
-        const series = chart.addSeries(CandlestickSeries, { upColor: "#2ea878", downColor: "#d44b3f", borderVisible: false, wickUpColor: "#2ea878", wickDownColor: "#d44b3f" });
-        series.setData(candles.map((c) => ({ time: t(c.time), open: c.open, high: c.high, low: c.low, close: c.close })));
+        const at = (ms: number) => Math.floor((ms + zoneShiftMs(new Date(ms), timeZone)) / 1000) as UTCTimestamp; // the axis shows the viewer's clock
+        const series = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, borderVisible: false, wickUpColor: up, wickDownColor: down });
+        series.setData(candles.map((c) => ({ time: at(c.time), open: c.open, high: c.high, low: c.low, close: c.close })));
         const closes = candles.map((c) => c.close);
-        for (const [period, color] of [[20, "#e3b44b"], [50, "#6ea8e0"], [200, "#b58ad6"]] as const) {
+        for (const [period, color] of [[20, c("--color-amber-400")], [50, c("--chart-ema50")], [200, c("--chart-ema200")]] as const) {
           const values = ema(closes, period);
           const line = chart.addSeries(LineSeries, { color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-          line.setData(candles.map((c, i) => ({ time: t(c.time), value: values[i] })).filter((p) => !Number.isNaN(p.value)));
+          line.setData(candles.map((c, i) => ({ time: at(c.time), value: values[i] })).filter((p) => !Number.isNaN(p.value)));
         }
         if (levels) {
-          for (const [title, price, color] of [["R1", levels.r1, "#d44b3f"], ["Pivot", levels.p, "#a59e8c"], ["S1", levels.s1, "#2ea878"]] as const) {
+          for (const [title, price, color] of [["R1", levels.r1, down], ["Pivot", levels.p, muted], ["S1", levels.s1, up]] as const) {
             series.createPriceLine({ price, title, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true });
           }
         }
@@ -49,7 +72,7 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
       })
       .catch(() => !cancelled && setStatus("error"));
     return () => { cancelled = true; chart.remove(); };
-  }, [tf, levels]);
+  }, [tf, levels, timeZone, themeTick]);
 
   return (
     <div className="card px-2 sm:px-5">
@@ -58,13 +81,13 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
           <button key={v} onClick={() => setTf(v)} aria-pressed={tf === v}
             className={`min-h-10 min-w-12 rounded-lg px-3 text-sm ${tf === v ? "bg-[var(--accent-bg)] font-semibold text-[var(--accent-fg)]" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
         ))}
-        <span className="flex w-full flex-wrap gap-x-3 text-xs text-zinc-500 sm:ml-auto sm:w-auto"><span className="text-amber-400">EMA20</span><span className="text-[#6ea8e0]">EMA50</span><span className="text-[#b58ad6]">EMA200</span><span>цаг УБ-аар</span></span>
+        <span className="flex w-full flex-wrap gap-x-3 text-xs text-zinc-500 sm:ml-auto sm:w-auto"><span className="text-amber-400">EMA20</span><span className="text-[var(--chart-ema50)]">EMA50</span><span className="text-[var(--chart-ema200)]">EMA200</span><span>{t(`цаг ${zone}-аар`, `times in ${zone}`)}</span></span>
       </div>
       <div className="relative h-[58dvh] max-h-[620px] min-h-[340px]">
         <div ref={ref} className="absolute inset-0" />
         {status !== "ok" && (
           <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
-            {status === "loading" ? "Ачаалж байна…" : status === "empty" ? "Дата ачаалж байна" : "Чартын дата татаж чадсангүй. Хуудсаа дахин ачаална уу."}
+            {status === "loading" ? t("Ачаалж байна…", "Loading…") : status === "empty" ? t("Дата ачаалж байна", "Loading data") : t("Чартын дата татаж чадсангүй. Хуудсаа дахин ачаална уу.", "Could not load chart data. Reload the page.")}
           </div>
         )}
       </div>

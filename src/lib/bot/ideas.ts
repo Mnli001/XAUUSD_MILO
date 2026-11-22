@@ -84,12 +84,12 @@ const oneADay: BotParams = { ...base, maxTradesPerDay: 1 };
 
 /** Fixed before looking at any result: three different kinds of entry, two settings each. */
 export const IDEAS: Idea[] = [
-  { name: "Азийн хүрээний breakout", params: oneADay, build: (c) => asianRangeOrders(c.m15, { rr: 2, news: c.news, params: oneADay }) },
-  { name: "Азийн хүрээний breakout + өдрийн тренд", params: oneADay, build: (c) => asianRangeOrders(c.m15, { rr: 2, news: c.news, params: oneADay, trend: c.daily }) },
-  { name: "Трендийн доторх уналтыг авах (RSI 30)", params: base, build: (c) => dipOrders(c.m15, { ...c, params: base, rsiLow: 30 }) },
-  { name: "Трендийн доторх уналтыг авах (RSI 25)", params: base, build: (c) => dipOrders(c.m15, { ...c, params: base, rsiLow: 25 }) },
-  { name: "Мэдээний дараах хөдөлгөөнийг дагах", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 2 }) },
-  { name: "Мэдээний дараах хөдөлгөөний эсрэг", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 1, fade: true }) },
+  { name: "Азийн хүрээний breakout", params: oneADay, build: (c) => asianRangeOrders(c.m15, { rr: 2, news: c.news, params: oneADay }) }, // i18n-ok: server log, machine reply or research-script name
+  { name: "Азийн хүрээний breakout + өдрийн тренд", params: oneADay, build: (c) => asianRangeOrders(c.m15, { rr: 2, news: c.news, params: oneADay, trend: c.daily }) }, // i18n-ok: server log, machine reply or research-script name
+  { name: "Трендийн доторх уналтыг авах (RSI 30)", params: base, build: (c) => dipOrders(c.m15, { ...c, params: base, rsiLow: 30 }) }, // i18n-ok: server log, machine reply or research-script name
+  { name: "Трендийн доторх уналтыг авах (RSI 25)", params: base, build: (c) => dipOrders(c.m15, { ...c, params: base, rsiLow: 25 }) }, // i18n-ok: server log, machine reply or research-script name
+  { name: "Мэдээний дараах хөдөлгөөнийг дагах", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 2 }) }, // i18n-ok: server log, machine reply or research-script name
+  { name: "Мэдээний дараах хөдөлгөөний эсрэг", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 1, fade: true }) }, // i18n-ok: server log, machine reply or research-script name
 ];
 
 type IdeaInput = Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] };

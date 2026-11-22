@@ -1,8 +1,9 @@
 import { type Candle, type Timeframe, ema, rsi, macdHist, swings } from "./indicators";
+import type { T } from "../i18n";
 
 export const MIN_CANDLES = 210;
 export const WEIGHTS: Record<Timeframe, number> = { "1day": 0.35, "4h": 0.3, "1h": 0.2, "15min": 0.15 };
-export type BiasLabel = "ӨСӨХ хандлага" | "УНАХ хандлага" | "ТОДОРХОЙГҮЙ";
+export type BiasLabel = "ӨСӨХ хандлага" | "УНАХ хандлага" | "ТОДОРХОЙГҮЙ"; // i18n-ok: a stored key, shown through its label function
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -38,9 +39,9 @@ export function timeframeScore(candles: Candle[]): number | null {
 }
 
 export function labelFor(total: number): BiasLabel {
-  if (total >= 20) return "ӨСӨХ хандлага";
-  if (total <= -20) return "УНАХ хандлага";
-  return "ТОДОРХОЙГҮЙ";
+  if (total >= 20) return "ӨСӨХ хандлага"; // i18n-ok: a stored key, shown through its label function
+  if (total <= -20) return "УНАХ хандлага"; // i18n-ok: a stored key, shown through its label function
+  return "ТОДОРХОЙГҮЙ"; // i18n-ok: a stored key, shown through its label function
 }
 
 /** Weighted bias across timeframes; weights are renormalised over the timeframes that have a score. */
@@ -58,4 +59,12 @@ export function combineBias(
   if (weight === 0) return null;
   const total = sum / weight;
   return { total, buyerPct: Math.round(50 + total / 2), label: labelFor(total) };
+}
+
+/** The stored bias label in the viewer's language. */
+export function biasLabelText(label: string, t: T): string {
+  if (label === "ӨСӨХ хандлага") return t("ӨСӨХ хандлага", "BULLISH bias"); // i18n-ok: the stored key on the left
+  if (label === "УНАХ хандлага") return t("УНАХ хандлага", "BEARISH bias"); // i18n-ok
+  if (label === "ТОДОРХОЙГҮЙ") return t("ТОДОРХОЙГҮЙ", "NEUTRAL"); // i18n-ok
+  return label;
 }

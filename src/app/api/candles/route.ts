@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   if (!user || !hasAccess(user, new Date())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const q = new URL(req.url).searchParams;
   const tf = q.get("tf") as Timeframe;
-  if (!TIMEFRAMES.includes(tf)) return NextResponse.json({ error: "tf буруу" }, { status: 400 });
+  if (!TIMEFRAMES.includes(tf)) return NextResponse.json({ error: "tf буруу" }, { status: 400 }); // i18n-ok: server log, machine reply or research-script name
   const limit = Math.min(Math.max(Number(q.get("limit")) || 500, 1), 1000);
   const candles = await loadCandles(SYMBOL, tf, limit);
   return NextResponse.json({ candles: candles.map((c) => ({ ...c, time: c.time.getTime() })) });

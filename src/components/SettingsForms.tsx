@@ -1,32 +1,156 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { changeNameAction, changePasswordAction, type AdminState } from "@/lib/actions/admin";
+import { deleteAccountAction, savePrefsAction, saveSignalPrefsAction, type SettingsState } from "@/lib/actions/settings";
+import type { Prefs } from "@/lib/prefs";
+import { TIME_ZONES } from "@/lib/prefs";
+import { zoneShiftMs } from "@/lib/time";
+import { useT, useViewer } from "./PrefsProvider";
 
-function Feedback({ state }: { state: AdminState }) {
+function Feedback({ state }: { state: { error?: string; ok?: string } }) {
   if (state.error) return <p role="alert" className="text-sm text-red-400">{state.error}</p>;
   if (state.ok) return <p role="status" className="text-sm text-emerald-400">{state.ok}</p>;
   return null;
 }
 
-export function SettingsForms({ name, email }: { name: string; email: string }) {
-  const [nameState, nameAction, namePending] = useActionState<AdminState, FormData>(changeNameAction, {});
-  const [pwState, pwAction, pwPending] = useActionState<AdminState, FormData>(changePasswordAction, {});
+export function ProfileForm({ name, email, access }: { name: string; email: string; access: string }) {
+  const t = useT();
+  const [state, action, pending] = useActionState<AdminState, FormData>(changeNameAction, {});
   return (
-    <div className="grid max-w-3xl gap-4 md:grid-cols-2">
-      <form action={nameAction} className="card space-y-3">
-        <h2 className="text-sm font-medium text-zinc-400">Профайл</h2>
-        <div><span className="label">Имэйл</span><p className="text-sm">{email}</p></div>
-        <div><label className="label" htmlFor="name">Нэр</label><input className="input" id="name" name="name" defaultValue={name} required maxLength={80} /></div>
-        <Feedback state={nameState} />
-        <button className="btn" disabled={namePending}>Хадгалах</button>
-      </form>
-      <form action={pwAction} className="card space-y-3">
-        <h2 className="text-sm font-medium text-zinc-400">Нууц үг солих</h2>
-        <div><label className="label" htmlFor="current">Одоогийн нууц үг</label><input className="input" id="current" name="current" type="password" required autoComplete="current-password" /></div>
-        <div><label className="label" htmlFor="next">Шинэ нууц үг (8-аас дээш тэмдэгт)</label><input className="input" id="next" name="next" type="password" required minLength={8} autoComplete="new-password" /></div>
-        <Feedback state={pwState} />
-        <button className="btn" disabled={pwPending}>Солих</button>
-      </form>
+    <form action={action} className="card space-y-3">
+      <h2 className="card-title">{t("Профайл", "Profile")}</h2>
+      <div><span className="label">{t("Имэйл", "Email")}</span><p className="text-sm break-all">{email}</p></div>
+      <div><label className="label" htmlFor="name">{t("Нэр", "Name")}</label><input className="input" id="name" name="name" defaultValue={name} required maxLength={80} /></div>
+      <div><span className="label">{t("Эрхийн хугацаа", "Access")}</span><p className="text-sm text-zinc-300">{access}</p></div>
+      <Feedback state={state} />
+      <button className="btn" disabled={pending}>{t("Хадгалах", "Save")}</button>
+    </form>
+  );
+}
+
+export function PasswordForm() {
+  const t = useT();
+  const [state, action, pending] = useActionState<AdminState, FormData>(changePasswordAction, {});
+  return (
+    <form action={action} className="card space-y-3">
+      <h2 className="card-title">{t("Нууц үг солих", "Change password")}</h2>
+      <div><label className="label" htmlFor="current">{t("Одоогийн нууц үг", "Current password")}</label><input className="input" id="current" name="current" type="password" required autoComplete="current-password" /></div>
+      <div><label className="label" htmlFor="next">{t("Шинэ нууц үг (8-аас дээш тэмдэгт)", "New password (8 characters or more)")}</label><input className="input" id="next" name="next" type="password" required minLength={8} autoComplete="new-password" /></div>
+      <Feedback state={state} />
+      <button className="btn" disabled={pending}>{t("Солих", "Change")}</button>
+    </form>
+  );
+}
+
+/** A row of choices that reads as one control; picking one saves it straight away. */
+function Choice({ name, label, value, options }: { name: string; label: string; value: string; options: [string, string][] }) {
+  return (
+    <div role="radiogroup" aria-label={label}>
+      <div className="label">{label}</div>
+      <div className="inline-flex max-w-full flex-wrap gap-1 rounded-xl border border-zinc-700 bg-zinc-950 p-1">
+        {options.map(([v, text]) => (
+          <label key={v} className="cursor-pointer">
+            <input type="radio" name={name} value={v} defaultChecked={v === value} className="peer sr-only" onChange={(e) => e.currentTarget.form?.requestSubmit()} />
+            <span className="flex min-h-10 items-center rounded-lg px-3.5 text-sm text-zinc-300 transition-colors peer-checked:bg-[var(--accent-bg)] peer-checked:font-semibold peer-checked:text-[var(--accent-fg)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-amber-400 sm:min-h-9">{text}</span>
+          </label>
+        ))}
+      </div>
     </div>
+  );
+}
+
+export function AppearanceForm({ prefs }: { prefs: Prefs }) {
+  const t = useT();
+  const [state, action] = useActionState<SettingsState, FormData>(savePrefsAction, {});
+  return (
+    <form action={action} className="card space-y-4">
+      <h2 className="card-title">{t("Харагдац", "Appearance")}</h2>
+      <Choice name="locale" label={t("Хэл", "Language")} value={prefs.locale} options={[["mn", "Монгол"], ["en", "English"]]} /* i18n-ok: each language under its own name */ />
+      <Choice name="theme" label={t("Өнгөний горим", "Theme")} value={prefs.theme} options={[["dark", t("Бараан", "Dark")], ["light", t("Цайвар", "Light")], ["system", t("Төхөөрөмжийг дагах", "Follow device")]]} />
+      <Feedback state={state} />
+      <noscript><button className="btn">{t("Хадгалах", "Save")}</button></noscript>
+    </form>
+  );
+}
+
+const offsetLabel = (timeZone: string, now: Date) => {
+  const minutes = Math.round(zoneShiftMs(now, timeZone) / 6e4);
+  const abs = Math.abs(minutes);
+  return `UTC${minutes < 0 ? "-" : "+"}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
+};
+const cityOf = (timeZone: string) => timeZone.slice(timeZone.lastIndexOf("/") + 1).replaceAll("_", " ");
+
+export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date }) {
+  const { t, time } = useViewer();
+  const [state, action] = useActionState<SettingsState, FormData>(savePrefsAction, {});
+  const select = useRef<HTMLSelectElement>(null);
+  const zones = (TIME_ZONES.includes(timeZone) ? TIME_ZONES : [...TIME_ZONES, timeZone])
+    .map((z) => ({ z, shift: zoneShiftMs(now, z) }))
+    .sort((a, b) => a.shift - b.shift || a.z.localeCompare(b.z));
+  const useDevice = () => {
+    const el = select.current;
+    if (!el) return;
+    const device = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (![...el.options].some((o) => o.value === device)) el.add(new Option(`(${offsetLabel(device, new Date())}) ${cityOf(device)}`, device));
+    el.value = device;
+    el.form?.requestSubmit();
+  };
+  return (
+    <form action={action} className="card space-y-3">
+      <h2 className="card-title">{t("Цагийн бүс", "Time zone")}</h2>
+      <p className="text-sm leading-relaxed text-zinc-400">{t("Мэдээний цаг, цагийн магадлал, журнал, дохионы цагийг энэ бүсээр харуулна. Дүрмийн цагууд ч мөн энэ бүс рүү хөрвөнө.", "News times, hourly odds, the journal and signal times are shown in this zone. The hours in the rules are converted to it as well.")}</p>
+      <div>
+        <label className="label" htmlFor="timeZone">{t("Цагийн бүс", "Time zone")}</label>
+        <select ref={select} className="input" id="timeZone" name="timeZone" defaultValue={timeZone} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+          {zones.map(({ z }) => <option key={z} value={z}>{`(${offsetLabel(z, now)}) ${cityOf(z)}`}</option>)}
+        </select>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className="btn-ghost" onClick={useDevice}>{t("Энэ төхөөрөмжийн бүсийг авах", "Use this device's zone")}</button>
+        <span className="font-mono text-sm text-zinc-400">{t("Одоо", "Now")} {time(now)}</span>
+      </div>
+      <Feedback state={state} />
+      <noscript><button className="btn">{t("Хадгалах", "Save")}</button></noscript>
+    </form>
+  );
+}
+
+export function SignalPrefsForm({ paused, muted }: { paused: boolean; muted: string[] }) {
+  const t = useT();
+  const [state, action, pending] = useActionState<SettingsState, FormData>(saveSignalPrefsAction, {});
+  const setups: [string, string][] = [["asian-breakout", t("Азийн хүрээний breakout", "Asian range breakout")], ["trend-dip", t("Тренд доторх уналтыг авах", "Buy the dip within the trend")]];
+  const row = "flex min-h-11 cursor-pointer items-center gap-3 text-sm text-zinc-200";
+  return (
+    <form action={action} className="space-y-3">
+      <fieldset>
+        <legend className="label">{t("Аль setup-ийн дохиог авах", "Which setups to hear about")}</legend>
+        {setups.map(([id, name]) => (
+          <label key={id} className={row}><input type="checkbox" name="setup" value={id} defaultChecked={!muted.includes(id)} className="h-5 w-5 accent-amber-500" />{name}</label>
+        ))}
+      </fieldset>
+      <label className={`${row} border-t border-zinc-800 pt-2`}><input type="checkbox" name="paused" defaultChecked={paused} className="h-5 w-5 accent-amber-500" />{t("Бүх дохиог түр зогсоох (холбоос хэвээр үлдэнэ)", "Pause all signals (Telegram stays linked)")}</label>
+      <Feedback state={state} />
+      <button className="btn" disabled={pending}>{t("Хадгалах", "Save")}</button>
+    </form>
+  );
+}
+
+export function DeleteAccountForm({ isAdmin }: { isAdmin: boolean }) {
+  const t = useT();
+  const [state, action, pending] = useActionState<SettingsState, FormData>(deleteAccountAction, {});
+  return (
+    <section className="card border-red-500/60">
+      <h2 className="card-title text-red-300">{t("Бүртгэл устгах", "Delete account")}</h2>
+      <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, токен, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
+      {isAdmin ? (
+        <p className="mt-3 text-sm text-zinc-500">{t("Админ бүртгэлийг устгах боломжгүй.", "An admin account cannot be deleted.")}</p>
+      ) : (
+        <form action={action} className="mt-3 flex max-w-sm flex-col gap-3">
+          <div><label className="label" htmlFor="deletePassword">{t("Нууц үг", "Password")}</label><input className="input" id="deletePassword" name="password" type="password" required autoComplete="current-password" /></div>
+          <Feedback state={state} />
+          <button className="btn-ghost border-red-500/60 text-red-300" disabled={pending}>{t("Бүртгэлээ устгах", "Delete my account")}</button>
+        </form>
+      )}
+    </section>
   );
 }

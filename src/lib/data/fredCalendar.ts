@@ -21,7 +21,7 @@ export class FredCalendar implements CalendarProvider {
       try {
         res = await fetch(`https://api.stlouisfed.org/fred/release/dates?${q}`, { cache: "no-store" });
       } catch (e) {
-        throw new ProviderError(`FRED руу холбогдож чадсангүй: ${(e as Error).message}`, 0);
+        throw new ProviderError(`FRED руу холбогдож чадсангүй: ${(e as Error).message}`, 0); // i18n-ok: server log, machine reply or research-script name
       }
       const body = (await res.json().catch(() => null)) as { release_dates?: { date: string }[]; error_message?: string } | null;
       if (!res.ok || !body || !Array.isArray(body.release_dates)) {

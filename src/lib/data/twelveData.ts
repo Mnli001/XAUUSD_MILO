@@ -28,7 +28,7 @@ export class TwelveData implements PriceProvider {
     } catch (e) {
       const err = e as Error & { cause?: { code?: string; message?: string } };
       const why = err.cause?.code ?? err.cause?.message ?? err.name;
-      throw new ProviderError(`Twelve Data руу холбогдож чадсангүй: ${err.message} (${why})`, 0);
+      throw new ProviderError(`Twelve Data руу холбогдож чадсангүй: ${err.message} (${why})`, 0); // i18n-ok: server log, machine reply or research-script name
     }
     let body: { status?: string; message?: string; values?: Row[] } | null = null;
     try {
@@ -47,7 +47,7 @@ export class TwelveData implements PriceProvider {
       close: Number(v.close),
     }));
     if (candles.some((c) => Number.isNaN(c.time.getTime()) || ![c.open, c.high, c.low, c.close].every(Number.isFinite))) {
-      throw new ProviderError("Twelve Data-аас буруу форматтай мөр ирлээ", res.status);
+      throw new ProviderError("Twelve Data-аас буруу форматтай мөр ирлээ", res.status); // i18n-ok: server log, machine reply or research-script name
     }
     return candles.sort((a, b) => a.time.getTime() - b.time.getTime());
   }

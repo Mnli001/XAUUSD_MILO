@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   if (!isCronAuthorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const key = process.env.FRED_API_KEY;
-  if (!key) return NextResponse.json({ ok: false, error: "FRED_API_KEY тохируулаагүй байна" }, { status: 503 });
+  if (!key) return NextResponse.json({ ok: false, error: "FRED_API_KEY тохируулаагүй байна" }, { status: 503 }); // i18n-ok: server log, machine reply or research-script name
   const result = await ingestCalendar(new FredCalendar(key), new Date());
   return NextResponse.json(result, { status: result.ok ? 200 : 502 });
 }
