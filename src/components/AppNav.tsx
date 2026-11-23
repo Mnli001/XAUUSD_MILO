@@ -18,7 +18,21 @@ const moreLinks = (t: T) => [["/performance", t("Гүйцэтгэл", "Performan
 
 const isCurrent = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
 
-/** The signed-in shell: a top bar on wide screens, a thumb-reach tab bar on phones and tablets. */
+function Brand() {
+  return (
+    <Link href="/today" className="flex items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
+      <span aria-hidden className="relative flex h-6 w-6 items-center justify-center rounded-full bg-amber-400">
+        <span className="h-2 w-2 rounded-full bg-zinc-950" />
+      </span>
+      XAU Analytics
+    </Link>
+  );
+}
+
+/**
+ * The signed-in shell. Wide screens get a rail drawn as a line with stations: each page is a stop,
+ * the current one filled. Phones and tablets get a slim top bar and a thumb-reach tab bar.
+ */
 export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
   const path = usePathname();
   const t = useT();
@@ -37,48 +51,66 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
   }, [open]);
 
   const item = "flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 hover:bg-zinc-800";
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  // One account menu: pinned into the top bar on phones, to the foot of the rail on wide screens.
+  const userMenu = (
+    <div ref={menuRef} className="fixed top-[calc(env(safe-area-inset-top)+0.375rem)] right-3 z-40 lg:top-auto lg:right-auto lg:bottom-5 lg:left-4 lg:w-52">
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}
+        className="flex min-h-11 w-full max-w-[13rem] items-center gap-2.5 rounded-lg px-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800">
+        <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-xs font-semibold text-zinc-100">{initial}</span>
+        <span className="truncate max-lg:sr-only">{name}</span>
+        <svg aria-hidden viewBox="0 0 12 12" className={`ml-auto h-3 w-3 shrink-0 text-zinc-500 max-lg:hidden transition-transform ${open ? "rotate-180" : ""}`}><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {open && (
+        <div role="menu" className="absolute top-full right-0 z-40 mt-1 w-56 rounded-xl border border-zinc-800 bg-zinc-900 p-1.5 shadow-xl shadow-black/40 lg:top-auto lg:right-auto lg:bottom-full lg:left-0 lg:mt-0 lg:mb-1">
+          {MORE.map(([href, label]) => <Link key={href} role="menuitem" href={href} className={`${item} lg:hidden`}>{label}</Link>)}
+          {isAdmin && <Link role="menuitem" href="/admin/users" className={`${item} text-amber-300`}>{t("Админ", "Admin")}</Link>}
+          <form action={logoutAction}><button role="menuitem" className={`${item} w-full text-left text-zinc-400`}>{t("Гарах", "Sign out")}</button></form>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4">
-          <Link href="/today" className="mr-3 flex items-center gap-2 font-semibold tracking-tight text-zinc-50">
-            <span aria-hidden className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-amber-400" />XAU Analytics
-          </Link>
-          <nav aria-label={t("Үндсэн цэс", "Main menu")} className="hidden h-full items-stretch lg:flex">
-            {[...MAIN, ...MORE].map(([href, label]) => {
+      {/* Wide screens: the line rail. */}
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 px-4 py-5 lg:flex">
+        <div className="px-2"><Brand /></div>
+        <nav aria-label={t("Үндсэн цэс", "Main menu")} className="relative mt-8 flex-1">
+          <span aria-hidden className="absolute top-5 bottom-5 left-[19px] w-[3px] rounded-full bg-zinc-800" />
+          <ul className="relative space-y-0.5">
+            {[...MAIN.map(([href, label]) => [href, label] as const), ...MORE].map(([href, label]) => {
               const on = isCurrent(path, href);
               return (
-                <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                  className={`flex items-center border-b-2 px-3 text-sm transition-colors ${on ? "border-amber-400 text-zinc-50" : "border-transparent text-zinc-400 hover:text-zinc-100"}`}>{label}</Link>
+                <li key={href}>
+                  <Link href={href} aria-current={on ? "page" : undefined}
+                    className={`group flex min-h-10 items-center gap-3.5 rounded-lg pr-3 pl-3 text-sm transition-colors ${on ? "bg-zinc-900 font-semibold text-zinc-50" : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100"}`}>
+                    <span aria-hidden className={`relative z-10 h-[13px] w-[13px] shrink-0 rounded-full border-[3px] transition-colors ${on ? "border-amber-400 bg-amber-400" : "border-zinc-700 bg-zinc-950 group-hover:border-zinc-500"}`} />
+                    {label}
+                  </Link>
+                </li>
               );
             })}
-          </nav>
-          <div ref={menuRef} className="relative ml-auto">
-            <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}
-              className="flex min-h-11 max-w-[11rem] items-center gap-2 rounded-lg px-2 text-sm text-zinc-300 hover:bg-zinc-900">
-              <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold text-amber-300">{name.trim().charAt(0).toUpperCase() || "?"}</span>
-              <span className="truncate">{name}</span>
-              <svg aria-hidden viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-            {open && (
-              <div role="menu" className="absolute right-0 top-full mt-1 w-52 rounded-xl border border-zinc-800 bg-zinc-900 p-1.5 shadow-xl shadow-black/40">
-                {MORE.map(([href, label]) => <Link key={href} role="menuitem" href={href} className={`${item} lg:hidden`}>{label}</Link>)}
-                {isAdmin && <Link role="menuitem" href="/admin/users" className={`${item} text-amber-300`}>{t("Админ", "Admin")}</Link>}
-                <form action={logoutAction}><button role="menuitem" className={`${item} w-full text-left text-zinc-400`}>{t("Гарах", "Sign out")}</button></form>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+          </ul>
+        </nav>
+        <div className="h-12" />
+      </aside>
 
-      <nav aria-label={t("Доод цэс", "Bottom menu")} className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      {/* Phones and tablets: a slim top bar. */}
+      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950 pt-[env(safe-area-inset-top)] lg:hidden">
+        <div className="flex h-14 items-center gap-2 px-4"><Brand /></div>
+      </header>
+      {userMenu}
+
+      <nav aria-label={t("Доод цэс", "Bottom menu")} className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800 bg-zinc-950 pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-6">
           {MAIN.map(([href, label, d]) => {
             const on = isCurrent(path, href);
             return (
               <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[10.5px] ${on ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"}`}>
-                <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+                className={`relative flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${on ? "text-zinc-50" : "text-zinc-500 hover:text-zinc-300"}`}>
+                <span aria-hidden className={`absolute top-0 h-[3px] w-8 rounded-b-full transition-colors ${on ? "bg-amber-400" : "bg-transparent"}`} />
+                <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={on ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
                 {label}
               </Link>
             );
@@ -94,6 +126,6 @@ export function SectionLink({ href, children }: { href: string; children: React.
   const on = isCurrent(usePathname(), href);
   return (
     <Link href={href} aria-current={on ? "page" : undefined}
-      className={`flex h-full items-center border-b-2 px-3 text-sm whitespace-nowrap transition-colors ${on ? "border-amber-400 text-zinc-50" : "border-transparent text-zinc-400 hover:text-zinc-100"}`}>{children}</Link>
+      className={`flex h-full items-center gap-2 border-b-[3px] px-3 text-sm whitespace-nowrap transition-colors ${on ? "border-amber-400 font-semibold text-zinc-50" : "border-transparent text-zinc-400 hover:text-zinc-100"}`}>{children}</Link>
   );
 }

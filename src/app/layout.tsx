@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/golos-text";
+import "@fontsource-variable/geologica/full.css";
 import "./globals.css";
 import { PrefsProvider } from "@/components/PrefsProvider";
 import { getPrefs, getT } from "@/lib/prefs.server";
 
-const DARK = "#0d0c09";
-const LIGHT = "#f6f3ea";
+const DARK = "#0c1620";
+const LIGHT = "#edf1f3";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();

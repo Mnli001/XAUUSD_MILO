@@ -25,5 +25,5 @@ test("starts at the current hour and flags hours near high-impact news", () => {
   const cells = screen.getAllByTestId("hour");
   expect(cells[0]).toHaveTextContent("20:00");
   expect(cells[23]).toHaveTextContent("19:00");
-  expect(screen.getAllByText(/⚠ мэдээ/)).toHaveLength(2); // 21:00 and 22:00 rows (21:30 UB ± 30 min)
+  expect(screen.getAllByTestId("news-flag")).toHaveLength(2); // 21:00 and 22:00 rows (21:30 UB ± 30 min)
 });

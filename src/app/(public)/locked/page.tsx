@@ -14,6 +14,7 @@ export default async function LockedPage() {
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-10">
       <div className="card w-full max-w-md space-y-4 text-center sm:p-6">
+        <span aria-hidden className="mx-auto block h-[13px] w-[13px] rounded-full border-[3px] border-amber-400" />
         <h1 className="page-title">{t("Эрх идэвхгүй", "Access inactive")}</h1>
         <p className="text-zinc-300">{t("Таны эрх идэвхжээгүй байна. Админтай холбогдож эрхээ нээлгэнэ үү.", "Your access is not active. Contact the admin to have it opened.")}</p>
         <p className="text-sm text-zinc-500">{t("Бүртгэлтэй имэйл:", "Registered email:")} {u.email}</p>

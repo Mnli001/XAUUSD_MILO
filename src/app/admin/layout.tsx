@@ -13,19 +13,29 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const t = await getT();
   await requireAdmin();
   return (
-    <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-stretch px-4">
-          <span className="mr-2 flex shrink-0 items-center gap-2 font-semibold tracking-tight"><span aria-hidden className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-amber-400" />{t("Админ", "Admin")}</span>
-          <nav aria-label={t("Админ цэс", "Admin menu")} className="flex min-w-0 flex-1 items-stretch overflow-x-auto">
+    <div className="min-h-dvh bg-zinc-950">
+      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950 pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex h-14 max-w-6xl items-stretch gap-2 px-4">
+          {/* The app's brand mark, with the admin badge beside it. */}
+          <span className="flex shrink-0 items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
+            <span aria-hidden className="relative flex h-6 w-6 items-center justify-center rounded-full bg-amber-400">
+              <span className="h-2 w-2 rounded-full bg-zinc-950" />
+            </span>
+            <span className="hidden sm:inline">XAU Analytics</span>
+            <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-semibold text-amber-300">{t("Админ", "Admin")}</span>
+          </span>
+          <nav aria-label={t("Админ цэс", "Admin menu")} className="ml-2 flex min-w-0 flex-1 items-stretch overflow-x-auto">
             <SectionLink href="/admin/users">{t("Хэрэглэгчид", "Users")}</SectionLink>
             <SectionLink href="/admin/events">{t("Мэдээ", "News")}</SectionLink>
             <SectionLink href="/admin/bot">{t("Ботын судалгаа", "Bot research")}</SectionLink>
           </nav>
-          <Link href="/today" className="ml-2 flex shrink-0 items-center text-sm text-zinc-400 hover:text-zinc-100"><span aria-hidden className="mr-1">←</span><span className="hidden sm:inline">{t("Систем рүү", "To the app")}</span><span className="sm:hidden">{t("Буцах", "Back")}</span></Link>
+          <Link href="/today" className="flex shrink-0 items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100">
+            <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span className="hidden sm:inline">{t("Систем рүү", "To the app")}</span><span className="sm:hidden">{t("Буцах", "Back")}</span>
+          </Link>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-5 sm:py-7">{children}</main>
+      <main className="mx-auto max-w-6xl px-4 py-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] sm:py-8">{children}</main>
     </div>
   );
 }

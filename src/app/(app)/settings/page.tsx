@@ -21,15 +21,18 @@ export default async function SettingsPage() {
   const access = user.role === "ADMIN" ? t("хугацаагүй (админ)", "no expiry (admin)") : user.accessUntil ? t(`${v.dateTime(user.accessUntil)} хүртэл (${v.zone})`, `until ${v.dateTime(user.accessUntil)} (${v.zone})`) : "—";
   const linked = !!user.telegramChatId;
   return (
-    <div className="space-y-4">
-      <h1 className="page-title">{t("Тохиргоо", "Settings")}</h1>
-      <div className="grid max-w-4xl items-start gap-4 md:grid-cols-2">
+    <div className="space-y-4 sm:space-y-5">
+      <div>
+        <h1 className="page-title">{t("Тохиргоо", "Settings")}</h1>
+        <p className="page-lede">{t("Хэл, өнгө, цагийн бүс энэ төхөөрөмж болон таны бүртгэлд хадгалагдана.", "Language, theme and time zone are saved to this device and to your account.")}</p>
+      </div>
+      <div className="grid max-w-4xl items-start gap-4 sm:gap-5 md:grid-cols-2">
         <AppearanceForm prefs={prefsOf(user)} />
         <TimeZoneForm timeZone={v.timeZone} now={new Date()} />
         <ProfileForm name={user.name} email={user.email} access={access} />
         <PasswordForm />
 
-        <div className="space-y-4 md:col-span-2">
+        <div className="space-y-4 sm:space-y-5 md:col-span-2">
           <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} />
           {linked && (
             <section className="card">

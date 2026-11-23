@@ -1,9 +1,11 @@
+import { sessionLabel, sessionOfUbHour, ubHour } from "@/lib/time";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
+import { SESSIONS, sessionColor } from "./SessionLine";
 
 type Bar = { time: string; open: number; high: number; low: number; close: number };
 type Props = { candles: Bar[]; side: "BUY" | "SELL" | null; entry: number | null; stop: number | null; target: number | null; band: { high: number; low: number } | null; v?: Viewer };
 
-const W = 640, H = 240, PAD = 8;
+const W = 640, H = 240, PAD = 8, STRIP = 5, PLOT = H - STRIP - 2 * PAD - 4;
 // Theme colours, so the drawing follows dark and light.
 const GOLD = "var(--color-amber-400)", UP = "var(--color-emerald-500)", DOWN = "var(--color-red-500)";
 const px = (v: number) => v.toFixed(2);
@@ -12,19 +14,27 @@ const px = (v: number) => v.toFixed(2);
 export function SetupChart({ candles, side, entry, stop, target, band, v = MN_VIEWER }: Props) {
   const { t } = v;
   const when = (iso: string) => v.dateTime(new Date(iso)).slice(5);
-  if (candles.length === 0) return <div className="flex h-56 items-center justify-center rounded-xl border border-zinc-800 text-sm text-zinc-500">{t("Лааны дата алга", "No candle data")}</div>;
+  if (candles.length === 0) return <div className="flex h-56 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-sm text-zinc-500">{t("Лааны дата алга", "No candle data")}</div>;
   const lines = ([[t("Орох", "Entry"), entry, GOLD, "0"], ["Stop", stop, DOWN, "6 4"], ["Target", target, UP, "6 4"]] as [string, number | null, string, string][]).filter((l): l is [string, number, string, string] => l[1] !== null);
   const values = [...candles.flatMap((c) => [c.high, c.low]), ...lines.map((l) => l[1]), ...(band ? [band.high, band.low] : [])];
   const min = Math.min(...values), max = Math.max(...values);
   const span = max - min || 1;
-  const y = (price: number) => PAD + (1 - (price - min) / span) * (H - 2 * PAD);
+  const y = (price: number) => PAD + (1 - (price - min) / span) * PLOT;
   const step = W / candles.length;
+  // The session each candle belongs to, merged into runs: the metro line the price travelled on.
+  const runs: { session: string; from: number; to: number }[] = [];
+  candles.forEach((c, i) => {
+    const s = sessionOfUbHour(ubHour(new Date(c.time)));
+    const last = runs.at(-1);
+    if (last && last.session === s) last.to = i + 1;
+    else runs.push({ session: s, from: i, to: i + 1 });
+  });
   const label = side && entry !== null && stop !== null && target !== null
     ? t(`${side} setup: орох ${px(entry)}, stop ${px(stop)}, target ${px(target)}`, `${side} setup: entry ${px(entry)}, stop ${px(stop)}, target ${px(target)}`)
     : t(`Сүүлийн ${candles.length} лаа, хаалт ${px(candles.at(-1)!.close)}`, `Last ${candles.length} candles, close ${px(candles.at(-1)!.close)}`);
   return (
-    <figure>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label} className="h-56 w-full rounded-xl border border-zinc-800 bg-zinc-950 sm:h-64">
+    <figure className="m-0">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={label} className="h-56 w-full rounded-lg border border-zinc-800 bg-zinc-950 sm:h-64">
         {band && <rect x="0" width={W} y={y(band.high)} height={Math.max(y(band.low) - y(band.high), 1)} fill={GOLD} opacity="0.1" />}
         {candles.map((c, i) => {
           const x = i * step + step / 2;
@@ -37,14 +47,23 @@ export function SetupChart({ candles, side, entry, stop, target, band, v = MN_VI
             </g>
           );
         })}
-        {lines.map(([name, price, color, dash]) => <line key={name} x1="0" x2={W} y1={y(price)} y2={y(price)} stroke={color} strokeWidth="1.5" strokeDasharray={dash} vectorEffect="non-scaling-stroke" />)}
+        {lines.map(([name, price, color, dash]) => <line key={name} x1="0" x2={W} y1={y(price)} y2={y(price)} stroke={color} strokeWidth={dash === "0" ? 2 : 1.5} strokeDasharray={dash} vectorEffect="non-scaling-stroke" />)}
+        {runs.map((r) => <rect key={r.from} x={r.from * step + 1} width={Math.max((r.to - r.from) * step - 2, 1)} y={H - STRIP - 3} height={STRIP} rx={2.5} fill={sessionColor(r.session)} />)}
       </svg>
-      <figcaption className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
-        {lines.map(([name, price, color]) => (
-          <span key={name} className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-0.5 w-4" style={{ background: color }} /><span>{name}</span><span className="font-mono text-zinc-200">{px(price)}</span></span>
-        ))}
-        {band && <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-2.5 w-4 rounded-sm" style={{ background: GOLD, opacity: 0.3 }} /><span>{t("Азийн хүрээ", "Asian range")}</span><span className="font-mono text-zinc-200">{px(band.low)}–{px(band.high)}</span></span>}
-        <span className="ml-auto font-mono whitespace-nowrap text-zinc-500">{when(candles[0].time)} → {when(candles.at(-1)!.time)} {v.zone}</span>
+      <figcaption className="mt-2.5 space-y-1.5 text-xs text-zinc-400">
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {lines.map(([name, price, color, dash]) => (
+            <span key={name} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              {dash === "0" ? <span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: color }} /> : <span aria-hidden className="w-4 border-t-2 border-dashed" style={{ borderColor: color }} />}
+              <span>{name}</span><span className="font-medium text-zinc-200 tabular-nums">{px(price)}</span>
+            </span>
+          ))}
+          {band && <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-2.5 w-4 rounded-sm" style={{ background: GOLD, opacity: 0.3 }} /><span>{t("Азийн хүрээ", "Asian range")}</span><span className="font-medium text-zinc-200 tabular-nums">{px(band.low)}–{px(band.high)}</span></span>}
+        </span>
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-zinc-500">
+          {SESSIONS.map((s) => <span key={s.key} className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: s.color }} />{sessionLabel(s.key, t)}</span>)}
+          <span className="whitespace-nowrap tabular-nums sm:ml-auto">{when(candles[0].time)} → {when(candles.at(-1)!.time)} {v.zone}</span>
+        </span>
       </figcaption>
     </figure>
   );

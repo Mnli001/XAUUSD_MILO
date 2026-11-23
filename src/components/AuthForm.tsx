@@ -11,9 +11,19 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [state, action, pending] = useActionState<FormState, FormData>(mode === "login" ? loginAction : registerAction, {});
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
-    <Link href="/" className="mb-6 flex items-center gap-2 font-semibold tracking-tight text-zinc-50"><span aria-hidden className="h-2.5 w-2.5 rotate-45 rounded-[2px] bg-amber-400" />XAU Analytics</Link>
-    <div className="mb-3 flex w-full max-w-sm justify-end"><LanguageSwitch locale={locale} /></div>
-    <form action={action} className="card w-full max-w-sm space-y-4 sm:p-6">
+    <div className="mb-5 flex w-full max-w-sm items-center justify-between">
+      <Link href="/" className="flex items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
+        <span aria-hidden className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400"><span className="h-2 w-2 rounded-full bg-zinc-950" /></span>XAU Analytics
+      </Link>
+      <LanguageSwitch locale={locale} />
+    </div>
+    <form action={action} className="card w-full max-w-sm space-y-4 pt-0 sm:p-6 sm:pt-0">
+      {/* The day in miniature: the three session lines with their stations. */}
+      <div aria-hidden className="relative mt-6 mb-5 flex h-3 items-center gap-1">
+        <span className="h-[5px] flex-[7] rounded-full bg-asia" /><span className="h-[5px] flex-[6] rounded-full bg-london" /><span className="h-[5px] flex-[8] rounded-full bg-ny" />
+        <span className="absolute left-[33%] h-[11px] w-[11px] -translate-x-1/2 rounded-full border-[3px] border-zinc-900 bg-zinc-50" />
+        <span className="absolute left-[62%] h-[11px] w-[11px] -translate-x-1/2 rounded-full border-[3px] border-zinc-900 bg-zinc-50" />
+      </div>
       <h1 className="page-title">{mode === "login" ? t("Нэвтрэх", "Sign in") : t("Бүртгүүлэх", "Register")}</h1>
       {mode === "register" && (
         <div>
@@ -34,8 +44,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       {state.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
       <button className="btn w-full" disabled={pending}>{pending ? t("Түр хүлээнэ үү…", "Please wait…") : mode === "login" ? t("Нэвтрэх", "Sign in") : t("Бүртгүүлэх", "Register")}</button>
       <p className="text-center text-sm text-zinc-400">
-        {mode === "login" ? <>{t("Бүртгэлгүй юу?", "No account?")} <Link className="text-amber-400" href="/register">{t("Бүртгүүлэх", "Register")}</Link></>
-          : <>{t("Бүртгэлтэй юу?", "Already registered?")} <Link className="text-amber-400" href="/login">{t("Нэвтрэх", "Sign in")}</Link></>}
+        {mode === "login" ? <>{t("Бүртгэлгүй юу?", "No account?")} <Link className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href="/register">{t("Бүртгүүлэх", "Register")}</Link></>
+          : <>{t("Бүртгэлтэй юу?", "Already registered?")} <Link className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href="/login">{t("Нэвтрэх", "Sign in")}</Link></>}
       </p>
     </form>
     </main>

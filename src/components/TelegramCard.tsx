@@ -13,15 +13,15 @@ export function TelegramCard({ configured, linked, isAdmin }: { configured: bool
   const ok = test.ok ?? unlink.ok;
   return (
     <section className="card">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-semibold text-zinc-50">{t("Дохиог Telegram-аар авах", "Get signals on Telegram")}</h2>
-        <span className={`rounded-md border px-2 py-0.5 text-xs font-medium ${linked ? "border-emerald-400/60 bg-emerald-400/10 text-emerald-400" : "border-zinc-700 text-zinc-400"}`}>{linked ? t("Холбогдсон", "Linked") : t("Холбогдоогүй", "Not linked")}</span>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <h2 className="text-[15px] font-semibold text-zinc-100">{t("Дохиог Telegram-аар авах", "Get signals on Telegram")}</h2>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${linked ? "bg-emerald-500/15 text-emerald-400" : "border border-zinc-800 text-zinc-400"}`}><span aria-hidden className={`h-1.5 w-1.5 rounded-full ${linked ? "bg-emerald-400" : "bg-zinc-600"}`} />{linked ? t("Холбогдсон", "Linked") : t("Холбогдоогүй", "Not linked")}</span>
       </div>
-      <p className="mt-1.5 max-w-prose text-sm leading-relaxed text-zinc-300">{t("Setup “Идэвхтэй” болох мөчид орох, stop, target, биелсэн нөхцөл, дүрмийн түүхэн үр дүнг бичсэн мессеж утсанд чинь ирнэ. Систем 5 минут тутам шалгадаг. Арилжааг та өөрөө нээнэ.", "The moment a setup becomes “Active”, a message with the entry, stop, target, the conditions met and the rule's historical record arrives on your phone. The system checks every 5 minutes. You open the trade yourself.")}</p>
+      <p className="mt-2 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Setup “Идэвхтэй” болох мөчид орох, stop, target, биелсэн нөхцөл, дүрмийн түүхэн үр дүнг бичсэн мессеж утсанд чинь ирнэ. Систем 5 минут тутам шалгадаг. Арилжааг та өөрөө нээнэ.", "The moment a setup becomes “Active”, a message with the entry, stop, target, the conditions met and the rule's historical record arrives on your phone. The system checks every 5 minutes. You open the trade yourself.")}</p>
 
       {!configured ? (
         isAdmin ? (
-          <ol className="mt-3 max-w-prose list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">
+          <ol className="mt-4 max-w-prose list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-300 marker:font-semibold marker:text-zinc-500">
             <li>{t("Telegram дээр ", "In Telegram open ")}<strong>@BotFather</strong>{t("-ийг нээж ", ", send ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/newbot</code>{t(" гэж бичээд бот үүсгэнэ. Төгсгөлд нь токен өгнө.", " and create a bot. At the end it gives you a token.")}</li>
             <li>{t("Railway дээр ", "On Railway, under ")}<strong>xau-analytics → Variables</strong>{t(" хэсэгт ", ", add a variable named ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5 break-all">TELEGRAM_BOT_TOKEN</code>{t(" нэртэй хувьсагч нэмж токеноо утга болгон тавина.", " with the token as its value.")}</li>
             <li>{t("Railway дахин ачаалсны дараа энэ хуудсыг шинэчлэхэд “Telegram холбох” товч гарна.", "After Railway redeploys, refresh this page and the “Link Telegram” button appears.")}</li>

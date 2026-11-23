@@ -8,8 +8,8 @@ import { zoneShiftMs } from "@/lib/time";
 import { useT, useViewer } from "./PrefsProvider";
 
 function Feedback({ state }: { state: { error?: string; ok?: string } }) {
-  if (state.error) return <p role="alert" className="text-sm text-red-400">{state.error}</p>;
-  if (state.ok) return <p role="status" className="text-sm text-emerald-400">{state.ok}</p>;
+  if (state.error) return <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">{state.error}</p>;
+  if (state.ok) return <p role="status" className="flex items-center gap-2 text-sm text-emerald-400"><span aria-hidden className="h-2 w-2 rounded-full bg-emerald-400" />{state.ok}</p>;
   return null;
 }
 
@@ -19,7 +19,7 @@ export function ProfileForm({ name, email, access }: { name: string; email: stri
   return (
     <form action={action} className="card space-y-3">
       <h2 className="card-title">{t("Профайл", "Profile")}</h2>
-      <div><span className="label">{t("Имэйл", "Email")}</span><p className="text-sm break-all">{email}</p></div>
+      <div><span className="label">{t("Имэйл", "Email")}</span><p className="text-sm break-all text-zinc-100">{email}</p></div>
       <div><label className="label" htmlFor="name">{t("Нэр", "Name")}</label><input className="input" id="name" name="name" defaultValue={name} required maxLength={80} /></div>
       <div><span className="label">{t("Эрхийн хугацаа", "Access")}</span><p className="text-sm text-zinc-300">{access}</p></div>
       <Feedback state={state} />
@@ -107,7 +107,7 @@ export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date })
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className="btn-ghost" onClick={useDevice}>{t("Энэ төхөөрөмжийн бүсийг авах", "Use this device's zone")}</button>
-        <span className="font-mono text-sm text-zinc-400">{t("Одоо", "Now")} {time(now)}</span>
+        <span className="flex items-center gap-2 text-sm text-zinc-400"><span aria-hidden className="h-[13px] w-[13px] rounded-full border-[3px] border-zinc-50 bg-amber-400" />{t("Одоо", "Now")} <span className="font-semibold text-zinc-100 tabular-nums">{time(now)}</span></span>
       </div>
       <Feedback state={state} />
       <noscript><button className="btn">{t("Хадгалах", "Save")}</button></noscript>
@@ -139,7 +139,7 @@ export function DeleteAccountForm({ isAdmin }: { isAdmin: boolean }) {
   const t = useT();
   const [state, action, pending] = useActionState<SettingsState, FormData>(deleteAccountAction, {});
   return (
-    <section className="card border-red-500/60">
+    <section className="card border-red-500/50">
       <h2 className="card-title text-red-300">{t("Бүртгэл устгах", "Delete account")}</h2>
       <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, токен, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
       {isAdmin ? (

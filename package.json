@@ -17,9 +17,11 @@
     "backtest": "tsx --env-file=.env scripts/backtest.ts",
     "variants": "tsx --env-file=.env scripts/variants.ts",
     "ideas": "tsx --env-file=.env scripts/ideas.ts",
-    "calendar": "tsx --env-file=.env scripts/calendar.ts"
+    "calendar": "tsx --env-file=.env scripts/calendar.ts",
+    "demo": "tsx --env-file=.env scripts/demo-data.ts"
   },
   "dependencies": {
+    "@fontsource-variable/geologica": "^5.3.0",
     "@fontsource-variable/golos-text": "^5.3.0",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.4",

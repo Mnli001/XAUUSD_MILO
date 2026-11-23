@@ -3,74 +3,137 @@ import type { Timeframe } from "@/lib/analysis/indicators";
 import { biasLabelText } from "@/lib/analysis/bias";
 import type { T } from "@/lib/i18n";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
+import { Dir } from "./Timetable";
 
 export const loadingText = (t: T) => t("Дата ачаалж байна", "Loading data");
 const tfLabels = (t: T): [Timeframe, string][] => [["1day", t("Өдөр", "Day")], ["4h", t("4ц", "4h")], ["1h", t("1ц", "1h")], ["15min", t("15м", "15m")]];
 const money = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(Math.round(n))}`;
 
 export function Empty({ title, v = MN_VIEWER }: { title: string; v?: Viewer }) {
-  return <div className="card"><h2 className="card-title">{title}</h2><p className="text-zinc-500">{loadingText(v.t)}</p></div>;
-}
-
-export function PriceHeader({ price, bias, v = MN_VIEWER }: Pick<TodaySnapshot, "price" | "bias"> & { v?: Viewer }) {
-  const { t } = v;
-  if (!price) return <Empty title="XAUUSD" v={v} />;
-  const up = (price.changePct ?? 0) >= 0;
-  const labelColor = bias?.label === "ӨСӨХ хандлага" ? "text-emerald-400" : bias?.label === "УНАХ хандлага" ? "text-red-400" : "text-zinc-300"; // i18n-ok: compared with the stored label
   return (
-    <div className="card flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-      <div className="min-w-0">
-        <div className="text-sm text-zinc-400">{t("Алт, XAUUSD", "Gold, XAUUSD")}</div>
-        <div className="flex flex-wrap items-baseline gap-x-3">
-          <span className="font-mono text-4xl font-semibold tracking-tight sm:text-5xl">{money(price.last)}</span>
-          {price.changePct !== null && <span className={up ? "text-emerald-400" : "text-red-400"}>{up ? "▲" : "▼"} {Math.abs(price.changePct).toFixed(2)}%</span>}
-        </div>
-        <div className="mt-1 text-xs text-zinc-500">
-          {t("Сүүлд шинэчлэгдсэн", "Last updated")} {v.time(price.updatedAt)}
-          {price.stale && <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
-        </div>
-      </div>
-      {bias && <div className="sm:text-right"><div className="text-sm text-zinc-400">{t("Чиглэл", "Direction")}</div><div className={`text-xl font-semibold sm:text-2xl ${labelColor}`}>{biasLabelText(bias.label, t)}</div></div>}
+    <div className="card">
+      <h2 className="card-title">{title}</h2>
+      <p className="flex items-center gap-2 text-sm text-zinc-500"><span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500" />{loadingText(v.t)}</p>
     </div>
   );
 }
 
+/** Price, change and freshness: the line above the day diagram. */
+export function PriceHeader({ price, date, v = MN_VIEWER }: Pick<TodaySnapshot, "price"> & { date?: string; v?: Viewer }) {
+  const { t } = v;
+  if (!price) return <p className="text-sm text-zinc-500">XAUUSD · {loadingText(t)}</p>;
+  const up = (price.changePct ?? 0) >= 0;
+  return (
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1.5">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <span className="text-[13px] text-zinc-400">XAUUSD</span>
+          <span className="text-[26px] leading-none font-bold tracking-[-0.02em] text-zinc-50 tabular-nums sm:text-[34px]">{money(price.last)}</span>
+          {price.changePct !== null && (
+            <span className={`rounded-md px-1.5 py-0.5 text-sm font-semibold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+              <Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="text-xs text-zinc-500 sm:text-right">
+        {date && <span className="block text-zinc-400 sm:mb-0.5">{date}</span>}
+        <span className="whitespace-nowrap">{t("Шинэчлэгдсэн", "Updated")} <span className="text-zinc-300 tabular-nums">{v.time(price.updatedAt)}</span> {v.zone}</span>
+        {price.stale && <span className="ml-2 rounded-md bg-amber-400/15 px-1.5 py-0.5 font-medium text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
+      </div>
+    </div>
+  );
+}
+
+/** The day's answer, set larger than anything else on the screen. */
 export function BiasBar({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias"> & { v?: Viewer }) {
   const { t } = v;
   if (!bias) return <Empty title={t("Давамгай тал", "Dominant side")} v={v} />;
+  const dir = bias.label === "ӨСӨХ хандлага" ? 1 : bias.label === "УНАХ хандлага" ? -1 : 0; // i18n-ok: compared with the stored label
+  const text = biasLabelText(bias.label, t);
+  const [head, ...rest] = text.split(" ");
+  const tone = dir > 0 ? "text-emerald-400" : dir < 0 ? "text-red-400" : "text-zinc-200";
   return (
-    <div className="card">
-      <h2 className="card-title">{t("Давамгай тал", "Dominant side")}</h2>
-      <div className="mb-1.5 flex justify-between gap-3 text-sm"><span className="text-emerald-400">{t("Худалдан авагч", "Buyers")} {bias.buyerPct}%</span><span className="text-red-400">{t("Худалдагч", "Sellers")} {100 - bias.buyerPct}%</span></div>
-      <div className="flex h-3 overflow-hidden rounded-full bg-red-500/70" role="img" aria-label={t(`Худалдан авагч ${bias.buyerPct}%`, `Buyers ${bias.buyerPct}%`)}>
-        <div className="bg-emerald-500" style={{ width: `${bias.buyerPct}%` }} />
+    <section className="card" aria-labelledby="bias-h">
+      <h2 id="bias-h" className="card-title">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <p className={`flex items-baseline gap-2.5 font-extrabold tracking-[-0.03em] ${tone}`}>
+          <Dir d={dir} className="text-4xl sm:text-5xl" />
+          <span className="text-5xl leading-none sm:text-6xl">{head}</span>
+          {rest.length > 0 && <span className="text-lg font-semibold tracking-normal sm:text-xl">{rest.join(" ")}</span>}
+        </p>
+        <p className="flex items-baseline gap-2 text-sm text-zinc-400 sm:block sm:text-right">{t("Нийт оноо", "Total score")} <span className={`text-2xl sm:block font-bold tabular-nums ${tone}`}>{signed(bias.total)}</span></p>
       </div>
-      <div className="mt-4 grid grid-cols-4 gap-2 text-sm sm:flex sm:flex-wrap">
+
+      <div className="mt-4 sm:mt-5">
+        <div className="mb-1.5 flex justify-between gap-3 text-[13px]"><span className="text-emerald-400">{t("Худалдан авагч", "Buyers")} <b className="tabular-nums">{bias.buyerPct}%</b></span><span className="text-red-400">{t("Худалдагч", "Sellers")} <b className="tabular-nums">{100 - bias.buyerPct}%</b></span></div>
+        <div className="flex h-[7px] gap-1" role="img" aria-label={t(`Худалдан авагч ${bias.buyerPct}%`, `Buyers ${bias.buyerPct}%`)}>
+          <div className="rounded-full bg-emerald-500" style={{ width: `${bias.buyerPct}%` }} />
+          <div className="flex-1 rounded-full bg-red-500" />
+        </div>
+      </div>
+
+      <dl className="mt-4 sm:mt-5 grid grid-cols-4 divide-x divide-zinc-800 rounded-lg border border-zinc-800">
         {tfLabels(t).map(([tf, label]) => {
           const s = bias.perTimeframe[tf];
+          const c = s === null || s === undefined ? "text-zinc-500" : s >= 20 ? "text-emerald-400" : s <= -20 ? "text-red-400" : "text-zinc-300";
           return (
-            <span key={tf} className="flex flex-col items-center gap-0.5 rounded-lg border border-zinc-800 px-2 py-1.5 font-mono sm:flex-row sm:gap-1.5">
-              <span className="text-xs text-zinc-400 sm:text-sm">{label}</span>
-              {s === null || s === undefined ? <span className="text-zinc-500">—</span> : s >= 20 ? <span className="text-emerald-400">▲ {Math.round(s)}</span> : s <= -20 ? <span className="text-red-400">▼ {Math.round(s)}</span> : <span className="text-zinc-300">● {Math.round(s)}</span>}
-            </span>
+            <div key={tf} className="px-2 py-2.5 text-center">
+              <dt className="text-xs text-zinc-500">{label}</dt>
+              <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${c}`}>{s === null || s === undefined ? "—" : <><Dir d={s >= 20 ? 1 : s <= -20 ? -1 : 0} /> {signed(s)}</>}</dd>
+            </div>
           );
         })}
-      </div>
-      <p className="mt-3 text-xs text-zinc-500">{t("Оноо −100…+100: тренд (EMA20/50/200), моментум (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%.")}</p>
-    </div>
+      </dl>
+      <details className="group mt-3">
+        <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200">
+          <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 transition-transform group-open:rotate-90"><path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {t("Оноо хэрхэн тооцогддог вэ", "How the score is built")}
+        </summary>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t("Оноо −100…+100: тренд (EMA20/50/200), моментум (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%.")}</p>
+      </details>
+    </section>
   );
 }
 
-export function LevelsCard({ levels, v = MN_VIEWER }: Pick<TodaySnapshot, "levels"> & { v?: Viewer }) {
+export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot, "levels"> & { price?: number; v?: Viewer }) {
   const { t } = v;
   if (!levels) return <Empty title={t("Гол түвшин", "Key levels")} v={v} />;
-  const items: [string, number | null][] = [["R2", levels.r2], ["R1", levels.r1], ["Pivot", levels.p], ["S1", levels.s1], ["S2", levels.s2], [t("Өчигдрийн оргил", "Yesterday's high"), levels.prevHigh], [t("Өчигдрийн ёроол", "Yesterday's low"), levels.prevLow], [t("Өдрийн ATR", "Daily ATR"), levels.atr]];
+  const ladder: [string, number][] = [["R2", levels.r2], ["R1", levels.r1], ["Pivot", levels.p], ["S1", levels.s1], ["S2", levels.s2]];
+  const extra: [string, number | null][] = [[t("Өчигдрийн оргил", "Yesterday's high"), levels.prevHigh], [t("Өчигдрийн ёроол", "Yesterday's low"), levels.prevLow], [t("Өдрийн ATR", "Daily ATR"), levels.atr]];
+  // Where the price sits on the ladder: the row it is just above gets the marker.
+  const idx = price === undefined ? -1 : ladder.findIndex(([, val]) => price >= val);
   return (
-    <div className="card">
-      <h2 className="card-title">{t("Гол түвшин", "Key levels")}</h2>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm min-[420px]:grid-cols-2 lg:grid-cols-1">
-        {items.map(([k, val]) => <div key={k} className="flex items-baseline justify-between gap-2"><dt className="text-zinc-400">{k}</dt><dd className="font-mono">{val === null ? "—" : money(val)}</dd></div>)}
+    <section className="card" aria-labelledby="levels-h">
+      <h2 id="levels-h" className="card-title">{t("Гол түвшин", "Key levels")}</h2>
+      <ol className="relative space-y-0">
+        <span aria-hidden className="absolute top-3 bottom-3 left-[5px] w-[3px] rounded-full bg-zinc-800" />
+        {ladder.map(([k, val], i) => (
+          <li key={k}>
+            {i === idx && price !== undefined && (
+              <div className="relative flex items-center gap-3 py-1 text-xs font-semibold text-amber-300">
+                <span aria-hidden className="relative z-10 h-[13px] w-[13px] rounded-full border-[3px] border-zinc-50 bg-amber-400" />
+                {t("Одоо", "Now")} <span className="ml-auto tabular-nums">{money(price)}</span>
+              </div>
+            )}
+            <div className="relative flex items-baseline gap-3 py-1.5 text-sm">
+              <span aria-hidden className={`relative z-10 h-[13px] w-[13px] shrink-0 self-center rounded-full border-[3px] bg-zinc-900 ${k.startsWith("R") ? "border-red-400" : k.startsWith("S") ? "border-emerald-400" : "border-zinc-400"}`} />
+              <span className="text-zinc-400">{k}</span>
+              <span className="ml-auto font-medium text-zinc-100 tabular-nums">{money(val)}</span>
+            </div>
+          </li>
+        ))}
+        {idx === -1 && price !== undefined && (
+          <li className="relative flex items-center gap-3 py-1 text-xs font-semibold text-amber-300">
+            <span aria-hidden className="relative z-10 h-[13px] w-[13px] rounded-full border-[3px] border-zinc-50 bg-amber-400" />
+            {t("Одоо", "Now")} <span className="ml-auto tabular-nums">{money(price)}</span>
+          </li>
+        )}
+      </ol>
+      <dl className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3 text-sm">
+        {extra.map(([k, val]) => <div key={k} className="flex items-baseline justify-between gap-2"><dt className="text-zinc-400">{k}</dt><dd className="tabular-nums">{val === null ? "—" : money(val)}</dd></div>)}
       </dl>
-    </div>
+    </section>
   );
 }

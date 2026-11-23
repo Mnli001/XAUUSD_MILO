@@ -39,11 +39,13 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
     // The chart paints on a canvas, so it takes the theme's colours as values rather than classes.
     const css = getComputedStyle(document.documentElement);
     const c = (name: string) => css.getPropertyValue(name).trim();
-    const up = c("--color-emerald-500"), down = c("--color-red-500"), muted = c("--color-zinc-400"), edge = c("--color-zinc-700");
+    const up = c("--color-emerald-500"), down = c("--color-red-500"), muted = c("--color-zinc-400"), edge = c("--color-zinc-800");
+    const cross = { color: c("--color-zinc-600"), labelBackgroundColor: c("--color-zinc-700") };
     const chart = createChart(el, {
       autoSize: true,
-      layout: { background: { color: "transparent" }, textColor: muted, fontFamily: "'Golos Text Variable', system-ui, sans-serif" },
+      layout: { background: { color: "transparent" }, textColor: muted, fontFamily: c("--font-sans") || "system-ui, sans-serif" },
       grid: { vertLines: { color: c("--chart-grid") }, horzLines: { color: c("--chart-grid") } },
+      crosshair: { vertLine: cross, horzLine: cross },
       timeScale: { timeVisible: true, borderColor: edge },
       rightPriceScale: { borderColor: edge },
     });
@@ -74,23 +76,32 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
     return () => { cancelled = true; chart.remove(); };
   }, [tf, levels, timeZone, themeTick]);
 
+  const keys: [string, string][] = [["EMA20", "var(--color-amber-400)"], ["EMA50", "var(--chart-ema50)"], ["EMA200", "var(--chart-ema200)"]];
+  const levelKeys: [string, string][] = [["R1", "var(--color-red-500)"], ["Pivot", "var(--color-zinc-400)"], ["S1", "var(--color-emerald-500)"]];
   return (
-    <div className="card px-2 sm:px-5">
-      <div className="mb-3 flex flex-wrap items-center gap-2 px-2 sm:px-0">
-        {TFS.map(([v, label]) => (
-          <button key={v} onClick={() => setTf(v)} aria-pressed={tf === v}
-            className={`min-h-10 min-w-12 rounded-lg px-3 text-sm ${tf === v ? "bg-[var(--accent-bg)] font-semibold text-[var(--accent-fg)]" : "border border-zinc-700 text-zinc-300 hover:bg-zinc-800"}`}>{label}</button>
-        ))}
-        <span className="flex w-full flex-wrap gap-x-3 text-xs text-zinc-500 sm:ml-auto sm:w-auto"><span className="text-amber-400">EMA20</span><span className="text-[var(--chart-ema50)]">EMA50</span><span className="text-[var(--chart-ema200)]">EMA200</span><span>{t(`цаг ${zone}-аар`, `times in ${zone}`)}</span></span>
+    <div className="card px-0 pb-3 sm:px-0 sm:pb-4">
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 sm:px-5">
+        <div role="group" aria-label={t("Цагийн хүрээ", "Timeframe")} className="inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-1">
+          {TFS.map(([v, label]) => (
+            <button key={v} onClick={() => setTf(v)} aria-pressed={tf === v}
+              className={`min-h-10 min-w-12 rounded-md px-3 text-sm tabular-nums transition-colors ${tf === v ? "bg-[var(--accent-bg)] font-semibold text-[var(--accent-fg)]" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>{label}</button>
+          ))}
+        </div>
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-400 sm:ml-auto">
+          {keys.map(([name, color]) => <li key={name} className="flex items-center gap-1.5"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: color }} />{name}</li>)}
+          {levelKeys.map(([name, color]) => <li key={name} className="flex items-center gap-1.5"><span aria-hidden className="w-4 border-t-2 border-dashed" style={{ borderColor: color }} />{name}</li>)}
+        </ul>
       </div>
-      <div className="relative h-[58dvh] max-h-[620px] min-h-[340px]">
+      <div className="relative h-[58dvh] max-h-[620px] min-h-[340px] border-y border-zinc-800">
         <div ref={ref} className="absolute inset-0" />
         {status !== "ok" && (
-          <div className="absolute inset-0 flex items-center justify-center text-zinc-500">
+          <div className="absolute inset-0 flex items-center justify-center gap-2 px-6 text-center text-sm text-zinc-500">
+            {status !== "error" && <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500" />}
             {status === "loading" ? t("Ачаалж байна…", "Loading…") : status === "empty" ? t("Дата ачаалж байна", "Loading data") : t("Чартын дата татаж чадсангүй. Хуудсаа дахин ачаална уу.", "Could not load chart data. Reload the page.")}
           </div>
         )}
       </div>
+      <p className="mt-3 px-4 text-xs text-zinc-500 sm:px-5">{t(`Цаг ${zone}-аар. Ногоон лаа өссөн, улаан лаа унасан.`, `Times in ${zone}. Green candles closed up, red candles closed down.`)}</p>
     </div>
   );
 }

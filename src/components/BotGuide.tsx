@@ -6,19 +6,21 @@ import { MN_VIEWER, type Viewer } from "@/lib/viewer";
  * language has its own wording (…Mn and …En below) inside one shared layout.
  */
 type Step = [string, ReactNode];
-const CODE = "rounded bg-zinc-800 px-1.5 py-0.5";
+const CODE = "rounded bg-zinc-800 px-1.5 py-0.5 text-[13px] text-zinc-100";
 
 function Summary({ children }: { children: ReactNode }) {
-  return <summary className="flex min-h-6 cursor-pointer items-center justify-between gap-3 text-sm font-medium text-zinc-100">{children}<svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform [details[open]_&]:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></summary>;
+  return <summary className="flex min-h-7 cursor-pointer items-center justify-between gap-3 text-[15px] font-semibold text-zinc-100">{children}<svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform [details[open]_&]:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg></summary>;
 }
 
+/** The steps as stops along one line: numbered roundels joined by a 3px track. */
 function Steps({ steps }: { steps: Step[] }) {
   return (
-    <ol className="mt-4 max-w-3xl space-y-4">
+    <ol className="relative mt-4 max-w-3xl">
+      <span aria-hidden className="absolute top-3 bottom-3 left-[13px] w-[3px] rounded-full bg-zinc-800" />
       {steps.map(([title, body], i) => (
-        <li key={title} className="flex gap-3 text-sm">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 font-mono text-xs text-amber-400">{i + 1}</span>
-          <div><div className="font-medium text-zinc-100">{title}</div><div className="mt-0.5 leading-relaxed text-zinc-300">{body}</div></div>
+        <li key={title} className="relative flex gap-3 pb-4 text-sm last:pb-0">
+          <span className="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-[3px] border-zinc-700 bg-zinc-900 text-xs font-bold text-zinc-100 tabular-nums">{i + 1}</span>
+          <div className="min-w-0 pt-0.5"><div className="font-semibold text-zinc-100">{title}</div><div className="mt-0.5 leading-relaxed text-zinc-300">{body}</div></div>
         </li>
       ))}
     </ol>
@@ -32,7 +34,7 @@ function botGuideMn({ origin, hasToken }: BotGuideProps) {
   const steps: Step[] = [
     ["MetaTrader 5-аа бэлдэх", <>Windows компьютер дээрээ MT5-г нээж, өөрийн дансаар нэвтэрнэ. Эхлээд заавал <strong>demo</strong> дансаар туршаарай.</>],
     ["Роботын файлыг татаж, MT5-д хуулах", <>
-      <a className="text-amber-400 underline" href="/api/bot/download?file=ex5">XauBot.ex5 татах</a>. MT5 дээр <strong>File → Open Data Folder</strong> дарж, нээгдсэн хавтасны <span className={code}>MQL5</span> → <span className={code}>Experts</span> дотор файлыг хуулна. Дараа нь MT5-ийн зүүн талын <strong>Navigator</strong> (Ctrl+N) дотор <strong>Expert Advisors</strong> дээр баруун товч → <strong>Refresh</strong>. Жагсаалтад XauBot гарч ирнэ.
+      <a className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href="/api/bot/download?file=ex5">XauBot.ex5 татах</a>. MT5 дээр <strong>File → Open Data Folder</strong> дарж, нээгдсэн хавтасны <span className={code}>MQL5</span> → <span className={code}>Experts</span> дотор файлыг хуулна. Дараа нь MT5-ийн зүүн талын <strong>Navigator</strong> (Ctrl+N) дотор <strong>Expert Advisors</strong> дээр баруун товч → <strong>Refresh</strong>. Жагсаалтад XauBot гарч ирнэ.
     </>],
     ["Вэбтэй холбогдохыг зөвшөөрөх", <>MT5 дээр <strong>Tools → Options → Expert Advisors</strong> таб. <strong>Allow WebRequest for listed URL</strong>-ийг чагталж, жагсаалтад энэ хаягийг нэмээд OK: <code className={code}>{origin}</code></>],
     ["Алтны чарт нээх", <><strong>Market Watch</strong> (Ctrl+M) дээр баруун товч → <strong>Symbols</strong> → <span className={code}>XAU</span> гэж хайж (зарим брокерт <span className={code}>GOLD</span>) → <strong>Show Symbol</strong> → OK. Дараа нь Market Watch дээрх XAUUSD дээр баруун товч → <strong>Chart Window</strong>.</>],
@@ -63,7 +65,7 @@ function botGuideEn({ origin, hasToken }: BotGuideProps): ReturnType<typeof botG
   const steps: Step[] = [
     ["Get MetaTrader 5 ready", <>Open MT5 on your Windows computer and sign in to your own account. Always try it on a <strong>demo</strong> account first.</>],
     ["Download the robot file and copy it into MT5", <>
-      <a className="text-amber-400 underline" href="/api/bot/download?file=ex5">Download XauBot.ex5</a>. In MT5 click <strong>File → Open Data Folder</strong> and copy the file into <span className={code}>MQL5</span> → <span className={code}>Experts</span> in the folder that opens. Then, in the <strong>Navigator</strong> on the left of MT5 (Ctrl+N), right-click <strong>Expert Advisors</strong> → <strong>Refresh</strong>. XauBot appears in the list.
+      <a className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href="/api/bot/download?file=ex5">Download XauBot.ex5</a>. In MT5 click <strong>File → Open Data Folder</strong> and copy the file into <span className={code}>MQL5</span> → <span className={code}>Experts</span> in the folder that opens. Then, in the <strong>Navigator</strong> on the left of MT5 (Ctrl+N), right-click <strong>Expert Advisors</strong> → <strong>Refresh</strong>. XauBot appears in the list.
     </>],
     ["Allow it to reach the web", <>In MT5 open <strong>Tools → Options → Expert Advisors</strong>. Tick <strong>Allow WebRequest for listed URL</strong>, add this address to the list and press OK: <code className={code}>{origin}</code></>],
     ["Open a gold chart", <>Right-click in <strong>Market Watch</strong> (Ctrl+M) → <strong>Symbols</strong> → search for <span className={code}>XAU</span> (<span className={code}>GOLD</span> at some brokers) → <strong>Show Symbol</strong> → OK. Then right-click XAUUSD in Market Watch → <strong>Chart Window</strong>.</>],
@@ -96,7 +98,7 @@ export function BotGuide(props: BotGuideProps) {
     <details className="card" open={!props.online}>
       <Summary>{c.summary}</Summary>
       <Steps steps={c.steps} />
-      <h3 className="mt-5 text-sm font-medium text-zinc-200">{c.useTitle}</h3>
+      <h3 className="mt-5 border-t border-zinc-800 pt-4 text-sm font-semibold text-zinc-100">{c.useTitle}</h3>
       <ul className="mt-2 max-w-3xl list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">{c.use}</ul>
       <p className="mt-3 text-xs text-zinc-500">{c.footer}</p>
     </details>
@@ -177,11 +179,11 @@ export function BacktestGuide({ v = MN_VIEWER }: { v?: Viewer }) {
       <Summary>{c.summary}</Summary>
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">{c.intro}</p>
       <Steps steps={c.steps} />
-      <h3 className="mt-5 text-sm font-medium text-zinc-200">{c.rulesTitle}</h3>
+      <h3 className="mt-5 border-t border-zinc-800 pt-4 text-sm font-semibold text-zinc-100">{c.rulesTitle}</h3>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">{c.rulesIntro}</p>
       <ol className="mt-2 max-w-3xl list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">{c.rules}</ol>
       <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-300">{c.twoYears}</p>
-      <h3 className="mt-5 text-sm font-medium text-zinc-200">{c.goodTitle}</h3>
+      <h3 className="mt-5 border-t border-zinc-800 pt-4 text-sm font-semibold text-zinc-100">{c.goodTitle}</h3>
       <ul className="mt-2 max-w-3xl list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-300">{c.good}</ul>
     </details>
   );

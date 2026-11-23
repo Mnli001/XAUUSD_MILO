@@ -3,6 +3,7 @@ import { useActionState, useEffect, useState } from "react";
 import type { LiveView } from "@/lib/bot/liveDb";
 import type { T } from "@/lib/i18n";
 import { useViewer } from "./PrefsProvider";
+import { Figures, Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
 import { saveBotConfigAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
 
 type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> & {
@@ -38,11 +39,11 @@ function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; cu
           return (
             <li key={a.login}>
               <a href={`/bot?account=${encodeURIComponent(a.login)}`} aria-current={here ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm transition-colors ${here ? "border-amber-500 bg-amber-500/10 text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
-                <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${a.online ? "bg-emerald-400" : "bg-zinc-600"}`} />
-                <span className="font-mono">{a.label}</span>
-                {a.mode === "REAL" && <span className="chip border-red-500/50 text-red-300">{t("Жинхэнэ", "Real")}</span>}
-                {a.state === "RUNNING" && <span className="chip border-emerald-500/50 text-emerald-300">{t("ажиллаж байна", "running")}</span>}
+                className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors ${here ? "border-amber-400 bg-zinc-800 font-semibold text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
+                <Station tone={a.online ? "on" : "off"} />
+                <span className="tabular-nums">{a.label}</span>
+                {a.mode === "REAL" && <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-xs font-semibold text-red-400">{t("Жинхэнэ", "Real")}</span>}
+                {a.state === "RUNNING" && <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-xs font-semibold text-emerald-400">{t("ажиллаж байна", "running")}</span>}
                 <span className="sr-only">{a.online ? t("холбогдсон", "connected") : t("холбогдоогүй", "not connected")}</span>
               </a>
             </li>
@@ -53,6 +54,8 @@ function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; cu
     </section>
   );
 }
+
+const signedMoney = (v: number | null) => (v === null ? "—" : <>{v !== 0 && <><Dir d={v} />{" "}</>}{signedUsd(v)}</>);
 
 export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string }) {
   const who = useViewer();
@@ -86,89 +89,102 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const savedTool = TOOLS.find(([id]) => id === c.mode)![1];
 
   const accountField = <input type="hidden" name="account" value={v.account} />;
+  const section = "text-[15px] font-semibold text-zinc-100";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 sm:space-y-5">
       <AccountSwitcher accounts={v.accounts} current={v.account} />
       {real && (
-        <div role="alert" className="card border border-red-500/70 text-red-300">
+        <div role="alert" className="rounded-xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm leading-relaxed text-red-300 sm:px-5">
           <strong>{t("ЖИНХЭНЭ ДАНС холбогдсон байна.", "A REAL ACCOUNT is connected.")}</strong> {t("Бот энэ дансан дээр жинхэнэ мөнгөөр арилжаа хийнэ", "The bot will trade real money on this account")}{c.allowReal ? "" : t(" — гэхдээ “Жинхэнэ данс” сонголт унтраалттай тул Start дарсан ч ажиллахгүй", " — but the “Real account” option is off, so it will not run even if you press Start")}.
         </div>
       )}
 
-      <div className="card">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={`inline-flex items-center gap-2 text-lg font-semibold ${running ? "text-emerald-400" : "text-zinc-300"}`}>
-            <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-emerald-400" : "bg-zinc-500"}`} />
+      <section className="card" aria-label={t("Ботын төлөв", "Bot status")}>
+        {/* The run state as a status line: a filled station while running, a hollow one when stopped. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span className={`inline-flex items-center gap-2.5 text-lg font-bold ${running ? "text-emerald-400" : "text-zinc-200"}`}>
+            <Station tone={running ? "on" : "off"} />
             {running ? t("Бот ажиллаж байна", "Bot is running") : t("Бот зогссон", "Bot is stopped")}
           </span>
-          <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-xs text-zinc-300">{savedTool}</span>
+          <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-xs font-medium text-zinc-300">{savedTool}</span>
           {!running && v.stopReason && <span className="text-sm text-zinc-400">({STOP_REASON[v.stopReason] ?? v.stopReason})</span>}
-          <span className={`ml-auto text-xs ${v.online ? "text-emerald-400" : "text-amber-400"}`}>
-            MT5: {v.online ? t("холбогдсон", "connected") : v.lastSeenAt ? t("холболт тасарсан", "connection lost") : t("холбогдоогүй", "not connected")}{stale ? t(" · самбар шинэчлэгдэхгүй байна", " · the panel is not updating") : ""}
-          </span>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-          {([
-            [t("Данс", "Account"), v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : "—", real ? "text-red-300" : undefined],
-            ["Balance", money(v.balance)],
-            ["Equity", money(v.equity)],
-            [t("Сүүлийн 24ц", "Last 24h"), money(v.pnl24h), tone(v.pnl24h)],
-          ] as [string, string, string?][]).map(([k, val, cls]) => (
-            <div key={k} className="min-w-0"><div className="text-xs text-zinc-400">{k}</div><div className={`truncate font-mono font-semibold sm:text-lg ${cls ?? ""}`}>{val}</div></div>
-          ))}
+        <p className={`mt-2 flex items-center gap-2 text-xs ${v.online ? "text-zinc-400" : "text-amber-300"}`}>
+          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${v.online ? "bg-emerald-400" : "border-2 border-amber-400"}`} />
+          <span>MT5: <span className={v.online ? "font-medium text-emerald-400" : "font-medium"}>{v.online ? t("холбогдсон", "connected") : v.lastSeenAt ? t("холболт тасарсан", "connection lost") : t("холбогдоогүй", "not connected")}</span>{stale ? t(" · самбар шинэчлэгдэхгүй байна", " · the panel is not updating") : ""}</span>
+        </p>
+        <div className="mt-4">
+          <Figures inset className="grid-cols-2 sm:grid-cols-4" items={[
+            { label: t("Данс", "Account"), value: v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : "—", tone: `text-sm sm:text-base ${real ? "text-red-300" : "text-zinc-100"}` },
+            { label: "Balance", value: money(v.balance) },
+            { label: "Equity", value: money(v.equity) },
+            { label: t("Сүүлийн 24ц", "Last 24h"), value: signedMoney(v.pnl24h), tone: tone(v.pnl24h) },
+          ]} />
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
           <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-6" disabled={running || !v.hasToken}>Start bot</button></form>
           <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-6" disabled={!running}>Stop</button></form>
-          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-300" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
-          {v.closeAllPending && <span className="self-center text-xs text-amber-400">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
+          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
+          {v.closeAllPending && <span className="self-center text-xs font-medium text-amber-300">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
         </div>
-        {!v.online && <p className="mt-3 text-xs text-amber-400">{t("MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.", "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.")}</p>}
-      </div>
+        {!v.online && <p className="mt-3 rounded-lg bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-300">{t("MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.", "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.")}</p>}
+      </section>
 
-      <div className="grid items-start gap-4 md:grid-cols-2">
-        <div className="card">
-          <h2 className="card-title">{t("Одоо", "Now")}</h2>
-          <div className={`text-3xl font-semibold tracking-tight ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-300"}`}>
+      <div className="grid items-start gap-4 sm:gap-5 md:grid-cols-2">
+        <section className="card" aria-labelledby="now-h">
+          <h2 id="now-h" className="card-title">{t("Одоо", "Now")}</h2>
+          <div className={`flex items-baseline gap-2 text-3xl font-bold tracking-[-0.02em] ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-200"}`}>
+            {v.signal === "BUY" || v.signal === "SELL" ? <Dir d={v.signal === "BUY" ? 1 : -1} /> : null}
             {v.signal === "BUY" ? "BUY" : v.signal === "SELL" ? "SELL" : v.signal === "NONE" ? t("Хүлээж байна", "Waiting") : "—"}
           </div>
-          <p className="mt-1 text-sm text-zinc-300">{v.reason || t("Роботоос мэдээлэл ирээгүй", "No data from the robot yet")}</p>
-          <p className="mt-2 font-mono text-xs text-zinc-500">{v.symbol ?? "—"}, bid {v.bid ?? "—"}, ask {v.ask ?? "—"}</p>
-          {running && <p className={`mt-2 font-mono ${tone(v.runPnl)}`}>{t("Энэ удаагийн үр дүн:", "This run's result:")} {money(v.runPnl)}</p>}
+          <p className="mt-1 text-sm leading-relaxed text-zinc-300">{v.reason || t("Роботоос мэдээлэл ирээгүй", "No data from the robot yet")}</p>
+          <p className="mt-2 text-xs text-zinc-500 tabular-nums">{v.symbol ?? "—"}, bid {v.bid ?? "—"}, ask {v.ask ?? "—"}</p>
+          {running && <p className="mt-3 border-t border-zinc-800 pt-3 text-sm text-zinc-400">{t("Энэ удаагийн үр дүн:", "This run's result:")} <span className={`font-semibold tabular-nums ${tone(v.runPnl)}`}>{signedMoney(v.runPnl)}</span></p>}
           {running && c.mode === "BASKET" && (
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
               {v.positions.length > 0 ? t(`Багц нээлттэй. ${money(c.basket.profit)} ашигт хүрвэл эсвэл ${money(-c.basket.loss)} алдагдалд хүрвэл бүгдийг зэрэг хаана.`, `Basket open. All trades close together at ${money(c.basket.profit)} profit or ${money(-c.basket.loss)} loss.`) : t("Дохио хүлээж байна. Гармагц багцыг бүхэлд нь нээнэ.", "Waiting for a signal. The whole basket opens as soon as one appears.")}
             </p>
           )}
           {running && c.mode === "ASIAN" && (
-            <p className="mt-1 text-sm text-zinc-400">{v.positions.length > 0 ? t(`Арилжаа нээлттэй. Stop, target эсвэл ${ub("04:00")} (${zone}) цагт хаагдана.`, `Trade open. It closes at the stop, the target or ${ub("04:00")} (${zone}).`) : t(`Дүрэм ажиллаж байна: өдөр бүр ${ub("15:00")}–${ub("00:00")} (${zone}) цагт breakout хүлээнэ. Stop дартал зогсохгүй.`, `The rule is running: every day it waits for a breakout between ${ub("15:00")} and ${ub("00:00")} (${zone}). It does not stop until you press Stop.`)}</p>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t(`Арилжаа нээлттэй. Stop, target эсвэл ${ub("04:00")} (${zone}) цагт хаагдана.`, `Trade open. It closes at the stop, the target or ${ub("04:00")} (${zone}).`) : t(`Дүрэм ажиллаж байна: өдөр бүр ${ub("15:00")}–${ub("00:00")} (${zone}) цагт breakout хүлээнэ. Stop дартал зогсохгүй.`, `The rule is running: every day it waits for a breakout between ${ub("15:00")} and ${ub("00:00")} (${zone}). It does not stop until you press Stop.`)}</p>
           )}
           {running && c.mode === "SCALPER" && (
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">
               {v.plannedSeconds ? t(`Ботын тооцсон хугацаа: ${Math.round(v.plannedSeconds)} сек · өнгөрсөн ${Math.round(v.elapsedSeconds ?? 0)} сек`, `Time planned by the bot: ${Math.round(v.plannedSeconds)} s · elapsed ${Math.round(v.elapsedSeconds ?? 0)} s`) : t("Эхний арилжаагаа хүлээж байна — хугацааг орсны дараа тооцно", "Waiting for the first trade — the time is worked out after entry")}
             </p>
           )}
-        </div>
+        </section>
 
-        <form action={cfgAction} className="card space-y-3">{accountField}
-          <h2 className="text-sm font-medium text-zinc-400">{t("Хэрэгсэл ба тохиргоо", "Tool and settings")}</h2>
+        <form action={cfgAction} className="card space-y-4" aria-labelledby="cfg-h">{accountField}
+          <h2 id="cfg-h" className="card-title mb-0">{t("Хэрэгсэл ба тохиргоо", "Tool and settings")}</h2>
           <input type="hidden" name="mode" value={tool} />
-          <div role="radiogroup" aria-label={t("Ботын хэрэгсэл", "Bot tool")} className="grid gap-2 sm:grid-cols-3">
-            {TOOLS.map(([id, name, about]) => (
-              <button key={id} type="button" role="radio" aria-checked={tool === id} disabled={running} onClick={() => setTool(id)}
-                className={`rounded-xl border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${tool === id ? "border-amber-400 bg-amber-400/10" : "border-zinc-700 hover:bg-zinc-800"}`}>
-                <span className={`block font-semibold ${tool === id ? "text-amber-300" : "text-zinc-100"}`}>{name}</span>
-                <span className="mt-1 block text-xs leading-relaxed text-zinc-400">{about}</span>
-              </button>
-            ))}
+          {/* The three tools as stops on one line; the chosen one is filled. */}
+          <div role="radiogroup" aria-label={t("Ботын хэрэгсэл", "Bot tool")} className="relative">
+            <span aria-hidden className="pointer-events-none absolute top-5 bottom-5 left-[17px] z-[1] w-[3px] rounded-full bg-zinc-700" />
+            {TOOLS.map(([id, name, about]) => {
+              const on = tool === id;
+              return (
+                <button key={id} type="button" role="radio" aria-checked={on} disabled={running} onClick={() => setTool(id)}
+                  className={`relative flex w-full gap-3 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${on ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
+                  <Station tone={on ? "now" : "off"} className="relative z-10 mt-1" />
+                  <span className="min-w-0">
+                    <span className={`flex flex-wrap items-center gap-2 font-semibold ${on ? "text-zinc-50" : "text-zinc-200"}`}>
+                      {name}
+                      {id !== "ASIAN" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-zinc-400">{about}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {oldRobot && (
-            <p role="alert" className="rounded-lg border border-amber-400/50 px-3 py-2 text-xs leading-relaxed text-amber-200">
-              {t("MT5 дээрх роботын файл хуучин тул энэ хэрэгсэл ажиллахгүй.", "The robot file on MT5 is old, so this tool will not work.")} <a className="underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
+            <p role="alert" className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-200">
+              {t("MT5 дээрх роботын файл хуучин тул энэ хэрэгсэл ажиллахгүй.", "The robot file on MT5 is old, so this tool will not work.")} <a className="font-semibold underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
             </p>
           )}
-          <div className="grid grid-cols-2 items-end gap-3" key={tool}>
+          <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4" key={tool}>
             {((asian ? [
               ["rLots", t("Лот", "Lots"), c.rule.lots, "0.01"],
             ] : basket ? [
@@ -181,11 +197,11 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             ]) as [string, string, number | string, string][]).map(([name, label, val, step]) => (
               <div key={name}>
                 <label className="label" htmlFor={name}>{label}</label>
-                <input className="input" id={name} name={name} type="number" inputMode="decimal" step={step} min="0" defaultValue={val} disabled={running} />
+                <input className="input tabular-nums" id={name} name={name} type="number" inputMode="decimal" step={step} min="0" defaultValue={val} disabled={running} />
               </div>
             ))}
           </div>
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-start gap-3 text-sm text-zinc-200">
             <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>{t("Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх", "Allow trading on a real account")} <span className="block text-xs text-zinc-500">{t("Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.", "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.")}</span></span>
           </label>
@@ -193,8 +209,8 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <p className="text-xs leading-relaxed text-zinc-400">
               {t(`Өдөрт хамгийн ихдээ нэг арилжаа, ${c.rule.lots.toFixed(2)} лотоор: алт $1 хөдлөхөд ±${money(exposure)}. Хүрээ ${ub("08:00")}–${ub("15:00")} (${zone}); ${ub("15:00")}–${ub("00:00")} цагт өдрийн трендийн чиглэлд хүрээнээс гарч хаагдсан эхний 15 минутын лаагаар орно. Stop хүрээний дунд, target 2 дахин хол, ${ub("04:00")}-д хаана.`,
                 `At most one trade a day, at ${c.rule.lots.toFixed(2)} lots: ±${money(exposure)} for every $1 gold moves. The range is ${ub("08:00")}–${ub("15:00")} (${zone}); between ${ub("15:00")} and ${ub("00:00")} it enters on the first 15-minute candle that closes outside the range in the direction of the daily trend. The stop is the middle of the range, the target is twice as far, and it closes at ${ub("04:00")}.`)}
-              {" "}{t("MT5-ийн Strategy Tester дээр хоёр жилд шалгасан: 2024.11–2025.11-д Profit Factor 1.59 (146 арилжаа, уналт 5.6%), 2025.11–2026.11-д 1.43 (120 арилжаа, уналт 16–22%). 0.01 лотод нэг арилжааны дундаж алдагдал $12–26 байсан. Өнгөрсөн үр дүн ирээдүйг батлахгүй; эхлээд demo дээр ажиллуул. MT5 ба компьютер асаалттай үед л ажиллана.",
-                "Tested over two years in the MT5 Strategy Tester: Profit Factor 1.59 in 2024.11–2025.11 (146 trades, drawdown 5.6%) and 1.43 in 2025.11–2026.11 (120 trades, drawdown 16–22%). At 0.01 lots the average losing trade was $12–26. Past results do not guarantee the future; run it on a demo account first. It works only while MT5 and the computer are on.")}
+              {" "}<span className="text-amber-300">{t("MT5-ийн Strategy Tester дээр хоёр жилд шалгасан: 2024.11–2025.11-д Profit Factor 1.59 (146 арилжаа, уналт 5.6%), 2025.11–2026.11-д 1.43 (120 арилжаа, уналт 16–22%). 0.01 лотод нэг арилжааны дундаж алдагдал $12–26 байсан. Өнгөрсөн үр дүн ирээдүйг батлахгүй; эхлээд demo дээр ажиллуул. MT5 ба компьютер асаалттай үед л ажиллана.",
+                "Tested over two years in the MT5 Strategy Tester: Profit Factor 1.59 in 2024.11–2025.11 (146 trades, drawdown 5.6%) and 1.43 in 2025.11–2026.11 (120 trades, drawdown 16–22%). At 0.01 lots the average losing trade was $12–26. Past results do not guarantee the future; run it on a demo account first. It works only while MT5 and the computer are on.")}</span>
             </p>
           ) : basket ? (
             <p className="text-xs leading-relaxed text-zinc-400">
@@ -214,45 +230,45 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         </form>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <div className="table-card">
-          <h2 className="px-4 pt-4 text-sm font-medium text-zinc-400 sm:px-5 sm:pt-5">{t("Нээлттэй арилжаа (", "Open trades (")}{v.positions.length})</h2>
-          {v.positions.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500 sm:px-5">{t("Алга", "None")}</p> : (
-            <table className="w-full">
-              <thead><tr>{["", t("Лот", "Lots"), t("Орсон", "Entry"), "SL", "TP", "P&L"].map((h) => <th key={h} className={`th ${h === "SL" || h === "TP" ? "hidden sm:table-cell" : ""} ${h === "P&L" ? "text-right" : ""}`}>{h}</th>)}</tr></thead>
+      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
+        <section className="table-card" aria-labelledby="open-h">
+          <h2 id="open-h" className={`px-4 pt-4 pb-2 sm:px-5 sm:pt-5 ${section}`}>{t("Нээлттэй арилжаа (", "Open trades (")}{v.positions.length})</h2>
+          {v.positions.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Алга", "None")}</p> : (
+            <table className="w-full border-collapse">
+              <thead><tr className="border-b border-zinc-800">{["", t("Лот", "Lots"), t("Орсон", "Entry"), "SL", "TP", "P&L"].map((h) => <th key={h} className={`th ${h === "SL" || h === "TP" ? "hidden sm:table-cell" : ""} ${h === "" ? "" : "text-right"}`}>{h}</th>)}</tr></thead>
               <tbody>{v.positions.map((p) => (
-                <tr key={p.ticket} className="border-t border-zinc-800">
-                  <td className={`td ${p.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{p.side}</td>
-                  <td className="td font-mono">{p.lots}</td><td className="td font-mono">{p.openPrice}</td>
-                  <td className="td hidden font-mono sm:table-cell">{p.sl || "—"}</td><td className="td hidden font-mono sm:table-cell">{p.tp || "—"}</td>
-                  <td className={`td text-right font-mono ${tone(p.profit)}`}>{money(p.profit)}</td>
+                <tr key={p.ticket} className="border-t border-zinc-800/70 first:border-t-0">
+                  <td className="td"><SidePill side={p.side} /></td>
+                  <td className="td text-right tabular-nums">{p.lots}</td><td className="td text-right tabular-nums">{p.openPrice}</td>
+                  <td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{p.sl || "—"}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{p.tp || "—"}</td>
+                  <td className="td text-right"><Pnl value={p.profit} /></td>
                 </tr>))}</tbody>
             </table>
           )}
-        </div>
-        <div className="table-card">
-          <h2 className="px-4 pt-4 text-sm font-medium text-zinc-400 sm:px-5 sm:pt-5">{t("Арилжааны түүх", "Trade history")} <span className="text-zinc-500">{t("(сүүлийн 50, нийт", "(last 50, total")} {v.dealCount})</span></h2>
-          {v.deals.length === 0 ? <p className="px-4 py-3 text-sm text-zinc-500 sm:px-5">{t("Хаагдсан арилжаа алга", "No closed trades")}</p> : (
-            <table className="w-full">
-              <thead><tr>{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], ["", ""], [t("Лот", "Lots"), ""], [t("Орсон", "Entry"), "hidden sm:table-cell"], [t("Гарсан", "Exit"), "hidden sm:table-cell"], ["P&L", "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
+        </section>
+        <section className="table-card" aria-labelledby="hist-h">
+          <h2 id="hist-h" className={`px-4 pt-4 pb-2 sm:px-5 sm:pt-5 ${section}`}>{t("Арилжааны түүх", "Trade history")} <span className="text-sm font-normal text-zinc-500">{t("(сүүлийн 50, нийт", "(last 50, total")} {v.dealCount})</span></h2>
+          {v.deals.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Хаагдсан арилжаа алга", "No closed trades")}</p> : (
+            <table className="w-full border-collapse">
+              <thead><tr className="border-b border-zinc-800">{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], ["", ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "hidden sm:table-cell text-right"], [t("Гарсан", "Exit"), "hidden sm:table-cell text-right"], ["P&L", "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
               <tbody>{v.deals.map((d) => (
-                <tr key={d.ticket} className="border-t border-zinc-800">
-                  <td className="td whitespace-nowrap font-mono">{who.dateTime(new Date(d.closeTime)).slice(5)}</td>
-                  <td className={`td ${d.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{d.side}</td>
-                  <td className="td font-mono">{d.lots}</td><td className="td hidden font-mono sm:table-cell">{d.openPrice}</td><td className="td hidden font-mono sm:table-cell">{d.closePrice}</td>
-                  <td className={`td text-right font-mono ${tone(d.profit)}`}>{money(d.profit)}</td>
+                <tr key={d.ticket} className="border-t border-zinc-800/70 first:border-t-0">
+                  <td className="td font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{who.dateTime(new Date(d.closeTime)).slice(5)}</td>
+                  <td className="td"><SidePill side={d.side} /></td>
+                  <td className="td text-right tabular-nums">{d.lots}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{d.openPrice}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{d.closePrice}</td>
+                  <td className="td text-right"><Pnl value={d.profit} /></td>
                 </tr>))}</tbody>
             </table>
           )}
-        </div>
+        </section>
       </div>
 
-      <form action={tokAction} className="card space-y-2">
-        <h2 className="text-sm font-medium text-zinc-400">{t("MT5 роботыг холбох", "Connect the MT5 robot")}</h2>
+      <form action={tokAction} className="card space-y-3" aria-labelledby="tok-h">
+        <h2 id="tok-h" className={section}>{t("MT5 роботыг холбох", "Connect the MT5 robot")}</h2>
         <p className="text-sm text-zinc-300">{t("Роботын тохиргоонд энэ хаягийг оруулна:", "Enter this address in the robot's settings:")}</p>
-        <code className="block rounded-lg bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
+        <code className="block rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
         {tokState.token ? (
-          <p className="text-sm">{t("Шинэ токен (дахин харагдахгүй, одоо хуулж ав):", "New token (shown only once, copy it now):")} <code className="mt-1 block rounded-lg bg-zinc-950 px-3 py-2 break-all text-amber-300 select-all">{tokState.token}</code></p>
+          <p className="text-sm text-amber-300">{t("Шинэ токен (дахин харагдахгүй, одоо хуулж ав):", "New token (shown only once, copy it now):")} <code className="mt-1 block rounded-lg border border-amber-400/40 bg-zinc-950 px-3 py-2 break-all text-amber-300 select-all">{tokState.token}</code></p>
         ) : (
           <p className="text-sm text-zinc-400">{v.hasToken ? t("Токен үүссэн. Шинийг үүсгэвэл хуучин нь хүчингүй болж, роботод шинийг оруулах хэрэгтэй.", "A token exists. Creating a new one cancels the old one, and the new one must be entered in the robot.") : t("Токен үүсээгүй. Эхлээд токен үүсгэнэ.", "No token yet. Create one first.")}</p>
         )}
