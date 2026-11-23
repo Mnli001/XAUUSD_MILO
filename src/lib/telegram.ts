@@ -145,12 +145,12 @@ export async function newLinkCode(userId: string, now = new Date()): Promise<str
 }
 
 export async function unlinkTelegram(userId: string): Promise<void> {
-  await db.update(schema.users).set({ telegramChatId: null, telegramLinkCode: null, telegramLinkExpiresAt: null }).where(eq(schema.users.id, userId));
+  await db.update(schema.users).set({ telegramChatId: null, telegramLinkCode: null, telegramLinkExpiresAt: null, telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null }).where(eq(schema.users.id, userId));
 }
 
 const HOW_TO_LINK = {
-  mn: "Холбохын тулд XAU Analytics сайтын Тохиргоо эсвэл Setup хуудсан дээрх “Telegram холбох” товчийг дарж, нээгдсэн холбоосоор энд орж Start дарна уу.",
-  en: "To link, press “Link Telegram” on the Settings or Setup page of the XAU Analytics site, follow the link it opens to here and press Start.",
+  mn: "Холбохын тулд XAU Analytics-д бүртгүүлсэн имэйл хаягаа энд бичээд илгээнэ үү. Дараа нь сайтдаа нэвтрэхэд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарна. (Эсвэл сайтын Тохиргоо хуудсан дээрх “Telegram холбох” товчийг дарж болно.)",
+  en: "To link, send the email address you registered with on XAU Analytics here. Then sign in to the site and press “Yes, it's mine” on the request that appears. (Or press “Link Telegram” on the site's Settings page.)",
 };
 const NOT_ADVICE = (t: T) => t("Статистик, санхүүгийн зөвлөгөө биш.", "Statistics, not financial advice.");
 
@@ -190,8 +190,9 @@ export async function statusText(u: User, now: Date, v: Viewer = viewer(prefsOf(
 }
 
 type Chat = { id?: number | string; type?: string };
+type Sender = { first_name?: string; last_name?: string; username?: string };
 type Update = {
-  message?: { chat?: Chat; text?: string };
+  message?: { chat?: Chat; text?: string; from?: Sender };
   my_chat_member?: { chat?: Chat; new_chat_member?: { status?: string } };
 };
 
@@ -227,9 +228,83 @@ async function linkChat(chat: string, code: string, now: Date): Promise<void> {
   await sendMessage(chat, esc(`${HOW_TO_LINK.mn}\n\n${HOW_TO_LINK.en}`));
 }
 
+export const PENDING_TTL_MS = 30 * 60 * 1000;
+const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
+
+/** How the chat calls itself, so the account's owner can tell whether the request is theirs. */
+function senderName(from: Sender | undefined): string {
+  const name = [from?.first_name, from?.last_name].filter(Boolean).join(" ").trim();
+  const handle = from?.username ? `@${from.username}` : "";
+  return ([name, handle].filter(Boolean).join(" · ") || "Telegram").slice(0, 80);
+}
+
 /**
- * One update from Telegram. "/start <code>" links the chat to the user holding that code; a linked
- * chat can also ask for /status, /stop, /resume and /help. Group chats are ignored.
+ * A chat gave an email address. If an account has it, that account is shown a yes/no on the site;
+ * the chat is linked only when its owner says yes there. The chat is told the same thing either way,
+ * so the bot cannot be used to find out which addresses are registered, and knowing somebody's
+ * address is not enough to receive their signals.
+ */
+async function requestLinkByEmail(chat: string, email: string, from: Sender | undefined, now: Date): Promise<void> {
+  await db.update(schema.users)
+    .set({ telegramPendingChatId: chat, telegramPendingName: senderName(from), telegramPendingExpiresAt: new Date(now.getTime() + PENDING_TTL_MS) })
+    .where(eq(schema.users.email, email.trim().toLowerCase()));
+  const base = siteUrl();
+  const link = (label: string) => (base ? `\n<a href="${esc(`${base}/settings`)}">${esc(label)}</a>` : "");
+  await sendMessage(chat, [
+    `${esc("Хэрэв энэ имэйл XAU Analytics-д бүртгэлтэй бол таны бүртгэлд баталгаажуулах хүсэлт очлоо. 30 минутын дотор сайтдаа нэвтэрч, гарч ирэх “Тийм, минийх” товчийг дарна уу. Дармагц энд мэдэгдэнэ.")}${link("Сайтыг нээх")}`, // i18n-ok: sent in both languages, the chat's owner is not known yet
+    `${esc("If this email is registered on XAU Analytics, a request to confirm has gone to that account. Within 30 minutes, sign in to the site and press “Yes, it's mine” on the request that appears. You will be told here as soon as you do.")}${link("Open the site")}`,
+  ].join("\n\n"));
+}
+
+/** The link request waiting for this user's yes or no, or null when there is none (or it has lapsed). */
+export function pendingTelegram(u: Pick<User, "telegramPendingChatId" | "telegramPendingName" | "telegramPendingExpiresAt">, now: Date): { name: string } | null {
+  if (!u.telegramPendingChatId || !u.telegramPendingExpiresAt || u.telegramPendingExpiresAt.getTime() <= now.getTime()) return null;
+  return { name: u.telegramPendingName || "Telegram" };
+}
+
+const clearPending = { telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null };
+
+/** The account's owner said yes on the site: the waiting chat becomes theirs. False when nothing was waiting. */
+export async function confirmPendingTelegram(userId: string, now = new Date()): Promise<boolean> {
+  const linked = await db.transaction(async (tx) => {
+    const [u] = await tx.select().from(schema.users).where(eq(schema.users.id, userId));
+    if (!u || !pendingTelegram(u, now)) {
+      if (u?.telegramPendingChatId) await tx.update(schema.users).set(clearPending).where(eq(schema.users.id, userId));
+      return null;
+    }
+    const chat = u.telegramPendingChatId!;
+    // one chat belongs to one account, or that chat would get every signal twice
+    await tx.update(schema.users).set({ telegramChatId: null }).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, userId)));
+    // the same chat may have asked for other addresses too; those requests are spent
+    await tx.update(schema.users).set(clearPending).where(and(eq(schema.users.telegramPendingChatId, chat), ne(schema.users.id, userId)));
+    const [done] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending }).where(eq(schema.users.id, userId)).returning();
+    return done;
+  });
+  if (!linked) return false;
+  const v = viewer(prefsOf(linked));
+  const { t } = v;
+  const access = linked.role === "ADMIN" ? "" : hasAccess(linked, now) && linked.accessUntil
+    ? t(`Таны эрх ${v.date(linked.accessUntil)} хүртэл хүчинтэй.`, `Your access runs until ${v.date(linked.accessUntil)}.`)
+    : t("Таны эрхийн хугацаа дууссан байна: эрх сунгагдсаны дараа дохио ирж эхэлнэ.", "Your access has expired: signals start once it is renewed.");
+  await sendMessage(linked.telegramChatId!, [
+    esc(t(`Холбогдлоо, ${linked.name}. Setup идэвхжих бүрд орох, stop, target-тай мессеж энд ирнэ.`, `Linked, ${linked.name}. Each time a setup becomes active, a message with the entry, stop and target arrives here.`)),
+    ...(access ? [esc(access)] : []),
+    "",
+    helpText(linked, t),
+    "",
+    `<i>${esc(t("Эдгээр нь түүхэн статистик дээр суурилсан дохио, санхүүгийн зөвлөгөө биш.", "These are signals based on historical statistics, not financial advice."))}</i>`,
+  ].join("\n")).catch((e) => console.error("[telegram] linked, but the welcome was not delivered", e));
+  return true;
+}
+
+/** The owner said the request is not theirs: it is dropped and the chat learns nothing. */
+export async function rejectPendingTelegram(userId: string): Promise<void> {
+  await db.update(schema.users).set(clearPending).where(eq(schema.users.id, userId));
+}
+
+/**
+ * One update from Telegram. "/start <code>" links the chat to the user holding that code; an email
+ * address from an unlinked chat asks that account's owner to confirm on the site; a linked chat can also ask for /status, /stop, /resume and /help. Group chats are ignored.
  */
 export async function handleUpdate(update: Update, now = new Date()): Promise<void> {
   const member = update.my_chat_member;
@@ -248,6 +323,7 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
 
   const [u] = await db.select().from(schema.users).where(eq(schema.users.telegramChatId, chat)).limit(1);
   if (!u) {
+    if (EMAIL.test(text) && text.length <= 200) return requestLinkByEmail(chat, text, update.message?.from, now);
     // Nobody is known for this chat yet, so the hint goes out in both languages.
     await sendMessage(chat, esc(`${HOW_TO_LINK.mn}\n\n${HOW_TO_LINK.en}`));
     return;

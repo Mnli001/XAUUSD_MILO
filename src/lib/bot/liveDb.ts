@@ -1,6 +1,7 @@
 import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
+import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
@@ -134,6 +135,8 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   if (!parsed.success) return null;
   const r: Report = parsed.data;
   const live = await botForAccount(owner.id, r.account.login);
+  // The owner's terminal is the site's price feed: everyone's chart moves with what it reports.
+  if (owner.role === "ADMIN") await recordTick({ symbol: r.symbol, bid: r.bid, ask: r.ask, server: r.account.server }, now).catch((e) => console.error("[feed] tick not kept", e));
 
   if (r.deals.length) {
     await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, userId: owner.id, login: live.login, runId: live.runId }))).onConflictDoNothing();

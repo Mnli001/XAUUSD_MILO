@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "../auth";
 import { getT } from "../prefs.server";
-import { botUsername, ensureWebhook, esc, forgetChat, isChatGone, newLinkCode, sendMessage, siteUrl, telegramConfigured, unlinkTelegram } from "../telegram";
+import { confirmPendingTelegram, rejectPendingTelegram, botUsername, ensureWebhook, esc, forgetChat, isChatGone, newLinkCode, sendMessage, siteUrl, telegramConfigured, unlinkTelegram } from "../telegram";
 
 export type TelegramState = { error?: string; ok?: string; link?: string };
 
@@ -59,4 +59,24 @@ export async function testTelegramAction(_prev: TelegramState, _form: FormData):
     }
     return { error: t("Telegram одоо хариу өгсөнгүй. Хэдэн минутын дараа дахин оролдоно уу.", "Telegram did not answer just now. Try again in a few minutes.") };
   }
+}
+
+/** "Yes, it's mine": the chat that gave this account's email to the bot is linked. */
+export async function confirmTelegramAction(_prev: TelegramState, _form: FormData): Promise<TelegramState> {
+  void _form;
+  const user = await requireUser();
+  const t = await getT();
+  const ok = await confirmPendingTelegram(user.id);
+  revalidatePath("/", "layout");
+  return ok ? { ok: t("Telegram холбогдлоо.", "Telegram linked.") } : { error: t("Хүсэлтийн хугацаа дууссан байна. Ботод имэйлээ дахин илгээнэ үү.", "The request has expired. Send your email to the bot again.") };
+}
+
+/** "No, not mine": the request is dropped. */
+export async function rejectTelegramAction(_prev: TelegramState, _form: FormData): Promise<TelegramState> {
+  void _form;
+  const user = await requireUser();
+  const t = await getT();
+  await rejectPendingTelegram(user.id);
+  revalidatePath("/", "layout");
+  return { ok: t("Хүсэлтийг татгалзлаа.", "Request declined.") };
 }

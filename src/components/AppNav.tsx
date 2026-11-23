@@ -49,19 +49,19 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", close); };
   }, [open]);
 
-  const item = "flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 hover:bg-zinc-800";
+  const item = "flex min-h-11 items-center rounded-xl px-3 text-sm text-zinc-200 hover:bg-zinc-500/15";
   const initial = name.trim().charAt(0).toUpperCase() || "?";
   // One account menu: pinned into the top bar on phones, to the foot of the rail on wide screens.
   const userMenu = (
-    <div ref={menuRef} className="fixed top-[calc(env(safe-area-inset-top)+0.375rem)] right-3 z-40 lg:top-auto lg:right-auto lg:bottom-5 lg:left-4 lg:w-52">
+    <div ref={menuRef} className="fixed top-[calc(env(safe-area-inset-top)+0.375rem)] right-3 z-40 lg:top-auto lg:right-auto lg:bottom-7 lg:left-7 lg:w-52">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}
-        className="flex min-h-11 w-full max-w-[13rem] items-center gap-2.5 rounded-lg px-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-800">
+        className="flex min-h-11 w-full max-w-[13rem] items-center gap-2.5 rounded-full px-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-500/15">
         <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-xs font-semibold text-zinc-100">{initial}</span>
         <span className="truncate max-lg:sr-only">{name}</span>
         <svg aria-hidden viewBox="0 0 12 12" className={`ml-auto h-3 w-3 shrink-0 text-zinc-500 max-lg:hidden transition-transform ${open ? "rotate-180" : ""}`}><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       {open && (
-        <div role="menu" className="absolute top-full right-0 z-40 mt-1 w-56 rounded-xl border border-zinc-800 bg-zinc-900 p-1.5 shadow-xl shadow-black/40 lg:top-auto lg:right-auto lg:bottom-full lg:left-0 lg:mt-0 lg:mb-1">
+        <div role="menu" className="glass-menu absolute top-full right-0 z-40 mt-1 w-56 rounded-[18px] p-1.5 lg:top-auto lg:right-auto lg:bottom-full lg:left-0 lg:mt-0 lg:mb-1">
           {MORE.map(([href, label]) => <Link key={href} role="menuitem" href={href} className={`${item} lg:hidden`}>{label}</Link>)}
           {isAdmin && <Link role="menuitem" href="/admin/users" className={`${item} text-amber-300`}>{t("Админ", "Admin")}</Link>}
           <form action={logoutAction}><button role="menuitem" className={`${item} w-full text-left text-zinc-400`}>{t("Гарах", "Sign out")}</button></form>
@@ -72,8 +72,8 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
 
   return (
     <>
-      {/* Wide screens: a quiet glass rail. The current page carries a gold edge and gold icon. */}
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r px-4 py-6 lg:flex" style={{ borderColor: "var(--hairline)", background: "linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 40%)" }}>
+      {/* Wide screens: a floating glass rail. The current page is a lit lozenge with a gold icon. */}
+      <aside className="glass-bar sticky top-3 m-3 mr-0 hidden h-[calc(100dvh-1.5rem)] w-64 shrink-0 flex-col rounded-[30px] px-4 py-6 lg:flex">
         <div className="px-3"><Brand /></div>
         <nav aria-label={t("Үндсэн цэс", "Main menu")} className="mt-10 flex-1">
           <ul className="space-y-1">
@@ -82,8 +82,8 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
               return (
                 <li key={href}>
                   <Link href={href} aria-current={on ? "page" : undefined}
-                    className={`group relative flex min-h-11 items-center gap-3.5 rounded-xl px-3 text-[14.5px] transition-colors duration-200 ${on ? "font-bold text-zinc-50" : "font-medium text-zinc-400 hover:text-zinc-100"}`}
-                    style={on ? { background: "linear-gradient(90deg, rgb(217 181 102 / 0.16), rgb(217 181 102 / 0.02))", boxShadow: "inset 0 0 0 1px var(--hairline-gold)" } : undefined}>
+                    className={`group relative flex min-h-11 items-center gap-3.5 rounded-full px-3.5 text-[14.5px] transition-colors duration-200 ${on ? "font-bold text-zinc-50" : "font-medium text-zinc-400 hover:text-zinc-100"}`}
+                    style={on ? { background: "linear-gradient(180deg, rgb(217 181 102 / 0.2), rgb(217 181 102 / 0.07))", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px var(--hairline-gold)" } : undefined}>
                     <svg aria-hidden viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 transition-colors duration-200 ${on ? "text-amber-400" : "text-zinc-500 group-hover:text-zinc-300"}`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
                     {label}
                   </Link>
@@ -96,21 +96,21 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
       </aside>
 
       {/* Phones and tablets: a slim top bar. */}
-      <header className="sticky top-0 z-30 border-b border-zinc-800/70 bg-zinc-950/75 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
+      <header className="glass-bar sticky top-0 z-30 pt-[env(safe-area-inset-top)] lg:hidden" style={{ boxShadow: "inset 0 -1px 0 var(--hairline)" }}>
         <div className="flex h-14 items-center gap-2 px-4"><Brand /></div>
       </header>
       {userMenu}
 
-      <nav aria-label={t("Доод цэс", "Bottom menu")} className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/70 bg-zinc-950/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-6">
+      <nav aria-label={t("Доод цэс", "Bottom menu")} className="glass-bar fixed inset-x-2.5 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-30 mx-auto max-w-xl rounded-[30px] p-1 lg:hidden">
+        <div className="grid grid-cols-6">
           {MAIN.map(([href, label, d]) => {
             const on = isCurrent(path, href);
             return (
               <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                className={`relative flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${on ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"}`}>
-                <span aria-hidden className={`absolute top-0 h-[2px] w-9 rounded-b-full transition-colors ${on ? "bg-amber-400" : "bg-transparent"}`} />
+                className={`relative flex min-h-[3.25rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[26px] text-[10.5px] font-medium transition-colors ${on ? "text-amber-400" : "text-zinc-400 hover:text-zinc-200"}`}
+                style={on ? { background: "linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05))", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px var(--hairline)" } : undefined}>
                 <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={on ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-                {label}
+                <span className="max-w-full truncate px-0.5">{label}</span>
               </Link>
             );
           })}

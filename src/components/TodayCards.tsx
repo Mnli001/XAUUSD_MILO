@@ -5,6 +5,7 @@ import type { T } from "@/lib/i18n";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
 import { Dir } from "./Timetable";
 import { PriceSpark } from "./PriceSpark";
+import { LivePrice } from "./LiveQuote";
 
 export const loadingText = (t: T) => t("Дата ачаалж байна", "Loading data");
 const tfLabels = (t: T): [Timeframe, string][] => [["1day", t("Өдөр", "Day")], ["4h", t("4ц", "4h")], ["1h", t("1ц", "1h")], ["15min", t("15м", "15m")]];
@@ -24,7 +25,6 @@ export function Empty({ title, v = MN_VIEWER }: { title: string; v?: Viewer }) {
 export function PriceHeader({ price, date, closes = [], v = MN_VIEWER }: Pick<TodaySnapshot, "price"> & { date?: string; closes?: number[]; v?: Viewer }) {
   const { t } = v;
   if (!price) return <p className="text-sm text-zinc-500">XAUUSD · {loadingText(t)}</p>;
-  const up = (price.changePct ?? 0) >= 0;
   const hi = closes.length ? Math.max(...closes) : null, lo = closes.length ? Math.min(...closes) : null;
   return (
     <div className="grid items-end gap-x-10 gap-y-4 md:grid-cols-[auto_minmax(0,1fr)]">
@@ -32,17 +32,8 @@ export function PriceHeader({ price, date, closes = [], v = MN_VIEWER }: Pick<To
         <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-zinc-400">
           <span className="font-semibold tracking-[0.08em] text-amber-400">XAUUSD</span>
           {date && <span>{date}</span>}
-          {price.stale && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
         </p>
-        <p className="font-display mt-2 text-[52px] leading-none text-zinc-50 sm:text-[72px]">{money(price.last)}</p>
-        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          {price.changePct !== null && (
-            <span className={`rounded-full px-2.5 py-1 font-bold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
-              <Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%
-            </span>
-          )}
-          <span className="whitespace-nowrap text-zinc-500">{t("Шинэчлэгдсэн", "Updated")} <span className="text-zinc-300 tabular-nums">{v.time(price.updatedAt)}</span> {v.zone}</span>
-        </p>
+        <LivePrice last={price.last} prevClose={price.changePct !== null ? price.last / (1 + price.changePct / 100) : null} updatedAt={price.updatedAt.toISOString()} />
       </div>
       {closes.length >= 8 && (
         <div className="min-w-0">

@@ -2,9 +2,10 @@
 import { useActionState } from "react";
 import { linkTelegramAction, testTelegramAction, unlinkTelegramAction, type TelegramState } from "@/lib/actions/telegram";
 import { useT } from "./PrefsProvider";
+import { TelegramConfirm } from "./TelegramConfirm";
 
 /** Where a user connects Telegram so that active setups reach their phone. */
-export function TelegramCard({ configured, linked, isAdmin }: { configured: boolean; linked: boolean; isAdmin: boolean }) {
+export function TelegramCard({ configured, linked, isAdmin, pending = null }: { configured: boolean; linked: boolean; isAdmin: boolean; pending?: { name: string } | null }) {
   const t = useT();
   const [link, linkAction, linking] = useActionState<TelegramState, FormData>(linkTelegramAction, {});
   const [test, testAction, testing] = useActionState<TelegramState, FormData>(testTelegramAction, {});
@@ -35,13 +36,18 @@ export function TelegramCard({ configured, linked, isAdmin }: { configured: bool
             <form action={unlinkAction}><button className="btn-ghost text-red-300" disabled={unlinking}>{t("Салгах", "Unlink")}</button></form>
           </div>
         </>
+      ) : pending ? (
+        <TelegramConfirm name={pending.name} />
       ) : link.link ? (
         <div className="mt-4 space-y-2">
           <a className="btn" href={link.link} target="_blank" rel="noreferrer">{t("Telegram нээж Start дарах", "Open Telegram and press Start")}</a>
           <p className="text-xs leading-relaxed text-zinc-400">{t("Telegram дээр бот нээгдэхэд ", "When the bot opens in Telegram, press ")}<strong>Start</strong>{t(" дарна. “Холбогдлоо” гэсэн хариу ирсний дараа энэ хуудсаа шинэчлээрэй.", ". After the “Linked” reply arrives, refresh this page.")}{t(" Холбоос 30 минут хүчинтэй.", " The link works for 30 minutes.")}</p>
         </div>
       ) : (
-        <form action={linkAction} className="mt-4"><button className="btn" disabled={linking}>{linking ? t("Бэлдэж байна…", "Preparing…") : t("Telegram холбох", "Link Telegram")}</button></form>
+        <div className="mt-4 space-y-3">
+          <form action={linkAction}><button className="btn" disabled={linking}>{linking ? t("Бэлдэж байна…", "Preparing…") : t("Telegram холбох", "Link Telegram")}</button></form>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Эсвэл Telegram дээр манай ботыг нээж, бүртгэлтэй имэйлээ бичээд илгээ. Дараа нь энд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарахад холбогдоно. Токен, код оруулах шаардлагагүй.", "Or open our bot in Telegram and send it the email you registered with. Then press “Yes, it's mine” on the request that appears here. No token or code to type.")}</p>
+        </div>
       )}
       {note && <p role="alert" className="mt-3 text-sm text-red-400">{note}</p>}
       {ok && !note && <p role="status" className="mt-3 text-sm text-emerald-400">{ok}</p>}

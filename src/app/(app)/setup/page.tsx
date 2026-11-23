@@ -5,11 +5,13 @@ import { SetupChart } from "@/components/SetupChart";
 import { TelegramCard } from "@/components/TelegramCard";
 import { requireUser } from "@/lib/auth";
 import { listSignals } from "@/lib/signals";
-import { telegramConfigured } from "@/lib/telegram";
+import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
 import { getViewer } from "@/lib/prefs.server";
 import { eventTitle } from "@/lib/data/calendarProvider";
 import type { T } from "@/lib/i18n";
 import { Dir } from "@/components/Timetable";
+import { ReasoningPanel } from "@/components/ReasoningPanel";
+import { getReasoning } from "@/lib/reasoningLive";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Setup — XAU Analytics" };
@@ -87,7 +89,7 @@ export default async function SetupPage() {
   const STATUS = statusOf(t);
   const now = new Date();
   const user = await requireUser();
-  const [view, next, signals] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15)]);
+  const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15), getReasoning(now, v.locale)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -99,6 +101,8 @@ export default async function SetupPage() {
           {next && <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-2.5 py-1 font-medium text-amber-300"><span aria-hidden className="h-1.5 w-1.5 shrink-0 rotate-45 rounded-[1px] bg-amber-400" />{t("Дараагийн чухал мэдээ", "Next important release")} {v.time(next.time)}: {eventTitle(next, t)}</span>}
         </p>
       </div>
+
+      <ReasoningPanel initial={reasoning} />
 
       {view.setups.map((s) => {
         const [label, tone, dot] = STATUS[s.status];
@@ -148,7 +152,7 @@ export default async function SetupPage() {
         );
       })}
 
-      <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} />
+      <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
 
       <section className="table-card" aria-labelledby="signals-h">
         <h2 id="signals-h" className="px-4 pt-4 pb-2 text-[15px] font-semibold text-zinc-100 sm:px-5 sm:pt-5">{t("Сүүлийн дохионууд", "Recent signals")}</h2>

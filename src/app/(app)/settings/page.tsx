@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { prefsOf } from "@/lib/prefsDb";
-import { telegramConfigured } from "@/lib/telegram";
+import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
 import { listTrades } from "@/lib/trades";
 import { logoutAction } from "@/lib/actions/session";
 import { AppearanceForm, DeleteAccountForm, PasswordForm, ProfileForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
@@ -36,7 +36,7 @@ export default async function SettingsPage() {
         <div className="md:col-span-2"><SoundToggle /></div>
 
         <div className="space-y-4 sm:space-y-5 md:col-span-2">
-          <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} />
+          <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
           {linked && (
             <section className="card">
               <h2 className="card-title">{t("Telegram мэдэгдэл", "Telegram notifications")}</h2>

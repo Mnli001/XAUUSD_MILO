@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { findUserById } from "@/lib/users";
-import { deliver, esc, handleUpdate, LINK_CODE_TTL_MS, newLinkCode, sendMessage, TelegramError, telegramTiming, unlinkTelegram, webhookSecret, telegramConfigured } from "@/lib/telegram";
+import { confirmPendingTelegram, pendingTelegram, rejectPendingTelegram, PENDING_TTL_MS, deliver, esc, handleUpdate, LINK_CODE_TTL_MS, newLinkCode, sendMessage, TelegramError, telegramTiming, unlinkTelegram, webhookSecret, telegramConfigured } from "@/lib/telegram";
 import { POST } from "@/app/api/telegram/webhook/route";
 import { resetDb } from "./helpers/db";
 import { makeUser } from "./helpers/users";
@@ -182,4 +182,73 @@ test("the webhook only accepts calls that carry Telegram's secret header", async
 test("the webhook answers 200 to a body it cannot read, so Telegram does not retry it for hours", async () => {
   const res = await POST(new Request("http://x/api/telegram/webhook", { method: "POST", headers: { "x-telegram-bot-api-secret-token": webhookSecret() }, body: "not json" }));
   expect(res.status).toBe(200);
+});
+
+// Linking by email: the bot asks for the address, the account's owner confirms on the site.
+const from = { first_name: "Бат", username: "bat_trader" };
+const say = (text: string, chatId = 555) => ({ message: { chat: { id: chatId, type: "private" }, text, from } });
+
+test("an unknown chat is asked for the email it registered with", async () => {
+  await handleUpdate(say("/start"));
+  expect(lastText()).toContain("имэйл");
+  expect(lastText()).toContain("email address");
+});
+test("an email from a chat does not link it: the account is shown a request and must say yes", async () => {
+  const u = await makeUser("a@x.mn");
+  await db.execute(sql`UPDATE users SET access_until = '2099-01-01' WHERE id = ${u.id}`);
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("  A@X.mn "), now);
+  let row = (await findUserById(u.id))!;
+  expect(row.telegramChatId).toBeNull(); // knowing the address is not enough
+  expect(row).toMatchObject({ telegramPendingChatId: "555", telegramPendingName: "Бат · @bat_trader" });
+  expect(pendingTelegram(row, now)).toEqual({ name: "Бат · @bat_trader" });
+  expect(lastText()).toContain("https://xau.example/settings");
+
+  expect(await confirmPendingTelegram(u.id, new Date(now.getTime() + 60_000))).toBe(true);
+  row = (await findUserById(u.id))!;
+  expect(row).toMatchObject({ telegramChatId: "555", telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null });
+  expect(lastText()).toContain("Холбогдлоо, a.");
+  expect(lastText()).toContain("2099-01-01"); // the bot says the subscription was recognised
+  expect(sends().at(-1)!.body.chat_id).toBe("555");
+});
+test("the bot answers the same whether or not the email is registered", async () => {
+  await makeUser("a@x.mn");
+  await handleUpdate(say("a@x.mn", 1));
+  const known = lastText();
+  await handleUpdate(say("nobody@x.mn", 2));
+  expect(lastText()).toBe(known);
+});
+test("a request lapses after 30 minutes and a declined one is dropped", async () => {
+  const u = await makeUser("a@x.mn");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("a@x.mn"), now);
+  const late = new Date(now.getTime() + PENDING_TTL_MS + 1);
+  expect(pendingTelegram((await findUserById(u.id))!, late)).toBeNull();
+  expect(await confirmPendingTelegram(u.id, late)).toBe(false);
+  expect((await findUserById(u.id))!).toMatchObject({ telegramChatId: null, telegramPendingChatId: null });
+
+  await handleUpdate(say("a@x.mn"), now);
+  await rejectPendingTelegram(u.id);
+  expect(await confirmPendingTelegram(u.id, now)).toBe(false);
+  expect((await findUserById(u.id))!.telegramChatId).toBeNull();
+});
+test("confirming moves the chat from any other account and spends its other requests", async () => {
+  const a = await makeUser("a@x.mn"), b = await makeUser("b@x.mn"), c = await makeUser("c@x.mn");
+  await linkUser(b.id, "555");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("c@x.mn", 777), now); // an unlinked chat asks for two accounts
+  await handleUpdate(say("a@x.mn", 777), now);
+  await db.execute(sql`UPDATE users SET telegram_pending_chat_id = '555', telegram_pending_expires_at = '2099-01-01' WHERE id = ${a.id}`);
+  await db.execute(sql`UPDATE users SET telegram_pending_chat_id = '555', telegram_pending_expires_at = '2099-01-01' WHERE id = ${c.id}`);
+  expect(await confirmPendingTelegram(a.id, now)).toBe(true);
+  expect((await findUserById(a.id))!.telegramChatId).toBe("555");
+  expect((await findUserById(b.id))!.telegramChatId).toBeNull(); // one chat, one account
+  expect((await findUserById(c.id))!.telegramPendingChatId).toBeNull();
+});
+test("a linked chat that sends an email is not asked to link again", async () => {
+  const u = await makeUser("a@x.mn");
+  await linkUser(u.id, "555");
+  await handleUpdate(say("other@x.mn"));
+  expect((await findUserById(u.id))!.telegramPendingChatId).toBeNull();
+  expect(lastText()).toContain("/status"); // the help text
 });

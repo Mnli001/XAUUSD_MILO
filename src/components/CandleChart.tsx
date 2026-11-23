@@ -6,6 +6,9 @@ import type { Levels } from "@/lib/snapshot";
 import { useViewer } from "./PrefsProvider";
 import type { T } from "@/lib/i18n";
 import { zoneShiftMs } from "@/lib/time";
+import { useQuote } from "@/lib/liveClient";
+import { withLive } from "@/lib/liveBar";
+import { LiveBadge } from "./LiveQuote";
 
 const tfs = (t: T): [Timeframe, string][] => [["15min", t("15м", "15m")], ["1h", t("1ц", "1h")], ["4h", t("4ц", "4h")], ["1day", t("Өдөр", "Day")]];
 type Row = { time: number; open: number; high: number; low: number; close: number };
@@ -31,6 +34,9 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
   const ref = useRef<HTMLDivElement>(null);
   const [tf, setTf] = useState<Timeframe>("1h");
   const [status, setStatus] = useState<"loading" | "empty" | "error" | "ok">("loading");
+  const quote = useQuote();
+  // What the live price is folded into: the candles as loaded, the series they are drawn on, and the time mapping.
+  const live = useRef<{ rows: Row[]; tf: Timeframe; update: (r: Row) => void } | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -70,11 +76,22 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
           }
         }
         chart.timeScale().fitContent();
+        live.current = { rows: candles, tf, update: (r) => series.update({ time: at(r.time), open: r.open, high: r.high, low: r.low, close: r.close }) };
         setStatus("ok");
       })
       .catch(() => !cancelled && setStatus("error"));
-    return () => { cancelled = true; chart.remove(); };
+    return () => { cancelled = true; live.current = null; chart.remove(); };
   }, [tf, levels, timeZone, themeTick]);
+
+  // The bar still forming follows the live price; a new bar opens when its time comes.
+  useEffect(() => {
+    const l = live.current;
+    if (!l || status !== "ok" || !quote?.live) return;
+    const rows = withLive(l.rows, l.tf, quote.price, quote.at);
+    if (rows === l.rows) return;
+    l.rows = rows;
+    try { l.update(rows[rows.length - 1]); } catch { /* the chart was rebuilt between the two effects */ }
+  }, [quote, status]);
 
   const keys: [string, string][] = [["EMA20", "var(--color-amber-400)"], ["EMA50", "var(--chart-ema50)"], ["EMA200", "var(--chart-ema200)"]];
   const levelKeys: [string, string][] = [["R1", "var(--color-red-500)"], ["Pivot", "var(--color-zinc-400)"], ["S1", "var(--color-emerald-500)"]];
@@ -87,6 +104,7 @@ export function CandleChart({ levels }: { levels: Levels | null }) {
               className={`min-h-10 min-w-12 rounded-md px-3 text-sm tabular-nums transition-colors ${tf === v ? "bg-[var(--accent-bg)] font-semibold text-[var(--accent-fg)]" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>{label}</button>
           ))}
         </div>
+        <LiveBadge />
         <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-400 sm:ml-auto">
           {keys.map(([name, color]) => <li key={name} className="flex items-center gap-1.5"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: color }} />{name}</li>)}
           {levelKeys.map(([name, color]) => <li key={name} className="flex items-center gap-1.5"><span aria-hidden className="w-4 border-t-2 border-dashed" style={{ borderColor: color }} />{name}</li>)}

@@ -9,6 +9,8 @@ import { Countdown } from "@/components/Countdown";
 import { ReactionRows } from "@/components/NewsList";
 import { eventTitle } from "@/lib/data/calendarProvider";
 import { getT, getViewer } from "@/lib/prefs.server";
+import { ReasoningPanel } from "@/components/ReasoningPanel";
+import { getReasoning } from "@/lib/reasoningLive";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -20,12 +22,13 @@ export default async function TodayPage() {
   const v = await getViewer();
   const { t } = v;
   const now = new Date();
-  const [snap, upcoming, next, reactions, day] = await Promise.all([
+  const [snap, upcoming, next, reactions, day, reasoning] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
     getReactions(),
     loadCandles(SYMBOL, "15min", 96),
+    getReasoning(now, v.locale),
   ]);
   const highSoon = upcoming.filter((e) => e.impact === "HIGH").map((e) => ({ time: e.time, title: e.title, type: e.type }));
   return (
@@ -40,8 +43,9 @@ export default async function TodayPage() {
 
       {/* Phones read top to bottom: the side, the next release, the hours, the levels. Wide screens pair them in two columns. */}
       <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-4 sm:space-y-5">
             <BiasBar bias={snap.bias} v={v} />
+            <ReasoningPanel initial={reasoning} compact />
         </div>
         <div className="min-w-0">
             <section className="card overflow-hidden p-0 sm:p-0" aria-labelledby="next-h">

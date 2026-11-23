@@ -67,12 +67,13 @@ export type Figure ={ label: string; value: ReactNode; tone?: string; note?: Rea
 export function Figures({ items, className = "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6", label, inset = false }: { items: Figure[]; className?: string; label?: string; inset?: boolean }) {
   // Pick a column count that divides the number of figures, or the empty cells show as a block.
   return (
-    <dl aria-label={label} className={`grid gap-px overflow-hidden border border-zinc-800 bg-zinc-800 ${inset ? "rounded-lg" : "rounded-xl"} ${className}`} style={inset ? undefined : { boxShadow: "var(--shadow-panel)" }}>
+    <dl aria-label={label} className={`grid gap-px overflow-hidden border ${inset ? "rounded-[16px]" : "rounded-[20px]"} ${className}`} style={{ borderColor: "var(--hairline)", background: "var(--hairline)", boxShadow: inset ? undefined : "var(--shadow-panel)" }}>
       {items.map((f) => (
-        <div key={f.label} className={`min-w-0 bg-zinc-900 ${inset ? "px-3 py-2.5" : "px-4 py-3"}`}>
-          <dt className="truncate text-xs text-zinc-500">{f.label}</dt>
-          <dd className={`mt-0.5 truncate text-lg font-semibold tabular-nums ${f.tone ?? "text-zinc-50"}`}>{f.value}</dd>
-          {f.note && <dd className="mt-0.5 truncate text-xs text-zinc-500">{f.note}</dd>}
+        <div key={f.label} className={`min-w-0 ${inset ? "px-3 py-2.5" : "px-4 py-3"}`} style={{ background: "var(--cell-bg)" }}>
+          <dt className="text-xs leading-snug break-words text-zinc-500">{f.label}</dt>
+          {/* A long figure shrinks and wraps; it is never cut off. */}
+          <dd className={`mt-0.5 text-[clamp(0.8rem,3.9vw,1.125rem)] leading-tight font-semibold break-words tabular-nums ${f.tone ?? "text-zinc-50"}`}>{f.value}</dd>
+          {f.note && <dd className="mt-0.5 text-xs leading-snug break-words text-zinc-500">{f.note}</dd>}
         </div>
       ))}
     </dl>

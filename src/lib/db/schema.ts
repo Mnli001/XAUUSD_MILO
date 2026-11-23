@@ -18,6 +18,9 @@ export const users = pgTable("users", {
   telegramChatId: text("telegram_chat_id"), // where setup signals are sent
   telegramLinkCode: text("telegram_link_code"), // one-time code the user presses Start with
   telegramLinkExpiresAt: ts("telegram_link_expires_at"), // the code above stops working after this
+  telegramPendingChatId: text("telegram_pending_chat_id"), // a chat that gave this account's email to the bot and waits for a yes on the site
+  telegramPendingName: text("telegram_pending_name"), // how that chat calls itself, shown beside the yes/no
+  telegramPendingExpiresAt: ts("telegram_pending_expires_at"), // the request above lapses after this
   signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
   signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
   signalsNews: boolean("signals_news").notNull().default(false), // a Telegram heads-up before HIGH-impact releases (opt-in)
@@ -141,6 +144,18 @@ export const signals = pgTable("signals", {
   sentTo: integer("sent_to").notNull().default(0),
   createdAt: ts("created_at").notNull(),
 }, (t) => [index("signals_created").on(t.createdAt)]);
+
+/**
+ * The newest price a robot reported, one row per symbol. Only the owner's (an admin's) robot writes
+ * here; every signed-in user reads it, so nobody else has to connect MT5 to see a live chart.
+ */
+export const liveTicks = pgTable("live_ticks", {
+  symbol: text("symbol").primaryKey(),
+  bid: doublePrecision("bid").notNull(),
+  ask: doublePrecision("ask").notNull(),
+  time: ts("time").notNull(),
+  source: text("source").notNull(), // the broker server the price came from
+});
 
 export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;
