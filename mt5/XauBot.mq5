@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.50"
+#property version   "2.60"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -35,7 +35,8 @@ enum ENUM_XAU_TOOL
    TOOL_LONDON   = 3, // Дүрэм 2 · Rule 2: London open first-hour breakout
    TOOL_PULLBACK = 4, // Дүрэм 3 · Rule 3: 1-hour pullback with the daily trend
    TOOL_FADE     = 5, // Дүрэм 4 · Rule 4: fading an overstretched price (1h)
-   TOOL_ICT      = 6  // ICT/SMC: sweep, MSS, FVG, OTE
+   TOOL_ICT      = 6, // ICT/SMC: sweep, MSS, FVG, OTE
+   TOOL_SMCX     = 7  // SMC Active: breakout, QM, nearest liquidity
   };
 input group "Strategy Tester (зөвхөн backtest-д · backtest only)"
 input ENUM_XAU_TOOL TesterTool    = TOOL_SCALPER; // Хэрэгсэл · Tool
@@ -45,7 +46,7 @@ input double TesterSlAtr          = 1.5;      // Scalper: stop loss (ATR x)
 input double TesterTpAtr          = 2.0;      // Scalper: take profit (ATR x)
 input double TesterProfit         = 0.0;      // Нийт ашиг $ хүрвэл хаах · Close at total profit $
 input double TesterLoss           = 0.0;      // Нийт алдагдал $ хүрвэл хаах · Close at total loss $
-input int    TesterIctVariant     = 1;        // ICT хувилбар 1-8 · ICT variant 1-8
+input int    TesterIctVariant     = 1;        // ICT / SMC Active хувилбар 1-8 · variant 1-8
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (сек) · Restart after (s)
 input int    ServerUtcOffsetWinter = 2;       // Серверийн цаг UTC-ээс түрүүлэх цаг (өвөл) · Server hours ahead of UTC (winter)
 input bool   ServerDstEurope      = true;     // Сервер Европын зуны цаг мөрддөг · Server follows EU summer time
@@ -91,6 +92,13 @@ bool     gRuleTraded = false;      // өнөөдөр орсон эсэх
 double   gRangeHigh = 0.0, gRangeLow = 0.0;
 int      gRangeBars = 0;
 datetime gRuleExitAt = 0;          // нээлттэй арилжааг энэ цагт хаана         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
+// SMC Active хэрэгсэл (tester)
+int      hM15Atr = INVALID_HANDLE;
+datetime gSxLastBar = 0;
+int      gSxDay = -1;
+bool     gSxLevels = false;
+double   gSxDayHi = 0, gSxDayLo = 0, gSxPostHi = 0, gSxPostLo = 0;
+datetime gSxBosUp = 0, gSxBosDn = 0, gSxQmUp = 0, gSxQmDn = 0;   // нэг swing-ээр нэг л удаа орно
 // ICT / SMC хэрэгсэл (tester)
 int      hM5Atr = INVALID_HANDLE;
 datetime gIctLastBar = 0;
@@ -166,6 +174,13 @@ int OnInit()
          hH1Ema50 = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
          hH1Rsi   = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
          hH1Atr   = iATR(_Symbol, PERIOD_H1, 14);
+         if(TesterTool == TOOL_SMCX)
+           {
+            if(TesterIctVariant < 1 || TesterIctVariant > 8) return(INIT_PARAMETERS_INCORRECT);
+            hM5Atr  = iATR(_Symbol, PERIOD_M5, 14);
+            hM15Atr = iATR(_Symbol, PERIOD_M15, 14);
+            if(hM5Atr == INVALID_HANDLE || hM15Atr == INVALID_HANDLE) return(INIT_FAILED);
+           }
          if(TesterTool == TOOL_ICT)
            {
             if(TesterIctVariant < 1 || TesterIctVariant > 8) return(INIT_PARAMETERS_INCORRECT);
@@ -205,6 +220,7 @@ void OnDeinit(const int reason)
    if(hH1Rsi    != INVALID_HANDLE) IndicatorRelease(hH1Rsi);
    if(hH1Atr    != INVALID_HANDLE) IndicatorRelease(hH1Atr);
    if(hM5Atr    != INVALID_HANDLE) IndicatorRelease(hM5Atr);
+   if(hM15Atr   != INVALID_HANDLE) IndicatorRelease(hM15Atr);
    Comment("");
   }
 
@@ -647,7 +663,8 @@ void RangeAdd(const double h, const double l)
 
 void RuleStep()
   {
-   if(TesterTool == TOOL_ICT) { IctStep(); return; }
+   if(TesterTool == TOOL_ICT)  { IctStep(); return; }
+   if(TesterTool == TOOL_SMCX) { SxStep(); return; }
    if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
      {
       CloseAllMine();                                            // барих хугацаа дууслаа
@@ -1019,6 +1036,202 @@ void IctStep()
    if(atr == EMPTY_VALUE || atr <= 0 || body2 < atr) return;   // displacement
    if(gSetDir > 0) { if(l <= h3) return; IctTryArm(kz, l, h3, atr); }
    else            { if(h >= l3) return; IctTryArm(kz, l3, h, atr); }
+  }
+
+//+------------------------------------------------------------------+
+//| SMC Active (Strategy Tester).                                     |
+//| Бүтэц эвдэрмэгц (breakout) шууд орно, QM (Quasimodo)-ийн зүүн     |
+//| мөрөнд limit тавина. TP: хамгийн ойрын эвдэгдээгүй BSL / SSL.     |
+//| Дүрэм: claude/trader-smc-active-preregistration.md                |
+//+------------------------------------------------------------------+
+bool SxVar(const int v) { return(TesterIctVariant == v); }
+ENUM_TIMEFRAMES SxTf() { return(SxVar(8) ? PERIOD_M15 : PERIOD_M5); }
+
+bool SwHigh(const MqlRates &r[], const int k) { return(r[k].high > r[k-1].high && r[k].high > r[k-2].high && r[k].high > r[k+1].high && r[k].high > r[k+2].high); }
+bool SwLow(const MqlRates &r[], const int k)  { return(r[k].low < r[k-1].low && r[k].low < r[k-2].low && r[k].low < r[k+1].low && r[k].low < r[k+2].low); }
+
+// Нээлттэй арилжаа + хүлээгдэж буй захиалгын тоо
+int SxCountOpen()
+  {
+   int n = CountPositions();
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) == MagicNumber && OrderGetString(ORDER_SYMBOL) == _Symbol) n++;
+     }
+   return(n);
+  }
+
+// Limit захиалга: 2 цагт биелээгүй эсвэл TP түрүүлж хүрвэл цуцална. Баасан 20:00 UTC-д бүгдийг хаана.
+void SxManage()
+  {
+   datetime now = TimeCurrent();
+   MqlDateTime u;
+   TimeToStruct(now - ServerUtcOffset(now) * 3600, u);
+   bool weekend = (u.day_of_week == 5 && u.hour >= 20);
+   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) != MagicNumber || OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+      double tp = OrderGetDouble(ORDER_TP);
+      bool buy = (OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_LIMIT);
+      bool reached = buy ? (tp > 0 && bid >= tp) : (tp > 0 && ask <= tp);
+      if(weekend || reached || now - (datetime)OrderGetInteger(ORDER_TIME_SETUP) >= 2 * 3600) trade.OrderDelete(t);
+     }
+   if(weekend && CountPositions() > 0) CloseAllMine();
+  }
+
+// TP = орох үнээс minR·R-аас багагүй зайтай хамгийн ойрын liquidity; олдохгүй бол 2R
+void SxEnter(const int dir, const double entry, const double stop, const double &lv[], const int cnt, const double minR, const double atr, const bool limit, const string tag)
+  {
+   double risk = dir * (entry - stop);
+   if(risk <= 0 || risk > 3.0 * atr) return;
+   double tp = 0, bestD = 0;
+   for(int i = 0; i < cnt; i++)
+     {
+      double d = dir * (lv[i] - entry);
+      if(d >= minR * risk && (bestD == 0 || d < bestD)) { bestD = d; tp = lv[i]; }
+     }
+   if(bestD == 0) tp = entry + dir * 2.0 * risk;
+   double lots = RuleLots();
+   if(lots <= 0) return;
+   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
+   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double sl = NormalizeDouble(stop, _Digits), t = NormalizeDouble(tp, _Digits), e = NormalizeDouble(entry, _Digits);
+   if(!limit)
+     {
+      if(dir > 0) { if(ask - sl <= minDist || t - ask <= minDist) return; trade.Buy(lots, _Symbol, 0.0, sl, t, tag); }
+      else        { if(sl - bid <= minDist || bid - t <= minDist) return; trade.Sell(lots, _Symbol, 0.0, sl, t, tag); }
+      return;
+     }
+   if(dir > 0) { if(e >= ask - minDist) return; trade.BuyLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, tag); }
+   else        { if(e <= bid + minDist) return; trade.SellLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, tag); }
+  }
+
+void SxStep()
+  {
+   SxManage();
+   ENUM_TIMEFRAMES tf = SxTf();
+   datetime bar = iTime(_Symbol, tf, 0);
+   if(bar == gSxLastBar) return;
+   gSxLastBar = bar;
+   datetime t1 = iTime(_Symbol, tf, 1);
+   if(t1 <= 0) return;
+   MqlDateTime u;
+   TimeToStruct(t1 - ServerUtcOffset(t1) * 3600, u);
+   datetime dayStart = t1 - (u.hour * 3600 + u.min * 60 + u.sec);
+   double bh = iHigh(_Symbol, tf, 1), bl = iLow(_Symbol, tf, 1);
+   if(u.day_of_year != gSxDay)
+     {
+      gSxDay = u.day_of_year;
+      gSxLevels = PrevDayLevels(dayStart);
+      gIctAsia = false;
+      gSxDayHi = bh; gSxDayLo = bl; gSxPostHi = 0; gSxPostLo = 0;
+     }
+   else { gSxDayHi = MathMax(gSxDayHi, bh); gSxDayLo = MathMin(gSxDayLo, bl); }
+   if(u.hour >= 7)
+     {
+      if(!gIctAsia) gIctAsia = AsiaRange(dayStart);
+      if(gSxPostHi == 0) { gSxPostHi = bh; gSxPostLo = bl; }
+      else { gSxPostHi = MathMax(gSxPostHi, bh); gSxPostLo = MathMin(gSxPostLo, bl); }
+     }
+   if(u.day_of_week == 0 || u.day_of_week == 6 || !gSxLevels) return;
+   if(u.hour >= 21 || u.hour < 1) return;                        // шөнийн rollover-ийн үед орохгүй
+   if(u.day_of_week == 5 && u.hour >= 19) return;
+   if(SxVar(6) && (u.hour < 7 || u.hour >= 17)) return;          // зөвхөн Лондон + Нью-Йорк
+   if(SxCountOpen() >= 3) return;
+
+   MqlRates r[];
+   ArraySetAsSeries(r, false);
+   int n = CopyRates(_Symbol, tf, 1, 300, r);                    // хаагдсан лаанууд, хуучнаас шинэ
+   if(n < 50) return;
+   int last = n - 1;
+   double atr = Buf(SxVar(8) ? hM15Atr : hM5Atr, 1);
+   if(atr == EMPTY_VALUE || atr <= 0) return;
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double buf = 0.1 * atr + (ask - bid);
+   double minR = SxVar(4) ? 0.5 : (SxVar(5) ? 1.5 : 1.0);
+
+   // Эвдэгдээгүй swing-ууд = BSL (дээр), SSL (доор)
+   double sufH[], sufL[];
+   ArrayResize(sufH, n + 1); ArrayResize(sufL, n + 1);
+   sufH[n] = -DBL_MAX; sufL[n] = DBL_MAX;
+   for(int k = n - 1; k >= 0; k--) { sufH[k] = MathMax(sufH[k + 1], r[k].high); sufL[k] = MathMin(sufL[k + 1], r[k].low); }
+   double bsl[], ssl[];
+   ArrayResize(bsl, n + 4); ArrayResize(ssl, n + 4);
+   int nb = 0, ns = 0, ksH = -1, ksL = -1;
+   for(int k = 2; k <= n - 3; k++)
+     {
+      if(SwHigh(r, k)) { ksH = k; if(sufH[k + 1] < r[k].high) bsl[nb++] = r[k].high; }
+      if(SwLow(r, k))  { ksL = k; if(sufL[k + 1] > r[k].low)  ssl[ns++] = r[k].low; }
+     }
+   if(gSxDayHi < gPdh) bsl[nb++] = gPdh;                         // өмнөх өдрийн high/low
+   if(gSxDayLo > gPdl) ssl[ns++] = gPdl;
+   if(gIctAsia && u.hour >= 7)                                   // Азийн high/low
+     {
+      if(gSxPostHi < gAsiaH) bsl[nb++] = gAsiaH;
+      if(gSxPostLo > gAsiaL) ssl[ns++] = gAsiaL;
+     }
+   int bias = SxVar(7) ? H4StructureBias() : 0;
+
+   // BUY: сүүлийн swing high-ийг анх удаа биеээрээ хаалтаар эвдсэн
+   if(ksH >= 0 && (!SxVar(7) || bias > 0))
+     {
+      double lvl = r[ksH].high;
+      bool first = r[last].close > lvl && r[last].close > r[last].open;
+      for(int j = ksH + 1; j < last && first; j++) if(r[j].close > lvl) first = false;
+      if(first)
+        {
+         if(!SxVar(3) && gSxBosUp != r[ksH].time && SxCountOpen() < 3)
+           {
+            gSxBosUp = r[ksH].time;
+            double lo = sufL[ksH];                               // эвдсэн хөлийн хамгийн нам цэг
+            SxEnter(1, ask, lo - buf, bsl, nb, minR, atr, false, "xau-bos");
+           }
+         if(!SxVar(2) && SxCountOpen() < 3)
+           {
+            int k1 = -1, k2 = -1;                                // QM: L1 (зүүн мөр) < H1 < L2 (толгой, L1-ээс доош) < эвдрэл
+            for(int k = ksH - 1; k >= 2; k--) if(SwLow(r, k)) { k1 = k; break; }
+            for(int k = n - 3; k > ksH; k--) if(SwLow(r, k)) { k2 = k; break; }
+            if(k1 >= 0 && k2 >= 0 && r[k2].low < r[k1].low && gSxQmUp != r[k2].time)
+              {
+               gSxQmUp = r[k2].time;
+               SxEnter(1, r[k1].low, r[k2].low - buf, bsl, nb, minR, atr, true, "xau-qm");
+              }
+           }
+        }
+     }
+   // SELL: эсрэгээр
+   if(ksL >= 0 && (!SxVar(7) || bias < 0))
+     {
+      double lvl = r[ksL].low;
+      bool first = r[last].close < lvl && r[last].close < r[last].open;
+      for(int j = ksL + 1; j < last && first; j++) if(r[j].close < lvl) first = false;
+      if(first)
+        {
+         if(!SxVar(3) && gSxBosDn != r[ksL].time && SxCountOpen() < 3)
+           {
+            gSxBosDn = r[ksL].time;
+            double hi = sufH[ksL];
+            SxEnter(-1, bid, hi + buf, ssl, ns, minR, atr, false, "xau-bos");
+           }
+         if(!SxVar(2) && SxCountOpen() < 3)
+           {
+            int k1 = -1, k2 = -1;
+            for(int k = ksL - 1; k >= 2; k--) if(SwHigh(r, k)) { k1 = k; break; }
+            for(int k = n - 3; k > ksL; k--) if(SwHigh(r, k)) { k2 = k; break; }
+            if(k1 >= 0 && k2 >= 0 && r[k2].high > r[k1].high && gSxQmDn != r[k2].time)
+              {
+               gSxQmDn = r[k2].time;
+               SxEnter(-1, r[k1].high, r[k2].high + buf, ssl, ns, minR, atr, true, "xau-qm");
+              }
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
