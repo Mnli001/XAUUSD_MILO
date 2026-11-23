@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.60"
+#property version   "2.70"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -36,7 +36,8 @@ enum ENUM_XAU_TOOL
    TOOL_PULLBACK = 4, // Дүрэм 3 · Rule 3: 1-hour pullback with the daily trend
    TOOL_FADE     = 5, // Дүрэм 4 · Rule 4: fading an overstretched price (1h)
    TOOL_ICT      = 6, // ICT/SMC: sweep, MSS, FVG, OTE
-   TOOL_SMCX     = 7  // SMC Active: breakout, QM, nearest liquidity
+   TOOL_SMCX     = 7, // SMC Active: breakout, QM, nearest liquidity
+   TOOL_STRADDLE = 8  // Straddle (BuySellStop Pro v5)
   };
 input group "Strategy Tester (зөвхөн backtest-д · backtest only)"
 input ENUM_XAU_TOOL TesterTool    = TOOL_SCALPER; // Хэрэгсэл · Tool
@@ -47,6 +48,7 @@ input double TesterTpAtr          = 2.0;      // Scalper: take profit (ATR x)
 input double TesterProfit         = 0.0;      // Нийт ашиг $ хүрвэл хаах · Close at total profit $
 input double TesterLoss           = 0.0;      // Нийт алдагдал $ хүрвэл хаах · Close at total loss $
 input int    TesterIctVariant     = 1;        // ICT / SMC Active хувилбар 1-8 · variant 1-8
+input bool   TesterManage         = false;    // SMC Active: BE + trailing (BuySellStop Pro v5) · BE + trailing
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (сек) · Restart after (s)
 input int    ServerUtcOffsetWinter = 2;       // Серверийн цаг UTC-ээс түрүүлэх цаг (өвөл) · Server hours ahead of UTC (winter)
 input bool   ServerDstEurope      = true;     // Сервер Европын зуны цаг мөрддөг · Server follows EU summer time
@@ -99,6 +101,7 @@ int      gSxDay = -1;
 bool     gSxLevels = false;
 double   gSxDayHi = 0, gSxDayLo = 0, gSxPostHi = 0, gSxPostLo = 0;
 datetime gSxBosUp = 0, gSxBosDn = 0, gSxQmUp = 0, gSxQmDn = 0;   // нэг swing-ээр нэг л удаа орно
+datetime gStPlaced = 0;                     // Straddle: хос захиалга тавьсан цаг
 // ICT / SMC хэрэгсэл (tester)
 int      hM5Atr = INVALID_HANDLE;
 datetime gIctLastBar = 0;
@@ -665,6 +668,7 @@ void RuleStep()
   {
    if(TesterTool == TOOL_ICT)  { IctStep(); return; }
    if(TesterTool == TOOL_SMCX) { SxStep(); return; }
+   if(TesterTool == TOOL_STRADDLE) { StStep(); return; }
    if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
      {
       CloseAllMine();                                            // барих хугацаа дууслаа
@@ -1082,6 +1086,7 @@ void SxManage()
       if(weekend || reached || now - (datetime)OrderGetInteger(ORDER_TIME_SETUP) >= 2 * 3600) trade.OrderDelete(t);
      }
    if(weekend && CountPositions() > 0) CloseAllMine();
+   if(TesterManage) SxTrailAll();
   }
 
 // TP = орох үнээс minR·R-аас багагүй зайтай хамгийн ойрын liquidity; олдохгүй бол 2R
@@ -1102,14 +1107,15 @@ void SxEnter(const int dir, const double entry, const double stop, const double 
    double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double sl = NormalizeDouble(stop, _Digits), t = NormalizeDouble(tp, _Digits), e = NormalizeDouble(entry, _Digits);
+   string cm = tag + ":" + DoubleToString(risk, 2);                // анхны R-ийг тэмдэглэнэ (BE, trailing-д)
    if(!limit)
      {
-      if(dir > 0) { if(ask - sl <= minDist || t - ask <= minDist) return; trade.Buy(lots, _Symbol, 0.0, sl, t, tag); }
-      else        { if(sl - bid <= minDist || bid - t <= minDist) return; trade.Sell(lots, _Symbol, 0.0, sl, t, tag); }
+      if(dir > 0) { if(ask - sl <= minDist || t - ask <= minDist) return; trade.Buy(lots, _Symbol, 0.0, sl, t, cm); }
+      else        { if(sl - bid <= minDist || bid - t <= minDist) return; trade.Sell(lots, _Symbol, 0.0, sl, t, cm); }
       return;
      }
-   if(dir > 0) { if(e >= ask - minDist) return; trade.BuyLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, tag); }
-   else        { if(e <= bid + minDist) return; trade.SellLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, tag); }
+   if(dir > 0) { if(e >= ask - minDist) return; trade.BuyLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm); }
+   else        { if(e <= bid + minDist) return; trade.SellLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm); }
   }
 
 void SxStep()
@@ -1232,6 +1238,126 @@ void SxStep()
            }
         }
      }
+  }
+
+//+------------------------------------------------------------------+
+//| Break-even + trailing stop: найзын BuySellStop Pro v5-ийн логик.  |
+//| Үнэ beTrig-ээр ашигт гармагц stop-ыг орох үнэ + beLock руу,       |
+//| trStart-аас хойш үнийг trDist зайтай дагана (trStep алхмаар).     |
+//+------------------------------------------------------------------+
+void TrailOne(const ulong ticket, const double beTrig, const double beLock, const double trStart, const double trDist, const double trStep)
+  {
+   if(!PositionSelectByTicket(ticket)) return;
+   bool buy = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+   double open = PositionGetDouble(POSITION_PRICE_OPEN), sl = PositionGetDouble(POSITION_SL), tp = PositionGetDouble(POSITION_TP);
+   double px = buy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+   if(buy)
+     {
+      if(px >= open + beTrig)
+        {
+         double nsl = NormalizeDouble(open + beLock, _Digits);
+         if(sl < nsl && trade.PositionModify(ticket, nsl, tp)) sl = nsl;
+        }
+      if(px >= open + trStart)
+        {
+         double nsl = NormalizeDouble(px - trDist, _Digits);
+         if(nsl > sl + trStep) trade.PositionModify(ticket, nsl, tp);
+        }
+     }
+   else
+     {
+      if(px <= open - beTrig)
+        {
+         double nsl = NormalizeDouble(open - beLock, _Digits);
+         if((sl == 0 || sl > nsl) && trade.PositionModify(ticket, nsl, tp)) sl = nsl;
+        }
+      if(px <= open - trStart)
+        {
+         double nsl = NormalizeDouble(px + trDist, _Digits);
+         if(sl == 0 || nsl < sl - trStep) trade.PositionModify(ticket, nsl, tp);
+        }
+     }
+  }
+
+// SMC Active: найзын харьцааг ($1 stop-д 0.8 / 0.1 / 1.0 / 0.8 / 0.15) арилжааны анхны R-д тааруулна
+void SxTrailAll()
+  {
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !IsMine(t)) continue;
+      string cm = PositionGetString(POSITION_COMMENT);
+      int at = StringFind(cm, ":");
+      if(at < 0) continue;
+      double R = StringToDouble(StringSubstr(cm, at + 1));
+      if(R <= 0) continue;
+      TrailOne(t, 0.8 * R, 0.1 * R, 1.0 * R, 0.8 * R, 0.15 * R);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Straddle: найзын BuySellStop Pro v5 (тасралтгүй горим)-ийг        |
+//| анхны тохиргоогоор нь. Үнээс ±$1.5 зайд Buy Stop / Sell Stop,     |
+//| SL $1, TP байхгүй. Нэг нь биелмэгц нөгөөг цуцална (OCO).          |
+//| 120 сек биелэхгүй бол цуцалж шинээр тавина; үнэ холдвол дагуулна. |
+//| Spread $0.50-аас их бол тавихгүй. BE +0.8 / +0.1, trailing 1.0 / 0.8.|
+//+------------------------------------------------------------------+
+void StDeletePending()
+  {
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) == MagicNumber && OrderGetString(ORDER_SYMBOL) == _Symbol) trade.OrderDelete(t);
+     }
+  }
+
+void StPlace()
+  {
+   double lots = RuleLots();
+   if(lots <= 0) return;
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double b = NormalizeDouble(ask + 1.5, _Digits), sv = NormalizeDouble(bid - 1.5, _Digits);
+   if(!trade.BuyStop(lots, b, _Symbol, NormalizeDouble(b - 1.0, _Digits), 0.0, ORDER_TIME_GTC, 0, "xau-straddle")) return;
+   if(!trade.SellStop(lots, sv, _Symbol, NormalizeDouble(sv + 1.0, _Digits), 0.0, ORDER_TIME_GTC, 0, "xau-straddle")) return;
+   gStPlaced = TimeCurrent();
+  }
+
+void StStep()
+  {
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   if(CountPositions() > 0)
+     {
+      StDeletePending();                                         // OCO
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong t = PositionGetTicket(i);
+         if(t != 0 && IsMine(t)) TrailOne(t, 0.8, 0.1, 1.0, 0.8, 0.15);
+        }
+      return;
+     }
+   if(ask - bid > 0.50) return;                                  // spread шүүлтүүр
+   int nb = 0, ns = 0;
+   double pb = 0, ps = 0;
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) != MagicNumber || OrderGetString(ORDER_SYMBOL) != _Symbol) continue;
+      if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_STOP)  { nb++; pb = OrderGetDouble(ORDER_PRICE_OPEN); }
+      if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_SELL_STOP) { ns++; ps = OrderGetDouble(ORDER_PRICE_OPEN); }
+     }
+   if(nb > 0 || ns > 0)
+     {
+      if(gStPlaced > 0 && TimeCurrent() - gStPlaced >= 120) { StDeletePending(); gStPlaced = 0; return; }
+      if(nb == 1 && ns == 1 && (MathAbs(pb - (ask + 1.5)) > 0.9 || MathAbs(ps - (bid - 1.5)) > 0.9))
+        {
+         StDeletePending();
+         StPlace();
+        }
+      return;
+     }
+   StPlace();
   }
 
 //+------------------------------------------------------------------+
