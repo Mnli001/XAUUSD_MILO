@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 
 const FRAG = `
 precision highp float;
-uniform vec2 r; uniform float t;
+uniform vec2 r; uniform float t; uniform vec2 m;
 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
   return mix(mix(h(i), h(i+vec2(1.0,0.0)), f.x), mix(h(i+vec2(0.0,1.0)), h(i+vec2(1.0,1.0)), f.x), f.y); }
@@ -15,15 +15,15 @@ float field(vec2 p, float tt){
 }
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5*r) / r.y;
-  vec2 p = uv*1.35 + vec2(0.0, 0.2);
-  float tt = t*0.045;
+  vec2 p = uv*1.35 + vec2(t*0.035, 0.2 - t*0.02);
+  float tt = t*0.17;
   float f = field(p, tt);
   // The surface normal from the height field: this is what makes it read as poured metal.
   float e = 0.012;
   float fx = field(p + vec2(e,0.0), tt) - f;
   float fy = field(p + vec2(0.0,e), tt) - f;
   vec3 nrm = normalize(vec3(-fx*38.0, -fy*38.0, 1.0));
-  vec3 l = normalize(vec3(0.45, 0.6, 0.75));
+  vec3 l = normalize(vec3(0.45 + m.x*0.9, 0.6 + m.y*0.9, 0.75));
   float diff = max(dot(nrm, l), 0.0);
   float spec = pow(max(dot(reflect(-l, nrm), vec3(0.0,0.0,1.0)), 0.0), 26.0);
   vec3 deep = vec3(0.16, 0.10, 0.03);
@@ -38,7 +38,7 @@ void main(){
 }`;
 const VERT = "attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }";
 
-/** A slow field of poured gold, rendered in a fragment shader. Decorative; one still frame under reduced motion. */
+/** A slow field of poured gold, rendered in a fragment shader. Decorative; slower under reduced motion. */
 export function GoldField({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -57,7 +57,11 @@ export function GoldField({ className = "" }: { className?: string }) {
     const a = gl.getAttribLocation(prog, "a");
     gl.enableVertexAttribArray(a);
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-    const ur = gl.getUniformLocation(prog, "r"), ut = gl.getUniformLocation(prog, "t");
+    const ur = gl.getUniformLocation(prog, "r"), ut = gl.getUniformLocation(prog, "t"), um = gl.getUniformLocation(prog, "m");
+    // The light leans toward the pointer, eased so it glides.
+    const aim = { x: 0, y: 0 }, at = { x: 0, y: 0 };
+    const onMove = (e: PointerEvent) => { aim.x = e.clientX / window.innerWidth - 0.5; aim.y = 0.5 - e.clientY / window.innerHeight; };
+    window.addEventListener("pointermove", onMove, { passive: true });
 
     // Rendered at reduced resolution: the field is soft, and this keeps phones cool.
     const size = () => {
@@ -66,17 +70,22 @@ export function GoldField({ className = "" }: { className?: string }) {
       canvas.height = Math.max(2, Math.round(canvas.clientHeight * k));
       gl.viewport(0, 0, canvas.width, canvas.height);
     };
-    const draw = (ms: number) => { gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, ms / 1000 + 40); gl.drawArrays(gl.TRIANGLES, 0, 3); };
+    const draw = (ms: number) => {
+      at.x += (aim.x - at.x) * 0.05; at.y += (aim.y - at.y) * 0.05;
+      gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, (ms / 1000) * rate + 40); gl.uniform2f(um, at.x, at.y);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    };
+    // Under reduced motion the field still drifts, at a third of the speed.
+    const rate = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0.35 : 1;
     size();
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0, visible = true;
     const loop = (ms: number) => { if (visible) draw(ms); raf = requestAnimationFrame(loop); };
-    if (still) draw(0); else raf = requestAnimationFrame(loop);
+    raf = requestAnimationFrame(loop);
     const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
     io.observe(canvas);
-    const onResize = () => { size(); if (still) draw(0); };
+    const onResize = () => size();
     window.addEventListener("resize", onResize);
-    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener("resize", onResize); };
+    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener("resize", onResize); window.removeEventListener("pointermove", onMove); };
   }, []);
   return <canvas ref={ref} aria-hidden className={className} />;
 }
