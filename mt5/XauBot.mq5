@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.41"
+#property version   "2.50"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -34,7 +34,8 @@ enum ENUM_XAU_TOOL
    TOOL_ASIAN    = 2, // Дүрэм 1 · Rule 1: Asian range breakout + daily trend
    TOOL_LONDON   = 3, // Дүрэм 2 · Rule 2: London open first-hour breakout
    TOOL_PULLBACK = 4, // Дүрэм 3 · Rule 3: 1-hour pullback with the daily trend
-   TOOL_FADE     = 5  // Дүрэм 4 · Rule 4: fading an overstretched price (1h)
+   TOOL_FADE     = 5, // Дүрэм 4 · Rule 4: fading an overstretched price (1h)
+   TOOL_ICT      = 6  // ICT/SMC: sweep, MSS, FVG, OTE
   };
 input group "Strategy Tester (зөвхөн backtest-д · backtest only)"
 input ENUM_XAU_TOOL TesterTool    = TOOL_SCALPER; // Хэрэгсэл · Tool
@@ -44,6 +45,7 @@ input double TesterSlAtr          = 1.5;      // Scalper: stop loss (ATR x)
 input double TesterTpAtr          = 2.0;      // Scalper: take profit (ATR x)
 input double TesterProfit         = 0.0;      // Нийт ашиг $ хүрвэл хаах · Close at total profit $
 input double TesterLoss           = 0.0;      // Нийт алдагдал $ хүрвэл хаах · Close at total loss $
+input int    TesterIctVariant     = 1;        // ICT хувилбар 1-8 · ICT variant 1-8
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (сек) · Restart after (s)
 input int    ServerUtcOffsetWinter = 2;       // Серверийн цаг UTC-ээс түрүүлэх цаг (өвөл) · Server hours ahead of UTC (winter)
 input bool   ServerDstEurope      = true;     // Сервер Европын зуны цаг мөрддөг · Server follows EU summer time
@@ -89,6 +91,28 @@ bool     gRuleTraded = false;      // өнөөдөр орсон эсэх
 double   gRangeHigh = 0.0, gRangeLow = 0.0;
 int      gRangeBars = 0;
 datetime gRuleExitAt = 0;          // нээлттэй арилжааг энэ цагт хаана         // хаах тушаал өгсөн ч арилжаа үлдсэн бол дахин оролдоно
+// ICT / SMC хэрэгсэл (tester)
+int      hM5Atr = INVALID_HANDLE;
+datetime gIctLastBar = 0;
+int      gIctDay = -1;
+datetime gIctDayStart = 0;                 // UTC 00:00, серверийн цагаар
+bool     gIctLevels = false, gIctAsia = false;
+double   gPdh = 0, gPdl = 0, gVah = 0, gVal = 0, gAsiaH = 0, gAsiaL = 0;
+bool     gPdhTaken = false, gPdlTaken = false, gAsiaHTaken = false, gAsiaLTaken = false;
+bool     gKzUsed[2];
+int      gSetDir = 0;                      // +1: доод liquidity авагдаж BUY хайна, -1: SELL
+datetime gSweepTime = 0;
+double   gSweepExt = 0;                    // sweep-ийн оргил (BUY-д хамгийн нам үнэ)
+double   gLegExt = 0;                      // түүнээс хойших эсрэг оргил (импульсийн төгсгөл)
+double   gMssLevel = 0;
+bool     gMss = false;
+ulong    gIctOrder = 0;
+datetime gIctOrderEnd = 0;
+double   gIctOrderTp = 0;
+int      gIctOrderDir = 0;
+datetime gH4BiasBar = 0;
+int      gH4Bias = 0;
+
 
 //+------------------------------------------------------------------+
 // Чартын бичвэр хоёр хэлээр: L("монгол", "english")
@@ -142,6 +166,12 @@ int OnInit()
          hH1Ema50 = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
          hH1Rsi   = iRSI(_Symbol, PERIOD_H1, 14, PRICE_CLOSE);
          hH1Atr   = iATR(_Symbol, PERIOD_H1, 14);
+         if(TesterTool == TOOL_ICT)
+           {
+            if(TesterIctVariant < 1 || TesterIctVariant > 8) return(INIT_PARAMETERS_INCORRECT);
+            hM5Atr = iATR(_Symbol, PERIOD_M5, 14);
+            if(hM5Atr == INVALID_HANDLE) return(INIT_FAILED);
+           }
          if(hD1Fast == INVALID_HANDLE || hD1Slow == INVALID_HANDLE || hH1Ema20 == INVALID_HANDLE || hH1Ema50 == INVALID_HANDLE || hH1Rsi == INVALID_HANDLE || hH1Atr == INVALID_HANDLE)
             return(INIT_FAILED);
          gMode = "RULE";
@@ -174,6 +204,7 @@ void OnDeinit(const int reason)
    if(hH1Ema50  != INVALID_HANDLE) IndicatorRelease(hH1Ema50);
    if(hH1Rsi    != INVALID_HANDLE) IndicatorRelease(hH1Rsi);
    if(hH1Atr    != INVALID_HANDLE) IndicatorRelease(hH1Atr);
+   if(hM5Atr    != INVALID_HANDLE) IndicatorRelease(hM5Atr);
    Comment("");
   }
 
@@ -616,6 +647,7 @@ void RangeAdd(const double h, const double l)
 
 void RuleStep()
   {
+   if(TesterTool == TOOL_ICT) { IctStep(); return; }
    if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
      {
       CloseAllMine();                                            // барих хугацаа дууслаа
@@ -700,6 +732,293 @@ void RuleStep()
       RuleOpen(dir, 1.5 * atr, MathAbs(e20 - price), TimeCurrent() + 12 * 3600);
       return;
      }
+  }
+
+//+------------------------------------------------------------------+
+//| ICT / SMC хэрэгсэл (Strategy Tester).                             |
+//| Дүрмийг тестийн өмнө тогтоосон: trader-ict-bot-preregistration.md |
+//| Bias (H4 бүтэц) → liquidity sweep → MSS → FVG → OTE-д limit орох. |
+//+------------------------------------------------------------------+
+bool IctVariant(const int v) { return(TesterIctVariant == v); }
+
+// H4 бүтэц: хаалт сүүлийн баталгаажсан 2/2 swing high-аас дээш гарвал +1, swing low-оос доош бол -1
+int H4StructureBias()
+  {
+   datetime last = iTime(_Symbol, PERIOD_H4, 1);
+   if(last == gH4BiasBar) return(gH4Bias);
+   gH4BiasBar = last;
+   MqlRates r[];
+   ArraySetAsSeries(r, false);
+   int n = CopyRates(_Symbol, PERIOD_H4, 1, 300, r);
+   int bias = 0;
+   if(n >= 50)
+     {
+      double sh = 0, sl = 0;
+      for(int j = 4; j < n; j++)
+        {
+         int k = j - 2;
+         if(r[k].high > r[k-1].high && r[k].high > r[k-2].high && r[k].high > r[k+1].high && r[k].high > r[k+2].high) sh = r[k].high;
+         if(r[k].low < r[k-1].low && r[k].low < r[k-2].low && r[k].low < r[k+1].low && r[k].low < r[k+2].low) sl = r[k].low;
+         if(sh > 0 && r[j].close > sh) { bias = 1; sh = 0; }
+         if(sl > 0 && r[j].close < sl) { bias = -1; sl = 0; }
+        }
+     }
+   gH4Bias = bias;
+   return(bias);
+  }
+
+// Өмнөх арилжааны өдөр (UTC): high/low ба tick volume profile (100 бин, value area 70%)
+bool PrevDayLevels(const datetime dayStart)
+  {
+   for(int d = 1; d <= 4; d++)
+     {
+      MqlRates r[];
+      ArraySetAsSeries(r, false);
+      datetime from = dayStart - d * 86400;
+      int n = CopyRates(_Symbol, PERIOD_M5, from, from + 86400 - 1, r);
+      if(n < 100) continue;                                      // амралтын өдөр бол өмнөх өдрийг авна
+      double hi = r[0].high, lo = r[0].low;
+      for(int i = 1; i < n; i++) { hi = MathMax(hi, r[i].high); lo = MathMin(lo, r[i].low); }
+      if(hi <= lo) return(false);
+      gPdh = hi; gPdl = lo;
+      double vol[100];
+      ArrayInitialize(vol, 0.0);
+      double size = (hi - lo) / 100.0, total = 0;
+      for(int i = 0; i < n; i++)
+        {
+         int b0 = (int)MathFloor((r[i].low - lo) / size), b1 = (int)MathFloor((r[i].high - lo) / size);
+         b0 = MathMax(0, MathMin(99, b0));
+         b1 = MathMax(0, MathMin(99, b1));
+         double share = (double)r[i].tick_volume / (b1 - b0 + 1);
+         for(int b = b0; b <= b1; b++) vol[b] += share;
+         total += (double)r[i].tick_volume;
+        }
+      int poc = ArrayMaximum(vol, 0, WHOLE_ARRAY);
+      int up = poc, dn = poc;
+      double acc = vol[poc];
+      while(acc < 0.7 * total && (up < 99 || dn > 0))
+        {
+         double above = (up < 99) ? vol[up + 1] : -1.0, below = (dn > 0) ? vol[dn - 1] : -1.0;
+         if(above >= below) { up++; acc += vol[up]; }
+         else               { dn--; acc += vol[dn]; }
+        }
+      gVah = lo + (up + 1) * size;
+      gVal = lo + dn * size;
+      return(true);
+     }
+   return(false);
+  }
+
+// Азийн хүрээ: 00:00-07:00 UTC
+bool AsiaRange(const datetime dayStart)
+  {
+   MqlRates r[];
+   ArraySetAsSeries(r, false);
+   int n = CopyRates(_Symbol, PERIOD_M5, dayStart, dayStart + 7 * 3600 - 1, r);
+   if(n < 60) return(false);
+   gAsiaH = r[0].high; gAsiaL = r[0].low;
+   for(int i = 1; i < n; i++) { gAsiaH = MathMax(gAsiaH, r[i].high); gAsiaL = MathMin(gAsiaL, r[i].low); }
+   return(true);
+  }
+
+void IctResetSetup() { gSetDir = 0; gMss = false; }
+
+// Sweep эхэлсэн: MSS-ийн түвшин нь sweep-ээс өмнөх хамгийн сүүлийн 2/2 fractal
+void IctBeginSetup(const int dir, const datetime t, const double ext)
+  {
+   gSetDir = dir; gSweepTime = t; gSweepExt = ext; gMss = false; gMssLevel = 0;
+   gLegExt = (dir > 0) ? iHigh(_Symbol, PERIOD_M5, 1) : iLow(_Symbol, PERIOD_M5, 1);
+   for(int k = 3; k < 300; k++)
+     {
+      if(dir > 0)
+        {
+         double v = iHigh(_Symbol, PERIOD_M5, k);
+         if(v > iHigh(_Symbol, PERIOD_M5, k - 1) && v > iHigh(_Symbol, PERIOD_M5, k - 2) && v > iHigh(_Symbol, PERIOD_M5, k + 1) && v > iHigh(_Symbol, PERIOD_M5, k + 2)) { gMssLevel = v; break; }
+        }
+      else
+        {
+         double v = iLow(_Symbol, PERIOD_M5, k);
+         if(v < iLow(_Symbol, PERIOD_M5, k - 1) && v < iLow(_Symbol, PERIOD_M5, k - 2) && v < iLow(_Symbol, PERIOD_M5, k + 1) && v < iLow(_Symbol, PERIOD_M5, k + 2)) { gMssLevel = v; break; }
+        }
+     }
+   if(gMssLevel == 0) IctResetSetup();
+  }
+
+bool IctHasExposure() { return(gIctOrder > 0 || CountPositions() > 0); }
+
+// Хүлээгдэж буй захиалга: killzone дуусах эсвэл target түрүүлж хүрвэл цуцална. Нээгдсэн арилжааг 20:00 UTC-д хаана.
+void IctManageOrders()
+  {
+   if(gIctOrder > 0)
+     {
+      if(OrderSelect(gIctOrder))
+        {
+         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID), ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+         bool reached = (gIctOrderDir > 0) ? bid >= gIctOrderTp : ask <= gIctOrderTp;
+         if(TimeCurrent() >= gIctOrderEnd || reached)
+            if(trade.OrderDelete(gIctOrder)) gIctOrder = 0;
+        }
+      else gIctOrder = 0;                                        // биелсэн
+     }
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0 || !IsMine(ticket)) continue;
+      if(PositionGetString(POSITION_COMMENT) != "xau-ict") continue;
+      datetime opened = (datetime)PositionGetInteger(POSITION_TIME);
+      datetime utc = opened - ServerUtcOffset(opened) * 3600;
+      MqlDateTime u;
+      TimeToStruct(utc, u);
+      if(TimeCurrent() >= opened - (u.hour * 3600 + u.min * 60 + u.sec) + 20 * 3600) trade.PositionClose(ticket);
+     }
+  }
+
+void IctPlace(const int kz, const int dir, double entry, double stop, double tp)
+  {
+   double lots = RuleLots();
+   if(lots <= 0) return;
+   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
+   entry = NormalizeDouble(entry, _Digits); stop = NormalizeDouble(stop, _Digits); tp = NormalizeDouble(tp, _Digits);
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   bool ok = false;
+   if(dir > 0)
+     {
+      if(entry >= ask - minDist) return;                         // үнэ аль хэдийн орох түвшинд/доор: алгасна
+      ok = trade.BuyLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict");
+     }
+   else
+     {
+      if(entry <= bid + minDist) return;
+      ok = trade.SellLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict");
+     }
+   if(!ok) return;
+   gIctOrder = trade.ResultOrder();
+   gIctOrderEnd = gIctDayStart + (kz == 0 ? 10 : 15) * 3600;
+   gIctOrderTp = tp;
+   gIctOrderDir = dir;
+   gKzUsed[kz] = true;
+   IctResetSetup();
+  }
+
+void IctTryArm(const int kz, const double fvgTop, const double fvgBot, const double atr)
+  {
+   int dir = gSetDir;
+   double leg = MathAbs(gLegExt - gSweepExt);
+   if(leg <= 0) return;
+   double o62 = gLegExt - dir * 0.62 * leg, o79 = gLegExt - dir * 0.79 * leg, o705 = gLegExt - dir * 0.705 * leg;
+   double oteHi = MathMax(o62, o79), oteLo = MathMin(o62, o79);
+   double entry;
+   if(IctVariant(2))      entry = (dir > 0) ? fvgTop : fvgBot;   // FVG-ийн ойрын ирмэг
+   else if(IctVariant(3)) entry = o705;                          // OTE 70.5%
+   else
+     {
+      double lo = MathMax(fvgBot, oteLo), hi = MathMin(fvgTop, oteHi);
+      if(lo > hi) return;                                        // FVG ба OTE давхцахгүй
+      entry = (dir > 0) ? hi : lo;
+     }
+   double mid = (gPdh + gPdl) / 2.0;                             // premium / discount
+   if(!IctVariant(7) && ((dir > 0 && entry > mid) || (dir < 0 && entry < mid))) return;
+   if(IctVariant(4) && ((dir > 0 && gSweepExt >= gVal) || (dir < 0 && gSweepExt <= gVah))) return;   // sweep value area-гийн гадна
+   double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double stop = gSweepExt - dir * (0.1 * atr + spread);
+   double risk = dir * (entry - stop);
+   if(risk <= 0) return;
+   // Target: авагдаагүй хамгийн ойрын эсрэг liquidity. 2R-аас ойр бол орохгүй; байхгүй бол 2R.
+   double cands[2];
+   int nc = 0;
+   if(dir > 0) { if(!gPdhTaken) cands[nc++] = gPdh; if(!gAsiaHTaken) cands[nc++] = gAsiaH; }
+   else        { if(!gPdlTaken) cands[nc++] = gPdl; if(!gAsiaLTaken) cands[nc++] = gAsiaL; }
+   double best = 0, bestDist = 0;
+   for(int i = 0; i < nc; i++)
+     {
+      double d = dir * (cands[i] - entry);
+      if(d > 0 && (bestDist == 0 || d < bestDist)) { best = cands[i]; bestDist = d; }
+     }
+   double tp;
+   if(bestDist > 0) { if(bestDist < 2.0 * risk) return; tp = best; }
+   else tp = entry + dir * 2.0 * risk;
+   IctPlace(kz, dir, entry, stop, tp);
+  }
+
+// Шинэ M5 лаа хаагдах бүрт шийднэ
+void IctStep()
+  {
+   IctManageOrders();
+   datetime bar = iTime(_Symbol, PERIOD_M5, 0);
+   if(bar == gIctLastBar) return;
+   gIctLastBar = bar;
+   datetime t1 = iTime(_Symbol, PERIOD_M5, 1);
+   if(t1 <= 0) return;
+   datetime utc = t1 - ServerUtcOffset(t1) * 3600;
+   MqlDateTime u;
+   TimeToStruct(utc, u);
+   datetime dayStart = t1 - (u.hour * 3600 + u.min * 60 + u.sec);
+   if(u.day_of_year != gIctDay)
+     {
+      gIctDay = u.day_of_year;
+      gIctDayStart = dayStart;
+      gIctLevels = PrevDayLevels(dayStart);
+      gIctAsia = false;
+      gPdhTaken = false; gPdlTaken = false; gAsiaHTaken = false; gAsiaLTaken = false;
+      gKzUsed[0] = false; gKzUsed[1] = false;
+      IctResetSetup();
+     }
+   if(u.day_of_week == 0 || u.day_of_week == 6 || !gIctLevels) return;
+   double h = iHigh(_Symbol, PERIOD_M5, 1), l = iLow(_Symbol, PERIOD_M5, 1), c = iClose(_Symbol, PERIOD_M5, 1);
+   if(u.hour < 7)
+     {
+      if(h > gPdh) gPdhTaken = true;                             // Азийн үеэр авагдсан түвшин sweep болохгүй
+      if(l < gPdl) gPdlTaken = true;
+      return;
+     }
+   if(!gIctAsia)
+     {
+      gIctAsia = AsiaRange(dayStart);
+      if(!gIctAsia) return;
+     }
+   if(u.hour >= 15) return;                                      // Нью-Йоркийн killzone дууссан
+
+   int bias = IctVariant(8) ? DailyTrend() : H4StructureBias();
+   if(gSetDir != 0 && gSetDir != bias) IctResetSetup();
+
+   // 1. Liquidity sweep: түвшинг өдөрт анх удаа давсан лаа
+   bool sweptLow = false, sweptHigh = false;
+   if(!gPdlTaken && l < gPdl)     { gPdlTaken = true; sweptLow = true; }
+   if(!gAsiaLTaken && l < gAsiaL) { gAsiaLTaken = true; sweptLow = true; }
+   if(!gPdhTaken && h > gPdh)     { gPdhTaken = true; sweptHigh = true; }
+   if(!gAsiaHTaken && h > gAsiaH) { gAsiaHTaken = true; sweptHigh = true; }
+   if(gSetDir == 0 && bias > 0 && sweptLow)  IctBeginSetup(1, t1, l);
+   if(gSetDir == 0 && bias < 0 && sweptHigh) IctBeginSetup(-1, t1, h);
+   if(gSetDir == 0) return;
+
+   // Шинэ оргил гарвал импульс, MSS-ийг дахин хүлээнэ
+   if(gSetDir > 0)
+     {
+      if(t1 > gSweepTime && l < gSweepExt) { gSweepExt = l; gLegExt = h; gMss = false; }
+      else gLegExt = MathMax(gLegExt, h);
+     }
+   else
+     {
+      if(t1 > gSweepTime && h > gSweepExt) { gSweepExt = h; gLegExt = l; gMss = false; }
+      else gLegExt = MathMin(gLegExt, l);
+     }
+
+   // 2. MSS: хаалт sweep-ээс өмнөх swing-ийг эвдсэн
+   if((gSetDir > 0 && c > gMssLevel) || (gSetDir < 0 && c < gMssLevel)) gMss = true;
+
+   // 3. Killzone дотор MSS-ийн дараа үүссэн FVG (лаа 3, 2, 1)
+   int kz = (u.hour >= 7 && u.hour < 10) ? 0 : ((u.hour >= 12 && u.hour < 15) ? 1 : -1);
+   if(kz < 0 || gKzUsed[kz]) return;
+   if((IctVariant(5) && kz != 0) || (IctVariant(6) && kz != 1)) return;
+   if(!gMss || IctHasExposure()) return;
+   if(iTime(_Symbol, PERIOD_M5, 3) < gSweepTime) return;
+   double h3 = iHigh(_Symbol, PERIOD_M5, 3), l3 = iLow(_Symbol, PERIOD_M5, 3);
+   double body2 = MathAbs(iClose(_Symbol, PERIOD_M5, 2) - iOpen(_Symbol, PERIOD_M5, 2));
+   double atr = Buf(hM5Atr, 2);
+   if(atr == EMPTY_VALUE || atr <= 0 || body2 < atr) return;   // displacement
+   if(gSetDir > 0) { if(l <= h3) return; IctTryArm(kz, l, h3, atr); }
+   else            { if(h >= l3) return; IctTryArm(kz, l3, h, atr); }
   }
 
 //+------------------------------------------------------------------+
