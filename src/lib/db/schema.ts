@@ -90,22 +90,31 @@ export const botState = pgTable("bot_state", {
   startBalance: doublePrecision("start_balance").notNull().default(10000),
 });
 
+/** A user's link to their robot: one token, whichever MT5 account the robot is signed in to. */
+export const botTokens = pgTable("bot_tokens", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash"),
+}, (t) => [uniqueIndex("bot_tokens_token_hash").on(t.tokenHash)]);
+
+/** One bot per MT5 account of a user. login "" is a bot set up before any account connected. */
 export const botLive = pgTable("bot_live", {
-  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }), // one bot per user
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull().default(""),
+  server: text("server"), // broker server name, from robot v2.41
   state: text("state").notNull().default("STOPPED"),
   runId: text("run_id"),
   closeAll: boolean("close_all").notNull().default(false),
   config: jsonb("config").notNull(),
-  tokenHash: text("token_hash"),
   startedAt: ts("started_at"),
   stoppedAt: ts("stopped_at"),
   stopReason: text("stop_reason"),
   lastSeenAt: ts("last_seen_at"),
   status: jsonb("status"),
-}, (t) => [uniqueIndex("bot_live_token_hash").on(t.tokenHash)]);
+}, (t) => [primaryKey({ columns: [t.userId, t.login] })]);
 
 export const botDeals = pgTable("bot_deals", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull().default(""),
   ticket: text("ticket").notNull(), // broker ticket; only unique per account
   runId: text("run_id"),
   side: text("side").notNull(),
@@ -114,7 +123,7 @@ export const botDeals = pgTable("bot_deals", {
   closePrice: doublePrecision("close_price").notNull(),
   profit: doublePrecision("profit").notNull(),
   closeTime: ts("close_time").notNull(),
-}, (t) => [primaryKey({ columns: [t.userId, t.ticket] }), index("bot_deals_user_close").on(t.userId, t.closeTime)]);
+}, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] }), index("bot_deals_user_close").on(t.userId, t.login, t.closeTime)]);
 
 /** A setup that became active: recorded once, then sent to linked users. */
 export const signals = pgTable("signals", {

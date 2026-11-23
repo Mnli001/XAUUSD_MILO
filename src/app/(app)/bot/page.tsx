@@ -11,11 +11,12 @@ export async function generateMetadata() {
   return { title: t("Бот — XAU Analytics", "Bot — XAU Analytics") };
 }
 
-export default async function BotPage() {
+export default async function BotPage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
   const v = await getViewer();
   const { t } = v;
   const user = await requireUser();
-  const view = await getLiveView(user.id, new Date());
+  const { account } = await searchParams;
+  const view = await getLiveView(user.id, new Date(), typeof account === "string" ? account : undefined);
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
@@ -28,7 +29,7 @@ export default async function BotPage() {
       </div>
       <BotGuide origin={origin} hasToken={view.hasToken} online={view.online} v={v} />
       <BacktestGuide v={v} />
-      <BotPanel initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} />
+      <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} />
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">{t("Scalper арга шалгагдаагүй: өнгөрсөн дата дээр ашигтай гэдэг нь нотлогдоогүй. Ашиг баталгаагүй, алдагдал хүлээх эрсдэлтэй. Санхүүгийн зөвлөгөө биш. Арилжаа таны өөрийн дансанд, таны шийдвэрээр хийгдэнэ.", "The Scalper method is unproven: it has not been shown to be profitable on past data. Profit is not guaranteed and you can lose money. Not financial advice. Trades are placed in your own account, by your own decision.")}</p>
     </div>
   );

@@ -25,6 +25,35 @@ const MIN_ROBOT: Record<string, number> = { SCALPER: 1, BASKET: 2, ASIAN: 3 };
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
 
+/** The user's MT5 accounts; each has its own settings, Start/Stop and history. */
+function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; current: string }) {
+  const { t } = useViewer();
+  if (accounts.length === 0) return null;
+  return (
+    <section className="card" aria-labelledby="accounts-title">
+      <h2 id="accounts-title" className="card-title">{t("MT5 данс", "MT5 accounts")}</h2>
+      <ul className="flex flex-wrap gap-2">
+        {accounts.map((a) => {
+          const here = a.login === current;
+          return (
+            <li key={a.login}>
+              <a href={`/bot?account=${encodeURIComponent(a.login)}`} aria-current={here ? "page" : undefined}
+                className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm transition-colors ${here ? "border-amber-500 bg-amber-500/10 text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
+                <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${a.online ? "bg-emerald-400" : "bg-zinc-600"}`} />
+                <span className="font-mono">{a.label}</span>
+                {a.mode === "REAL" && <span className="chip border-red-500/50 text-red-300">{t("Жинхэнэ", "Real")}</span>}
+                {a.state === "RUNNING" && <span className="chip border-emerald-500/50 text-emerald-300">{t("ажиллаж байна", "running")}</span>}
+                <span className="sr-only">{a.online ? t("холбогдсон", "connected") : t("холбогдоогүй", "not connected")}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 max-w-prose text-xs leading-relaxed text-zinc-500">{t("Өөр данс нэмэхдээ MT5 дээр тэр дансаар нэвтэрнэ (File → Login to Trade Account). Робот вэбтэй холбогдмогц данс энд гарч ирнэ, анх зогссон төлөвтэй байна. Нэг MT5 нэг удаад нэг дансанд л нэвтэрдэг тул хоёр дансыг зэрэг ажиллуулахад хоёр тусдаа MT5 хэрэгтэй.", "To add another account, sign in to it in MT5 (File → Login to Trade Account). It appears here as soon as the robot reaches the web, and starts out stopped. One MT5 is signed in to one account at a time, so running two accounts at once needs two separate MT5 installations.")}</p>
+    </section>
+  );
+}
+
 export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string }) {
   const who = useViewer();
   const { t, ub, zone } = who;
@@ -37,13 +66,13 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   useEffect(() => {
     let alive = true;
     const load = () =>
-      fetch("/api/bot/status", { cache: "no-store" })
+      fetch(`/api/bot/status?account=${encodeURIComponent(initial.account)}`, { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
         .then((d: View) => { if (alive) { setV(d); setStale(false); } })
         .catch(() => alive && setStale(true));
     const id = setInterval(load, 2000);
     return () => { alive = false; clearInterval(id); };
-  }, []);
+  }, [initial.account]);
 
   const running = v.state === "RUNNING";
   const real = v.accountMode === "REAL";
@@ -56,8 +85,11 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const oldRobot = (v.robotVersion ?? (v.online ? 1 : MIN_ROBOT[tool])) < MIN_ROBOT[tool];
   const savedTool = TOOLS.find(([id]) => id === c.mode)![1];
 
+  const accountField = <input type="hidden" name="account" value={v.account} />;
+
   return (
     <div className="space-y-4">
+      <AccountSwitcher accounts={v.accounts} current={v.account} />
       {real && (
         <div role="alert" className="card border border-red-500/70 text-red-300">
           <strong>{t("ЖИНХЭНЭ ДАНС холбогдсон байна.", "A REAL ACCOUNT is connected.")}</strong> {t("Бот энэ дансан дээр жинхэнэ мөнгөөр арилжаа хийнэ", "The bot will trade real money on this account")}{c.allowReal ? "" : t(" — гэхдээ “Жинхэнэ данс” сонголт унтраалттай тул Start дарсан ч ажиллахгүй", " — but the “Real account” option is off, so it will not run even if you press Start")}.
@@ -78,7 +110,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         </div>
         <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
           {([
-            [t("Данс", "Account"), v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}` : "—", real ? "text-red-300" : undefined],
+            [t("Данс", "Account"), v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : "—", real ? "text-red-300" : undefined],
             ["Balance", money(v.balance)],
             ["Equity", money(v.equity)],
             [t("Сүүлийн 24ц", "Last 24h"), money(v.pnl24h), tone(v.pnl24h)],
@@ -87,9 +119,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           ))}
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
-          <form action={startBotAction} className="max-sm:flex-1"><button className="btn w-full px-6" disabled={running || !v.hasToken}>Start bot</button></form>
-          <form action={stopBotAction} className="max-sm:flex-1"><button className="btn-ghost w-full px-6" disabled={!running}>Stop</button></form>
-          <form action={closeAllAction} className="max-sm:w-full"><button className="btn-ghost w-full text-red-300" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
+          <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-6" disabled={running || !v.hasToken}>Start bot</button></form>
+          <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-6" disabled={!running}>Stop</button></form>
+          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-300" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
           {v.closeAllPending && <span className="self-center text-xs text-amber-400">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
         </div>
         {!v.online && <p className="mt-3 text-xs text-amber-400">{t("MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.", "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.")}</p>}
@@ -119,7 +151,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           )}
         </div>
 
-        <form action={cfgAction} className="card space-y-3">
+        <form action={cfgAction} className="card space-y-3">{accountField}
           <h2 className="text-sm font-medium text-zinc-400">{t("Хэрэгсэл ба тохиргоо", "Tool and settings")}</h2>
           <input type="hidden" name="mode" value={tool} />
           <div role="radiogroup" aria-label={t("Ботын хэрэгсэл", "Bot tool")} className="grid gap-2 sm:grid-cols-3">

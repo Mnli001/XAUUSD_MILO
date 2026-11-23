@@ -43,6 +43,13 @@
       "when": 1795337823832,
       "tag": "0005_user_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795398859516,
+      "tag": "0006_bot_accounts",
+      "breakpoints": true
     }
   ]
 }

@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.40"
+#property version   "2.41"
 #property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -59,7 +59,7 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 4             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
+#define ROBOT_VERSION 5             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
 
 // роботын өөрийн төлөв
 string   gActiveRunId = "";
@@ -821,6 +821,14 @@ string JRaw(const string body, const string key)
    return(StringSubstr(body, p, e - p));
   }
 
+// Брокерын серверийн нэрийг JSON-д аюулгүй болгох: хашилт, ташуу зураасыг авч хаяна
+string JsonSafe(string v)
+  {
+   StringReplace(v, "\\", "");
+   StringReplace(v, "\"", "");
+   return(StringSubstr(v, 0, 80));
+  }
+
 string JStr(const string body, const string key)
   {
    string k = "\"" + key + "\":\"";
@@ -915,7 +923,7 @@ void Sync()
      }
    string json = "{\"account\":{\"login\":\"" + (string)AccountInfoInteger(ACCOUNT_LOGIN) + "\",\"mode\":\"" + AccountModeStr() +
                  "\",\"balance\":" + Num(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ",\"equity\":" + Num(AccountInfoDouble(ACCOUNT_EQUITY), 2) +
-                 ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\"},\"symbol\":\"" + _Symbol + "\",\"bid\":" +
+                 ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\",\"server\":\"" + JsonSafe(AccountInfoString(ACCOUNT_SERVER)) + "\"},\"symbol\":\"" + _Symbol + "\",\"bid\":" +
                  Num(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits) + ",\"ask\":" + Num(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits) +
                  ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + gReason + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
                  ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION + "}";

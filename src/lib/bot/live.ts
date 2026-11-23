@@ -106,7 +106,7 @@ export const hashToken = (t: string) => createHash("sha256").update(t).digest("h
 const side = z.enum(["BUY", "SELL"]);
 const num = z.number().finite();
 export const reportSchema = z.object({
-  account: z.object({ login: z.string().max(40), mode: z.enum(["DEMO", "REAL", "CONTEST"]), balance: num, equity: num, currency: z.string().max(10).optional() }),
+  account: z.object({ login: z.string().min(1).max(40), server: z.string().max(80).optional(), mode: z.enum(["DEMO", "REAL", "CONTEST"]), balance: num, equity: num, currency: z.string().max(10).optional() }),
   symbol: z.string().max(40),
   bid: num,
   ask: num,

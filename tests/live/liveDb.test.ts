@@ -17,7 +17,7 @@ const report = (o: Record<string, unknown> = {}) => ({
 
 beforeEach(async () => {
   await resetDb();
-  await db.execute(sql`TRUNCATE bot_live, bot_deals`);
+  await db.execute(sql`TRUNCATE bot_tokens, bot_live, bot_deals`);
   admin = await makeUser("admin@x.mn", "ADMIN");
   user = await makeUser("u@x.mn");
   await db.execute(sql`UPDATE users SET access_until = ${new Date("2027-06-01T00:00:00Z")} WHERE id = ${user.id}`);
