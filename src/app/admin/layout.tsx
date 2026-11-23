@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { SectionLink } from "@/components/AppNav";
 import { getT } from "@/lib/prefs.server";
+import { BrandMark } from "@/components/BrandMark";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -18,10 +19,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex h-14 max-w-6xl items-stretch gap-2 px-4">
           {/* The app's brand mark, with the admin badge beside it. */}
           <span className="flex shrink-0 items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
-            <span aria-hidden className="relative flex h-6 w-6 items-center justify-center rounded-full bg-amber-400">
-              <span className="h-2 w-2 rounded-full bg-zinc-950" />
-            </span>
-            <span className="hidden sm:inline">XAU Analytics</span>
+            <BrandMark />
+            <span className="hidden font-display text-[18px] sm:inline">XAU Analytics</span>
             <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-semibold text-amber-300">{t("Админ", "Admin")}</span>
           </span>
           <nav aria-label={t("Админ цэс", "Admin menu")} className="ml-2 flex min-w-0 flex-1 items-stretch overflow-x-auto">

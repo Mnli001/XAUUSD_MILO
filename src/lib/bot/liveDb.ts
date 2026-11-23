@@ -1,17 +1,17 @@
-import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
-import { type Command, type LiveConfig, type Report, DEFAULT_LIVE_CONFIG, commandFor, hashToken, newToken, parseConfig, reportSchema } from "./live";
+import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 
 export const ONLINE_WITHIN_MS = 15_000;
 
 type Row = typeof schema.botLive.$inferSelect;
 const shape = (row: Row) => {
   const stored = row.config as Partial<LiveConfig>;
-  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...stored, basket: { ...DEFAULT_LIVE_CONFIG.basket, ...stored.basket }, rule: { ...DEFAULT_LIVE_CONFIG.rule, ...stored.rule } } };
+  return { ...row, state: row.state as "RUNNING" | "STOPPED", config: { ...DEFAULT_LIVE_CONFIG, ...stored, basket: { ...DEFAULT_LIVE_CONFIG.basket, ...stored.basket }, rule: { ...DEFAULT_LIVE_CONFIG.rule, ...stored.rule }, gate: { ...DEFAULT_LIVE_CONFIG.gate, ...stored.gate } } };
 };
 const rowsOf = (userId: string) => db.select().from(schema.botLive).where(eq(schema.botLive.userId, userId)).orderBy(sql`${schema.botLive.lastSeenAt} DESC NULLS LAST`, schema.botLive.login);
 
@@ -42,6 +42,26 @@ export async function saveLiveConfig(userId: string, input: unknown, t: T = mnT,
   if (!r.config) return { error: r.error };
   await update(userId, live.login, { config: r.config });
   return {};
+}
+
+export async function saveGateConfig(userId: string, input: unknown, t: T = mnT, login?: string): Promise<{ error?: string }> {
+  const live = await getLive(userId, login);
+  const r = parseGate(input, live.config, t);
+  if (!r.config) return { error: r.error };
+  await update(userId, live.login, { config: r.config });
+  return {};
+}
+
+/** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
+async function blackoutsFor(config: LiveConfig, now: Date): Promise<string> {
+  const g = config.gate;
+  if (!g.on || (g.newsBeforeMin <= 0 && g.newsAfterMin <= 0)) return "";
+  const rows = await db.select({ time: schema.economicEvents.time }).from(schema.economicEvents).where(and(
+    eq(schema.economicEvents.impact, "HIGH"),
+    gte(schema.economicEvents.time, new Date(now.getTime() - g.newsAfterMin * 6e4)),
+    lte(schema.economicEvents.time, new Date(now.getTime() + BLACKOUT_HORIZON_MS + g.newsBeforeMin * 6e4)),
+  ));
+  return blackoutWindows(rows.map((r) => r.time), g.newsBeforeMin, g.newsAfterMin, now);
 }
 
 export async function startBot(userId: string, now: Date, login?: string): Promise<void> {
@@ -123,7 +143,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale));
+  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now));
   if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
@@ -173,6 +193,13 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     plannedSeconds: status?.plannedSeconds ?? null,
     elapsedSeconds: status?.elapsedSeconds ?? null,
     positions: status?.positions ?? [],
+    // The entry filter as the robot last reported it (null from robot files older than v2.80).
+    gateOn: status?.gateOn ?? null,
+    block: status?.block ?? null,
+    blockDetail: status?.blockDetail ?? null,
+    tradesToday: status?.tradesToday ?? null,
+    dayPnl: status?.dayPnl ?? null,
+    dailyLossHit: status?.dailyLossHit ?? null,
     deals,
     dealCount: n,
     pnl24h: Number(total ?? 0),

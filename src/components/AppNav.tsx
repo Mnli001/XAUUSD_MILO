@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { logoutAction } from "@/lib/actions/session";
 import type { T } from "@/lib/i18n";
 import { useT } from "./PrefsProvider";
+import { BrandName } from "./BrandMark";
 
 const mainLinks = (t: T) => [
   ["/today", t("Өнөөдөр", "Today"), "M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8L17 7M7 17l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"],
@@ -14,18 +15,16 @@ const mainLinks = (t: T) => [
   ["/journal", t("Журнал", "Journal"), "M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Zm0 0v14a2 2 0 0 0 2 2M10 9h5m-5 4h5"],
   ["/bot", t("Бот", "Bot"), "M12 3v3M8 6h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Zm-5 6v3m18-3v3M9.5 12v1m5-1v1M9.5 16h5"],
 ] as const;
-const moreLinks = (t: T) => [["/performance", t("Гүйцэтгэл", "Performance")], ["/settings", t("Тохиргоо", "Settings")]] as const;
+const moreLinks = (t: T) => [
+  ["/performance", t("Гүйцэтгэл", "Performance"), "M4 19h16M7 16V9m5 7V5m5 11v-4"],
+  ["/settings", t("Тохиргоо", "Settings"), "M4 7h9m4 0h3M4 17h3m4 0h9M15 4.5v5M9 14.5v5"],
+] as const;
 
 const isCurrent = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
 
 function Brand() {
   return (
-    <Link href="/today" className="flex items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
-      <span aria-hidden className="relative flex h-6 w-6 items-center justify-center rounded-full bg-amber-400">
-        <span className="h-2 w-2 rounded-full bg-zinc-950" />
-      </span>
-      XAU Analytics
-    </Link>
+    <Link href="/today" aria-label="XAU Analytics"><BrandName /></Link>
   );
 }
 
@@ -73,19 +72,19 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
 
   return (
     <>
-      {/* Wide screens: the line rail. */}
-      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 px-4 py-5 lg:flex">
-        <div className="px-2"><Brand /></div>
-        <nav aria-label={t("Үндсэн цэс", "Main menu")} className="relative mt-8 flex-1">
-          <span aria-hidden className="absolute top-5 bottom-5 left-[19px] w-[3px] rounded-full bg-zinc-800" />
-          <ul className="relative space-y-0.5">
-            {[...MAIN.map(([href, label]) => [href, label] as const), ...MORE].map(([href, label]) => {
+      {/* Wide screens: a quiet glass rail. The current page carries a gold edge and gold icon. */}
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r px-4 py-6 lg:flex" style={{ borderColor: "var(--hairline)", background: "linear-gradient(180deg, rgb(255 255 255 / 0.025), transparent 40%)" }}>
+        <div className="px-3"><Brand /></div>
+        <nav aria-label={t("Үндсэн цэс", "Main menu")} className="mt-10 flex-1">
+          <ul className="space-y-1">
+            {[...MAIN, ...MORE].map(([href, label, d]) => {
               const on = isCurrent(path, href);
               return (
                 <li key={href}>
                   <Link href={href} aria-current={on ? "page" : undefined}
-                    className={`group flex min-h-10 items-center gap-3.5 rounded-lg pr-3 pl-3 text-sm transition-colors ${on ? "bg-zinc-900 font-semibold text-zinc-50" : "text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-100"}`}>
-                    <span aria-hidden className={`relative z-10 h-[13px] w-[13px] shrink-0 rounded-full border-[3px] transition-colors ${on ? "border-amber-400 bg-amber-400" : "border-zinc-700 bg-zinc-950 group-hover:border-zinc-500"}`} />
+                    className={`group relative flex min-h-11 items-center gap-3.5 rounded-xl px-3 text-[14.5px] transition-colors duration-200 ${on ? "font-bold text-zinc-50" : "font-medium text-zinc-400 hover:text-zinc-100"}`}
+                    style={on ? { background: "linear-gradient(90deg, rgb(217 181 102 / 0.16), rgb(217 181 102 / 0.02))", boxShadow: "inset 0 0 0 1px var(--hairline-gold)" } : undefined}>
+                    <svg aria-hidden viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 transition-colors duration-200 ${on ? "text-amber-400" : "text-zinc-500 group-hover:text-zinc-300"}`} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
                     {label}
                   </Link>
                 </li>
@@ -97,19 +96,19 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
       </aside>
 
       {/* Phones and tablets: a slim top bar. */}
-      <header className="sticky top-0 z-30 border-b border-zinc-800 bg-zinc-950 pt-[env(safe-area-inset-top)] lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-zinc-800/70 bg-zinc-950/75 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
         <div className="flex h-14 items-center gap-2 px-4"><Brand /></div>
       </header>
       {userMenu}
 
-      <nav aria-label={t("Доод цэс", "Bottom menu")} className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800 bg-zinc-950 pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label={t("Доод цэс", "Bottom menu")} className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800/70 bg-zinc-950/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-6">
           {MAIN.map(([href, label, d]) => {
             const on = isCurrent(path, href);
             return (
               <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                className={`relative flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${on ? "text-zinc-50" : "text-zinc-500 hover:text-zinc-300"}`}>
-                <span aria-hidden className={`absolute top-0 h-[3px] w-8 rounded-b-full transition-colors ${on ? "bg-amber-400" : "bg-transparent"}`} />
+                className={`relative flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${on ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"}`}>
+                <span aria-hidden className={`absolute top-0 h-[2px] w-9 rounded-b-full transition-colors ${on ? "bg-amber-400" : "bg-transparent"}`} />
                 <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={on ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
                 {label}
               </Link>

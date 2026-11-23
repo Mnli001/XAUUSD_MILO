@@ -5,8 +5,8 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.70"
-#property description "Web-controlled robot with two tools, scalper and basket. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
+#property version   "2.80"
+#property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
 
@@ -52,6 +52,19 @@ input bool   TesterManage         = false;    // SMC Active: BE + trailing (BuyS
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (сек) · Restart after (s)
 input int    ServerUtcOffsetWinter = 2;       // Серверийн цаг UTC-ээс түрүүлэх цаг (өвөл) · Server hours ahead of UTC (winter)
 input bool   ServerDstEurope      = true;     // Сервер Европын зуны цаг мөрддөг · Server follows EU summer time
+// Орох шүүлтүүр: бодит цагт вэбийн тохиргоог дагана, tester дотор эндээс авна. Мэдээний шүүлтүүр tester дотор ажиллахгүй (мэдээний цаг вэбээс ирдэг).
+input group "Орох шүүлтүүр, tester · Entry filter, tester"
+input bool   TesterGate           = true;     // Шүүлтүүр асаах (false: v2.70-ийн дүрмээр) · Filter on (false = as in v2.70)
+input bool   TesterGateTrend      = true;     // H1 + M15 EMA20/50 чиглэл таарах · H1 + M15 trend must agree
+input int    TesterSessionStartUb = 15;       // Арилжаа эхлэх цаг (УБ) · First hour traded (UB)
+input int    TesterSessionEndUb   = 1;        // Арилжаа дуусах цаг (УБ, орохгүй) · First hour not traded (UB)
+input double TesterAtrMin         = 1.5;      // M15 ATR доод $ (0 = үгүй) · Min M15 ATR $ (0 = off)
+input double TesterAtrMax         = 25.0;     // M15 ATR дээд $ (0 = үгүй) · Max M15 ATR $ (0 = off)
+input double TesterSpreadPct      = 10.0;     // Spread нь M15 ATR-ийн %-аас ихгүй · Max spread, % of M15 ATR
+input double TesterRsiMax         = 70.0;     // BUY: RSI(14,M15) дээд; SELL: 100-аас хасна (0 = үгүй) · RSI cap (0 = off)
+input double TesterExtAtr         = 2.0;      // EMA20(M15)-оос ATR × -аас хол бол орохгүй (0 = үгүй) · Max stretch from EMA20, ATR x
+input int    TesterMaxTradesDay   = 6;        // Өдөрт орох дээд тоо (0 = үгүй) · Max entries a day (0 = off)
+input double TesterDailyLossPct   = 3.0;      // Өдрийн алдагдал балансын % хүрвэл зогсох (0 = үгүй) · Daily loss stop, % of balance
 
 CTrade trade;
 int    hEmaFast = INVALID_HANDLE, hEmaSlow = INVALID_HANDLE, hEmaTrend = INVALID_HANDLE, hRsi = INVALID_HANDLE, hAtr = INVALID_HANDLE;
@@ -64,7 +77,20 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 5             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ
+#define ROBOT_VERSION 6             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+
+// Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
+bool     gGateOn = true, gGTrend = true;
+int      gGStart = 15, gGEnd = 1, gGMaxTrades = 6;
+double   gGAtrMin = 1.5, gGAtrMax = 25.0, gGSpreadPct = 10.0, gGRsiMax = 70.0, gGExtAtr = 2.0, gGDailyLossPct = 3.0;
+string   gBlackouts = "";          // "from-to;from-to" UTC unix секунд, вэбээс (HIGH мэдээний өмнө/дараа)
+string   gBlock = "";              // шүүлтүүр хаасан шалтгааны код, "" = нэвтэрнэ
+string   gBlockDetail = "";        // тоон дэлгэрэнгүй (хэлнээс хамаарахгүй)
+int      hGH1Fast = INVALID_HANDLE, hGH1Slow = INVALID_HANDLE, hGM15Fast = INVALID_HANDLE, hGM15Slow = INVALID_HANDLE, hGM15Rsi = INVALID_HANDLE, hGM15Atr = INVALID_HANDLE;
+datetime gStatsAt = 0;             // өдрийн тоололын кэш (секундэд нэг удаа)
+int      gTradesToday = 0;
+double   gDayPnl = 0.0, gDayStartBalance = 0.0;
+bool     gDailyLossHit = false;
 
 // роботын өөрийн төлөв
 string   gActiveRunId = "";
@@ -150,7 +176,14 @@ int OnInit()
    hAtr      = iATR(_Symbol, PERIOD_M1, 14);
    hD1Fast   = iMA(_Symbol, PERIOD_D1, 20, 0, MODE_EMA, PRICE_CLOSE);   // Азийн breakout-ын өдрийн тренд
    hD1Slow   = iMA(_Symbol, PERIOD_D1, 50, 0, MODE_EMA, PRICE_CLOSE);
-   if(hEmaFast == INVALID_HANDLE || hEmaSlow == INVALID_HANDLE || hEmaTrend == INVALID_HANDLE || hRsi == INVALID_HANDLE || hAtr == INVALID_HANDLE || hD1Fast == INVALID_HANDLE || hD1Slow == INVALID_HANDLE)
+   hGH1Fast  = iMA(_Symbol, PERIOD_H1, 20, 0, MODE_EMA, PRICE_CLOSE);  // шүүлтүүр: дээд хугацааны тренд
+   hGH1Slow  = iMA(_Symbol, PERIOD_H1, 50, 0, MODE_EMA, PRICE_CLOSE);
+   hGM15Fast = iMA(_Symbol, PERIOD_M15, 20, 0, MODE_EMA, PRICE_CLOSE);
+   hGM15Slow = iMA(_Symbol, PERIOD_M15, 50, 0, MODE_EMA, PRICE_CLOSE);
+   hGM15Rsi  = iRSI(_Symbol, PERIOD_M15, 14, PRICE_CLOSE);
+   hGM15Atr  = iATR(_Symbol, PERIOD_M15, 14);
+   if(hEmaFast == INVALID_HANDLE || hEmaSlow == INVALID_HANDLE || hEmaTrend == INVALID_HANDLE || hRsi == INVALID_HANDLE || hAtr == INVALID_HANDLE || hD1Fast == INVALID_HANDLE || hD1Slow == INVALID_HANDLE ||
+      hGH1Fast == INVALID_HANDLE || hGH1Slow == INVALID_HANDLE || hGM15Fast == INVALID_HANDLE || hGM15Slow == INVALID_HANDLE || hGM15Rsi == INVALID_HANDLE || hGM15Atr == INVALID_HANDLE)
      {
       Print(L("XauBot: индикатор үүсгэж чадсангүй", "XauBot: could not create the indicators"));
       return(INIT_FAILED);
@@ -171,6 +204,23 @@ int OnInit()
       gTarget  = TesterProfit;
       gMaxLoss = TesterLoss;
       gLinkStatus = "Strategy Tester";
+      gGateOn  = TesterGate;
+      gGTrend  = TesterGateTrend;
+      gGStart  = TesterSessionStartUb;
+      gGEnd    = TesterSessionEndUb;
+      gGAtrMin = TesterAtrMin;
+      gGAtrMax = TesterAtrMax;
+      gGSpreadPct = TesterSpreadPct;
+      gGRsiMax = TesterRsiMax;
+      gGExtAtr = TesterExtAtr;
+      gGMaxTrades = TesterMaxTradesDay;
+      gGDailyLossPct = TesterDailyLossPct;
+      if(gGStart < 0 || gGStart > 23 || gGEnd < 0 || gGEnd > 23 || gGAtrMin < 0 || gGAtrMax < 0 || (gGAtrMax > 0 && gGAtrMin >= gGAtrMax) ||
+         gGSpreadPct < 0 || gGRsiMax < 0 || gGRsiMax > 100 || gGExtAtr < 0 || gGMaxTrades < 0 || gGDailyLossPct < 0)
+        {
+         Print(L("XauBot: орох шүүлтүүрийн Tester… утга буруу", "XauBot: an entry filter Tester… value is out of range"));
+         return(INIT_PARAMETERS_INCORRECT);
+        }
       if(TesterTool >= TOOL_ASIAN)
         {
          hH1Ema20 = iMA(_Symbol, PERIOD_H1, 20, 0, MODE_EMA, PRICE_CLOSE);
@@ -224,6 +274,12 @@ void OnDeinit(const int reason)
    if(hH1Atr    != INVALID_HANDLE) IndicatorRelease(hH1Atr);
    if(hM5Atr    != INVALID_HANDLE) IndicatorRelease(hM5Atr);
    if(hM15Atr   != INVALID_HANDLE) IndicatorRelease(hM15Atr);
+   if(hGH1Fast  != INVALID_HANDLE) IndicatorRelease(hGH1Fast);
+   if(hGH1Slow  != INVALID_HANDLE) IndicatorRelease(hGH1Slow);
+   if(hGM15Fast != INVALID_HANDLE) IndicatorRelease(hGM15Fast);
+   if(hGM15Slow != INVALID_HANDLE) IndicatorRelease(hGM15Slow);
+   if(hGM15Rsi  != INVALID_HANDLE) IndicatorRelease(hGM15Rsi);
+   if(hGM15Atr  != INVALID_HANDLE) IndicatorRelease(hGM15Atr);
    Comment("");
   }
 
@@ -231,7 +287,7 @@ void OnDeinit(const int reason)
 void RetryClose()
   {
    if(!gClosing) return;
-   if(CountPositions() == 0) { gClosing = false; return; }
+   if(CountPositions() + CountOrders() == 0) { gClosing = false; return; }
    CloseAllMine();
   }
 
@@ -274,27 +330,27 @@ void TesterStep()
 void OnTimer()
   {
    if(IsRuleTool()) return;
-   if(gMode == "ASIAN")
-     {
-      RetryClose();
-      LiveAsianStep();
-      Sync();
-      ShowStatus();
-      return;
-     }
    RetryClose();
-   EvaluateSignal();
-   ManageRun();
+   DailyGuard();
+   if(gMode == "ASIAN")
+      LiveAsianStep();
+   else
+     {
+      EvaluateSignal();
+      ManageRun();
+     }
+   GateCheck(SignalDir());                                       // самбарт "яагаад орохгүй байна" гэдгийг үргэлж шинэчилнэ
    Sync();
    ShowStatus();
   }
 
 void OnTick()
   {
-   if(IsRuleTool()) { RuleStep(); return; }
-   if(gMode == "ASIAN") { RetryClose(); LiveAsianStep(); return; }
+   if(IsRuleTool()) { RetryClose(); DailyGuard(); RuleStep(); return; }
+   if(gMode == "ASIAN") { RetryClose(); DailyGuard(); LiveAsianStep(); return; }
    TesterStep();
    RetryClose();
+   DailyGuard();
    EvaluateSignal();
    ManageRun();
    TryEnter();
@@ -376,20 +432,292 @@ double RunPnl()
    return(ClosedPnlSince(gRunStart) + FloatingPnl());
   }
 
+// Нээлттэй арилжааг хааж, хүлээгдэж буй захиалгыг цуцална. Амжилтгүй бол RetryClose дахин оролдоно.
 void CloseAllMine()
   {
    for(int i = PositionsTotal() - 1; i >= 0; i--)
      {
       ulong t = PositionGetTicket(i);
       if(IsMine(t))
-         if(!trade.PositionClose(t))
+         if(!trade.PositionClose(t) || !TradeOk())
             Print(L("XauBot: арилжаа хааж чадсангүй #", "XauBot: could not close trade #"), (string)t, " — ", trade.ResultRetcodeDescription());
      }
+   DeleteMyOrders();
   }
 
 bool RealBlocked()
   {
    return(AccountModeStr() == "REAL" && !AllowRealAccount);
+  }
+
+//+------------------------------------------------------------------+
+//| Захиалгын туслахууд: брокерын хариу, tick, stops level, лот       |
+//+------------------------------------------------------------------+
+// OrderSend true буцаасан нь биелсэн гэсэн үг биш: брокерын хариу кодыг шалгана.
+bool TradeOk()
+  {
+   uint rc = trade.ResultRetcode();
+   return(rc == TRADE_RETCODE_DONE || rc == TRADE_RETCODE_DONE_PARTIAL || rc == TRADE_RETCODE_PLACED);
+  }
+
+double TickSize()
+  {
+   double ts = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   return(ts > 0 ? ts : _Point);
+  }
+double PriceDown(const double p) { double ts = TickSize(); return(NormalizeDouble(MathFloor(p / ts + 1e-7) * ts, _Digits)); }
+double PriceUp(const double p)   { double ts = TickSize(); return(NormalizeDouble(MathCeil(p / ts - 1e-7) * ts, _Digits)); }
+double PriceNear(const double p) { double ts = TickSize(); return(NormalizeDouble(MathRound(p / ts) * ts, _Digits)); }
+
+// Брокерын stops level ба freeze level-ээс нэг point илүү
+double StopsMin()
+  {
+   long lv = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL), fz = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_FREEZE_LEVEL);
+   if(fz > lv) lv = fz;
+   return((double)(lv + 1) * _Point);
+  }
+
+int SpreadPoints()
+  {
+   return((int)MathRound((SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID)) / _Point));
+  }
+
+// Лотыг брокерын алхам, доод, дээд хэмжээнд тааруулна. Доод хэмжээнээс бага бол 0.
+double NormLots(const double want)
+  {
+   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   if(step <= 0) step = 0.01;
+   int digits = (int)MathMax(0.0, MathCeil(-MathLog10(step) - 1e-9));
+   double lots = MathFloor(want / step + 1e-9) * step;
+   if(vmax > 0 && lots > vmax) lots = MathFloor(vmax / step + 1e-9) * step;
+   lots = NormalizeDouble(lots, digits);
+   if(lots <= 0 || lots < vmin - 1e-9) return(0.0);
+   return(lots);
+  }
+
+// Зах зээлийн захиалга. Stop/target-ийг tick-д тааруулж, stops level-ээс ойр бол түүнд хүртэл холдуулна:
+// BUY-ийн stop, target-ийг Bid-ээс, SELL-ийнхийг Ask-аас хэмждэг. Үнэ хөдөлсөн (requote) бол нэг дахин оролдоно.
+bool SendMarket(const int dir, const double lots, const double slDist, const double tpDist, const string cm)
+  {
+   if(lots <= 0 || dir == 0) return(false);
+   for(int attempt = 0; attempt < 2; attempt++)
+     {
+      double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      if(ask <= 0 || bid <= 0) return(false);
+      double minD = StopsMin();
+      double sl = 0.0, tp = 0.0;
+      bool sent;
+      if(dir > 0)
+        {
+         if(slDist > 0) sl = PriceDown(MathMin(ask - slDist, bid - minD));
+         if(tpDist > 0) tp = PriceUp(MathMax(ask + tpDist, bid + minD));
+         sent = trade.Buy(lots, _Symbol, 0.0, sl, tp, cm);
+        }
+      else
+        {
+         if(slDist > 0) sl = PriceUp(MathMax(bid + slDist, ask + minD));
+         if(tpDist > 0) tp = PriceDown(MathMin(bid - tpDist, ask - minD));
+         sent = trade.Sell(lots, _Symbol, 0.0, sl, tp, cm);
+        }
+      if(sent && TradeOk()) { gStatsAt = 0; return(true); }   // өдрийн тоолол шинэчлэгдэнэ
+      uint rc = trade.ResultRetcode();
+      if(rc != TRADE_RETCODE_REQUOTE && rc != TRADE_RETCODE_PRICE_CHANGED && rc != TRADE_RETCODE_PRICE_OFF) break;
+     }
+   return(false);
+  }
+
+int CountOrders()
+  {
+   int n = 0;
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) == MagicNumber && OrderGetString(ORDER_SYMBOL) == _Symbol) n++;
+     }
+   return(n);
+  }
+
+void DeleteMyOrders()
+  {
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0) continue;
+      if(OrderGetInteger(ORDER_MAGIC) == MagicNumber && OrderGetString(ORDER_SYMBOL) == _Symbol) trade.OrderDelete(t);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Орох шүүлтүүр: бүх хэрэгсэл арилжаа нээхээс өмнө давна.          |
+//| Аль нэг нөхцөл хаавал gBlock-д код, gBlockDetail-д тоо үлдэнэ.    |
+//+------------------------------------------------------------------+
+datetime ServerNow() { return(gTester ? TimeCurrent() : TimeTradeServer()); }
+datetime UtcNow()    { return(gTester ? TimeCurrent() - ServerUtcOffset(TimeCurrent()) * 3600 : TimeGMT()); }
+
+// Өнөөдрийн (UTC 00:00 = УБ 08:00-оос хойш) орсон тоо ба дүн. Секундэд нэг л удаа түүх уншина.
+void DayStats()
+  {
+   datetime now = ServerNow();
+   if(now == gStatsAt) return;
+   gStatsAt = now;
+   datetime from = now - (datetime)((long)UtcNow() % 86400);
+   int n = 0;
+   double closed = 0.0;
+   datetime lastBasket = 0;
+   if(HistorySelect(from, now + 60))
+     {
+      int total = HistoryDealsTotal();
+      for(int i = 0; i < total; i++)
+        {
+         ulong t = HistoryDealGetTicket(i);
+         if(t == 0) continue;
+         if(HistoryDealGetInteger(t, DEAL_MAGIC) != MagicNumber || HistoryDealGetString(t, DEAL_SYMBOL) != _Symbol) continue;
+         closed += HistoryDealGetDouble(t, DEAL_PROFIT) + HistoryDealGetDouble(t, DEAL_SWAP) + HistoryDealGetDouble(t, DEAL_COMMISSION);
+         if(HistoryDealGetInteger(t, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
+         if(HistoryDealGetString(t, DEAL_COMMENT) == "xau-basket")      // нэг багц = нэг оролт
+           {
+            datetime dt = (datetime)HistoryDealGetInteger(t, DEAL_TIME);
+            bool same = (lastBasket > 0 && dt - lastBasket <= 60);
+            lastBasket = dt;
+            if(same) continue;
+           }
+         n++;
+        }
+     }
+   gTradesToday = n;
+   gDayPnl = closed + FloatingPnl();
+   gDayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE) - closed;
+   gDailyLossHit = (gGateOn && gGDailyLossPct > 0 && gDayStartBalance > 0 && gDayPnl <= -gGDailyLossPct / 100.0 * gDayStartBalance);
+  }
+
+// Өдрийн алдагдлын хязгаарт хүрмэгц роботын арилжааг хааж, маргааш хүртэл шинээр орохгүй.
+void DailyGuard()
+  {
+   if(!gGateOn || gGDailyLossPct <= 0) { gDailyLossHit = false; return; }
+   DayStats();
+   if(gDailyLossHit && !gClosing && CountPositions() + CountOrders() > 0)
+     {
+      Print(L("XauBot: өдрийн алдагдлын хязгаарт хүрлээ (", "XauBot: daily loss stop reached ("), Num(gDayPnl, 2), L("), арилжааг хааж байна", "), closing the trades"));
+      gClosing = true;
+      CloseAllMine();
+     }
+  }
+
+// Вэбээс ирсэн HIGH мэдээний хаалттай цонхнууд: "from-to;from-to" (UTC unix секунд)
+bool InBlackout(datetime &until)
+  {
+   if(gBlackouts == "") return(false);
+   long now = (long)UtcNow();
+   string parts[];
+   int n = StringSplit(gBlackouts, ';', parts);
+   for(int i = 0; i < n; i++)
+     {
+      int d = StringFind(parts[i], "-");
+      if(d <= 0) continue;
+      long a = StringToInteger(StringSubstr(parts[i], 0, d)), b = StringToInteger(StringSubstr(parts[i], d + 1));
+      if(now >= a && now <= b) { until = (datetime)b; return(true); }
+     }
+   return(false);
+  }
+
+bool GateBlock(const string code, const string detail)
+  {
+   gBlock = code;
+   gBlockDetail = detail;
+   return(false);
+  }
+
+string Arrow(const int d) { return(d > 0 ? "↑" : (d < 0 ? "↓" : "→")); }
+
+// dir: +1 BUY, -1 SELL, 0 = чиглэлгүй (зөвхөн цаг, мэдээ, хэлбэлзэл, spread, өдрийн хязгаар)
+bool GateCheck(const int dir)
+  {
+   gBlock = "";
+   gBlockDetail = "";
+   if(!gGateOn) return(true);
+   DayStats();
+   if(gDailyLossHit) return(GateBlock("DAILY_LOSS", Num(gDayPnl, 2) + " / -" + Num(gGDailyLossPct / 100.0 * gDayStartBalance, 2)));
+   if(gGMaxTrades > 0 && gTradesToday >= gGMaxTrades) return(GateBlock("MAX_TRADES", (string)gTradesToday + " / " + (string)gGMaxTrades));
+
+   datetime utc = UtcNow();
+   MqlDateTime u;
+   TimeToStruct(utc, u);
+   int ubHour = (u.hour + 8) % 24;                                // Улаанбаатар = UTC+8, зуны цаггүй
+   if(u.day_of_week == 0 || u.day_of_week == 6) return(GateBlock("SESSION", L("амралтын өдөр", "weekend")));
+   bool inSession = (gGStart == gGEnd) || (gGStart < gGEnd ? (ubHour >= gGStart && ubHour < gGEnd) : (ubHour >= gGStart || ubHour < gGEnd));
+   if(!inSession) return(GateBlock("SESSION", StringFormat("%02d:%02d UB", ubHour, u.min)));
+   MqlDateTime s;
+   TimeToStruct(ServerNow(), s);
+   if((s.hour == 23 && s.min >= 45) || (s.hour == 0 && s.min < 30))   // брокерын өдрийн солилт: spread тэлдэг
+      return(GateBlock("ROLLOVER", StringFormat("%02d:%02d", s.hour, s.min)));
+   datetime until = 0;
+   if(InBlackout(until)) return(GateBlock("NEWS", (string)(int)MathCeil((double)(until - utc) / 60.0) + L(" мин", " min")));
+
+   double atr = Buf(hGM15Atr, 1);
+   if(atr == EMPTY_VALUE || atr <= 0) return(GateBlock("DATA", ""));
+   if(gGAtrMin > 0 && atr < gGAtrMin) return(GateBlock("ATR_LOW", "ATR " + Num(atr, 2) + " < " + Num(gGAtrMin, 2)));
+   if(gGAtrMax > 0 && atr > gGAtrMax) return(GateBlock("ATR_HIGH", "ATR " + Num(atr, 2) + " > " + Num(gGAtrMax, 2)));
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   double spread = ask - bid;
+   if(gGSpreadPct > 0 && spread > gGSpreadPct / 100.0 * atr)
+      return(GateBlock("SPREAD", "spread " + Num(spread, 2) + " > " + Num(gGSpreadPct / 100.0 * atr, 2)));
+   if(dir == 0) return(true);
+
+   if(gGTrend)
+     {
+      double hf = Buf(hGH1Fast, 1), hs = Buf(hGH1Slow, 1), mf = Buf(hGM15Fast, 1), ms = Buf(hGM15Slow, 1);
+      if(hf == EMPTY_VALUE || hs == EMPTY_VALUE || mf == EMPTY_VALUE || ms == EMPTY_VALUE) return(GateBlock("DATA", ""));
+      int h1 = (hf > hs) ? 1 : ((hf < hs) ? -1 : 0), m15 = (mf > ms) ? 1 : ((mf < ms) ? -1 : 0);
+      if(h1 != dir || m15 != dir) return(GateBlock("TREND", "H1 " + Arrow(h1) + " · M15 " + Arrow(m15)));
+     }
+   if(gGRsiMax > 0)
+     {
+      double rs = Buf(hGM15Rsi, 0);
+      if(rs == EMPTY_VALUE) return(GateBlock("DATA", ""));
+      if(dir > 0 && rs > gGRsiMax)          return(GateBlock("RSI", "RSI " + Num(rs, 0) + " > " + Num(gGRsiMax, 0)));
+      if(dir < 0 && rs < 100.0 - gGRsiMax)  return(GateBlock("RSI", "RSI " + Num(rs, 0) + " < " + Num(100.0 - gGRsiMax, 0)));
+     }
+   if(gGExtAtr > 0)
+     {
+      double e20 = Buf(hGM15Fast, 0);
+      if(e20 == EMPTY_VALUE) return(GateBlock("DATA", ""));
+      double stretch = dir * (bid - e20) / atr;                   // орох чиглэлд EMA20-оос хэдэн ATR холдсон
+      if(stretch > gGExtAtr) return(GateBlock("EXTENDED", Num(stretch, 1) + " ATR > " + Num(gGExtAtr, 1)));
+     }
+   return(true);
+  }
+
+string GateText(const string code)
+  {
+   if(code == "DAILY_LOSS") return(L("өдрийн алдагдлын хязгаарт хүрсэн, маргааш үргэлжилнэ", "daily loss stop reached, resumes tomorrow"));
+   if(code == "MAX_TRADES") return(L("өнөөдрийн орох тоо дууссан", "today's entries are used up"));
+   if(code == "SESSION")    return(L("арилжааны цагаас гадуур", "outside the trading hours"));
+   if(code == "ROLLOVER")   return(L("брокерын өдрийн солилт, spread тэлдэг", "broker rollover, spreads widen"));
+   if(code == "NEWS")       return(L("чухал мэдээний ойр", "close to a high-impact release"));
+   if(code == "DATA")       return(L("индикаторын дата ачаалж байна", "loading indicator data"));
+   if(code == "ATR_LOW")    return(L("зах хэт тайван", "market too quiet"));
+   if(code == "ATR_HIGH")   return(L("зах хэт огцом хөдөлж байна", "market moving too violently"));
+   if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
+   if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
+   if(code == "RSI")        return(L("RSI хэт сунасан", "RSI overstretched"));
+   if(code == "EXTENDED")   return(L("үнэ EMA20-оос хэт холдсон", "price too far from EMA20"));
+   return(code);
+  }
+
+string GateLine()
+  {
+   if(!gGateOn) return(L("Шүүлтүүр: унтраалттай", "Filter: off"));
+   if(gBlock == "") return(L("Шүүлтүүр: нээлттэй", "Filter: pass"));
+   return(L("Шүүлтүүр хаасан: ", "Filter blocks: ") + GateText(gBlock) + (gBlockDetail != "" ? " (" + gBlockDetail + ")" : ""));
+  }
+
+int SignalDir()
+  {
+   if(gMode == "ASIAN") return(DailyTrend());
+   return(gSignal == "BUY" ? 1 : (gSignal == "SELL" ? -1 : 0));
   }
 
 //+------------------------------------------------------------------+
@@ -463,6 +791,7 @@ void ManageRun()
    double pnl = RunPnl();
    if(gTarget > 0 && pnl >= gTarget)    { Finish("TARGET");   return; }
    if(gMaxLoss > 0 && pnl <= -gMaxLoss) { Finish("MAX_LOSS"); return; }
+   if(gFirstEntry > 0 && gDailyLossHit) { Finish("DAILY_LOSS"); return; }   // өдрийн алдагдлын хязгаар (DailyGuard)
    if(gFirstEntry <= 0)
      {
       if(TimeCurrent() - gRunStart >= WAIT_FOR_SIGNAL_SECONDS) Finish("NO_SIGNAL");
@@ -490,34 +819,25 @@ void TryBasket()
    if(RealBlocked()) return;
    if(!gTester && TimeLocal() - gLastSyncOk > 30) return;
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
-   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return;
-   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
+   if(!TradingAllowed()) return;
+   if(SpreadPoints() > MaxSpreadPoints) return;
+   int dir = (gSignal == "BUY") ? 1 : -1;
+   if(!GateCheck(dir)) return;                                   // орох шүүлтүүр: шалтгаан gBlock-д
 
-   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   if(step <= 0) step = 0.01;
-   double lots = MathFloor(gLots / step + 1e-9) * step;
-   if(lots < vmin) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
-   if(lots > vmax) lots = vmax;
-   lots = NormalizeDouble(lots, 2);
+   double lots = NormLots(gLots);
+   if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
 
    // Аваарын stop: робот, компьютер унтарсан үед л ажиллах ёстой тул нийт алдагдлын хязгаараас 2 дахин хол тавина.
    double contract = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);
    if(contract <= 0) contract = 100.0;
    double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
-   double slDist = MathMax(2.0 * gMaxLoss / (lots * gMaxPos * contract) + spread, minDist + spread);
+   double slDist = 2.0 * gMaxLoss / (lots * gMaxPos * contract) + spread;   // stops level-ийг SendMarket хангана
 
    string side = gSignal;
    int opened = 0;
    for(int i = 0; i < gMaxPos; i++)
      {
-      bool ok = false;
-      if(side == "BUY")
-         ok = trade.Buy(lots, _Symbol, 0.0, NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK) - slDist, _Digits), 0.0, "xau-basket");
-      else
-         ok = trade.Sell(lots, _Symbol, 0.0, NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID) + slDist, _Digits), 0.0, "xau-basket");
+      bool ok = SendMarket(dir, lots, slDist, 0.0, "xau-basket");
       if(ok) opened++;
       else
         {
@@ -544,33 +864,18 @@ void TryEnter()
    if(!gTester && TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(CountPositions() >= gMaxPos) return;
-   if(TotalVolume() + gLots > gLots * gMaxPos + 1e-8) return;     // netting дансанд ч нийт лот хэтрэхгүй
-   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return;
-   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
+   double lots = NormLots(gLots);
+   if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
+   if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
+   if(!TradingAllowed()) return;
+   if(SpreadPoints() > MaxSpreadPoints) return;
 
    double atr = Buf(hAtr, 0);
    if(atr == EMPTY_VALUE || atr <= 0) return;
+   int dir = (gSignal == "BUY") ? 1 : -1;
+   if(!GateCheck(dir)) return;                                   // орох шүүлтүүр: шалтгаан gBlock-д
 
-   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   if(step <= 0) step = 0.01;
-   double lots = MathFloor(gLots / step + 1e-9) * step;
-   if(lots < vmin) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
-   if(lots > vmax) lots = vmax;                                  // брокерын нэг захиалгын дээд хэмжээ
-   lots = NormalizeDouble(lots, 2);
-
-   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
-   double slDist = MathMax(gSlAtr * atr, minDist);
-   double tpDist = MathMax(gTpAtr * atr, minDist);
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-   bool ok = false;
-   if(gSignal == "BUY")
-      ok = trade.Buy(lots, _Symbol, 0.0, NormalizeDouble(ask - slDist, _Digits), NormalizeDouble(ask + tpDist, _Digits), "xau-bot");
-   else
-      ok = trade.Sell(lots, _Symbol, 0.0, NormalizeDouble(bid + slDist, _Digits), NormalizeDouble(bid - tpDist, _Digits), "xau-bot");
+   bool ok = SendMarket(dir, lots, gSlAtr * atr, gTpAtr * atr, "xau-bot");   // stops level, tick-ийг SendMarket хангана
 
    gLastEntry = TimeCurrent();                                   // амжилтгүй болсон ч дараагийн оролдлогыг хүлээлгэнэ
    if(!ok)
@@ -622,33 +927,25 @@ int DailyTrend()
    return(f > sl ? 1 : (f < sl ? -1 : 0));
   }
 
-double RuleLots()
+double RuleLots() { return(NormLots(gTester ? TesterLots : gLots)); }
+
+// Арилжаа хийх боломжтой эсэх: Algo Trading асаалттай, брокер тухайн symbol-д шинэ арилжаа зөвшөөрч байгаа
+bool TradingAllowed()
   {
-   double step = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double vmax = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   if(step <= 0) step = 0.01;
-   double lots = MathFloor((gTester ? TesterLots : gLots) / step + 1e-9) * step;
-   if(lots < vmin) return(0.0);
-   if(lots > vmax) lots = vmax;
-   return(NormalizeDouble(lots, 2));
+   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) return(false);
+   long m = SymbolInfoInteger(_Symbol, SYMBOL_TRADE_MODE);
+   return(m != SYMBOL_TRADE_MODE_DISABLED && m != SYMBOL_TRADE_MODE_CLOSEONLY);
   }
 
-// dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай.
+// dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай. Орох шүүлтүүрийг давах ёстой.
 bool RuleOpen(const int dir, const double slDist, const double tpDist, const datetime exitAt)
   {
    double lots = RuleLots();
    if(lots <= 0) return(false);
-   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return(false);
-   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
-   if(slDist <= minDist || tpDist <= minDist) return(false);
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   bool ok = false;
-   if(dir > 0)
-      ok = trade.Buy(lots, _Symbol, 0.0, NormalizeDouble(ask - slDist, _Digits), NormalizeDouble(ask + tpDist, _Digits), "xau-rule");
-   else
-      ok = trade.Sell(lots, _Symbol, 0.0, NormalizeDouble(bid + slDist, _Digits), NormalizeDouble(bid - tpDist, _Digits), "xau-rule");
+   if(SpreadPoints() > MaxSpreadPoints) return(false);
+   if(slDist <= StopsMin() || tpDist <= StopsMin()) return(false);   // хүрээ хэт нарийн: stop тавих боломжгүй
+   if(!GateCheck(dir)) return(false);
+   bool ok = SendMarket(dir, lots, slDist, tpDist, "xau-rule");
    if(ok)
      {
       gRuleTraded = true;
@@ -898,20 +1195,22 @@ void IctPlace(const int kz, const int dir, double entry, double stop, double tp)
   {
    double lots = RuleLots();
    if(lots <= 0) return;
-   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
-   entry = NormalizeDouble(entry, _Digits); stop = NormalizeDouble(stop, _Digits); tp = NormalizeDouble(tp, _Digits);
+   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(!GateCheck(dir)) return;                                   // орох шүүлтүүр (TesterGate)
+   entry = PriceNear(entry); stop = PriceNear(stop); tp = PriceNear(tp);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   double minDist = StopsMin();
+   if(MathAbs(entry - stop) < minDist || MathAbs(tp - entry) < minDist) return;   // stops level-ээс ойр: брокер татгалзана
    bool ok = false;
    if(dir > 0)
      {
       if(entry >= ask - minDist) return;                         // үнэ аль хэдийн орох түвшинд/доор: алгасна
-      ok = trade.BuyLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict");
+      ok = trade.BuyLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict") && TradeOk();
      }
    else
      {
       if(entry <= bid + minDist) return;
-      ok = trade.SellLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict");
+      ok = trade.SellLimit(lots, entry, _Symbol, stop, tp, ORDER_TIME_GTC, 0, "xau-ict") && TradeOk();
      }
    if(!ok) return;
    gIctOrder = trade.ResultOrder();
@@ -1103,19 +1402,22 @@ void SxEnter(const int dir, const double entry, const double stop, const double 
    if(bestD == 0) tp = entry + dir * 2.0 * risk;
    double lots = RuleLots();
    if(lots <= 0) return;
-   if((int)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD) > MaxSpreadPoints) return;
-   double minDist = (double)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_STOPS_LEVEL) * _Point;
+   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(!GateCheck(dir)) return;                                   // орох шүүлтүүр (TesterGate)
+   double minDist = StopsMin();
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   double sl = NormalizeDouble(stop, _Digits), t = NormalizeDouble(tp, _Digits), e = NormalizeDouble(entry, _Digits);
+   double sl = PriceNear(stop), t = PriceNear(tp), e = PriceNear(entry);
    string cm = tag + ":" + DoubleToString(risk, 2);                // анхны R-ийг тэмдэглэнэ (BE, trailing-д)
    if(!limit)
      {
-      if(dir > 0) { if(ask - sl <= minDist || t - ask <= minDist) return; trade.Buy(lots, _Symbol, 0.0, sl, t, cm); }
-      else        { if(sl - bid <= minDist || bid - t <= minDist) return; trade.Sell(lots, _Symbol, 0.0, sl, t, cm); }
+      // BUY-ийн stop/target-ийг Bid-ээс, SELL-ийнхийг Ask-аас хэмжинэ
+      if(dir > 0) { if(bid - sl <= minDist || t - bid <= minDist) return; if(!trade.Buy(lots, _Symbol, 0.0, sl, t, cm) || !TradeOk()) Print("XauBot: SMC ", trade.ResultRetcodeDescription()); }
+      else        { if(sl - ask <= minDist || ask - t <= minDist) return; if(!trade.Sell(lots, _Symbol, 0.0, sl, t, cm) || !TradeOk()) Print("XauBot: SMC ", trade.ResultRetcodeDescription()); }
       return;
      }
-   if(dir > 0) { if(e >= ask - minDist) return; trade.BuyLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm); }
-   else        { if(e <= bid + minDist) return; trade.SellLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm); }
+   if(MathAbs(e - sl) < minDist || MathAbs(t - e) < minDist) return;
+   if(dir > 0) { if(e >= ask - minDist) return; if(!trade.BuyLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm) || !TradeOk()) Print("XauBot: SMC ", trade.ResultRetcodeDescription()); }
+   else        { if(e <= bid + minDist) return; if(!trade.SellLimit(lots, e, _Symbol, sl, t, ORDER_TIME_GTC, 0, cm) || !TradeOk()) Print("XauBot: SMC ", trade.ResultRetcodeDescription()); }
   }
 
 void SxStep()
@@ -1316,10 +1618,15 @@ void StPlace()
   {
    double lots = RuleLots();
    if(lots <= 0) return;
+   if(!GateCheck(0)) return;                                     // орох шүүлтүүр, чиглэлгүй хэсэг (TesterGate)
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   double b = NormalizeDouble(ask + 1.5, _Digits), sv = NormalizeDouble(bid - 1.5, _Digits);
-   if(!trade.BuyStop(lots, b, _Symbol, NormalizeDouble(b - 1.0, _Digits), 0.0, ORDER_TIME_GTC, 0, "xau-straddle")) return;
-   if(!trade.SellStop(lots, sv, _Symbol, NormalizeDouble(sv + 1.0, _Digits), 0.0, ORDER_TIME_GTC, 0, "xau-straddle")) return;
+   double b = PriceUp(ask + 1.5), sv = PriceDown(bid - 1.5);
+   if(!trade.BuyStop(lots, b, _Symbol, PriceDown(b - 1.0), 0.0, ORDER_TIME_GTC, 0, "xau-straddle") || !TradeOk()) return;
+   if(!trade.SellStop(lots, sv, _Symbol, PriceUp(sv + 1.0), 0.0, ORDER_TIME_GTC, 0, "xau-straddle") || !TradeOk())
+     {
+      StDeletePending();                                         // ганц талтай үлдээхгүй
+      return;
+     }
    gStPlaced = TimeCurrent();
   }
 
@@ -1450,9 +1757,12 @@ void LiveAsianStep()
    if(CountPositions() > 0) return;
    if(RealBlocked()) { gReason = L("Жинхэнэ данс зөвшөөрөгдөөгүй", "Real account not allowed"); return; }
    if(TimeLocal() - gLastSyncOk > 30) { gReason = L("Вэбтэй холбоо тасарсан тул орсонгүй", "No entry: the web connection was lost"); return; }
-   if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) || !MQLInfoInteger(MQL_TRADE_ALLOWED)) { gReason = L("Algo Trading унтраалттай тул орсонгүй", "No entry: Algo Trading is off"); return; }
+   if(!TradingAllowed()) { gReason = L("Algo Trading унтраалттай эсвэл брокер арилжаа хаасан тул орсонгүй", "No entry: Algo Trading is off or the broker has closed trading"); return; }
+   if(RuleLots() <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
    double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double dist = MathAbs(price - (hi + lo) / 2.0);
+   if(dist <= StopsMin()) { gReason = rangeText + L(" · stop хэт ойр тул орсонгүй", " · no entry: the stop would be too close"); return; }
+   if(!GateCheck(trend)) { gReason = rangeText + L(" · breakout гарсан ч шүүлтүүр хаасан, өнөөдөр орохгүй: ", " · breakout blocked by the filter, no entry today: ") + GateText(gBlock); return; }
    if(RuleOpen(trend, dist, dist * 2.0, dayStart + 20 * 3600))
      {
       gSignal = (trend > 0) ? "BUY" : "SELL";
@@ -1487,6 +1797,17 @@ string JsonSafe(string v)
    return(StringSubstr(v, 0, 80));
   }
 
+// Чөлөөт бичвэрийг (шалтгаан, брокерын хариу) JSON мөр болгох: хашилт, ташуу зураасыг escape хийж, удирдах тэмдэгтийг хасна
+string JsonText(string v, const int maxLen)
+  {
+   for(int i = StringLen(v) - 1; i >= 0; i--)                     // control characters (line breaks etc.) become spaces
+      if(StringGetCharacter(v, i) < 32) StringSetCharacter(v, i, 32);
+   if(StringLen(v) > maxLen) v = StringSubstr(v, 0, maxLen);
+   StringReplace(v, "\\", "\\\\");
+   StringReplace(v, "\"", "\\\"");
+   return(v);
+  }
+
 string JStr(const string body, const string key)
   {
    string k = "\"" + key + "\":\"";
@@ -1505,7 +1826,9 @@ string Num(const double v, const int digits) { return(DoubleToString(v, digits))
 
 string IsoUtc(const datetime serverTime)
   {
-   datetime gmt = serverTime - (TimeTradeServer() - TimeGMT());
+   // Серверийн цагийн зөрүүг 15 минутаар бүхэлчилнэ: TimeGMT нь компьютерийн цагаас хамаардаг тул секундээр хэлбэлздэг
+   long off = (long)MathRound((double)(TimeTradeServer() - TimeGMT()) / 900.0) * 900;
+   datetime gmt = serverTime - (datetime)off;
    MqlDateTime s;
    TimeToStruct(gmt, s);
    return(StringFormat("%04d-%02d-%02dT%02d:%02d:%02dZ", s.year, s.mon, s.day, s.hour, s.min, s.sec));
@@ -1531,13 +1854,16 @@ string PositionsJson()
 string DealsJson()
   {
    string out = "";
-   if(!HistorySelect(TimeCurrent() - 86400, TimeCurrent() + 60)) return(out);
+   // Нээсэн deal нь 24 цагаас өмнө байж болох тул 7 хоногийг уншиж, зөвхөн 24 цагт хаагдсаныг илгээнэ
+   datetime since = TimeCurrent() - 86400;
+   if(!HistorySelect(TimeCurrent() - 7 * 86400, TimeCurrent() + 60)) return(out);
    int total = HistoryDealsTotal();
    int added = 0;
    for(int i = total - 1; i >= 0 && added < 30; i--)
      {
       ulong t = HistoryDealGetTicket(i);
       if(t == 0) continue;
+      if((datetime)HistoryDealGetInteger(t, DEAL_TIME) < since) break;
       if(HistoryDealGetInteger(t, DEAL_MAGIC) != MagicNumber) continue;
       if(HistoryDealGetString(t, DEAL_SYMBOL) != _Symbol) continue;
       long entry = HistoryDealGetInteger(t, DEAL_ENTRY);
@@ -1583,8 +1909,10 @@ void Sync()
                  "\",\"balance\":" + Num(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ",\"equity\":" + Num(AccountInfoDouble(ACCOUNT_EQUITY), 2) +
                  ",\"currency\":\"" + AccountInfoString(ACCOUNT_CURRENCY) + "\",\"server\":\"" + JsonSafe(AccountInfoString(ACCOUNT_SERVER)) + "\"},\"symbol\":\"" + _Symbol + "\",\"bid\":" +
                  Num(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits) + ",\"ask\":" + Num(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits) +
-                 ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + gReason + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
-                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION + "}";
+                 ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + JsonText(gReason, 280) + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
+                 ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION +
+                 ",\"gateOn\":" + (gGateOn ? "true" : "false") + ",\"block\":\"" + gBlock + "\",\"blockDetail\":\"" + JsonText(gBlockDetail, 100) + "\",\"tradesToday\":" + (string)gTradesToday +
+                 ",\"dayPnl\":" + Num(gDayPnl, 2) + ",\"dailyLossHit\":" + (gDailyLossHit ? "true" : "false") + "}";
 
    uchar data[];
    int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
@@ -1603,6 +1931,7 @@ void Sync()
       return;
      }
    if(code == 401) { gLinkStatus = L("токен буруу", "wrong token"); return; }
+   if(code == 400) { gLinkStatus = L("вэб роботын мэдээг хүлээж авсангүй (400) — шинэ XauBot.ex5 татна уу", "the web rejected the robot's report (400) — download the new XauBot.ex5"); return; }
    if(code != 200) { gLinkStatus = L("серверийн хариу ", "server replied ") + (string)code; return; }
 
    string body = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
@@ -1612,12 +1941,28 @@ void Sync()
    string state = JStr(body, "state");
    string runId = JStr(body, "runId");
    gCloseAll   = JBool(body, "closeAll");
-   gLots       = JNum(body, "lots");
-   gMaxPos     = (int)JNum(body, "maxPositions");
+   gLots       = MathMax(0.0, JNum(body, "lots"));
+   gMaxPos     = (int)MathMax(1.0, JNum(body, "maxPositions"));
    gSlAtr      = JNum(body, "slAtr");
    gTpAtr      = JNum(body, "tpAtr");
    gTarget     = JNum(body, "profitTarget");
    gMaxLoss    = JNum(body, "maxLoss");
+   if(JRaw(body, "gateOn") != "")                               // орох шүүлтүүрийн тохиргоо (вэб v2.80+)
+     {
+      gGateOn        = JBool(body, "gateOn");
+      gGTrend        = JBool(body, "gTrend");
+      gGStart        = (int)MathMax(0.0, MathMin(23.0, JNum(body, "gSessionStart")));
+      gGEnd          = (int)MathMax(0.0, MathMin(23.0, JNum(body, "gSessionEnd")));
+      gGAtrMin       = MathMax(0.0, JNum(body, "gAtrMin"));
+      gGAtrMax       = MathMax(0.0, JNum(body, "gAtrMax"));
+      gGSpreadPct    = MathMax(0.0, JNum(body, "gSpreadPct"));
+      gGRsiMax       = MathMax(0.0, MathMin(100.0, JNum(body, "gRsiMax")));
+      gGExtAtr       = MathMax(0.0, JNum(body, "gExtAtr"));
+      gGMaxTrades    = (int)MathMax(0.0, JNum(body, "gMaxTrades"));
+      gGDailyLossPct = MathMax(0.0, JNum(body, "gDailyLossPct"));
+      gBlackouts     = JStr(body, "blackouts");
+      gStatsAt       = 0;
+     }
    if(Language == LANG_WEB)
      {
       string lang = JStr(body, "lang");                        // вэбийн Тохиргоо дахь хэл
@@ -1651,6 +1996,8 @@ void ShowStatus()
    s += L("Төлөв: ", "State: ") + (gState == "RUNNING" ? (gFinished == "" ? L("АЖИЛЛАЖ БАЙНА", "RUNNING") : L("дуусгаж байна (", "finishing (") + gFinished + ")") : L("зогссон", "stopped")) + "\n";
    s += L("Хэрэгсэл: ", "Tool: ") + (gMode == "BASKET" ? L("Багц", "Basket") : (gMode == "ASIAN" ? L("Азийн breakout", "Asian breakout") : "Scalper")) + "\n";
    s += L("Дохио: ", "Signal: ") + gSignal + " — " + gReason + "\n";
+   s += GateLine() + "\n";
+   if(gGateOn) s += L("Өнөөдөр: ", "Today: ") + (string)gTradesToday + (gGMaxTrades > 0 ? " / " + (string)gGMaxTrades : "") + L(" оролт · ", " entries · ") + Num(gDayPnl, 2) + (gDailyLossHit ? L(" · АЛДАГДЛЫН ХЯЗГААР", " · LOSS STOP") : "") + "\n";
    s += L("Нээлттэй: ", "Open: ") + (string)CountPositions() + " / " + (string)gMaxPos + L(" · лот ", " · lots ") + Num(gLots, 2);
    if(gState == "RUNNING") s += L(" · энэ удаа: ", " · this run: ") + Num(RunPnl(), 2);
    if(gState == "RUNNING" && gMode == "BASKET" && gFirstEntry > 0) s += L("\nБагц (", "\nBasket (") + gRunSide + "): +" + Num(gTarget, 2) + L(" хүрвэл эсвэл -", " or -") + Num(gMaxLoss, 2) + L(" хүрвэл бүгдийг хаана", " closes everything");

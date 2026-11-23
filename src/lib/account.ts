@@ -14,11 +14,14 @@ export function wantsSignal(u: Pick<User, "signalsPaused" | "signalsMuted">, set
   return !u.signalsPaused && !muted(u).includes(setupId);
 }
 
-/** `wanted` is the list of setups the user ticked; the rest are muted. Pausing keeps the choices. */
-export async function saveSignalPrefs(userId: string, input: { paused: boolean; wanted: string[] }): Promise<{ error?: "setup" }> {
+/**
+ * `wanted` is the list of setups the user ticked; the rest are muted. Pausing keeps the choices.
+ * `news` turns the heads-up before HIGH-impact releases on or off; left out, it is not changed.
+ */
+export async function saveSignalPrefs(userId: string, input: { paused: boolean; wanted: string[]; news?: boolean }): Promise<{ error?: "setup" }> {
   if (input.wanted.some((id) => !(SIGNAL_SETUPS as readonly string[]).includes(id))) return { error: "setup" };
   const signalsMuted = SIGNAL_SETUPS.filter((id) => !input.wanted.includes(id)).join(",");
-  await db.update(schema.users).set({ signalsPaused: input.paused, signalsMuted }).where(eq(schema.users.id, userId));
+  await db.update(schema.users).set({ signalsPaused: input.paused, signalsMuted, ...(input.news === undefined ? {} : { signalsNews: input.news }) }).where(eq(schema.users.id, userId));
   return {};
 }
 

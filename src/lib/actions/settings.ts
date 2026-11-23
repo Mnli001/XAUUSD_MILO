@@ -25,7 +25,7 @@ export async function savePrefsAction(_prev: SettingsState, form: FormData): Pro
 export async function saveSignalPrefsAction(_prev: SettingsState, form: FormData): Promise<SettingsState> {
   const user = await requireUser();
   const t = await getT();
-  const r = await saveSignalPrefs(user.id, { paused: form.get("paused") === "on", wanted: form.getAll("setup").map(String) });
+  const r = await saveSignalPrefs(user.id, { paused: form.get("paused") === "on", wanted: form.getAll("setup").map(String), news: form.get("news") === "on" });
   if (r.error) return { error: t("Хадгалж чадсангүй", "Could not save") };
   revalidatePath("/settings");
   return { ok: t("Хадгаллаа", "Saved") };

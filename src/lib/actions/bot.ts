@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "../auth";
-import { saveLiveConfig, startBot, stopBot, requestCloseAll, rotateToken } from "../bot/liveDb";
+import { saveLiveConfig, saveGateConfig, startBot, stopBot, requestCloseAll, rotateToken } from "../bot/liveDb";
 import { getT } from "../prefs.server";
 
 export type BotFormState = { error?: string; ok?: string; token?: string };
@@ -19,6 +19,15 @@ export async function saveBotConfigAction(_prev: BotFormState, form: FormData): 
   if (r.error) return r;
   revalidatePath("/bot");
   return { ok: t("Тохиргоо хадгалагдлаа", "Settings saved") };
+}
+
+export async function saveGateAction(_prev: BotFormState, form: FormData): Promise<BotFormState> {
+  const user = await requireUser();
+  const t = await getT();
+  const r = await saveGateConfig(user.id, Object.fromEntries(form), t, accountIn(form));
+  if (r.error) return r;
+  revalidatePath("/bot");
+  return { ok: t("Шүүлтүүр хадгалагдлаа", "Filter saved") };
 }
 
 export async function startBotAction(form: FormData) {

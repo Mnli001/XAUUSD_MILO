@@ -19,6 +19,7 @@ export type SetupNow = {
   target: number | null;
   band: { high: number; low: number } | null; // a price zone worth drawing (the Asian range)
   checks: { label: string; ok: boolean }[];
+  at?: Date; // ACTIVE only: when the 15-minute bar that made it active closed
 };
 
 const M15 = 15 * 6e4;
@@ -66,7 +67,7 @@ export function asianSetup(m15: Candle[], dailyScore: number | null, news: Date[
     if (hour >= 20) return off(t("Өнөөдрийн setup дууссан", "Today's setup is over"), t(`Энэ дүрмийн арилжаа ${ub("04:00")} (${zone}) цагт хаагддаг. Маргаашийн хүрээг хүлээнэ.`, `Trades on this rule close at ${ub("04:00")} (${zone}). Waiting for tomorrow's range.`), { band, checks: done });
     const dist = Math.abs(breakout.close - mid);
     return {
-      status: "ACTIVE", side: trend, band, checks: done,
+      status: "ACTIVE", side: trend, band, checks: done, at: new Date(breakout.time.getTime() + M15),
       headline: t(`${trend}: хүрээнээс ${sideWord} гарлаа`, `${trend}: broke ${sideWord} the range`),
       detail: t(`15 минутын лаа ${px(breakout.close)} дээр хүрээний гадна, трендийн чиглэлд хаагдсан. Stop нь хүрээний дунд, target нь stop-оос ${ASIAN_RR} дахин хол. ${ub("04:00")} (${zone}) гэхэд хүрээгүй бол хаана.`, `A 15-minute candle closed outside the range at ${px(breakout.close)}, in the direction of the trend. The stop is the middle of the range and the target is ${ASIAN_RR} times as far. If neither is hit by ${ub("04:00")} (${zone}), it is closed.`),
       entry: breakout.close, stop: mid, target: breakout.close + dir * dist * ASIAN_RR,
@@ -105,7 +106,7 @@ export function dipSetup(m15: Candle[], ind: { rsi: number; atr: number; daily: 
   const dir = side === "BUY" ? 1 : -1;
   const levels = { entry: last.close, stop: last.close - dir * 2 * ind.atr, target: last.close + dir * 1.5 * ind.atr };
   if (hit) {
-    return { status: "ACTIVE", side, band: null, checks, ...levels,
+    return { status: "ACTIVE", side, band: null, checks, ...levels, at: new Date(last.time.getTime() + M15),
       headline: t(`${side}: тренд доторх ${side === "BUY" ? "уналт" : "өсөлт"}`, `${side}: ${side === "BUY" ? "dip" : "rally"} within the trend`),
       detail: t(`RSI ${ind.rsi.toFixed(0)} болж ${side === "BUY" ? "хэт зарагдсан" : "хэт авагдсан"} бүсэд орлоо. Stop 2 ATR (${px(2 * ind.atr)}), target 1.5 ATR (${px(1.5 * ind.atr)}). 8 цагийн дотор хүрээгүй бол хаана.`, `RSI is at ${ind.rsi.toFixed(0)}, in ${side === "BUY" ? "oversold" : "overbought"} territory. Stop 2 ATR (${px(2 * ind.atr)}), target 1.5 ATR (${px(1.5 * ind.atr)}). Closed if neither is hit within 8 hours.`) };
   }

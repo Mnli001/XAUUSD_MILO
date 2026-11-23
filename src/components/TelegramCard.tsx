@@ -28,14 +28,17 @@ export function TelegramCard({ configured, linked, isAdmin }: { configured: bool
           </ol>
         ) : <p className="mt-3 text-sm text-zinc-500">{t("Админ Telegram ботыг хараахан тохируулаагүй байна.", "The admin has not set up the Telegram bot yet.")}</p>
       ) : linked ? (
-        <div className="mt-4 flex flex-wrap gap-3">
-          <form action={testAction}><button className="btn-ghost" disabled={testing}>{t("Туршилтын мессеж илгээх", "Send a test message")}</button></form>
-          <form action={unlinkAction}><button className="btn-ghost text-red-300" disabled={unlinking}>{t("Салгах", "Unlink")}</button></form>
-        </div>
+        <>
+          <p className="mt-3 max-w-prose text-xs leading-relaxed text-zinc-400">{t("Ботод бичих командууд: ", "Commands you can send the bot: ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/status</code>{t(" одоогийн чиглэл, дараагийн чухал мэдээ; ", " current bias and the next important release; ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/stop</code>{t(" дохиог түр зогсоох; ", " pause signals; ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/resume</code>{t(" дахин асаах.", " turn them back on.")}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <form action={testAction}><button className="btn-ghost" disabled={testing}>{t("Туршилтын мессеж илгээх", "Send a test message")}</button></form>
+            <form action={unlinkAction}><button className="btn-ghost text-red-300" disabled={unlinking}>{t("Салгах", "Unlink")}</button></form>
+          </div>
+        </>
       ) : link.link ? (
         <div className="mt-4 space-y-2">
           <a className="btn" href={link.link} target="_blank" rel="noreferrer">{t("Telegram нээж Start дарах", "Open Telegram and press Start")}</a>
-          <p className="text-xs leading-relaxed text-zinc-400">{t("Telegram дээр бот нээгдэхэд ", "When the bot opens in Telegram, press ")}<strong>Start</strong>{t(" дарна. “Холбогдлоо” гэсэн хариу ирсний дараа энэ хуудсаа шинэчлээрэй.", ". After the “Linked” reply arrives, refresh this page.")}</p>
+          <p className="text-xs leading-relaxed text-zinc-400">{t("Telegram дээр бот нээгдэхэд ", "When the bot opens in Telegram, press ")}<strong>Start</strong>{t(" дарна. “Холбогдлоо” гэсэн хариу ирсний дараа энэ хуудсаа шинэчлээрэй.", ". After the “Linked” reply arrives, refresh this page.")}{t(" Холбоос 30 минут хүчинтэй.", " The link works for 30 minutes.")}</p>
         </div>
       ) : (
         <form action={linkAction} className="mt-4"><button className="btn" disabled={linking}>{linking ? t("Бэлдэж байна…", "Preparing…") : t("Telegram холбох", "Link Telegram")}</button></form>

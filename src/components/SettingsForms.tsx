@@ -115,7 +115,7 @@ export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date })
   );
 }
 
-export function SignalPrefsForm({ paused, muted }: { paused: boolean; muted: string[] }) {
+export function SignalPrefsForm({ paused, muted, news = false }: { paused: boolean; muted: string[]; news?: boolean }) {
   const t = useT();
   const [state, action, pending] = useActionState<SettingsState, FormData>(saveSignalPrefsAction, {});
   const setups: [string, string][] = [["asian-breakout", t("Азийн хүрээний breakout", "Asian range breakout")], ["trend-dip", t("Тренд доторх уналтыг авах", "Buy the dip within the trend")]];
@@ -128,6 +128,7 @@ export function SignalPrefsForm({ paused, muted }: { paused: boolean; muted: str
           <label key={id} className={row}><input type="checkbox" name="setup" value={id} defaultChecked={!muted.includes(id)} className="h-5 w-5 accent-amber-500" />{name}</label>
         ))}
       </fieldset>
+      <label className={row}><input type="checkbox" name="news" defaultChecked={news} className="h-5 w-5 accent-amber-500" />{t("Чухал мэдээ гарахаас 30 минутын өмнө сануулах", "Warn me 30 minutes before an important release")}</label>
       <label className={`${row} border-t border-zinc-800 pt-2`}><input type="checkbox" name="paused" defaultChecked={paused} className="h-5 w-5 accent-amber-500" />{t("Бүх дохиог түр зогсоох (холбоос хэвээр үлдэнэ)", "Pause all signals (Telegram stays linked)")}</label>
       <Feedback state={state} />
       <button className="btn" disabled={pending}>{t("Хадгалах", "Save")}</button>

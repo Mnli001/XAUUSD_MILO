@@ -4,6 +4,7 @@ import { biasLabelText } from "@/lib/analysis/bias";
 import type { T } from "@/lib/i18n";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
 import { Dir } from "./Timetable";
+import { PriceSpark } from "./PriceSpark";
 
 export const loadingText = (t: T) => t("Дата ачаалж байна", "Loading data");
 const tfLabels = (t: T): [Timeframe, string][] => [["1day", t("Өдөр", "Day")], ["4h", t("4ц", "4h")], ["1h", t("1ц", "1h")], ["15min", t("15м", "15m")]];
@@ -20,28 +21,38 @@ export function Empty({ title, v = MN_VIEWER }: { title: string; v?: Viewer }) {
 }
 
 /** Price, change and freshness: the line above the day diagram. */
-export function PriceHeader({ price, date, v = MN_VIEWER }: Pick<TodaySnapshot, "price"> & { date?: string; v?: Viewer }) {
+export function PriceHeader({ price, date, closes = [], v = MN_VIEWER }: Pick<TodaySnapshot, "price"> & { date?: string; closes?: number[]; v?: Viewer }) {
   const { t } = v;
   if (!price) return <p className="text-sm text-zinc-500">XAUUSD · {loadingText(t)}</p>;
   const up = (price.changePct ?? 0) >= 0;
+  const hi = closes.length ? Math.max(...closes) : null, lo = closes.length ? Math.min(...closes) : null;
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1.5">
+    <div className="grid items-end gap-x-10 gap-y-4 md:grid-cols-[auto_minmax(0,1fr)]">
       <div className="min-w-0">
-        <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <span className="text-[13px] text-zinc-400">XAUUSD</span>
-          <span className="text-[26px] leading-none font-bold tracking-[-0.02em] text-zinc-50 tabular-nums sm:text-[34px]">{money(price.last)}</span>
+        <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-zinc-400">
+          <span className="font-semibold tracking-[0.08em] text-amber-400">XAUUSD</span>
+          {date && <span>{date}</span>}
+          {price.stale && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
+        </p>
+        <p className="font-display mt-2 text-[52px] leading-none text-zinc-50 sm:text-[72px]">{money(price.last)}</p>
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           {price.changePct !== null && (
-            <span className={`rounded-md px-1.5 py-0.5 text-sm font-semibold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+            <span className={`rounded-full px-2.5 py-1 font-bold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
               <Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%
             </span>
           )}
+          <span className="whitespace-nowrap text-zinc-500">{t("Шинэчлэгдсэн", "Updated")} <span className="text-zinc-300 tabular-nums">{v.time(price.updatedAt)}</span> {v.zone}</span>
+        </p>
+      </div>
+      {closes.length >= 8 && (
+        <div className="min-w-0">
+          <PriceSpark closes={closes} className="h-24 sm:h-32" />
+          <p className="mt-2 flex justify-between text-xs text-zinc-500 tabular-nums">
+            <span>{t("24 цаг", "24 hours")}</span>
+            <span>{t("Доод", "Low")} <span className="text-zinc-300">{money(lo!)}</span> · {t("Дээд", "High")} <span className="text-zinc-300">{money(hi!)}</span></span>
+          </p>
         </div>
-      </div>
-      <div className="text-xs text-zinc-500 sm:text-right">
-        {date && <span className="block text-zinc-400 sm:mb-0.5">{date}</span>}
-        <span className="whitespace-nowrap">{t("Шинэчлэгдсэн", "Updated")} <span className="text-zinc-300 tabular-nums">{v.time(price.updatedAt)}</span> {v.zone}</span>
-        {price.stale && <span className="ml-2 rounded-md bg-amber-400/15 px-1.5 py-0.5 font-medium text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
-      </div>
+      )}
     </div>
   );
 }
@@ -55,16 +66,23 @@ export function BiasBar({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias"> & {
   const [head, ...rest] = text.split(" ");
   const tone = dir > 0 ? "text-emerald-400" : dir < 0 ? "text-red-400" : "text-zinc-200";
   return (
-    <section className="card" aria-labelledby="bias-h">
-      <h2 id="bias-h" className="card-title">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
+    <section className="hallmark strike p-5 sm:p-7" aria-labelledby="bias-h">
+      <h2 id="bias-h" className="sr-only">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
+      {/* The hallmark: side struck in wide capitals, the score as its purity mark, the time as its serial. */}
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <p className={`flex items-baseline gap-2.5 font-extrabold tracking-[-0.03em] ${tone}`}>
-          <Dir d={dir} className="text-4xl sm:text-5xl" />
-          <span className="text-5xl leading-none sm:text-6xl">{head}</span>
-          {rest.length > 0 && <span className="text-lg font-semibold tracking-normal sm:text-xl">{rest.join(" ")}</span>}
+        <p className={`flex items-center gap-3 ${tone}`}>
+          <Dir d={dir} className="text-[28px] sm:text-[34px]" />
+          <span className="stamp text-[46px] leading-none sm:text-[64px]">{head}</span>
+          {rest.length > 0 && <span className="self-end pb-1 text-base font-medium text-zinc-300 sm:text-lg">{rest.join(" ")}</span>}
         </p>
-        <p className="flex items-baseline gap-2 text-sm text-zinc-400 sm:block sm:text-right">{t("Нийт оноо", "Total score")} <span className={`text-2xl sm:block font-bold tabular-nums ${tone}`}>{signed(bias.total)}</span></p>
+        <p className="flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0.5">
+          <span className={`font-display text-[32px] leading-none sm:text-[40px] ${tone}`}>{signed(bias.total)}</span>
+          <span className="text-xs text-zinc-500">{t("нийт оноо / 100", "total score / 100")}</span>
+        </p>
       </div>
+      <p className="mt-4 border-t pt-3 text-[11px] font-semibold tracking-[0.14em] text-amber-400/90 uppercase tabular-nums" style={{ borderColor: "var(--hairline-gold)" }}>
+        XAUUSD · № {v.date(bias.computedAt)} · {v.time(bias.computedAt)} {v.zone}
+      </p>
 
       <div className="mt-4 sm:mt-5">
         <div className="mb-1.5 flex justify-between gap-3 text-[13px]"><span className="text-emerald-400">{t("Худалдан авагч", "Buyers")} <b className="tabular-nums">{bias.buyerPct}%</b></span><span className="text-red-400">{t("Худалдагч", "Sellers")} <b className="tabular-nums">{100 - bias.buyerPct}%</b></span></div>

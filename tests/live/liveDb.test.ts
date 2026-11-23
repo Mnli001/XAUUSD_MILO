@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
-import { getLive, saveLiveConfig, startBot, stopBot, requestCloseAll, rotateToken, handleSync, getLiveView } from "@/lib/bot/liveDb";
+import { db, schema } from "@/lib/db";
+import { DEFAULT_GATE } from "@/lib/bot/live";
+import { getLive, saveLiveConfig, saveGateConfig, startBot, stopBot, requestCloseAll, rotateToken, handleSync, getLiveView } from "@/lib/bot/liveDb";
 import { POST } from "@/app/api/bot/sync/route";
 import type { User } from "@/lib/db/schema";
 import { resetDb } from "../helpers/db";
@@ -12,7 +13,7 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 6, ...o,
 });
 
 beforeEach(async () => {
@@ -135,11 +136,11 @@ test("reports from a robot that does not send its timing are still accepted", as
 test("the basket tool runs end to end: saved, started, refused on an old robot file, reported", async () => {
   expect((await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" })).error).toBeUndefined();
   await startBot(admin.id, now);
-  expect(await handleSync(token, report(), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+  expect(await handleSync(token, report({ version: 5 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "OLD_ROBOT" });
   await startBot(admin.id, now);
-  expect(await handleSync(token, report({ version: 2 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
-  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 2, config: { mode: "BASKET", basket: { count: 8 } } });
+  expect(await handleSync(token, report({ version: 6 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
+  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 6, config: { mode: "BASKET", basket: { count: 8 } } });
 });
 
 test("the robot is told its owner's language", async () => {
@@ -147,4 +148,50 @@ test("the robot is told its owner's language", async () => {
   await db.execute(sql`UPDATE users SET locale = 'en' WHERE id = ${user.id}`);
   expect((await handleSync(userToken, report(), now))!.lang).toBe("en");
   expect((await handleSync(token, report(), now))!.lang).toBe("mn"); // the other user's robot is unaffected
+});
+
+describe("the entry filter", () => {
+  const gateForm = { gOn: "on", gTrend: "on", gStart: "15", gEnd: "1", gNewsBefore: "30", gNewsAfter: "60", gAtrMin: "1.5", gAtrMax: "25", gSpreadPct: "10", gRsiMax: "70", gExtAtr: "2", gMaxTrades: "4", gDailyLoss: "2" };
+  const release = (time: string, impact: "HIGH" | "MEDIUM" = "HIGH") =>
+    db.insert(schema.economicEvents).values({ type: `T-${time}-${impact}`, title: "CPI", country: "US", impact, time: new Date(time), source: "test" });
+
+  test("a bot saved before the filter existed gets the default filter", async () => {
+    await getLive(admin.id);
+    await db.execute(sql`UPDATE bot_live SET config = config - 'gate' WHERE user_id = ${admin.id}`);
+    expect((await getLive(admin.id)).config.gate).toEqual(DEFAULT_GATE);
+  });
+  test("it is saved on its own, keeps the tool settings, and reaches the robot", async () => {
+    await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "2", slAtr: "1", tpAtr: "2" });
+    expect((await saveGateConfig(admin.id, gateForm)).error).toBeUndefined();
+    expect((await saveGateConfig(admin.id, { ...gateForm, gStart: "25" })).error).toBeTruthy();
+    expect((await getLive(admin.id)).config).toMatchObject({ lots: 0.3, gate: { maxTradesDay: 4, dailyLossPct: 2 } });
+    await startBot(admin.id, now);
+    expect(await handleSync(token, report(), now)).toMatchObject({ state: "RUNNING", lots: 0.3, gateOn: true, gMaxTrades: 4, gDailyLossPct: 2 });
+  });
+  test("the robot is sent the windows around stored HIGH-impact releases only", async () => {
+    await release("2026-11-23T13:30:00Z");
+    await release("2026-11-23T12:00:00Z", "MEDIUM");
+    await release("2026-11-20T13:30:00Z"); // long over
+    const s = (iso: string) => Math.floor(Date.parse(iso) / 1000);
+    expect((await handleSync(token, report(), now))!.blackouts).toBe(`${s("2026-11-23T13:00:00Z")}-${s("2026-11-23T14:30:00Z")}`);
+    await saveGateConfig(admin.id, { ...gateForm, gNewsBefore: "0", gNewsAfter: "0" });
+    expect((await handleSync(token, report(), now))!.blackouts).toBe("");
+  });
+  test("the page shows why the robot is not entering, today's count and the loss stop", async () => {
+    await handleSync(token, report({ gateOn: true, block: "NEWS", blockDetail: "25 min", tradesToday: 3, dayPnl: -40.5, dailyLossHit: false }), now);
+    expect(await getLiveView(admin.id, now)).toMatchObject({ gateOn: true, block: "NEWS", blockDetail: "25 min", tradesToday: 3, dayPnl: -40.5, dailyLossHit: false });
+    await handleSync(token, report({ version: 5 }), now); // an older file reports none of it
+    expect(await getLiveView(admin.id, now)).toMatchObject({ gateOn: null, block: null, tradesToday: null, dailyLossHit: null });
+  });
+  test("the robot reporting the daily loss stop ends the run with that reason", async () => {
+    await startBot(admin.id, now);
+    await handleSync(token, report({ finished: "DAILY_LOSS", positions: [], dailyLossHit: true }), now);
+    expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "DAILY_LOSS" });
+  });
+  test("the sync route tells a report it cannot read (400) from a wrong token (401)", async () => {
+    const call = (headers: Record<string, string>, body: unknown) => POST(new Request("http://x/api/bot/sync", { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }));
+    expect((await call({ "x-bot-token": token }, { nonsense: true })).status).toBe(400);
+    expect((await call({ "x-bot-token": "nope" }, report())).status).toBe(401);
+    expect((await call({ "x-bot-token": token }, report({ reason: "x".repeat(400) }))).status).toBe(200); // a long reason is cut, not refused
+  });
 });

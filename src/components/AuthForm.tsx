@@ -4,6 +4,7 @@ import Link from "next/link";
 import { loginAction, registerAction, type FormState } from "@/lib/actions/session";
 import { usePrefs, useT } from "./PrefsProvider";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { BrandName } from "./BrandMark";
 
 export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const t = useT();
@@ -12,9 +13,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
     <div className="mb-5 flex w-full max-w-sm items-center justify-between">
-      <Link href="/" className="flex items-center gap-2.5 font-bold tracking-[-0.01em] text-zinc-50">
-        <span aria-hidden className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400"><span className="h-2 w-2 rounded-full bg-zinc-950" /></span>XAU Analytics
-      </Link>
+      <Link href="/" aria-label="XAU Analytics"><BrandName /></Link>
       <LanguageSwitch locale={locale} />
     </div>
     <form action={action} className="card w-full max-w-sm space-y-4 pt-0 sm:p-6 sm:pt-0">

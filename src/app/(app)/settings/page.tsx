@@ -6,6 +6,7 @@ import { listTrades } from "@/lib/trades";
 import { logoutAction } from "@/lib/actions/session";
 import { AppearanceForm, DeleteAccountForm, PasswordForm, ProfileForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
 import { TelegramCard } from "@/components/TelegramCard";
+import { SoundToggle } from "@/components/SoundToggle";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -32,12 +33,14 @@ export default async function SettingsPage() {
         <ProfileForm name={user.name} email={user.email} access={access} />
         <PasswordForm />
 
+        <div className="md:col-span-2"><SoundToggle /></div>
+
         <div className="space-y-4 sm:space-y-5 md:col-span-2">
           <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} />
           {linked && (
             <section className="card">
               <h2 className="card-title">{t("Telegram мэдэгдэл", "Telegram notifications")}</h2>
-              <SignalPrefsForm paused={user.signalsPaused} muted={user.signalsMuted.split(",").filter(Boolean)} />
+              <SignalPrefsForm paused={user.signalsPaused} muted={user.signalsMuted.split(",").filter(Boolean)} news={user.signalsNews} />
             </section>
           )}
         </div>

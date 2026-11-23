@@ -17,8 +17,10 @@ export const users = pgTable("users", {
   accessUntil: ts("access_until"),
   telegramChatId: text("telegram_chat_id"), // where setup signals are sent
   telegramLinkCode: text("telegram_link_code"), // one-time code the user presses Start with
+  telegramLinkExpiresAt: ts("telegram_link_expires_at"), // the code above stops working after this
   signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
   signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
+  signalsNews: boolean("signals_news").notNull().default(false), // a Telegram heads-up before HIGH-impact releases (opt-in)
   locale: text("locale").notNull().default("mn"),
   theme: text("theme").notNull().default("dark"),
   timeZone: text("time_zone").notNull().default("Asia/Ulaanbaatar"),
@@ -58,6 +60,7 @@ export const economicEvents = pgTable("economic_events", {
   previous: text("previous"),
   actual: text("actual"),
   source: text("source").notNull(),
+  alertedAt: ts("alerted_at"), // when the Telegram "news soon" heads-up went out, so it goes out once
 }, (t) => [uniqueIndex("event_type_time").on(t.type, t.time), index("event_time").on(t.time)]);
 
 export const eventReactions = pgTable("event_reactions", {

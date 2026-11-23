@@ -4,7 +4,7 @@ import type { LiveView } from "@/lib/bot/liveDb";
 import type { T } from "@/lib/i18n";
 import { useViewer } from "./PrefsProvider";
 import { Figures, Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
-import { saveBotConfigAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
+import { saveBotConfigAction, saveGateAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
 
 type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> & {
   startedAt: string | null; stoppedAt: string | null; lastSeenAt: string | null;
@@ -13,16 +13,34 @@ type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> &
 
 const stopReasons = (t: T): Record<string, string> => ({
   MANUAL: t("гараар зогсоосон", "stopped by hand"), TARGET: t("ашгийн зорилтод хүрсэн", "profit target reached"), MAX_LOSS: t("алдагдлын хязгаарт хүрсэн", "loss limit reached"),
-  TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад дохио гараагүй", "no signal for 30 minutes"),
+  TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
+  DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин, Багц хэрэгслийг мэдэхгүй", "the robot file on MT5 is old and does not know the Basket tool"),
+  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v2.80-аас өмнөх, орох шүүлтүүргүй)", "the robot file on MT5 is old (before v2.80, without the entry filter)"),
 });
+/** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
+const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
+  DAILY_LOSS: t(`өдрийн алдагдлын хязгаарт хүрсэн: арилжааг хаасан, ${dayStart}-аас дахин орно`, `the daily loss stop was reached: trades closed, entries resume at ${dayStart}`),
+  MAX_TRADES: t("өнөөдрийн орох тоо дууссан", "today's entries are used up"),
+  SESSION: t("арилжааны цагаас гадуур", "outside the trading hours"),
+  ROLLOVER: t("брокерын өдрийн солилт, spread тэлдэг", "the broker's daily rollover, when spreads widen"),
+  NEWS: t("чухал мэдээний өмнө/дараа", "around a high-impact release"),
+  DATA: t("индикаторын дата ачаалж байна", "loading indicator data"),
+  ATR_LOW: t("зах хэт тайван (ATR бага)", "the market is too quiet (low ATR)"),
+  ATR_HIGH: t("зах хэт огцом хөдөлж байна (ATR өндөр)", "the market is moving too violently (high ATR)"),
+  SPREAD: t("spread хэт өргөн", "the spread is too wide"),
+  TREND: t("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"),
+  RSI: t("RSI хэт сунасан: хөдөлгөөний араас хөөхгүй", "RSI is overstretched: it will not chase the move"),
+  EXTENDED: t("үнэ EMA20-оос хэт холдсон", "price is too far from EMA20"),
+});
+/** Robot v2.80 (protocol 6) is the first with the entry filter; the web runs no tool on an older file (GATE_ROBOT_VERSION in lib/bot/live). */
+const GATE_ROBOT = 6;
+const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 const toolList = (t: T) => [
   ["SCALPER", "Scalper", t("Нэг нэгээр орно. Арилжаа бүр өөрийн stop, target-тай. Хэр удаан ажиллахаа бот өөрөө тооцно.", "Enters one at a time. Each trade has its own stop and target. The bot works out how long to run.")],
   ["BASKET", t("Багц", "Basket"), t("Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана.", "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.")],
   ["ASIAN", t("Азийн breakout", "Asian breakout"), t("Өдөрт нэг арилжаа: Азийн хүрээнээс өдрийн трендийн чиглэлд гарахад орно. Stop, target, хаах цагийг дүрэм өөрөө тогтооно.", "One trade a day: enters when price leaves the Asian range in the direction of the daily trend. The rule sets the stop, target and closing time.")],
 ] as const;
-const MIN_ROBOT: Record<string, number> = { SCALPER: 1, BASKET: 2, ASIAN: 3 };
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
 
@@ -60,11 +78,12 @@ const signedMoney = (v: number | null) => (v === null ? "—" : <>{v !== 0 && <>
 export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string }) {
   const who = useViewer();
   const { t, ub, zone } = who;
-  const STOP_REASON = stopReasons(t), TOOLS = toolList(t);
+  const STOP_REASON = stopReasons(t), TOOLS = toolList(t), BLOCK = blockReasons(t, `${ub("08:00")} (${zone})`);
   const [v, setV] = useState<View>(initial);
   const [stale, setStale] = useState(false);
   const [cfgState, cfgAction, cfgPending] = useActionState<BotFormState, FormData>(saveBotConfigAction, {});
   const [tokState, tokAction, tokPending] = useActionState<BotFormState, FormData>(rotateTokenAction, {});
+  const [gateState, gateAction, gatePending] = useActionState<BotFormState, FormData>(saveGateAction, {});
 
   useEffect(() => {
     let alive = true;
@@ -85,7 +104,8 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const asian = tool === "ASIAN";
   const exposure = (basket ? c.basket.lots * c.basket.count : asian ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
   const spread = v.bid !== null && v.ask !== null && v.ask > v.bid ? v.ask - v.bid : null;
-  const oldRobot = (v.robotVersion ?? (v.online ? 1 : MIN_ROBOT[tool])) < MIN_ROBOT[tool];
+  const oldRobot = (v.robotVersion ?? (v.online ? 1 : GATE_ROBOT)) < GATE_ROBOT;
+  const g = c.gate;
   const savedTool = TOOLS.find(([id]) => id === c.mode)![1];
 
   const accountField = <input type="hidden" name="account" value={v.account} />;
@@ -140,6 +160,27 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           </div>
           <p className="mt-1 text-sm leading-relaxed text-zinc-300">{v.reason || t("Роботоос мэдээлэл ирээгүй", "No data from the robot yet")}</p>
           <p className="mt-2 text-xs text-zinc-500 tabular-nums">{v.symbol ?? "—"}, bid {v.bid ?? "—"}, ask {v.ask ?? "—"}</p>
+          {v.gateOn !== null && (
+            <div className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3 text-sm">
+              {/* The entry filter's verdict, as the robot reports it on every sync. */}
+              <p className="flex items-start gap-2.5">
+                <Station tone={!v.gateOn ? "off" : v.block ? "warn" : "on"} className="mt-1 shrink-0" />
+                <span className="leading-relaxed">
+                  {!v.gateOn ? <span className="text-amber-300">{t("Орох шүүлтүүр унтраалттай: бот дохио бүрт шууд орно.", "The entry filter is off: the bot enters on every signal.")}</span>
+                    : v.block ? <><span className="font-semibold text-zinc-100">{t("Орохгүй байгаа шалтгаан:", "Why it is not entering:")}</span> <span className="text-amber-300">{BLOCK[v.block] ?? v.block}</span>{v.blockDetail ? <span className="text-zinc-500 tabular-nums"> ({v.blockDetail})</span> : null}</>
+                    : <span className="text-zinc-300">{t("Шүүлтүүр нээлттэй: нөхцөл бүрдсэн дохио гармагц орно.", "The filter passes: it enters when a signal meets every condition.")}</span>}
+                </span>
+              </p>
+              {v.tradesToday !== null && (
+                <p className="text-xs text-zinc-400 tabular-nums">
+                  {t(`Өнөөдөр (${ub("08:00")}-аас)`, `Today (since ${ub("08:00")})`)}: {v.tradesToday}{g.on && g.maxTradesDay > 0 ? ` / ${g.maxTradesDay}` : ""} {t("оролт", "entries")} · <span className={tone(v.dayPnl)}>{signedMoney(v.dayPnl)}</span>
+                  {g.on && g.dailyLossPct > 0 && (v.dailyLossHit
+                    ? <span className="font-semibold text-red-400"> · {t(`алдагдлын хязгаар (${g.dailyLossPct}%) хүрсэн`, `loss stop (${g.dailyLossPct}%) reached`)}</span>
+                    : <span> · {t(`алдагдлын хязгаар ${g.dailyLossPct}%`, `loss stop at ${g.dailyLossPct}%`)}</span>)}
+                </p>
+              )}
+            </div>
+          )}
           {running && <p className="mt-3 border-t border-zinc-800 pt-3 text-sm text-zinc-400">{t("Энэ удаагийн үр дүн:", "This run's result:")} <span className={`font-semibold tabular-nums ${tone(v.runPnl)}`}>{signedMoney(v.runPnl)}</span></p>}
           {running && c.mode === "BASKET" && (
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
@@ -181,7 +222,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           </div>
           {oldRobot && (
             <p role="alert" className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-200">
-              {t("MT5 дээрх роботын файл хуучин тул энэ хэрэгсэл ажиллахгүй.", "The robot file on MT5 is old, so this tool will not work.")} <a className="font-semibold underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
+              {t("MT5 дээрх роботын файл хуучин (v2.80-аас өмнөх, орох шүүлтүүргүй) тул бот эхлэхгүй.", "The robot file on MT5 is old (before v2.80, without the entry filter), so the bot will not start.")} <a className="font-semibold underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
             </p>
           )}
           <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4" key={tool}>
@@ -229,6 +270,51 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           <button className="btn" disabled={running || cfgPending}>{running ? t("Ажиллаж байх үед өөрчлөхгүй", "Cannot be changed while running") : t("Хадгалах", "Save")}</button>
         </form>
       </div>
+
+      <form action={gateAction} className="card space-y-4" aria-labelledby="gate-h">{accountField}
+        <div>
+          <h2 id="gate-h" className="card-title mb-1">{t("Орох шүүлтүүр", "Entry filter")}</h2>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Гурван хэрэгсэл бүгд арилжаа нээхээс өмнө эдгээр нөхцөлийг давна: бот цөөн, илүү нөхцөл бүрдсэн үед л орно. Тоог 0 болговол тэр шалгалт унтарна. Хадгалсны дараагийн оролтоос үйлчилнэ.", "All three tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Set a number to 0 to switch that check off. Changes apply from the next entry.")}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex items-start gap-3 text-sm text-zinc-200">
+            <input type="checkbox" name="gOn" defaultChecked={g.on} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <span>{t("Шүүлтүүр асаалттай", "Filter on")} <span className="block text-xs text-zinc-500">{t("Унтраавал доорх бүх шалгалт, өдрийн хязгаар ч унтарна.", "Off switches every check below off, the daily limits too.")}</span></span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-zinc-200">
+            <input type="checkbox" name="gTrend" defaultChecked={g.trend} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <span>{t("Дээд хугацааны тренд таарах", "Higher-timeframe trend must agree")} <span className="block text-xs text-zinc-500">{t("BUY: H1 ба M15 дээр EMA20 нь EMA50-аас дээш. SELL: эсрэгээр.", "BUY: EMA20 above EMA50 on both H1 and M15. SELL: the reverse.")}</span></span>
+          </label>
+        </div>
+        <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-4">
+          {([
+            ["gStart", t("Эхлэх цаг (УБ)", "Start hour (UB)"), g.sessionStartUb, "1", "23"],
+            ["gEnd", t("Дуусах цаг (УБ)", "End hour (UB)"), g.sessionEndUb, "1", "23"],
+            ["gNewsBefore", t("Мэдээний өмнө, мин", "Minutes before news"), g.newsBeforeMin, "5", "240"],
+            ["gNewsAfter", t("Мэдээний дараа, мин", "Minutes after news"), g.newsAfterMin, "5", "240"],
+            ["gAtrMin", t("M15 ATR доод, $", "M15 ATR at least, $"), g.atrMin, "0.1", "100"],
+            ["gAtrMax", t("M15 ATR дээд, $", "M15 ATR at most, $"), g.atrMax, "0.5", "200"],
+            ["gSpreadPct", t("Spread ≤ ATR-ийн %", "Spread ≤ % of ATR"), g.maxSpreadPct, "1", "100"],
+            ["gRsiMax", t("RSI(14) хязгаар", "RSI(14) cap"), g.rsiMax, "1", "95"],
+            ["gExtAtr", t("EMA20-оос ≤ ATR ×", "From EMA20 ≤ ATR ×"), g.maxExtAtr, "0.1", "20"],
+            ["gMaxTrades", t("Өдөрт орох дээд тоо", "Entries a day, at most"), g.maxTradesDay, "1", "100"],
+            ["gDailyLoss", t("Өдрийн алдагдал, балансын %", "Daily loss stop, % of balance"), g.dailyLossPct, "0.5", "50"],
+          ] as [string, string, number, string, string][]).map(([name, label, val, step, max]) => (
+            <div key={name}>
+              <label className="label" htmlFor={name}>{label}</label>
+              <input className="input tabular-nums" id={name} name={name} type="number" inputMode="decimal" step={step} min="0" max={max} defaultValue={val} />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs leading-relaxed text-zinc-400">
+          {t(`Хадгалсан тохиргоогоор ${ub(hh(g.sessionStartUb))}–${ub(hh(g.sessionEndUb))} (${zone}) цагт арилжина. HIGH мэдээнээс ${g.newsBeforeMin} минутын өмнөөс ${g.newsAfterMin} минутын дараа хүртэл, брокерын өдрийн солилтын үед (серверийн 23:45–00:30) шинээр орохгүй. RSI хязгаар 70 бол RSI 70-аас дээш үед BUY, 30-аас доош үед SELL хийхгүй. Өдрийн тоолол ${ub("08:00")}-д шинэчлэгдэнэ.`,
+            `With the saved settings it trades ${ub(hh(g.sessionStartUb))}–${ub(hh(g.sessionEndUb))} (${zone}). It opens nothing new from ${g.newsBeforeMin} minutes before a HIGH-impact release to ${g.newsAfterMin} minutes after it, nor during the broker's daily rollover (23:45–00:30 server time). An RSI cap of 70 means no BUY above RSI 70 and no SELL below 30. The daily count restarts at ${ub("08:00")}.`)}
+        </p>
+        <p className="text-xs leading-relaxed text-amber-300">{t("Шүүлтүүр нь муу нөхцөлд орохоос сэргийлэх зорилготой; ботыг ашигтай болгоно гэсэн баталгаа биш. Тохиргоо бүрийг MT5-ийн Strategy Tester (TesterGate… input-ууд) болон demo дансан дээр шалгаж байж жинхэнэ мөнгө тавина.", "The filter is meant to keep the bot out of poor conditions; it does not make the bot profitable. Check any setting in the MT5 Strategy Tester (the TesterGate… inputs) and on a demo account before putting real money on it.")}</p>
+        {gateState.error && <p role="alert" className="text-sm text-red-400">{gateState.error}</p>}
+        {gateState.ok && <p role="status" className="text-sm text-emerald-400">{gateState.ok}</p>}
+        <button className="btn" disabled={gatePending}>{t("Шүүлтүүр хадгалах", "Save filter")}</button>
+      </form>
 
       <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <section className="table-card" aria-labelledby="open-h">

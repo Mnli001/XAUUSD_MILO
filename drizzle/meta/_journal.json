@@ -50,6 +50,13 @@
       "when": 1795398859516,
       "tag": "0006_bot_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795448884053,
+      "tag": "0007_telegram_alerts",
+      "breakpoints": true
     }
   ]
 }

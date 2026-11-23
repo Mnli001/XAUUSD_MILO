@@ -1,5 +1,8 @@
 import { parseConfig, commandFor, newToken, hashToken, reportSchema, DEFAULT_LIVE_CONFIG, type LiveConfig } from "@/lib/bot/live";
 
+/** Robot v2.80, the first file with the entry filter; the web runs no tool on an older one. */
+const V = 6;
+
 const cfg = (o: Partial<LiveConfig> = {}): LiveConfig => ({ ...DEFAULT_LIVE_CONFIG, ...o });
 const demo = { mode: "DEMO" as const };
 const real = { mode: "REAL" as const };
@@ -7,7 +10,7 @@ const real = { mode: "REAL" as const };
 test("config accepts any positive lot size and has no daily limit", () => {
   const r = parseConfig({ lots: "25", maxPositions: "11", slAtr: "1.5", tpAtr: "2", profitTarget: "", maxLoss: "", allowReal: "on" });
   expect(r.error).toBeUndefined();
-  expect(r.config).toEqual({ mode: "SCALPER", basket: DEFAULT_LIVE_CONFIG.basket, rule: DEFAULT_LIVE_CONFIG.rule, lots: 25, maxPositions: 11, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: true });
+  expect(r.config).toEqual({ mode: "SCALPER", basket: DEFAULT_LIVE_CONFIG.basket, rule: DEFAULT_LIVE_CONFIG.rule, gate: DEFAULT_LIVE_CONFIG.gate, lots: 25, maxPositions: 11, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: true });
   expect(Object.keys(DEFAULT_LIVE_CONFIG)).not.toContain("dailyLossPct");
   expect(Object.keys(DEFAULT_LIVE_CONFIG)).not.toContain("maxSeconds"); // the robot works out its own duration
 });
@@ -22,14 +25,17 @@ test("a stopped bot tells the terminal to stop, and passes on a close-all reques
   expect(commandFor({ state: "STOPPED", runId: null, closeAll: true, config: cfg() }, demo)).toMatchObject({ state: "STOPPED", closeAll: true });
 });
 test("a running bot sends its settings as flat numbers", () => {
-  const c = commandFor({ state: "RUNNING", runId: "r1", closeAll: false, config: cfg({ lots: 0.5, maxPositions: 4, profitTarget: 100 }) }, demo);
-  expect(c).toEqual({ state: "RUNNING", runId: "r1", lang: "mn", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "" });
+  const c = commandFor({ state: "RUNNING", runId: "r1", closeAll: false, config: cfg({ lots: 0.5, maxPositions: 4, profitTarget: 100 }) }, demo, V);
+  expect(c).toEqual({
+    state: "RUNNING", runId: "r1", lang: "mn", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "",
+    gateOn: true, gTrend: true, gSessionStart: 15, gSessionEnd: 1, gAtrMin: 1.5, gAtrMax: 25, gSpreadPct: 10, gRsiMax: 70, gExtAtr: 2, gMaxTrades: 6, gDailyLossPct: 3, blackouts: "",
+  });
 });
 test("a real account is traded only when the owner switched that on", () => {
   const state = { state: "RUNNING" as const, runId: "r1", closeAll: false };
-  expect(commandFor({ ...state, config: cfg({ allowReal: false }) }, real)).toMatchObject({ state: "STOPPED", reason: "REAL_NOT_ALLOWED" });
-  expect(commandFor({ ...state, config: cfg({ allowReal: true }) }, real)).toMatchObject({ state: "RUNNING" });
-  expect(commandFor({ ...state, config: cfg({ allowReal: false }) }, { mode: "CONTEST" })).toMatchObject({ state: "RUNNING" });
+  expect(commandFor({ ...state, config: cfg({ allowReal: false }) }, real, V)).toMatchObject({ state: "STOPPED", reason: "REAL_NOT_ALLOWED" });
+  expect(commandFor({ ...state, config: cfg({ allowReal: true }) }, real, V)).toMatchObject({ state: "RUNNING" });
+  expect(commandFor({ ...state, config: cfg({ allowReal: false }) }, { mode: "CONTEST" }, V)).toMatchObject({ state: "RUNNING" });
 });
 test("tokens are random and only their hash needs storing", () => {
   const a = newToken(), b = newToken();
@@ -68,14 +74,13 @@ describe("the basket tool", () => {
   });
   test("the terminal is told to open the whole basket and where to close it", () => {
     const config = parseConfig(basketForm).config!;
-    const cmd = commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, 2);
+    const cmd = commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, V);
     expect(cmd).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 10, profitTarget: 5, maxLoss: 12 });
-    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config: DEFAULT_LIVE_CONFIG }, { mode: "DEMO" }, 2).mode).toBe("SCALPER");
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config: DEFAULT_LIVE_CONFIG }, { mode: "DEMO" }, V).mode).toBe("SCALPER");
   });
   test("a robot file from before the basket existed is not started in basket mode", () => {
     const config = parseConfig(basketForm).config!;
     for (const v of [undefined, 1]) expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, v)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
-    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config: DEFAULT_LIVE_CONFIG }, { mode: "DEMO" }, undefined).state).toBe("RUNNING"); // the scalper still runs on it
   });
   test("reports may carry the robot's version", () => {
     const base = { account: { login: "1", mode: "DEMO", balance: 1, equity: 1 }, symbol: "X", bid: 1, ask: 1, signal: "NONE", reason: "", runPnl: 0, positions: [], deals: [], finished: "" };
@@ -95,7 +100,7 @@ describe("the Asian breakout tool", () => {
   });
   test("the terminal is told to run the rule with one position and no money stops", () => {
     const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
-    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, 3)).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.03, maxPositions: 1, profitTarget: 0, maxLoss: 0 });
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, V)).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.03, maxPositions: 1, profitTarget: 0, maxLoss: 0 });
   });
   test("it needs the robot file that carries the rule", () => {
     const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
