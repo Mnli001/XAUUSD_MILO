@@ -23,6 +23,7 @@ const stopReasons = (t: T): Record<string, string> => ({
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
   DAILY_LOSS: t(`өдрийн алдагдлын хязгаарт хүрсэн: арилжааг хаасан, ${dayStart}-аас дахин орно`, `the daily loss stop was reached: trades closed, entries resume at ${dayStart}`),
   MAX_TRADES: t("өнөөдрийн орох тоо дууссан", "today's entries are used up"),
+  DAY_BUDGET: t("энэ арилжааны эрсдэл өдрийн алдагдлын хязгаарын үлдэгдлээс их байна: эрсдэлээ багасгах эсвэл өдрийн хязгаараа өсгөнө үү", "this trade's risk is larger than what is left of the daily loss limit: lower the risk or raise the daily limit"),
   RISK_SMALL: t("тавьсан эрсдэлд брокерын доод лот ч багтахгүй байна: эрсдэлийн дүнгээ өсгөнө үү", "even the broker's minimum lot does not fit the chosen risk: raise the risk amount"),
   MARGIN: t("дансны чөлөөт margin хүрэлцэхгүй", "not enough free margin in the account"),
   SITE_STOP: t("сайтын шинжилгээнээс stop-ийн зай ирээгүй байна", "no stop distance from the site reading yet"),

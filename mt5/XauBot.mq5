@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.10"
+#property version   "3.20"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -64,6 +64,10 @@ input double TesterSpreadPct      = 10.0;     // Spread нь M15 ATR-ийн %-а
 input double TesterRsiMax         = 70.0;     // BUY: RSI(14,M15) дээд; SELL: 100-аас хасна (0 = үгүй) · RSI cap (0 = off)
 input double TesterExtAtr         = 2.0;      // EMA20(M15)-оос ATR × -аас хол бол орохгүй (0 = үгүй) · Max stretch from EMA20, ATR x
 input int    TesterMaxTradesDay   = 6;        // Өдөрт орох дээд тоо (0 = үгүй) · Max entries a day (0 = off)
+input int    TesterRiskMode       = 0;        // Хэмжээ: 0 = TesterLots, 1 = арилжаа бүрт $, 2 = балансын % · Size: 0 lots, 1 $ per trade, 2 % of balance
+input double TesterRiskValue      = 2.0;      // Эрсдэл ($ эсвэл %) · Risk ($ or %)
+input bool   TesterH1Stops        = false;    // Stop = H1 ATR x 1.5, target = stop x 2 (Scalper) · Stops from the 1-hour ATR
+input bool   TesterProtect        = false;    // +1R-д stop-ийг орсон үнэ рүү, +1.5R-ээс дагуулах · Break-even at +1R, trail from +1.5R
 input double TesterDailyLossPct   = 3.0;      // Өдрийн алдагдал балансын % хүрвэл зогсох (0 = үгүй) · Daily loss stop, % of balance
 
 CTrade trade;
@@ -180,6 +184,7 @@ int OnInit()
    hEmaTrend = iMA(_Symbol, PERIOD_M5, 50, 0, MODE_EMA, PRICE_CLOSE);
    hRsi      = iRSI(_Symbol, PERIOD_M1, 7, PRICE_CLOSE);
    hAtr      = iATR(_Symbol, PERIOD_M1, 14);
+   hH1Atr    = iATR(_Symbol, PERIOD_H1, 14);
    hD1Fast   = iMA(_Symbol, PERIOD_D1, 20, 0, MODE_EMA, PRICE_CLOSE);   // Азийн breakout-ын өдрийн тренд
    hD1Slow   = iMA(_Symbol, PERIOD_D1, 50, 0, MODE_EMA, PRICE_CLOSE);
    hGH1Fast  = iMA(_Symbol, PERIOD_H1, 20, 0, MODE_EMA, PRICE_CLOSE);  // шүүлтүүр: дээд хугацааны тренд
@@ -222,7 +227,10 @@ int OnInit()
       gGMaxTrades = TesterMaxTradesDay;
       gGDailyLossPct = TesterDailyLossPct;
       gCMin = 0;                                                   // Tester дотор вэбийн дүгнэлт байхгүй
-      gRiskMode = 0; gStopMode = 0; gProtect = false;
+      gRiskMode = (int)MathMax(0, MathMin(2, TesterRiskMode));
+      gRiskVal  = MathMax(0.0, TesterRiskValue);
+      gStopMode = TesterH1Stops ? 1 : 0;
+      gProtect  = TesterProtect;
       if(gGStart < 0 || gGStart > 23 || gGEnd < 0 || gGEnd > 23 || gGAtrMin < 0 || gGAtrMax < 0 || (gGAtrMax > 0 && gGAtrMin >= gGAtrMax) ||
          gGSpreadPct < 0 || gGRsiMax < 0 || gGRsiMax > 100 || gGExtAtr < 0 || gGMaxTrades < 0 || gGDailyLossPct < 0)
         {
@@ -718,6 +726,7 @@ string GateText(const string code)
    if(code == "ATR_HIGH")   return(L("зах хэт огцом хөдөлж байна", "market moving too violently"));
    if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
    if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
+   if(code == "DAY_BUDGET") return(L("энэ арилжааны эрсдэл өдрийн алдагдлын үлдсэн хязгаараас их", "this trade's risk is larger than what is left of the daily loss limit"));
    if(code == "RISK_SMALL") return(L("тавьсан эрсдэлд доод лот ч багтахгүй (stop хэт ойр болно)", "even the minimum lot does not fit the chosen risk (the stop would be too close)"));
    if(code == "MARGIN")     return(L("чөлөөт margin хүрэлцэхгүй", "not enough free margin"));
    if(code == "SITE_STOP")  return(L("вэбийн шинжилгээний stop-ийн зай ирээгүй", "no stop distance from the site reading yet"));
@@ -837,6 +846,44 @@ void ManageRun()
 //| Арилжаа нээх                                                     |
 //+------------------------------------------------------------------+
 // Багц: дохио гармагц тохируулсан тооны арилжааг нэг дор нээнэ. Нэг ажиллагаанд нэг л багц.
+// Үнэ 1.0 хөдлөхөд 1 лотын ашиг/алдагдал дансны валютаар
+double PerLot()
+  {
+   double ts = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE), tv = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   return((ts > 0 && tv > 0) ? tv / ts : SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE));
+  }
+
+// Нээлттэй арилжаанууд stop-доо хүрвэл одоогийн байдлаас цааш хэдийг алдах вэ
+double OpenRiskToStops()
+  {
+   double sum = 0.0, per = PerLot();
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !IsMine(t)) continue;
+      double sl = PositionGetDouble(POSITION_SL);
+      if(sl <= 0) continue;
+      bool buy = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY);
+      double px = buy ? SymbolInfoDouble(_Symbol, SYMBOL_BID) : SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      double more = (buy ? px - sl : sl - px) * PositionGetDouble(POSITION_VOLUME) * per;
+      if(more > 0) sum += more;
+     }
+   return(sum);
+  }
+
+// Шинэ арилжааны эрсдэл өдрийн алдагдлын хязгаарын үлдэгдэлд багтах ёстой. Эс бөгөөс хязгаар нь
+// арилжааг stop-доо хүрэхээс өмнө хааж, ердийн хэлбэлзэл бүрийг алдагдал болгодог.
+bool FitsDayBudget(const double lots, const double slDist)
+  {
+   if(!gGateOn || gGDailyLossPct <= 0 || slDist <= 0) return(true);
+   gStatsAt = 0;
+   DayStats();
+   double left = gGDailyLossPct / 100.0 * gDayStartBalance + gDayPnl - OpenRiskToStops();
+   double risk = lots * slDist * PerLot();
+   if(risk <= left + 1e-9) return(true);
+   return(GateBlock("DAY_BUDGET", "$" + Num(risk, 2) + " > $" + Num(MathMax(0.0, left), 2)));
+  }
+
 // Эрсдэлээр хэмжээ тогтооно. gRiskMode: 0 = тогтмол лот, 1 = арилжаа бүрт $ дүн, 2 = балансын %.
 // Тооцсон лот брокерын доод лотоос бага гарвал (жижиг данс) stop-ийг ойртуулж доод лотоор орно:
 // эрсдэл хэвээр, ашгийн зай мөн адил харьцаагаар багасна. Stop нь spread, stops level-ээс ойртох
@@ -850,8 +897,7 @@ bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrin
       return(true);
      }
    double risk = (gRiskMode == 1) ? gRiskVal : gRiskVal / 100.0 * AccountInfoDouble(ACCOUNT_BALANCE);
-   double ts = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE), tv = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double perLot = (ts > 0 && tv > 0) ? tv / ts : SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);   // үнэ 1.0 хөдлөхөд 1 лотын ашиг/алдагдал
+   double perLot = PerLot();
    if(risk <= 0 || perLot <= 0) return(GateBlock("RISK_SMALL", ""));
    lots = NormLots(risk / (slDist * perLot));
    if(lots <= 0)
@@ -937,12 +983,14 @@ void TryEnter()
    double slD = gSlAtr * atr, tpD = gTpAtr * atr;
    if(gStopMode == 1)
      {
+      if(gTester) { double h1 = Buf(hH1Atr, 1); gSiteAtr = (h1 == EMPTY_VALUE) ? 0.0 : h1; }   // tester: вэбгүй тул H1 ATR-ийг өөрөө уншина
       if(gSiteAtr <= 0) { GateBlock("SITE_STOP", ""); return; }
       slD = gSiteStopMult * gSiteAtr;
       tpD = slD * gSiteRR;
      }
    double lots = 0.0;
    if(!SizeTrade(slD, tpD, lots, true)) return;                  // шалтгаан gBlock эсвэл gReason-д
+   if(!FitsDayBudget(lots, slD)) return;
    if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
    bool ok = SendMarket(dir, lots, slD, tpD, "xau-bot:" + Num(slD, 2));   // stops level, tick-ийг SendMarket хангана; тайлбарт анхны эрсдэлийн зай (R)
 
@@ -1015,6 +1063,7 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    double lots = RuleLots(), sl = slDist, tp = tpDist;
    if(!gTester && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно
    if(lots <= 0) return(false);
+   if(!gTester && !FitsDayBudget(lots, sl)) return(false);
    bool ok = SendMarket(dir, lots, sl, tp, "xau-rule");
    if(ok)
      {
@@ -1655,7 +1704,7 @@ void TrailOne(const ulong ticket, const double beTrig, const double beLock, cons
 // +1R хүрэхэд stop-ийг орсон үнээс +0.1R рүү (алдагдалгүй), +1.5R-ээс эхлэн үнийг 1R зайтай дагуулна.
 void ProtectAll()
   {
-   if(!gProtect || gTester) return;
+   if(!gProtect) return;
    for(int i = PositionsTotal() - 1; i >= 0; i--)
      {
       ulong t = PositionGetTicket(i);
