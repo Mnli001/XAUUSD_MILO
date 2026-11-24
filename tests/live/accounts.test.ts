@@ -10,7 +10,7 @@ const now = new Date("2026-11-23T10:00:00Z");
 const later = (s: number) => new Date(now.getTime() + s * 1000);
 const report = (login: string, server: string | undefined, o: Record<string, unknown> = {}) => ({
   account: { login, mode: "DEMO", balance: login === "969508" ? 5000 : 100000, equity: 100000, currency: "USD", ...(server ? { server } : {}) },
-  symbol: "XAUUSD", bid: 4100.1, ask: 4100.4, signal: "NONE", reason: "", runPnl: 0, version: 7,
+  symbol: "XAUUSD", bid: 4100.1, ask: 4100.4, signal: "NONE", reason: "", runPnl: 0, version: 8,
   positions: [], deals: [], finished: "", ...o,
 });
 const MQ = ["5058238423", "MetaQuotes-Demo"] as const;

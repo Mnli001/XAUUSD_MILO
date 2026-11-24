@@ -16,12 +16,15 @@ const stopReasons = (t: T): Record<string, string> => ({
   TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v2.90-ээс өмнөх): шинэ XauBot.ex5 татаж солино уу", "the robot file on MT5 is old (before v2.90): download the new XauBot.ex5 and replace it"),
+  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v3.00-аас өмнөх): шинэ XauBot.ex5 татаж солино уу", "the robot file on MT5 is old (before v3.00): download the new XauBot.ex5 and replace it"),
 });
 /** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
   DAILY_LOSS: t(`өдрийн алдагдлын хязгаарт хүрсэн: арилжааг хаасан, ${dayStart}-аас дахин орно`, `the daily loss stop was reached: trades closed, entries resume at ${dayStart}`),
   MAX_TRADES: t("өнөөдрийн орох тоо дууссан", "today's entries are used up"),
+  RISK_SMALL: t("тавьсан эрсдэлд брокерын доод лот ч багтахгүй байна: эрсдэлийн дүнгээ өсгөнө үү", "even the broker's minimum lot does not fit the chosen risk: raise the risk amount"),
+  MARGIN: t("дансны чөлөөт margin хүрэлцэхгүй", "not enough free margin in the account"),
+  SITE_STOP: t("сайтын шинжилгээнээс stop-ийн зай ирээгүй байна", "no stop distance from the site reading yet"),
   CONSENSUS: t("сайтын олон аргын дүгнэлт орох чиглэлийг хангалттай дэмжихгүй байна", "the site's many-method reading does not back the entry side strongly enough"),
   SESSION: t("арилжааны цагаас гадуур", "outside the trading hours"),
   ROLLOVER: t("брокерын өдрийн солилт, spread тэлдэг", "the broker's daily rollover, when spreads widen"),
@@ -287,6 +290,28 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <span>{t("Дээд хугацааны тренд таарах", "Higher-timeframe trend must agree")} <span className="block text-xs text-zinc-500">{t("BUY: H1 ба M15 дээр EMA20 нь EMA50-аас дээш. SELL: эсрэгээр.", "BUY: EMA20 above EMA50 on both H1 and M15. SELL: the reverse.")}</span></span>
           </label>
         </div>
+        <fieldset className="rounded-2xl border p-4" style={{ borderColor: "var(--hairline)" }}>
+          <legend className="px-1 text-sm font-semibold text-zinc-100">{t("Арилжааны хэмжээ ба stop", "Trade size and stop")}</legend>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Ямар ч хэмжээний дансанд тохирно: арилжаа бүрт алдаж болох дүнгээ хэлэхэд робот stop-ийн зайнаас лотоо өөрөө тооцно. Жижиг дансанд тооцсон лот брокерын доод лотоос (ихэвчлэн 0.01) бага гарвал робот stop-оо ойртуулж доод лотоор орно; stop хэт ойр болох бол тэр арилжаанд орохгүй.", "Fits an account of any size: say how much one trade may lose and the robot works out the lots from the stop distance. On a small account, when the lots come out below the broker's minimum (usually 0.01), the robot moves the stop closer and enters with the minimum; if the stop would be too close it skips that trade.")}</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="gRiskMode">{t("Хэмжээг тогтоох арга", "How to size a trade")}</label>
+              <select className="input" id="gRiskMode" name="gRiskMode" defaultValue={g.riskMode ?? "LOTS"}>
+                <option value="LOTS">{t("Тогтмол лот (хэрэгслийн талбараас)", "Fixed lots (from the tool's field)")}</option>
+                <option value="USD">{t("Арилжаа бүрт $ дүн", "Dollars per trade")}</option>
+                <option value="PCT">{t("Балансын хувь", "Percent of balance")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="gRiskVal">{t("Эрсдэл ($ эсвэл %)", "Risk ($ or %)")}</label>
+              <input className="input tabular-nums" id="gRiskVal" name="gRiskVal" type="number" inputMode="decimal" step="0.1" min="0" defaultValue={g.riskValue || ""} placeholder={t("жишээ: 10", "e.g. 10")} />
+            </div>
+          </div>
+          <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
+            <input type="checkbox" name="gSiteStops" defaultChecked={g.siteStops ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <span>{t("Stop, target-ыг сайтын шинжилгээнээс авах", "Take the stop and target from the site's reading")} <span className="block text-xs text-zinc-500">{t("Stop = 1 цагийн ATR × 1.5, target = stop × 2 (Өнөөдөр хуудсын шинжилгээтэй ижил). Унтраалттай бол Scalper 1 минутын ATR-аа хэрэглэнэ. Зөвхөн Scalper хэрэгсэлд.", "Stop = 1-hour ATR × 1.5, target = stop × 2 (the same levels as the reading on Today). Off: the Scalper uses its 1-minute ATR. Scalper tool only.")}</span></span>
+          </label>
+        </fieldset>
         <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-4">
           {([
             ["gStart", t("Эхлэх цаг (УБ)", "Start hour (UB)"), g.sessionStartUb, "1", "23"],
@@ -356,7 +381,21 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         <p className="text-sm text-zinc-300">{t("Роботын тохиргоонд энэ хаягийг оруулна:", "Enter this address in the robot's settings:")}</p>
         <code className="block rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
         {tokState.token ? (
+          <>
           <p className="text-sm text-amber-300">{t("Шинэ токен (дахин харагдахгүй, одоо хуулж ав):", "New token (shown only once, copy it now):")} <code className="mt-1 block rounded-lg border border-amber-400/40 bg-zinc-950 px-3 py-2 break-all text-amber-300 select-all">{tokState.token}</code></p>
+          {/* One file with the address and this token: MT5 loads it into the robot's Inputs, so nothing is typed by hand. */}
+          <button type="button" className="btn-ghost" onClick={() => {
+            const text = `ServerUrl=${syncUrl}\r\nBotToken=${tokState.token}\r\n`;
+            const bytes = new Uint8Array(2 + text.length * 2);
+            bytes[0] = 0xff; bytes[1] = 0xfe; // UTF-16LE, the encoding MT5 writes its .set files in
+            for (let i = 0; i < text.length; i++) { const c = text.charCodeAt(i); bytes[2 + i * 2] = c & 0xff; bytes[3 + i * 2] = c >> 8; }
+            const url = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
+            const link = document.createElement("a");
+            link.href = url; link.download = "XauBot.set"; link.click();
+            URL.revokeObjectURL(url);
+          }}>{t("Тохиргооны файл татах (XauBot.set)", "Download settings file (XauBot.set)")}</button>
+          <p className="text-xs leading-relaxed text-zinc-500">{t("MT5 дээр роботыг чарт руу чирээд Inputs таб → Load → энэ файлыг сонгоно. Хаяг болон таны токен өөрөө бөглөгдөнө. Файлыг хэнд ч бүү өг: энэ токен зөвхөн таны бүртгэлд хамаарна.", "In MT5 drag the robot onto the chart, open the Inputs tab → Load → pick this file. The address and your token fill in by themselves. Do not share the file: this token belongs to your account only.")}</p>
+          </>
         ) : (
           <p className="text-sm text-zinc-400">{v.hasToken ? t("Токен үүссэн. Шинийг үүсгэвэл хуучин нь хүчингүй болж, роботод шинийг оруулах хэрэгтэй.", "A token exists. Creating a new one cancels the old one, and the new one must be entered in the robot.") : t("Токен үүсээгүй. Эхлээд токен үүсгэнэ.", "No token yet. Create one first.")}</p>
         )}

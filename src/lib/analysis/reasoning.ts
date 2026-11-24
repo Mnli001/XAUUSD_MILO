@@ -32,6 +32,8 @@ export type Reasoning = {
   score: number;
   families: { family: Family; name: string; verdict: Verdict; buy: number; sell: number; n: number }[];
   plan: Plan | null; // reference levels from volatility, only when the methods lean one way
+  /** ATR(14) on the 1-hour chart, in dollars; NaN or 0 when there are too few candles. */
+  atrH1: number;
 };
 
 export type ReasoningInput = { m15: Candle[]; h1: Candle[]; h4: Candle[]; d1: Candle[]; price: number; now: Date };
@@ -364,5 +366,5 @@ export function reason(input: ReasoningInput, t: T): Reasoning {
     const risk = PLAN_STOP_ATR * a;
     plan = { side: verdict, entry: input.price, stop: input.price - dir * risk, target: input.price + dir * risk * PLAN_RR, rr: PLAN_RR, atr: a };
   }
-  return { price: input.price, readings, buy, sell, neutral: n - buy - sell, verdict, score: n ? Math.round(((buy - sell) / n) * 100) : 0, families, plan };
+  return { price: input.price, readings, buy, sell, neutral: n - buy - sell, verdict, score: n ? Math.round(((buy - sell) / n) * 100) : 0, families, plan, atrH1: a };
 }

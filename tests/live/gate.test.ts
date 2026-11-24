@@ -121,3 +121,29 @@ describe("the many-method reading", () => {
     expect(parseGate(form({})).config!.gate.minAgree).toBe(8);
   });
 });
+
+describe("sizing and stops", () => {
+  const run = (config: LiveConfig) => ({ state: "RUNNING" as const, runId: "r", closeAll: false, config });
+  test("fixed lots is the default and sends no risk", () => {
+    expect(commandFor(run(DEFAULT_LIVE_CONFIG), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ rMode: 0, rVal: 0, sMode: 0, sAtr: 0 });
+  });
+  test("dollars per trade and percent of balance are saved and sent", () => {
+    const usd = parseGate(form({ gRiskMode: "USD", gRiskVal: "10" })).config!;
+    expect(usd.gate).toMatchObject({ riskMode: "USD", riskValue: 10, siteStops: false });
+    expect(commandFor(run(usd), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ rMode: 1, rVal: 10 });
+    const pct = parseGate(form({ gRiskMode: "PCT", gRiskVal: "2", gSiteStops: "on" })).config!;
+    expect(commandFor(run(pct), { mode: "DEMO" }, GATE_ROBOT_VERSION, "mn", "", { buy: 10, sell: 1, total: 16, atrH1: 9.876 })).toMatchObject({ rMode: 2, rVal: 2, sMode: 1, sAtr: 9.88, sStop: 1.5, sRR: 2 });
+  });
+  test("a risk mode needs its amount", () => {
+    expect(parseGate(form({ gRiskMode: "USD", gRiskVal: "" })).error).toBeTruthy();
+    expect(parseGate(form({ gRiskMode: "PCT", gRiskVal: "60" })).error).toBeTruthy();
+  });
+  test("site stops with no reading send a zero distance, so the robot waits", () => {
+    const c = parseGate(form({ gRiskMode: "LOTS", gSiteStops: "on" })).config!;
+    expect(commandFor(run(c), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ sMode: 1, sAtr: 0 });
+  });
+  test("the risk setting still applies with the filter switched off", () => {
+    const c = parseGate(form({ gOn: undefined, gRiskMode: "USD", gRiskVal: "5" })).config!;
+    expect(commandFor(run(c), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ gateOn: false, rMode: 1, rVal: 5 });
+  });
+});

@@ -13,7 +13,7 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 7, ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 8, ...o,
 });
 
 beforeEach(async () => {
@@ -136,11 +136,11 @@ test("reports from a robot that does not send its timing are still accepted", as
 test("the basket tool runs end to end: saved, started, refused on an old robot file, reported", async () => {
   expect((await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" })).error).toBeUndefined();
   await startBot(admin.id, now);
-  expect(await handleSync(token, report({ version: 6 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+  expect(await handleSync(token, report({ version: 7 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "OLD_ROBOT" });
   await startBot(admin.id, now);
-  expect(await handleSync(token, report({ version: 7 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
-  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 7, config: { mode: "BASKET", basket: { count: 8 } } });
+  expect(await handleSync(token, report({ version: 8 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
+  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 8, config: { mode: "BASKET", basket: { count: 8 } } });
 });
 
 test("the robot is told its owner's language", async () => {

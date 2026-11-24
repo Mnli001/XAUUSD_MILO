@@ -28,12 +28,18 @@ export type GateConfig = {
   rsiMax: number; // no BUY with M15 RSI(14) above this, no SELL below 100 minus it
   maxExtAtr: number; // no entry when price is more than this many M15 ATRs past EMA20 in the entry's direction
   maxTradesDay: number; // entries a day (a basket counts once); the day starts 08:00 UB
+  /** How a trade is sized: fixed lots (the tool's own field), a dollar amount risked per trade, or a share of the balance. */
+  riskMode: RiskMode;
+  riskValue: number; // USD: dollars per trade; PCT: % of balance; unused for LOTS
+  siteStops: boolean; // stop and target from the site's reading (1-hour ATR) instead of the 1-minute ATR
   minAgree: number; // how many of the site's methods must read the entry's side (0 = not checked)
   dailyLossPct: number; // % of the day's starting balance: the robot closes its trades and stops entering
 };
+export type RiskMode = "LOTS" | "USD" | "PCT";
+export const RISK_MODES: RiskMode[] = ["LOTS", "USD", "PCT"];
 export const DEFAULT_GATE: GateConfig = {
   on: true, trend: true, sessionStartUb: 15, sessionEndUb: 1, newsBeforeMin: 30, newsAfterMin: 60,
-  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8,
+  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8, riskMode: "LOTS", riskValue: 0, siteStops: false,
 };
 
 export type LiveConfig = {
@@ -116,8 +122,13 @@ const gateSchema = (t: T) => z.object({
   gExtAtr: within(0, 20, t("EMA20-оос холдох хязгаар 0–20 ATR", "The stretch cap must be 0–20 ATR")),
   gMaxTrades: wholeWithin(0, 100, t("Өдрийн орох тоо 0–100 бүхэл тоо", "Entries a day must be a whole number, 0–100")),
   gAgree: wholeWithin(0, 16, t("Санал нийлэх аргын тоо 0 (шалгахгүй) – 16", "Methods that must agree: 0 (off) to 16")).optional(),
+  gRiskMode: z.enum(["LOTS", "USD", "PCT"]).optional(),
+  gRiskVal: within(0, 100000, t("Эрсдэлийн дүн 0-ээс их тоо байна", "The risk amount must be a number above 0")).optional(),
+  gSiteStops: allowReal.optional(),
   gDailyLoss: within(0, 50, t("Өдрийн алдагдлын хязгаар балансын 0–50%", "The daily loss stop must be 0–50% of balance")),
-}).refine((g) => !(g.gAtrMin > 0 && g.gAtrMax > 0 && g.gAtrMin >= g.gAtrMax), { message: t("ATR-ийн доод хязгаар дээд хязгаараасаа бага байх ёстой", "The lowest ATR must be below the highest") });
+}).refine((g) => !(g.gRiskMode === "USD" && !((g.gRiskVal ?? 0) > 0)), { message: t("Арилжаа бүрт эрсдэлд оруулах $ дүнг оруулна уу", "Enter the dollars to risk per trade") })
+  .refine((g) => !(g.gRiskMode === "PCT" && !((g.gRiskVal ?? 0) > 0 && (g.gRiskVal ?? 0) <= 50)), { message: t("Эрсдэл балансын 0–50% байна", "Risk must be 0–50% of balance") })
+  .refine((g) => !(g.gAtrMin > 0 && g.gAtrMax > 0 && g.gAtrMin >= g.gAtrMax), { message: t("ATR-ийн доод хязгаар дээд хязгаараасаа бага байх ёстой", "The lowest ATR must be below the highest") });
 
 /** The entry filter has its own form; saving it keeps every tool's settings. */
 export function parseGate(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
@@ -127,6 +138,8 @@ export function parseGate(input: unknown, current: LiveConfig = DEFAULT_LIVE_CON
   return { config: { ...current, gate: {
     on: g.gOn, trend: g.gTrend, sessionStartUb: g.gStart, sessionEndUb: g.gEnd, newsBeforeMin: g.gNewsBefore, newsAfterMin: g.gNewsAfter,
     atrMin: g.gAtrMin, atrMax: g.gAtrMax, maxSpreadPct: g.gSpreadPct, rsiMax: g.gRsiMax, maxExtAtr: g.gExtAtr, maxTradesDay: g.gMaxTrades, dailyLossPct: g.gDailyLoss, minAgree: g.gAgree ?? current.gate?.minAgree ?? DEFAULT_GATE.minAgree,
+    riskMode: g.gRiskMode ?? current.gate?.riskMode ?? "LOTS", riskValue: g.gRiskMode && g.gRiskMode !== "LOTS" ? (g.gRiskVal ?? 0) : g.gRiskMode ? 0 : (current.gate?.riskValue ?? 0),
+    siteStops: g.gRiskMode !== undefined ? (g.gSiteStops ?? false) : (current.gate?.siteStops ?? false),
   } } };
 }
 
@@ -170,6 +183,8 @@ export type Command = {
   blackouts: string; // see blackoutWindows
   // The site's many-method reading (robot v2.90 and newer): the entry's side needs cMin methods; 0 = not checked.
   cMin: number; cBuy: number; cSell: number; cTotal: number;
+  // Sizing and stops (robot v3.00 and newer). rMode 0 lots, 1 dollars per trade, 2 % of balance. sMode 1: stop = sStop × sAtr, target = stop × sRR.
+  rMode: number; rVal: number; sMode: number; sAtr: number; sStop: number; sRR: number;
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -179,11 +194,14 @@ export const ASIAN_ROBOT_VERSION = 3;
  * Robot v2.80 (protocol 6) is the first with the entry filter and the order-handling fixes. An older
  * file would trade without the filter the owner set here, so no tool runs on it.
  */
-export const GATE_ROBOT_VERSION = 7;
+export const GATE_ROBOT_VERSION = 8;
 /** Robot v2.90 (protocol 7) is the first that waits for the site's many-method reading. */
 export const CONSENSUS_ROBOT_VERSION = 7;
 /** What the methods read right now, as counts. */
-export type ConsensusCounts = { buy: number; sell: number; total: number };
+export type ConsensusCounts = { buy: number; sell: number; total: number; atrH1?: number };
+/** The site plan's stop and reward, as the robot receives them (the same numbers the reasoning panel shows). */
+export const SITE_STOP_ATR = 1.5;
+export const SITE_RR = 2;
 export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
 /** The filter as flat fields. With the filter off, every check goes out switched off as well. */
@@ -197,6 +215,9 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
     blackouts: on ? blackouts : "",
     // With no reading to send, the counts go out as zero and the robot waits rather than guesses.
     cMin, cBuy: consensus?.buy ?? 0, cSell: consensus?.sell ?? 0, cTotal: consensus?.total ?? 0,
+    rMode: RISK_MODES.indexOf(g.riskMode ?? "LOTS"), rVal: g.riskMode && g.riskMode !== "LOTS" ? g.riskValue : 0,
+    // With site stops on and no reading, sAtr goes out as 0 and the robot waits.
+    sMode: g.siteStops ? 1 : 0, sAtr: g.siteStops && Number.isFinite(consensus?.atrH1) ? Math.round((consensus!.atrH1 as number) * 100) / 100 : 0, sStop: SITE_STOP_ATR, sRR: SITE_RR,
   };
 }
 

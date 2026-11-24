@@ -5,12 +5,12 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.90"
+#property version   "3.00"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
 
-input string ServerUrl            = "https://xau-analytics-production.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
+input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
 input string BotToken             = "";       // Вэб дээр үүсгэсэн токен · Token from the web
 input bool   AllowRealAccount     = false;    // Жинхэнэ данс зөвшөөрөх · Allow a real account
 input long   MagicNumber          = 20261121; // Роботын арилжааг ялгах дугаар · Magic number
@@ -77,7 +77,7 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 7             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 8             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -85,6 +85,9 @@ int      gGStart = 15, gGEnd = 1, gGMaxTrades = 6;
 double   gGAtrMin = 1.5, gGAtrMax = 25.0, gGSpreadPct = 10.0, gGRsiMax = 70.0, gGExtAtr = 2.0, gGDailyLossPct = 3.0;
 // Вэбийн олон аргын дүгнэлт: орох чиглэлийг дор хаяж gCMin арга дэмжсэн үед л орно (0 = шалгахгүй)
 int      gCMin = 0, gCBuy = 0, gCSell = 0, gCTotal = 0;
+// Хэмжээ ба stop: вэбээс. gRiskMode 0 = лот, 1 = $, 2 = балансын %. gStopMode 1 = вэбийн шинжилгээний H1 ATR-аас.
+int      gRiskMode = 0, gStopMode = 0;
+double   gRiskVal = 0.0, gSiteAtr = 0.0, gSiteStopMult = 1.5, gSiteRR = 2.0;
 string   gBlackouts = "";          // "from-to;from-to" UTC unix секунд, вэбээс (HIGH мэдээний өмнө/дараа)
 string   gBlock = "";              // шүүлтүүр хаасан шалтгааны код, "" = нэвтэрнэ
 string   gBlockDetail = "";        // тоон дэлгэрэнгүй (хэлнээс хамаарахгүй)
@@ -218,6 +221,7 @@ int OnInit()
       gGMaxTrades = TesterMaxTradesDay;
       gGDailyLossPct = TesterDailyLossPct;
       gCMin = 0;                                                   // Tester дотор вэбийн дүгнэлт байхгүй
+      gRiskMode = 0; gStopMode = 0;
       if(gGStart < 0 || gGStart > 23 || gGEnd < 0 || gGEnd > 23 || gGAtrMin < 0 || gGAtrMax < 0 || (gGAtrMax > 0 && gGAtrMin >= gGAtrMax) ||
          gGSpreadPct < 0 || gGRsiMax < 0 || gGRsiMax > 100 || gGExtAtr < 0 || gGMaxTrades < 0 || gGDailyLossPct < 0)
         {
@@ -712,6 +716,9 @@ string GateText(const string code)
    if(code == "ATR_HIGH")   return(L("зах хэт огцом хөдөлж байна", "market moving too violently"));
    if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
    if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
+   if(code == "RISK_SMALL") return(L("тавьсан эрсдэлд доод лот ч багтахгүй (stop хэт ойр болно)", "even the minimum lot does not fit the chosen risk (the stop would be too close)"));
+   if(code == "MARGIN")     return(L("чөлөөт margin хүрэлцэхгүй", "not enough free margin"));
+   if(code == "SITE_STOP")  return(L("вэбийн шинжилгээний stop-ийн зай ирээгүй", "no stop distance from the site reading yet"));
    if(code == "CONSENSUS")  return(L("олон аргын дүгнэлт орох чиглэлийг дэмжихгүй байна", "the many-method reading does not back this side"));
    if(code == "RSI")        return(L("RSI хэт сунасан", "RSI overstretched"));
    if(code == "EXTENDED")   return(L("үнэ EMA20-оос хэт холдсон", "price too far from EMA20"));
@@ -815,6 +822,11 @@ void ManageRun()
       if(CountPositions() == 0) Finish(pnl >= 0 ? "TARGET" : "MAX_LOSS");
       return;
      }
+   if(gStopMode == 1)                                            // вэбийн stop/target-тай арилжаа өөрийн түвшнээрээ хаагдана
+     {
+      if(CountPositions() == 0) Finish(pnl >= 0 ? "TARGET" : "MAX_LOSS");
+      return;
+     }
    if(gSignal != "NONE" && gSignal != gRunSide) { Finish("REVERSAL"); return; }   // чиглэл эргэлээ
    if(ElapsedSeconds() >= gPlannedSeconds)      { Finish("TIME");     return; }   // тооцсон хугацаа дууслаа
   }
@@ -823,6 +835,42 @@ void ManageRun()
 //| Арилжаа нээх                                                     |
 //+------------------------------------------------------------------+
 // Багц: дохио гармагц тохируулсан тооны арилжааг нэг дор нээнэ. Нэг ажиллагаанд нэг л багц.
+// Эрсдэлээр хэмжээ тогтооно. gRiskMode: 0 = тогтмол лот, 1 = арилжаа бүрт $ дүн, 2 = балансын %.
+// Тооцсон лот брокерын доод лотоос бага гарвал (жижиг данс) stop-ийг ойртуулж доод лотоор орно:
+// эрсдэл хэвээр, ашгийн зай мөн адил харьцаагаар багасна. Stop нь spread, stops level-ээс ойртох
+// шаардлагатай бол орохгүй (RISK_SMALL). canShrink = false бол stop-ийг хөдөлгөхгүй (дүрмийн stop).
+bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrink)
+  {
+   if(gRiskMode == 0 || slDist <= 0)
+     {
+      lots = NormLots(gLots);
+      if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return(false); }
+      return(true);
+     }
+   double risk = (gRiskMode == 1) ? gRiskVal : gRiskVal / 100.0 * AccountInfoDouble(ACCOUNT_BALANCE);
+   double ts = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE), tv = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double perLot = (ts > 0 && tv > 0) ? tv / ts : SymbolInfoDouble(_Symbol, SYMBOL_TRADE_CONTRACT_SIZE);   // үнэ 1.0 хөдлөхөд 1 лотын ашиг/алдагдал
+   if(risk <= 0 || perLot <= 0) return(GateBlock("RISK_SMALL", ""));
+   lots = NormLots(risk / (slDist * perLot));
+   if(lots <= 0)
+     {
+      double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+      if(vmin <= 0) vmin = 0.01;
+      double need = risk / (vmin * perLot);                       // доод лотоор энэ эрсдэлд багтах stop-ийн зай
+      double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      double floorD = MathMax(StopsMin(), 3.0 * spread);
+      if(!canShrink || need < floorD)
+         return(GateBlock("RISK_SMALL", "$" + Num(risk, 2) + L(" эрсдэлд доод лот ", " risk, min lot ") + Num(vmin, 2) + " → stop " + Num(need, 2) + " < " + Num(floorD, 2)));
+      if(tpDist > 0) tpDist = tpDist * need / slDist;
+      slDist = need;
+      lots = NormLots(vmin);
+     }
+   double margin = 0.0;
+   if(OrderCalcMargin(ORDER_TYPE_BUY, _Symbol, lots, SymbolInfoDouble(_Symbol, SYMBOL_ASK), margin) && margin > AccountInfoDouble(ACCOUNT_MARGIN_FREE))
+      return(GateBlock("MARGIN", Num(margin, 2) + " > " + Num(AccountInfoDouble(ACCOUNT_MARGIN_FREE), 2)));
+   return(lots > 0);
+  }
+
 void TryBasket()
   {
    if(gFirstEntry > 0) return;                                   // багц аль хэдийн нээгдсэн
@@ -875,9 +923,6 @@ void TryEnter()
    if(!gTester && TimeLocal() - gLastSyncOk > 30) return;                    // вэбтэй холбоо тасарсан үед шинээр нээхгүй
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(CountPositions() >= gMaxPos) return;
-   double lots = NormLots(gLots);
-   if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
-   if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
    if(!TradingAllowed()) return;
    if(SpreadPoints() > MaxSpreadPoints) return;
 
@@ -886,7 +931,18 @@ void TryEnter()
    int dir = (gSignal == "BUY") ? 1 : -1;
    if(!GateCheck(dir)) return;                                   // орох шүүлтүүр: шалтгаан gBlock-д
 
-   bool ok = SendMarket(dir, lots, gSlAtr * atr, gTpAtr * atr, "xau-bot");   // stops level, tick-ийг SendMarket хангана
+   // Stop, target: вэбийн шинжилгээний H1 ATR-аас (gStopMode 1) эсвэл M1 ATR-аас
+   double slD = gSlAtr * atr, tpD = gTpAtr * atr;
+   if(gStopMode == 1)
+     {
+      if(gSiteAtr <= 0) { GateBlock("SITE_STOP", ""); return; }
+      slD = gSiteStopMult * gSiteAtr;
+      tpD = slD * gSiteRR;
+     }
+   double lots = 0.0;
+   if(!SizeTrade(slD, tpD, lots, true)) return;                  // шалтгаан gBlock эсвэл gReason-д
+   if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
+   bool ok = SendMarket(dir, lots, slD, tpD, "xau-bot");         // stops level, tick-ийг SendMarket хангана
 
    gLastEntry = TimeCurrent();                                   // амжилтгүй болсон ч дараагийн оролдлогыг хүлээлгэнэ
    if(!ok)
@@ -898,7 +954,7 @@ void TryEnter()
      {
       gFirstEntry = TimeCurrent();
       gRunSide = gSignal;
-      gPlannedSeconds = PlanSeconds();
+      gPlannedSeconds = (gStopMode == 1) ? 0 : PlanSeconds();
       Print("XauBot: ", gRunSide, L(" чиглэлд ", " side, planned to run "), (string)gPlannedSeconds, L(" секунд ажиллахаар тооцлоо", " seconds"));
      }
   }
@@ -951,12 +1007,13 @@ bool TradingAllowed()
 // dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай. Орох шүүлтүүрийг давах ёстой.
 bool RuleOpen(const int dir, const double slDist, const double tpDist, const datetime exitAt)
   {
-   double lots = RuleLots();
-   if(lots <= 0) return(false);
    if(SpreadPoints() > MaxSpreadPoints) return(false);
    if(slDist <= StopsMin() || tpDist <= StopsMin()) return(false);   // хүрээ хэт нарийн: stop тавих боломжгүй
    if(!GateCheck(dir)) return(false);
-   bool ok = SendMarket(dir, lots, slDist, tpDist, "xau-rule");
+   double lots = RuleLots(), sl = slDist, tp = tpDist;
+   if(!gTester && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно
+   if(lots <= 0) return(false);
+   bool ok = SendMarket(dir, lots, sl, tp, "xau-rule");
    if(ok)
      {
       gRuleTraded = true;
@@ -1976,6 +2033,12 @@ void Sync()
       gCBuy          = (int)MathMax(0.0, JNum(body, "cBuy"));
       gCSell         = (int)MathMax(0.0, JNum(body, "cSell"));
       gCTotal        = (int)MathMax(0.0, JNum(body, "cTotal"));
+      gRiskMode      = (int)MathMax(0.0, MathMin(2.0, JNum(body, "rMode")));
+      gRiskVal       = MathMax(0.0, JNum(body, "rVal"));
+      gStopMode      = (int)MathMax(0.0, MathMin(1.0, JNum(body, "sMode")));
+      gSiteAtr       = MathMax(0.0, JNum(body, "sAtr"));
+      gSiteStopMult  = MathMax(0.2, MathMin(10.0, JNum(body, "sStop") > 0 ? JNum(body, "sStop") : 1.5));
+      gSiteRR        = MathMax(0.2, MathMin(10.0, JNum(body, "sRR") > 0 ? JNum(body, "sRR") : 2.0));
       gStatsAt       = 0;
      }
    if(Language == LANG_WEB)

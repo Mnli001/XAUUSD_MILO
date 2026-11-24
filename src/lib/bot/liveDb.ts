@@ -58,12 +58,13 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 /** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
 /** The many-method reading as counts, when this bot waits for it. Null when it cannot be computed: the robot then holds back. */
 async function consensusFor(config: LiveConfig, now: Date): Promise<ConsensusCounts | null> {
-  if (!config.gate?.on || !((config.gate.minAgree ?? 0) > 0)) return null;
+  const needsCounts = !!config.gate?.on && (config.gate.minAgree ?? 0) > 0;
+  if (!needsCounts && !config.gate?.siteStops) return null;
   try {
     const view = await getReasoning(now, "en");
     if (!view) return null;
     const { buy, sell, neutral } = view.reasoning;
-    return { buy, sell, total: buy + sell + neutral };
+    return { buy, sell, total: buy + sell + neutral, atrH1: view.reasoning.atrH1 };
   } catch { return null; }
 }
 
