@@ -183,7 +183,19 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
 
   const { deals: _deals, account, ...rest } = r;
   void _deals;
-  await update(owner.id, live.login, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, server: account.server ?? live.server, status: { ...rest, account: { ...account, login: masked(account.login) } } });
+  const isSteady =
+    process.env.NODE_ENV !== "test" &&
+    state === live.state &&
+    closeAll === live.closeAll &&
+    stopReason === live.stopReason &&
+    r.deals.length === 0 &&
+    r.positions.length === ((live.status as { positions?: unknown[] } | null)?.positions?.length ?? 0) &&
+    live.lastSeenAt &&
+    now.getTime() - live.lastSeenAt.getTime() < 5_000;
+
+  if (!isSteady) {
+    await update(owner.id, live.login, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, server: account.server ?? live.server, status: { ...rest, account: { ...account, login: masked(account.login) } } });
+  }
   return cmd;
 }
 

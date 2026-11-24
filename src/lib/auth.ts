@@ -34,9 +34,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
 /** The signed-in user read fresh from the database (once per request), or null. */
 export const getSessionUser = cache(async (): Promise<User | null> => {
-  const session = await auth();
-  const id = session?.user?.id;
-  return id ? findUserById(id) : null;
+  try {
+    const session = await auth();
+    const id = session?.user?.id;
+    return id ? await findUserById(id) : null;
+  } catch {
+    return null;
+  }
 });
 
 /** Signed in AND has access; otherwise redirects to /login or /locked. */

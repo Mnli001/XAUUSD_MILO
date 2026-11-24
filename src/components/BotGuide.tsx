@@ -57,7 +57,7 @@ function botGuideMn({ origin, hasToken }: BotGuideProps) {
         <li><strong>Жинхэнэ данс</strong> дээр ажиллуулахын тулд хоёр газар зөвшөөрнө: энэ хуудасны “Жинхэнэ данс” сонголт, мөн MT5 дээр роботын Inputs-ийн <span className={code}>AllowRealAccount = true</span>. Аль нэг нь унтраалттай бол бот жинхэнэ данс дээр арилжаа хийхгүй.</li>
         <li>Алтны зах бямба, ням гарагт хаалттай. Тэр үед Start дарсан ч арилжаа хийгдэхгүй.</li>
     </>,
-    footer: <>Файл ажиллахгүй бол эх кодыг <a className="underline" href="/api/bot/download?file=mq5">XauBot.mq5</a> татаж, MetaEditor (F4) дээр нээгээд Compile (F7) дарж болно.</>,
+    footer: <>Файл ажиллахгүй бол эх кодыг <a className="underline" href="/api/bot/download?file=mq5">XauBot.mq5</a> татаж, MetaEditor (F4) дээр нээгээд Compile (F7) дарж болно. Хэрэв зөвхөн Amazon/VPS сервер дээрх MT5-аас сайт руу live үнэ дамжуулах бол зориулалтын <a className="underline font-semibold text-amber-400" href="/api/bot/download?file=feed">XauFeed.mq5 (Live Bridge)</a> татаж ашиглана уу.</>,
   };
 }
 
@@ -89,7 +89,7 @@ function botGuideEn({ origin, hasToken }: BotGuideProps): ReturnType<typeof botG
         <li>To run it on a <strong>real account</strong>, allow it in two places: the “Real account” option on this page, and <span className={code}>AllowRealAccount = true</span> in the robot&apos;s Inputs in MT5. If either is off, the bot does not trade on a real account.</li>
         <li>The gold market is closed on Saturday and Sunday. Pressing Start then places no trades.</li>
     </>,
-    footer: <>If the file does not work, download the source <a className="underline" href="/api/bot/download?file=mq5">XauBot.mq5</a>, open it in MetaEditor (F4) and press Compile (F7).</>,
+    footer: <>If the file does not work, download the source <a className="underline" href="/api/bot/download?file=mq5">XauBot.mq5</a>, open it in MetaEditor (F4) and press Compile (F7). If you only want to broadcast live price from MT5 on an Amazon/VPS server to the site, download the dedicated <a className="underline font-semibold text-amber-400" href="/api/bot/download?file=feed">XauFeed.mq5 (Live Bridge)</a>.</>,
   };
 }
 

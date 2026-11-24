@@ -10,7 +10,7 @@
 
 #include <Trade\Trade.mqh>
 
-input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
+input string ServerUrl            = "http://localhost:3000/api/bot/sync"; // Вэб самбар дээрх хаяг (Жишээ: https://your-site.com/api/bot/sync) · Web address
 input string BotToken             = "";       // Вэб дээр үүсгэсэн токен · Token from the web
 input bool   AllowRealAccount     = false;    // Жинхэнэ данс зөвшөөрөх · Allow a real account
 input long   MagicNumber          = 20261121; // Роботын арилжааг ялгах дугаар · Magic number
@@ -360,14 +360,32 @@ void OnTimer()
       ManageRun();
      }
    GateCheck(SignalDir());                                       // самбарт "яагаад орохгүй байна" гэдгийг үргэлж шинэчилнэ
-   Sync();
+   
+   // Оновчлол: Ботыг зогсоосон бөгөөд арилжаагүй сул зогсох үед 3 сек тутамд, идэвхтэй үед тогтмол sync хийнэ
+   static int idleCounter = 0;
+   bool isIdle = (gState == "STOPPED" && CountPositions() == 0 && CountOrders() == 0);
+   if(isIdle)
+     {
+      idleCounter++;
+      if(idleCounter >= 3)
+        {
+         Sync();
+         idleCounter = 0;
+        }
+     }
+   else
+     {
+      idleCounter = 0;
+      Sync();
+     }
+
    ShowStatus();
   }
 
 void OnTick()
   {
    if(IsRuleTool()) { RetryClose(); DailyGuard(); RuleStep(); return; }
-   if(gMode == "ASIAN") { RetryClose(); DailyGuard(); LiveAsianStep(); return; }
+   if(gMode == "ASIAN") { RetryClose(); DailyGuard(); ProtectAll(); LiveAsianStep(); return; }
    if(gMode == "READING") { RetryClose(); DailyGuard(); ProtectAll(); ReadingStep(); return; }
    if(gMode == "DAY") { RetryClose(); DailyGuard(); ProtectAll(); DayStep(); return; }
    TesterStep();

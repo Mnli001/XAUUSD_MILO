@@ -53,7 +53,15 @@ export function ReactionRows({ stats, v = MN_VIEWER }: { stats: Reaction[] | und
                 </td>
               </>
             )}
-            <td className="py-1.5 text-right whitespace-nowrap text-zinc-500 tabular-nums">n={s.n}</td>
+            <td className="py-1.5 text-right whitespace-nowrap text-zinc-500 tabular-nums">
+              {s.n > 0 && s.n < 10 ? (
+                <span className="text-amber-400/90 font-medium" title={t("Түүвэр цөөн тул болгоомжтой хандана уу", "Small sample size, exercise caution")}>
+                  n={s.n} ⚠
+                </span>
+              ) : (
+                `n=${s.n}`
+              )}
+            </td>
           </tr>
         ))}
       </tbody>

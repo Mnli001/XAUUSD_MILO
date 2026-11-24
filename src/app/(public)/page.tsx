@@ -22,11 +22,11 @@ export const dynamic = "force-dynamic";
 
 /** What the app answers, set as a departures list: the question, the answer, the page it lives on. */
 const stops = (t: T) => [
-  [t("Өнөөдөр аль тал давамгай вэ?", "Which side leads today?"), t("Өдөр, 4 цаг, 1 цаг, 15 минутын тренд, моментум, бүтцийг нэг оноонд нэгтгэж худалдан авагч, худалдагчийн аль нь давамгай байгааг харуулна.", "Trend, momentum and structure on the daily, 4-hour, 1-hour and 15-minute charts are combined into one score that shows whether buyers or sellers have the upper hand."), t("Өнөөдөр", "Today"), "var(--color-asia)"],
-  [t("Аль цаг хөдөлдөг вэ?", "Which hours move?"), t("Сүүлийн 6 сарын түүхээс цаг бүрт алт хэдэн хувьд өсөж, хэдэн хувьд унаж байсныг таны цагаар гаргана. Түүвэр бага бол хувь харуулахгүй.", "From the last 6 months of history: for each hour, how often gold rose and how often it fell, on your own clock. No percentage when the sample is small."), t("Цагийн хуваарь", "Hour by hour"), "var(--color-london)"],
-  [t("Хэзээ мэдээ гарах вэ?", "When is the next release?"), t("CPI, NFP, FOMC зэрэг мэдээ хэдэн цагт гарах, өмнө нь ийм мэдээний дараа алт 15, 30, 60 минутад хэрхэн хөдөлж байсныг харна.", "When CPI, NFP, FOMC and other releases come out, and how gold moved 15, 30 and 60 minutes after such releases before."), t("Мэдээ", "News"), "var(--color-ny)"],
-  [t("Миний арилжаа сайжирч байна уу?", "Is my trading improving?"), t("Арилжаагаа бүртгэж win rate, P&L, profit factor, drawdown-оо сешн, гараг, цагаар задлан шинжилнэ.", "Record your trades and break down win rate, P&L, profit factor and drawdown by session, weekday and hour."), t("Журнал", "Journal"), "var(--color-zinc-400)"],
-  [t("Робот ажиллуулж болох уу?", "Can I run a robot?"), t("Өөрийн MetaTrader 5-тай холбож, роботыг вэбээс асааж зогсооно. Арга нь шалгагдаагүй тул эхлээд demo дансаар туршина.", "Connect your own MetaTrader 5 and start or stop the robot from the web. The method is unproven, so try it on a demo account first."), t("Бот", "Bot"), "var(--color-zinc-400)"],
+  [t("Өнөөдөр зах зээл аль талдаа байна вэ?", "Which side commands the market today?"), t("D1, H4, H1, M15 цагийн тренд, моментум, зах зээлийн бүтцийг нэгтгэн худалдан авагч эсвэл худалдагчийн бодит хүчийг цэгцтэй тооцоолж харуулна.", "Combines D1, H4, H1, and M15 trend, momentum, and market structure into one clear score showing true buyer vs seller strength."), t("Өнөөдөр", "Today"), "var(--color-asia)"],
+  [t("Алт хамгийн хүчтэй хөдөлдөг цагууд аль нь вэ?", "Which hours see the strongest gold volatility?"), t("Сүүлийн 6 сарын бодит түүхээс цаг бүрт алт өсөх эсвэл унах магадлалыг Улаанбаатарын цагаар нарийвчлан тооцно. Түүвэр хангалтгүй бол худал тоо харуулахгүй.", "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient."), t("Цагийн хуваарь", "Hour by hour"), "var(--color-london)"],
+  [t("Эдийн засгийн хүчтэй мэдээнүүд хэзээ гарах вэ?", "When do high-impact economic releases drop?"), t("NFP, CPI, FOMC зэрэг алт савлуулах гол мэдээнүүд болон өмнө нь ижил мэдээний дараа алт 15, 30, 60 минутад дунджаар хэдэн ам.доллар хөдөлснийг шууд хянана.", "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases."), t("Мэдээ", "News"), "var(--color-ny)"],
+  [t("Таны арилжааны чадвар бодитоор өсөж байна уу?", "Is your trading edge genuinely growing?"), t("Арилжаа бүрээ системтэй тэмдэглэж, Win rate, P&L, Profit factor, Drawdown-аа сешн, гариг, цагаар нь задлан өөрийн алдаа, давуу талыг илрүүлнэ.", "Systematically log every trade and break down your Win Rate, P&L, Profit Factor, and Drawdown by session, day, and hour to spot your true strengths and leaks."), t("Журнал", "Journal"), "var(--color-zinc-400)"],
+  [t("MT5 роботоо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("MetaTrader 5 терминалтайгаа шууд холбогдож, ботынхоо төлөв, эрсдэл, Start/Stop-ийг гар утсаараа ч хялбар удирдах боломжтой.", "Connect directly with your MetaTrader 5 terminal to seamlessly monitor bot state, risk parameters, and Start/Stop commands even from your phone."), t("Бот", "Bot"), "var(--color-zinc-400)"],
 ] as const;
 
 /** Illustration only: shaped like the real table, labelled as a sample below it. */
@@ -38,7 +38,21 @@ export default async function LandingPage() {
   const user = await getSessionUser();
   if (user && hasAccess(user, new Date())) redirect("/today");
   const now = new Date();
-  const [events, snap, day] = await Promise.all([getEvents(now, new Date(now.getTime() + 24 * 36e5)), getTodaySnapshot(SYMBOL, now), loadCandles(SYMBOL, "15min", 96)]);
+  let events: Awaited<ReturnType<typeof getEvents>> = [];
+  let snap: Awaited<ReturnType<typeof getTodaySnapshot>> = { price: null, bias: null, hourly: null, levels: null };
+  let day: Awaited<ReturnType<typeof loadCandles>> = [];
+  try {
+    const res = await Promise.all([
+      getEvents(now, new Date(now.getTime() + 24 * 36e5)),
+      getTodaySnapshot(SYMBOL, now),
+      loadCandles(SYMBOL, "15min", 96)
+    ]);
+    events = res[0];
+    snap = res[1];
+    day = res[2];
+  } catch (err) {
+    console.warn("[landing] DB not reachable:", (err as Error).message);
+  }
   const upcoming = events.filter((e) => e.impact === "HIGH");
   const money = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const up = (snap.price?.changePct ?? 0) >= 0;
@@ -63,9 +77,9 @@ export default async function LandingPage() {
                 <span className="now-pulse h-1.5 w-1.5 rounded-full bg-amber-300" />{t("Алтны зах зээл, Улаанбаатарын цагаар", "The gold market, on Ulaanbaatar time")}
               </p>
               <h1 className="font-display mt-6 max-w-[13ch] text-[clamp(2.9rem,7.4vw,6.2rem)] leading-[0.98] text-zinc-50">
-                {t("Алтны өдөр,", "Gold's day,")} <span className="gold-text">{t("цаг цагаараа.", "hour by hour.")}</span>
+                {t("Алтны зах зээл,", "Gold market clarity,")} <span className="gold-text">{t("хором хормоор.", "hour by hour.")}</span>
               </h1>
-              <p className="mt-7 max-w-[44ch] text-lg leading-relaxed text-zinc-300 sm:text-xl">{t("Өнөөдөр аль тал давамгай, аль цаг өсөх эсвэл унах хандлагатай, дараагийн мэдээ хэзээ гарахыг Улаанбаатарын цагаар, түүхэн тоогоор харуулна.", "Which side leads today, which hours lean up or down, and when the next release lands, on Ulaanbaatar time and from historical numbers.")}</p>
+              <p className="mt-7 max-w-[44ch] text-lg leading-relaxed text-zinc-300 sm:text-xl">{t("Өнөөдрийн давамгай чиглэл, цаг тутмын магадлал, эдийн засгийн мэдээнүүдийн нөлөөг Улаанбаатарын цагаар, ямар ч хуурамч таамаггүй цэвэр статистик өгөгдлөөр шинжилнэ.", "Track today's direction, hourly odds, and economic news reactions on Ulaanbaatar time — driven by clean, honest statistical data without market noise.")}</p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link href="/register" className="btn sheen min-h-13 px-8 text-[15px] max-sm:flex-1">{t("Бүртгүүлэх", "Register")}</Link>
                 <Link href="/login" className="btn-ghost min-h-13 px-7 text-[15px] backdrop-blur-md max-sm:flex-1">{t("Нэвтрэх", "Sign in")}</Link>
@@ -100,8 +114,8 @@ export default async function LandingPage() {
         {/* A sample of the hour table, beside what it means. */}
         <section className="mx-auto grid w-full max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,28rem)_1fr] lg:gap-20">
           <div>
-            <h2 className="font-display text-[34px] leading-[1.08] text-zinc-50 sm:text-[48px]">{t("Цаг бүр нэг мөр.", "One row per hour.")}</h2>
-            <p className="mt-5 max-w-[42ch] text-[17px] leading-relaxed text-zinc-400">{t("Хуваарь шиг уншина: цаг, сешн, тухайн цагт алт хэдэн хувьд өсөж эсвэл унаж байсан, хэдэн өдрөөс тооцсон. Мэдээтэй цагийг тэмдэглэнэ.", "Read it like a timetable: the hour, the session, how often gold rose or fell in that hour, and over how many days. Hours with a release are flagged.")}</p>
+            <h2 className="font-display text-[34px] leading-[1.08] text-zinc-50 sm:text-[48px]">{t("Цаг тутмын чиг хандлага нүдний өмнө.", "Hour-by-hour market pulse at a glance.")}</h2>
+            <p className="mt-5 max-w-[42ch] text-[17px] leading-relaxed text-zinc-400">{t("Цагийн хуваарь шиг цэгцтэй: цаг, арилжааны сешн, өнгөрсөн түүхэнд алт тухайн цагт өсөх эсвэл унах магадлал, хэдэн өдрийн дата дээр суурилсан зэргийг ил тод харна. Мэдээтэй цагуудыг урьдчилан анхааруулна.", "Clean and structured: session, hour, probability of gold rising or falling historically, and the sample size. Hours with major news are clearly highlighted.")}</p>
           </div>
           <figure className="m-0">
             <div className="table-card">
@@ -124,12 +138,12 @@ export default async function LandingPage() {
                 </tbody>
               </table>
             </div>
-            <figcaption className="mt-3 text-xs text-zinc-500">{t("Жишээ. Бодит дата биш.", "Sample. Not real data.")}</figcaption>
+            <figcaption className="mt-3 text-xs text-zinc-500">{t("Загвар харагдац. Бодит статистикийг систем дотроос харна уу.", "Sample preview. View real statistics inside the platform.")}</figcaption>
           </figure>
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-5 sm:px-8" aria-labelledby="stops-h">
-          <h2 id="stops-h" className="font-display max-w-[18ch] text-[34px] leading-[1.08] text-zinc-50 sm:text-[48px]">{t("Арилжааны өмнөх таван асуулт.", "Five questions before a trade.")}</h2>
+          <h2 id="stops-h" className="font-display max-w-[18ch] text-[34px] leading-[1.08] text-zinc-50 sm:text-[48px]">{t("Зах зээлд орохоос өмнө харах 5 гол хүчин зүйл.", "5 essential checks before entering the market.")}</h2>
           <ol className="mt-10 border-t" style={{ borderColor: "var(--hairline)" }}>
             {stops(t).map(([q, a, page], i) => (
               <li key={q} className="grid gap-x-10 gap-y-2 border-b py-7 transition-colors duration-300 hover:bg-white/[0.02] sm:grid-cols-[4rem_minmax(0,22rem)_1fr_auto] sm:px-3" style={{ borderColor: "var(--hairline)" }}>
