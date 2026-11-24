@@ -5,6 +5,7 @@ import type { T } from "@/lib/i18n";
 import { useViewer } from "./PrefsProvider";
 import { Figures, Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
 import { saveBotConfigAction, saveGateAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
+import { sessionLabel } from "@/lib/time";
 
 type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> & {
   startedAt: string | null; stoppedAt: string | null; lastSeenAt: string | null;
@@ -280,6 +281,22 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           <h2 id="gate-h" className="card-title mb-1">{t("Орох шүүлтүүр", "Entry filter")}</h2>
           <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Гурван хэрэгсэл бүгд арилжаа нээхээс өмнө эдгээр нөхцөлийг давна: бот цөөн, илүү нөхцөл бүрдсэн үед л орно. Тоог 0 болговол тэр шалгалт унтарна. Хадгалсны дараагийн оролтоос үйлчилнэ.", "All three tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Set a number to 0 to switch that check off. Changes apply from the next entry.")}</p>
         </div>
+        <div className="rounded-2xl border p-4" style={{ borderColor: "var(--hairline)" }}>
+          <p className="text-sm font-semibold text-zinc-100">{t("Бэлэн тохиргоо", "Ready-made settings")}</p>
+          <p className="mt-1 max-w-prose text-xs leading-relaxed text-zinc-400">{t("Нэг товчоор бүх талбарыг бөглөж хадгална. Дараа нь доорх талбаруудаас хүссэнээ өөрчилж болно. Гурвуулаа балансын хувиар хэмжээгээ тооцож, ашигтай арилжааг хамгаална.", "One press fills and saves every field below; change any of them afterwards. All three size by percent of balance and protect a winning trade.")}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {([
+              ["CAREFUL", t("Болгоомжтой", "Careful"), t("11+ арга · өдөрт 3 · эрсдэл 1%", "11+ methods · 3 a day · 1% risk")],
+              ["BALANCED", t("Дунд", "Balanced"), t("9+ арга · өдөрт 5 · эрсдэл 2%", "9+ methods · 5 a day · 2% risk")],
+              ["ACTIVE", t("Идэвхтэй", "Active"), t("7+ арга · өдөрт 8 · эрсдэл 3%", "7+ methods · 8 a day · 3% risk")],
+            ] as const).map(([id, name, sub]) => (
+              <button key={id} name="preset" value={id} disabled={gatePending} className="rounded-2xl border px-4 py-3 text-left transition-colors hover:bg-white/[0.04] disabled:opacity-50" style={{ borderColor: "var(--hairline)" }}>
+                <span className="block text-sm font-semibold text-zinc-100">{name}</span>
+                <span className="mt-0.5 block text-xs text-zinc-400">{sub}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex items-start gap-3 text-sm text-zinc-200">
             <input type="checkbox" name="gOn" defaultChecked={g.on} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
@@ -310,6 +327,10 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
             <input type="checkbox" name="gSiteStops" defaultChecked={g.siteStops ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>{t("Stop, target-ыг сайтын шинжилгээнээс авах", "Take the stop and target from the site's reading")} <span className="block text-xs text-zinc-500">{t("Stop = 1 цагийн ATR × 1.5, target = stop × 2 (Өнөөдөр хуудсын шинжилгээтэй ижил). Унтраалттай бол Scalper 1 минутын ATR-аа хэрэглэнэ. Зөвхөн Scalper хэрэгсэлд.", "Stop = 1-hour ATR × 1.5, target = stop × 2 (the same levels as the reading on Today). Off: the Scalper uses its 1-minute ATR. Scalper tool only.")}</span></span>
+          </label>
+          <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
+            <input type="checkbox" name="gProtect" defaultChecked={g.protect ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Зөвхөн Scalper хэрэгсэлд.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Scalper tool only.")}</span></span>
           </label>
         </fieldset>
         <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-4">
@@ -342,6 +363,33 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         {gateState.ok && <p role="status" className="text-sm text-emerald-400">{gateState.ok}</p>}
         <button className="btn" disabled={gatePending}>{t("Шүүлтүүр хадгалах", "Save filter")}</button>
       </form>
+
+      <section className="card" aria-labelledby="entry-h">
+        <h2 id="entry-h" className="card-title mb-1">{t("Ямар нөхцөлд орсон арилжаа хэрхэн дууссан бэ", "How trades ended, by the conditions at entry")}</h2>
+        <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Робот арилжаа нээх бүрд сайтын 16 аргын хэд нь тэр чиглэлийг дэмжиж байсныг хадгална. Хаагдсан арилжаануудыг тэр тоогоор бүлэглэв. Цөөн арилжаанаас дүгнэлт хийж болохгүй: 30-аас дээш болтол чиг хандлага гэж бүү үз.", "Each time the robot opens a trade, the site keeps how many of its 16 methods backed that side. Closed trades are grouped by that number. Few trades prove nothing: do not read a pattern into fewer than 30.")}</p>
+        {v.entryStats.trades === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">{t("Одоогоор бүртгэгдсэн хаагдсан арилжаа алга. Робот v3.10-аар арилжаа хийж эхэлмэгц энд гарна.", "No closed trades recorded yet. They appear here once the robot (v3.10) has traded.")}</p>
+        ) : (
+          <div className="mt-3 grid gap-4 lg:grid-cols-2">
+            {([[t("Дэмжсэн аргын тоогоор", "By methods backing the side"), v.entryStats.byBacking, (k: string) => k === "NONE" ? t("дүгнэлтгүй", "no reading") : t(`${k} арга`, `${k} methods`)], [t("Сешнээр", "By session"), v.entryStats.bySession, (k: string) => sessionLabel(k, t)]] as const).map(([title, rows, label]) => (
+              <table key={title} className="w-full text-sm">
+                <caption className="pb-1 text-left text-xs font-semibold text-zinc-300">{title}</caption>
+                <thead><tr className="text-xs text-zinc-500"><th className="py-1 text-left font-medium">{t("Бүлэг", "Group")}</th><th className="py-1 text-right font-medium">{t("Арилжаа", "Trades")}</th><th className="py-1 text-right font-medium">{t("Ашигтай", "Won")}</th><th className="py-1 text-right font-medium">P&L</th></tr></thead>
+                <tbody>
+                  {rows.map((b) => (
+                    <tr key={b.key} className="border-t" style={{ borderColor: "var(--hairline)" }}>
+                      <td className="py-1.5 text-zinc-200">{label(b.key)}</td>
+                      <td className="py-1.5 text-right tabular-nums text-zinc-300">{b.trades}</td>
+                      <td className="py-1.5 text-right tabular-nums text-zinc-300">{Math.round((b.wins / b.trades) * 100)}%</td>
+                      <td className="py-1.5 text-right"><Pnl value={b.pnl} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <section className="table-card" aria-labelledby="open-h">

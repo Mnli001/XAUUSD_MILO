@@ -64,6 +64,13 @@
       "when": 1795456747608,
       "tag": "0008_live_feed_telegram_email",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795498490979,
+      "tag": "0009_bot_entries",
+      "breakpoints": true
     }
   ]
 }

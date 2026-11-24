@@ -7,7 +7,10 @@ import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
 import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
-import type { ConsensusCounts } from "./live";
+import { applyPreset, isPreset, type ConsensusCounts } from "./live";
+import { sessionOfUbHour, ubHour } from "../time";
+import { deliver, esc, telegramConfigured } from "../telegram";
+import { translator } from "../i18n";
 
 export const ONLINE_WITHIN_MS = 15_000;
 
@@ -49,6 +52,8 @@ export async function saveLiveConfig(userId: string, input: unknown, t: T = mnT,
 
 export async function saveGateConfig(userId: string, input: unknown, t: T = mnT, login?: string): Promise<{ error?: string }> {
   const live = await getLive(userId, login);
+  const preset = (input as { preset?: unknown } | null)?.preset;
+  if (isPreset(preset)) { await update(userId, live.login, { config: applyPreset(live.config, preset) }); return {}; }
   const r = parseGate(input, live.config, t);
   if (!r.config) return { error: r.error };
   await update(userId, live.login, { config: r.config });
@@ -153,8 +158,11 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   if (owner.role === "ADMIN") await recordTick({ symbol: r.symbol, bid: r.bid, ask: r.ask, server: r.account.server }, now).catch((e) => console.error("[feed] tick not kept", e));
 
   if (r.deals.length) {
-    await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, userId: owner.id, login: live.login, runId: live.runId }))).onConflictDoNothing();
+    const fresh = await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, userId: owner.id, login: live.login, runId: live.runId }))).onConflictDoNothing().returning();
+    // Deals already a day old when first seen (a robot reconnecting) are stored but not announced.
+    for (const d of fresh) if (now.getTime() - d.closeTime.getTime() < 10 * 60_000) notify(owner, tradeClosedText(owner, d));
   }
+  await recordEntries(owner, live.login, r.positions, now).catch((e) => console.error("[bot] entry not recorded", e));
 
   let { state, closeAll, stopReason } = live;
   let stoppedAt = live.stoppedAt;
@@ -218,7 +226,78 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     dayPnl: status?.dayPnl ?? null,
     dailyLossHit: status?.dailyLossHit ?? null,
     deals,
+    entryStats: await getEntryStats(userId, live.login),
     dealCount: n,
     pnl24h: Number(total ?? 0),
   };
+}
+
+// ---- What the reading said when each position was opened, and how those trades ended ----
+
+type Owner = NonNullable<Awaited<ReturnType<typeof findUserById>>>;
+/** Position tickets already written, so a robot reporting every second costs no query once its trades are known. */
+const knownEntries = new Set<string>();
+export const forgetKnownEntries = () => knownEntries.clear();
+
+async function recordEntries(owner: Owner, login: string, positions: Report["positions"], now: Date): Promise<void> {
+  const unseen = positions.filter((p) => !knownEntries.has(`${owner.id}:${login}:${p.ticket}`));
+  if (!unseen.length) return;
+  const view = await getReasoning(now, "en").catch(() => null);
+  const r = view?.reasoning;
+  const rows = unseen.map((p) => ({
+    userId: owner.id, login, ticket: p.ticket, side: p.side, openedAt: now, openPrice: p.openPrice, lots: p.lots,
+    cBuy: r?.buy ?? 0, cSell: r?.sell ?? 0, cTotal: r ? r.buy + r.sell + r.neutral : 0,
+    atrH1: r && Number.isFinite(r.atrH1) ? r.atrH1 : null, session: sessionOfUbHour(ubHour(now)),
+  }));
+  const fresh = await db.insert(schema.botEntries).values(rows).onConflictDoNothing().returning();
+  for (const p of unseen) knownEntries.add(`${owner.id}:${login}:${p.ticket}`);
+  for (const e of fresh) notify(owner, tradeOpenedText(owner, e));
+}
+
+/** A robot message to its owner's Telegram. Never awaited: a slow Telegram must not hold up the robot's reply. */
+function notify(owner: Owner, html: string): void {
+  if (!telegramConfigured() || !owner.telegramChatId || owner.signalsPaused) return;
+  deliver(owner.telegramChatId, html).catch((e) => console.error("[bot] telegram notice failed", e instanceof Error ? e.message : e));
+}
+const px = (n: number) => n.toFixed(2);
+const usd = (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}$${Math.abs(n).toFixed(2)}`;
+export function tradeOpenedText(owner: { locale: string }, e: { side: string; lots: number; openPrice: number; cBuy: number; cSell: number; cTotal: number }): string {
+  const t = translator(parseLocale(owner.locale));
+  const backing = e.side === "BUY" ? e.cBuy : e.cSell;
+  return [
+    `${e.side === "BUY" ? "🟢" : "🔴"} <b>${t("Робот арилжаа нээлээ", "The robot opened a trade")}</b>`,
+    `${esc(e.side)} ${e.lots} · ${px(e.openPrice)}`,
+    e.cTotal ? t(`Чиглэлийг ${e.cTotal} аргын ${backing} нь дэмжиж байв`, `${backing} of ${e.cTotal} methods backed this side`) : "",
+  ].filter(Boolean).join("\n");
+}
+export function tradeClosedText(owner: { locale: string }, d: { side: string; lots: number; openPrice: number; closePrice: number; profit: number }): string {
+  const t = translator(parseLocale(owner.locale));
+  return [
+    `${d.profit >= 0 ? "✅" : "❌"} <b>${t("Робот арилжаа хаалаа", "The robot closed a trade")}</b> ${usd(d.profit)}`,
+    `${esc(d.side)} ${d.lots} · ${px(d.openPrice)} → ${px(d.closePrice)}`,
+  ].join("\n");
+}
+
+export type EntryBucket = { key: string; trades: number; wins: number; pnl: number };
+export type EntryStats = { trades: number; byBacking: EntryBucket[]; bySession: EntryBucket[] };
+/** Closed robot trades grouped by how many methods backed the side at entry, and by session. Facts, not a forecast. */
+export async function getEntryStats(userId: string, login: string): Promise<EntryStats> {
+  const rows = await db
+    .select({ side: schema.botEntries.side, cBuy: schema.botEntries.cBuy, cSell: schema.botEntries.cSell, cTotal: schema.botEntries.cTotal, session: schema.botEntries.session, profit: schema.botDeals.profit })
+    .from(schema.botDeals)
+    .innerJoin(schema.botEntries, and(eq(schema.botEntries.userId, schema.botDeals.userId), eq(schema.botEntries.login, schema.botDeals.login), eq(schema.botEntries.ticket, schema.botDeals.position)))
+    .where(and(eq(schema.botDeals.userId, userId), eq(schema.botDeals.login, login)));
+  const add = (m: Map<string, EntryBucket>, key: string, profit: number) => {
+    const b = m.get(key) ?? { key, trades: 0, wins: 0, pnl: 0 };
+    b.trades++; if (profit > 0) b.wins++; b.pnl += profit;
+    m.set(key, b);
+  };
+  const backing = new Map<string, EntryBucket>(), session = new Map<string, EntryBucket>();
+  for (const r of rows) {
+    const n = r.side === "BUY" ? r.cBuy : r.cSell;
+    add(backing, r.cTotal === 0 ? "NONE" : n >= 11 ? "11+" : n >= 8 ? "8-10" : "0-7", r.profit);
+    add(session, r.session, r.profit);
+  }
+  const order = ["11+", "8-10", "0-7", "NONE"];
+  return { trades: rows.length, byBacking: order.map((k) => backing.get(k)).filter((b): b is EntryBucket => !!b), bySession: [...session.values()] };
 }

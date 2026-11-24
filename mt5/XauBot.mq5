@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.00"
+#property version   "3.10"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -77,7 +77,7 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 8             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 9             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -87,6 +87,7 @@ double   gGAtrMin = 1.5, gGAtrMax = 25.0, gGSpreadPct = 10.0, gGRsiMax = 70.0, g
 int      gCMin = 0, gCBuy = 0, gCSell = 0, gCTotal = 0;
 // Хэмжээ ба stop: вэбээс. gRiskMode 0 = лот, 1 = $, 2 = балансын %. gStopMode 1 = вэбийн шинжилгээний H1 ATR-аас.
 int      gRiskMode = 0, gStopMode = 0;
+bool     gProtect = false;         // ашигтай арилжааг хамгаалах: +1R дээр stop-ийг орсон үнэ рүү, +1.5R-ээс дагуулна
 double   gRiskVal = 0.0, gSiteAtr = 0.0, gSiteStopMult = 1.5, gSiteRR = 2.0;
 string   gBlackouts = "";          // "from-to;from-to" UTC unix секунд, вэбээс (HIGH мэдээний өмнө/дараа)
 string   gBlock = "";              // шүүлтүүр хаасан шалтгааны код, "" = нэвтэрнэ
@@ -221,7 +222,7 @@ int OnInit()
       gGMaxTrades = TesterMaxTradesDay;
       gGDailyLossPct = TesterDailyLossPct;
       gCMin = 0;                                                   // Tester дотор вэбийн дүгнэлт байхгүй
-      gRiskMode = 0; gStopMode = 0;
+      gRiskMode = 0; gStopMode = 0; gProtect = false;
       if(gGStart < 0 || gGStart > 23 || gGEnd < 0 || gGEnd > 23 || gGAtrMin < 0 || gGAtrMax < 0 || (gGAtrMax > 0 && gGAtrMin >= gGAtrMax) ||
          gGSpreadPct < 0 || gGRsiMax < 0 || gGRsiMax > 100 || gGExtAtr < 0 || gGMaxTrades < 0 || gGDailyLossPct < 0)
         {
@@ -359,6 +360,7 @@ void OnTick()
    RetryClose();
    DailyGuard();
    EvaluateSignal();
+   ProtectAll();
    ManageRun();
    TryEnter();
   }
@@ -942,7 +944,7 @@ void TryEnter()
    double lots = 0.0;
    if(!SizeTrade(slD, tpD, lots, true)) return;                  // шалтгаан gBlock эсвэл gReason-д
    if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
-   bool ok = SendMarket(dir, lots, slD, tpD, "xau-bot");         // stops level, tick-ийг SendMarket хангана
+   bool ok = SendMarket(dir, lots, slD, tpD, "xau-bot:" + Num(slD, 2));   // stops level, tick-ийг SendMarket хангана; тайлбарт анхны эрсдэлийн зай (R)
 
    gLastEntry = TimeCurrent();                                   // амжилтгүй болсон ч дараагийн оролдлогыг хүлээлгэнэ
    if(!ok)
@@ -1649,6 +1651,23 @@ void TrailOne(const ulong ticket, const double beTrig, const double beLock, cons
      }
   }
 
+// Ашигтай арилжааг хамгаална (вэбийн "protect"): анхны эрсдэлийн зай R-ийг арилжааны тайлбараас уншина.
+// +1R хүрэхэд stop-ийг орсон үнээс +0.1R рүү (алдагдалгүй), +1.5R-ээс эхлэн үнийг 1R зайтай дагуулна.
+void ProtectAll()
+  {
+   if(!gProtect || gTester) return;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !IsMine(t)) continue;
+      string cm = PositionGetString(POSITION_COMMENT);
+      if(StringFind(cm, "xau-bot:") != 0) continue;
+      double R = StringToDouble(StringSubstr(cm, 8));
+      if(R <= 0) continue;
+      TrailOne(t, 1.0 * R, 0.1 * R, 1.5 * R, 1.0 * R, 0.2 * R);
+     }
+  }
+
 // SMC Active: найзын харьцааг ($1 stop-д 0.8 / 0.1 / 1.0 / 0.8 / 0.15) арилжааны анхны R-д тааруулна
 void SxTrailAll()
   {
@@ -1956,7 +1975,7 @@ string DealsJson()
       if(out != "") out += ",";
       out += "{\"ticket\":\"" + (string)t + "\",\"side\":\"" + side + "\",\"lots\":" + Num(HistoryDealGetDouble(t, DEAL_VOLUME), 2) +
              ",\"openPrice\":" + Num(openPrice, _Digits) + ",\"closePrice\":" + Num(closePrice, _Digits) + ",\"profit\":" + Num(profit, 2) +
-             ",\"closeTime\":\"" + IsoUtc((datetime)HistoryDealGetInteger(t, DEAL_TIME)) + "\"}";
+             ",\"closeTime\":\"" + IsoUtc((datetime)HistoryDealGetInteger(t, DEAL_TIME)) + "\",\"position\":\"" + (string)posId + "\"}";
       added++;
      }
    return(out);
@@ -2033,6 +2052,7 @@ void Sync()
       gCBuy          = (int)MathMax(0.0, JNum(body, "cBuy"));
       gCSell         = (int)MathMax(0.0, JNum(body, "cSell"));
       gCTotal        = (int)MathMax(0.0, JNum(body, "cTotal"));
+      gProtect       = JBool(body, "protect");
       gRiskMode      = (int)MathMax(0.0, MathMin(2.0, JNum(body, "rMode")));
       gRiskVal       = MathMax(0.0, JNum(body, "rVal"));
       gStopMode      = (int)MathMax(0.0, MathMin(1.0, JNum(body, "sMode")));

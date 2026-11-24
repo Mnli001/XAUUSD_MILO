@@ -129,6 +129,7 @@ export const botDeals = pgTable("bot_deals", {
   closePrice: doublePrecision("close_price").notNull(),
   profit: doublePrecision("profit").notNull(),
   closeTime: ts("close_time").notNull(),
+  position: text("position"), // the position the deal closed (robot v3.10+): joins it to bot_entries
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] }), index("bot_deals_user_close").on(t.userId, t.login, t.closeTime)]);
 
 /** A setup that became active: recorded once, then sent to linked users. */
@@ -161,3 +162,19 @@ export type User = typeof users.$inferSelect;
 export type Trade = typeof trades.$inferSelect;
 export type EconomicEvent = typeof economicEvents.$inferSelect;
 export type Role = User["role"];
+
+/** What the site's reading said at the moment the robot opened a position: the raw material for "which conditions worked". */
+export const botEntries = pgTable("bot_entries", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull().default(""),
+  ticket: text("ticket").notNull(), // the position ticket
+  side: text("side").notNull(),
+  openedAt: ts("opened_at").notNull(),
+  openPrice: doublePrecision("open_price").notNull(),
+  lots: doublePrecision("lots").notNull(),
+  cBuy: integer("c_buy").notNull(),
+  cSell: integer("c_sell").notNull(),
+  cTotal: integer("c_total").notNull(),
+  atrH1: doublePrecision("atr_h1"),
+  session: text("session").notNull(),
+}, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] })]);

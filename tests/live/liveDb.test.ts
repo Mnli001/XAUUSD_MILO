@@ -13,7 +13,7 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 8, ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 9, ...o,
 });
 
 beforeEach(async () => {
@@ -136,11 +136,11 @@ test("reports from a robot that does not send its timing are still accepted", as
 test("the basket tool runs end to end: saved, started, refused on an old robot file, reported", async () => {
   expect((await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" })).error).toBeUndefined();
   await startBot(admin.id, now);
-  expect(await handleSync(token, report({ version: 7 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+  expect(await handleSync(token, report({ version: 8 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "OLD_ROBOT" });
   await startBot(admin.id, now);
-  expect(await handleSync(token, report({ version: 8 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
-  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 8, config: { mode: "BASKET", basket: { count: 8 } } });
+  expect(await handleSync(token, report({ version: 9 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
+  expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 9, config: { mode: "BASKET", basket: { count: 8 } } });
 });
 
 test("the robot is told its owner's language", async () => {
@@ -193,5 +193,42 @@ describe("the entry filter", () => {
     expect((await call({ "x-bot-token": token }, { nonsense: true })).status).toBe(400);
     expect((await call({ "x-bot-token": "nope" }, report())).status).toBe(401);
     expect((await call({ "x-bot-token": token }, report({ reason: "x".repeat(400) }))).status).toBe(200); // a long reason is cut, not refused
+  });
+});
+
+describe("entries, presets and trade notices", () => {
+  test("a position is recorded once with what the reading said, and joins its closing deal", async () => {
+    await handleSync(token, report(), now);
+    await handleSync(token, report(), new Date(now.getTime() + 1000));
+    const entries = await db.select().from(schema.botEntries);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ userId: admin.id, ticket: "11", side: "BUY", lots: 0.05, session: "Лондон" }); // i18n-ok: the stored session key (18:00 UB)
+    const deal = { ticket: "900", position: "11", side: "BUY", lots: 0.05, openPrice: 4099, closePrice: 4104, profit: 25, closeTime: now.toISOString() };
+    await handleSync(token, report({ positions: [], deals: [deal] }), new Date(now.getTime() + 2000));
+    const view = await getLiveView(admin.id, now);
+    expect(view.entryStats.trades).toBe(1);
+    expect(view.entryStats.bySession).toEqual([{ key: "Лондон", trades: 1, wins: 1, pnl: 25 }]); // i18n-ok
+    expect(view.entryStats.byBacking[0]).toMatchObject({ trades: 1, wins: 1, pnl: 25 });
+  });
+  test("a deal from an older robot file, without its position, is stored and simply not grouped", async () => {
+    const deal = { ticket: "901", side: "SELL", lots: 0.01, openPrice: 4100, closePrice: 4101, profit: -1, closeTime: now.toISOString() };
+    await handleSync(token, report({ positions: [], deals: [deal] }), now);
+    const view = await getLiveView(admin.id, now);
+    expect(view.dealCount).toBe(1);
+    expect(view.entryStats.trades).toBe(0);
+  });
+  test("a preset fills the filter in one go and keeps the tool settings", async () => {
+    await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "2", slAtr: "1", tpAtr: "2" });
+    expect(await saveGateConfig(admin.id, { preset: "CAREFUL" })).toEqual({});
+    const c = (await getLive(admin.id)).config;
+    expect(c).toMatchObject({ lots: 0.3, gate: { on: true, minAgree: 11, maxTradesDay: 3, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true, sessionStartUb: 15 } });
+    await startBot(admin.id, now);
+    expect(await handleSync(token, report(), now)).toMatchObject({ cMin: 11, rMode: 2, rVal: 1, sMode: 1, protect: true });
+  });
+  test("the notices name the side, the price and the result in the owner's language", async () => {
+    const { tradeOpenedText, tradeClosedText } = await import("@/lib/bot/liveDb");
+    expect(tradeOpenedText({ locale: "en" }, { side: "BUY", lots: 0.01, openPrice: 4100.5, cBuy: 11, cSell: 2, cTotal: 16 })).toContain("11 of 16 methods backed this side");
+    expect(tradeClosedText({ locale: "en" }, { side: "SELL", lots: 0.01, openPrice: 4100, closePrice: 4096.5, profit: 3.5 })).toMatch(/closed a trade.*\+\$3\.50[\s\S]*4100\.00 → 4096\.50/);
+    expect(tradeClosedText({ locale: "mn" }, { side: "BUY", lots: 0.01, openPrice: 4100, closePrice: 4098, profit: -2 })).toContain("−$2.00");
   });
 });

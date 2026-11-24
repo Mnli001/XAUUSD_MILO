@@ -31,6 +31,7 @@ export type GateConfig = {
   /** How a trade is sized: fixed lots (the tool's own field), a dollar amount risked per trade, or a share of the balance. */
   riskMode: RiskMode;
   riskValue: number; // USD: dollars per trade; PCT: % of balance; unused for LOTS
+  protect: boolean; // move the stop to entry at +1R and trail from +1.5R (Scalper trades)
   siteStops: boolean; // stop and target from the site's reading (1-hour ATR) instead of the 1-minute ATR
   minAgree: number; // how many of the site's methods must read the entry's side (0 = not checked)
   dailyLossPct: number; // % of the day's starting balance: the robot closes its trades and stops entering
@@ -39,7 +40,7 @@ export type RiskMode = "LOTS" | "USD" | "PCT";
 export const RISK_MODES: RiskMode[] = ["LOTS", "USD", "PCT"];
 export const DEFAULT_GATE: GateConfig = {
   on: true, trend: true, sessionStartUb: 15, sessionEndUb: 1, newsBeforeMin: 30, newsAfterMin: 60,
-  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8, riskMode: "LOTS", riskValue: 0, siteStops: false,
+  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8, riskMode: "LOTS", riskValue: 0, siteStops: false, protect: false,
 };
 
 export type LiveConfig = {
@@ -125,6 +126,7 @@ const gateSchema = (t: T) => z.object({
   gRiskMode: z.enum(["LOTS", "USD", "PCT"]).optional(),
   gRiskVal: within(0, 100000, t("Эрсдэлийн дүн 0-ээс их тоо байна", "The risk amount must be a number above 0")).optional(),
   gSiteStops: allowReal.optional(),
+  gProtect: allowReal.optional(),
   gDailyLoss: within(0, 50, t("Өдрийн алдагдлын хязгаар балансын 0–50%", "The daily loss stop must be 0–50% of balance")),
 }).refine((g) => !(g.gRiskMode === "USD" && !((g.gRiskVal ?? 0) > 0)), { message: t("Арилжаа бүрт эрсдэлд оруулах $ дүнг оруулна уу", "Enter the dollars to risk per trade") })
   .refine((g) => !(g.gRiskMode === "PCT" && !((g.gRiskVal ?? 0) > 0 && (g.gRiskVal ?? 0) <= 50)), { message: t("Эрсдэл балансын 0–50% байна", "Risk must be 0–50% of balance") })
@@ -140,6 +142,7 @@ export function parseGate(input: unknown, current: LiveConfig = DEFAULT_LIVE_CON
     atrMin: g.gAtrMin, atrMax: g.gAtrMax, maxSpreadPct: g.gSpreadPct, rsiMax: g.gRsiMax, maxExtAtr: g.gExtAtr, maxTradesDay: g.gMaxTrades, dailyLossPct: g.gDailyLoss, minAgree: g.gAgree ?? current.gate?.minAgree ?? DEFAULT_GATE.minAgree,
     riskMode: g.gRiskMode ?? current.gate?.riskMode ?? "LOTS", riskValue: g.gRiskMode && g.gRiskMode !== "LOTS" ? (g.gRiskVal ?? 0) : g.gRiskMode ? 0 : (current.gate?.riskValue ?? 0),
     siteStops: g.gRiskMode !== undefined ? (g.gSiteStops ?? false) : (current.gate?.siteStops ?? false),
+    protect: g.gRiskMode !== undefined ? (g.gProtect ?? false) : (current.gate?.protect ?? false),
   } } };
 }
 
@@ -185,6 +188,7 @@ export type Command = {
   cMin: number; cBuy: number; cSell: number; cTotal: number;
   // Sizing and stops (robot v3.00 and newer). rMode 0 lots, 1 dollars per trade, 2 % of balance. sMode 1: stop = sStop × sAtr, target = stop × sRR.
   rMode: number; rVal: number; sMode: number; sAtr: number; sStop: number; sRR: number;
+  protect: boolean; // robot v3.10 and newer
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -194,7 +198,7 @@ export const ASIAN_ROBOT_VERSION = 3;
  * Robot v2.80 (protocol 6) is the first with the entry filter and the order-handling fixes. An older
  * file would trade without the filter the owner set here, so no tool runs on it.
  */
-export const GATE_ROBOT_VERSION = 8;
+export const GATE_ROBOT_VERSION = 9;
 /** Robot v2.90 (protocol 7) is the first that waits for the site's many-method reading. */
 export const CONSENSUS_ROBOT_VERSION = 7;
 /** What the methods read right now, as counts. */
@@ -218,6 +222,7 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
     rMode: RISK_MODES.indexOf(g.riskMode ?? "LOTS"), rVal: g.riskMode && g.riskMode !== "LOTS" ? g.riskValue : 0,
     // With site stops on and no reading, sAtr goes out as 0 and the robot waits.
     sMode: g.siteStops ? 1 : 0, sAtr: g.siteStops && Number.isFinite(consensus?.atrH1) ? Math.round((consensus!.atrH1 as number) * 100) / 100 : 0, sStop: SITE_STOP_ATR, sRR: SITE_RR,
+    protect: !!g.protect,
   };
 }
 
@@ -253,7 +258,7 @@ export const reportSchema = z.object({
   reason: z.string().transform((s) => s.slice(0, 300)), // cut, not refused: a long reason must not cut the robot off
   runPnl: num,
   positions: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, sl: num, tp: num, profit: num })).max(300),
-  deals: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, closePrice: num, profit: num, closeTime: z.coerce.date() })).max(200),
+  deals: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, closePrice: num, profit: num, closeTime: z.coerce.date(), position: z.string().max(40).optional() })).max(200),
   finished: z.string().max(40),
   plannedSeconds: num.optional(), // the run length the robot worked out; 0 until its first trade
   elapsedSeconds: num.optional(),
@@ -267,3 +272,16 @@ export const reportSchema = z.object({
   dailyLossHit: z.boolean().optional(),
 });
 export type Report = z.infer<typeof reportSchema>;
+
+/**
+ * Ready-made filter settings for people who do not want to tune fourteen fields. Each keeps the
+ * trading hours and volatility limits and changes how picky and how large the robot is.
+ */
+export type PresetId = "CAREFUL" | "BALANCED" | "ACTIVE";
+export const PRESETS: Record<PresetId, Partial<GateConfig>> = {
+  CAREFUL: { on: true, trend: true, minAgree: 11, maxTradesDay: 3, dailyLossPct: 2, rsiMax: 68, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true },
+  BALANCED: { on: true, trend: true, minAgree: 9, maxTradesDay: 5, dailyLossPct: 3, rsiMax: 70, riskMode: "PCT", riskValue: 2, siteStops: true, protect: true },
+  ACTIVE: { on: true, trend: true, minAgree: 7, maxTradesDay: 8, dailyLossPct: 5, rsiMax: 75, riskMode: "PCT", riskValue: 3, siteStops: false, protect: true },
+};
+export const isPreset = (v: unknown): v is PresetId => v === "CAREFUL" || v === "BALANCED" || v === "ACTIVE";
+export const applyPreset = (current: LiveConfig, id: PresetId): LiveConfig => ({ ...current, gate: { ...DEFAULT_GATE, ...current.gate, ...PRESETS[id] } });
