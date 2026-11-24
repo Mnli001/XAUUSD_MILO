@@ -147,3 +147,25 @@ describe("sizing and stops", () => {
     expect(commandFor(run(c), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ gateOn: false, rMode: 1, rVal: 5 });
   });
 });
+
+describe("the reading tool", () => {
+  const run = (config: LiveConfig) => ({ state: "RUNNING" as const, runId: "r", closeAll: false, config });
+  const reading = parseConfig({ mode: "READING", rLots: "0.02" }, DEFAULT_LIVE_CONFIG).config!;
+  test("it is saved with its lot size and keeps the filter", () => {
+    expect(reading).toMatchObject({ mode: "READING", rule: { lots: 0.02 }, gate: { minAgree: 8 } });
+  });
+  test("it always sends a threshold and the site stop, with the counts", () => {
+    const cmd = commandFor(run(reading), { mode: "DEMO" }, 10, "mn", "", { buy: 10, sell: 1, total: 14, atrH1: 12.345 });
+    expect(cmd).toMatchObject({ state: "RUNNING", mode: "READING", lots: 0.02, maxPositions: 1, cMin: 8, cBuy: 10, cSell: 1, cTotal: 14, sMode: 1, sAtr: 12.35, sStop: 1.5, sRR: 2 });
+  });
+  test("with the filter off, or no threshold set, it waits for nine methods", () => {
+    const off = { ...reading, gate: { ...reading.gate, on: false } };
+    expect(commandFor(run(off), { mode: "DEMO" }, 10)).toMatchObject({ gateOn: false, cMin: 8, sMode: 1 });
+    const none = { ...reading, gate: { ...reading.gate, minAgree: 0 } };
+    expect(commandFor(run(none), { mode: "DEMO" }, 10)).toMatchObject({ cMin: 9 });
+  });
+  test("a robot file older than v3.30 is not started on it", () => {
+    expect(commandFor(run(reading), { mode: "DEMO" }, 9)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+    expect(minRobotVersion("READING")).toBe(10);
+  });
+});

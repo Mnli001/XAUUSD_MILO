@@ -64,7 +64,7 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 /** The many-method reading as counts, when this bot waits for it. Null when it cannot be computed: the robot then holds back. */
 async function consensusFor(config: LiveConfig, now: Date): Promise<ConsensusCounts | null> {
   const needsCounts = !!config.gate?.on && (config.gate.minAgree ?? 0) > 0;
-  if (!needsCounts && !config.gate?.siteStops) return null;
+  if (!needsCounts && !config.gate?.siteStops && config.mode !== "READING") return null;
   try {
     const view = await getReasoning(now, "en");
     if (!view) return null;

@@ -6,7 +6,7 @@ import { z } from "zod";
  * What the owner sets on the web. Lot size is theirs to choose; there is no daily limit.
  * How long a run lasts is not a setting: the robot works that out itself from volatility.
  */
-export type BotMode = "SCALPER" | "BASKET" | "ASIAN";
+export type BotMode = "SCALPER" | "BASKET" | "ASIAN" | "READING";
 /** The Asian range breakout: the rule decides entry, stop, target and exit; the owner only sets the lot. */
 export type RuleConfig = { lots: number };
 /** The basket tool: open `count` trades at once, close them all together at a total profit or a total loss. */
@@ -89,8 +89,8 @@ const ruleSchema = (t: T) => z.object({ rLots: positive(t("Лот 0-ээс их 
 /** Each tool has its own form; saving one keeps the other's settings from `current`. */
 export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
   const asked = (input as { mode?: unknown } | null)?.mode;
-  const mode: BotMode = asked === "BASKET" || asked === "ASIAN" ? asked : "SCALPER";
-  if (mode === "ASIAN") {
+  const mode: BotMode = asked === "BASKET" || asked === "ASIAN" || asked === "READING" ? asked : "SCALPER";
+  if (mode === "ASIAN" || mode === "READING") {
     const r = ruleSchema(t).safeParse(input);
     if (!r.success) return { error: r.error.issues[0].message };
     return { config: { ...current, mode, allowReal: r.data.allowReal, rule: { lots: r.data.rLots } } };
@@ -122,7 +122,7 @@ const gateSchema = (t: T) => z.object({
   gRsiMax: within(0, 95, t("RSI-ийн хязгаар 0 (үгүй) эсвэл 55–95", "The RSI cap must be 0 (off) or 55–95")).refine((v) => v === 0 || v >= 55, t("RSI-ийн хязгаар 0 (үгүй) эсвэл 55–95", "The RSI cap must be 0 (off) or 55–95")),
   gExtAtr: within(0, 20, t("EMA20-оос холдох хязгаар 0–20 ATR", "The stretch cap must be 0–20 ATR")),
   gMaxTrades: wholeWithin(0, 100, t("Өдрийн орох тоо 0–100 бүхэл тоо", "Entries a day must be a whole number, 0–100")),
-  gAgree: wholeWithin(0, 16, t("Санал нийлэх аргын тоо 0 (шалгахгүй) – 16", "Methods that must agree: 0 (off) to 16")).optional(),
+  gAgree: wholeWithin(0, 14, t("Санал нийлэх аргын тоо 0 (шалгахгүй) – 14", "Methods that must agree: 0 (off) to 14")).optional(),
   gRiskMode: z.enum(["LOTS", "USD", "PCT"]).optional(),
   gRiskVal: within(0, 100000, t("Эрсдэлийн дүн 0-ээс их тоо байна", "The risk amount must be a number above 0")).optional(),
   gSiteStops: allowReal.optional(),
@@ -206,12 +206,18 @@ export type ConsensusCounts = { buy: number; sell: number; total: number; atrH1?
 /** The site plan's stop and reward, as the robot receives them (the same numbers the reasoning panel shows). */
 export const SITE_STOP_ATR = 1.5;
 export const SITE_RR = 2;
-export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
+/** Robot v3.30 (protocol 10) is the first that can trade the reading itself. */
+export const READING_ROBOT_VERSION = 10;
+/** The reading tool waits for this many methods when the owner set none: the level the research held up at. */
+export const READING_MIN_AGREE = 9;
+export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "READING" ? READING_ROBOT_VERSION : mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
 /** The filter as flat fields. With the filter off, every check goes out switched off as well. */
-function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null) {
+function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null, reading = false) {
   const on = g.on;
-  const cMin = on ? (g.minAgree ?? 0) : 0;
+  // The reading tool always needs a threshold and the site's stop distance, whatever the filter says.
+  const cMin = reading ? ((g.minAgree ?? 0) > 0 ? g.minAgree : READING_MIN_AGREE) : on ? (g.minAgree ?? 0) : 0;
+  const siteStops = reading || g.siteStops;
   return {
     gateOn: on, gTrend: on && g.trend, gSessionStart: g.sessionStartUb, gSessionEnd: on ? g.sessionEndUb : g.sessionStartUb,
     gAtrMin: on ? g.atrMin : 0, gAtrMax: on ? g.atrMax : 0, gSpreadPct: on ? g.maxSpreadPct : 0, gRsiMax: on ? g.rsiMax : 0,
@@ -221,7 +227,7 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
     cMin, cBuy: consensus?.buy ?? 0, cSell: consensus?.sell ?? 0, cTotal: consensus?.total ?? 0,
     rMode: RISK_MODES.indexOf(g.riskMode ?? "LOTS"), rVal: g.riskMode && g.riskMode !== "LOTS" ? g.riskValue : 0,
     // With site stops on and no reading, sAtr goes out as 0 and the robot waits.
-    sMode: g.siteStops ? 1 : 0, sAtr: g.siteStops && Number.isFinite(consensus?.atrH1) ? Math.round((consensus!.atrH1 as number) * 100) / 100 : 0, sStop: SITE_STOP_ATR, sRR: SITE_RR,
+    sMode: siteStops ? 1 : 0, sAtr: siteStops && Number.isFinite(consensus?.atrH1) ? Math.round((consensus!.atrH1 as number) * 100) / 100 : 0, sStop: SITE_STOP_ATR, sRR: SITE_RR,
     protect: !!g.protect,
   };
 }
@@ -229,8 +235,8 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
 export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
-  const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus);
-  const tool = c.mode === "ASIAN"
+  const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus, c.mode === "READING");
+  const tool = c.mode === "ASIAN" || c.mode === "READING"
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
     : basket
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
@@ -279,9 +285,10 @@ export type Report = z.infer<typeof reportSchema>;
  */
 export type PresetId = "CAREFUL" | "BALANCED" | "ACTIVE";
 export const PRESETS: Record<PresetId, Partial<GateConfig>> = {
-  CAREFUL: { on: true, trend: true, minAgree: 11, maxTradesDay: 3, dailyLossPct: 2, rsiMax: 68, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true },
+  // The agreement levels are the ones the candle research held up at (8–10); 11 and above was too rare to judge.
+  CAREFUL: { on: true, trend: true, minAgree: 10, maxTradesDay: 3, dailyLossPct: 2, rsiMax: 68, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true },
   BALANCED: { on: true, trend: true, minAgree: 9, maxTradesDay: 5, dailyLossPct: 3, rsiMax: 70, riskMode: "PCT", riskValue: 2, siteStops: true, protect: true },
-  ACTIVE: { on: true, trend: true, minAgree: 7, maxTradesDay: 8, dailyLossPct: 5, rsiMax: 75, riskMode: "PCT", riskValue: 3, siteStops: false, protect: true },
+  ACTIVE: { on: true, trend: true, minAgree: 8, maxTradesDay: 8, dailyLossPct: 5, rsiMax: 75, riskMode: "PCT", riskValue: 3, siteStops: false, protect: true },
 };
 export const isPreset = (v: unknown): v is PresetId => v === "CAREFUL" || v === "BALANCED" || v === "ACTIVE";
 export const applyPreset = (current: LiveConfig, id: PresetId): LiveConfig => ({ ...current, gate: { ...DEFAULT_GATE, ...current.gate, ...PRESETS[id] } });

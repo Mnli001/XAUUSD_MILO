@@ -43,6 +43,7 @@ const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
 const GATE_ROBOT = 6;
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 const toolList = (t: T) => [
+  ["READING", t("Дүгнэлт", "Reading"), t("Сайтын олон аргын дүгнэлтийг шууд дагана: 15 минут тутам шалгаж, хангалттай олон арга нэг чиглэл заахад орно. Stop = 1 цагийн ATR × 1.5, ашиг = stop × 2. Нэг удаад нэг арилжаа.", "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.")],
   ["SCALPER", "Scalper", t("Нэг нэгээр орно. Арилжаа бүр өөрийн stop, target-тай. Хэр удаан ажиллахаа бот өөрөө тооцно.", "Enters one at a time. Each trade has its own stop and target. The bot works out how long to run.")],
   ["BASKET", t("Багц", "Basket"), t("Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана.", "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.")],
   ["ASIAN", t("Азийн breakout", "Asian breakout"), t("Өдөрт нэг арилжаа: Азийн хүрээнээс өдрийн трендийн чиглэлд гарахад орно. Stop, target, хаах цагийг дүрэм өөрөө тогтооно.", "One trade a day: enters when price leaves the Asian range in the direction of the daily trend. The rule sets the stop, target and closing time.")],
@@ -107,8 +108,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const c = v.config;
   const [tool, setTool] = useState(c.mode);
   const basket = tool === "BASKET";
+  const reading = tool === "READING";
   const asian = tool === "ASIAN";
-  const exposure = (basket ? c.basket.lots * c.basket.count : asian ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
+  const exposure = (basket ? c.basket.lots * c.basket.count : asian || reading ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
   const spread = v.bid !== null && v.ask !== null && v.ask > v.bid ? v.ask - v.bid : null;
   const oldRobot = (v.robotVersion ?? (v.online ? 1 : GATE_ROBOT)) < GATE_ROBOT;
   const g = c.gate;
@@ -193,6 +195,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               {v.positions.length > 0 ? t(`Багц нээлттэй. ${money(c.basket.profit)} ашигт хүрвэл эсвэл ${money(-c.basket.loss)} алдагдалд хүрвэл бүгдийг зэрэг хаана.`, `Basket open. All trades close together at ${money(c.basket.profit)} profit or ${money(-c.basket.loss)} loss.`) : t("Дохио хүлээж байна. Гармагц багцыг бүхэлд нь нээнэ.", "Waiting for a signal. The whole basket opens as soon as one appears.")}
             </p>
           )}
+          {running && c.mode === "READING" && (
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop эсвэл target-аараа хаагдана.", "Trade open. It closes at its stop or its target.") : t("Дүгнэлтийг 15 минут тутам шалгаж байна. Хангалттай олон арга нэг чиглэл заахад орно.", "Checking the reading every 15 minutes. It enters when enough methods point one way.")}</p>
+          )}
           {running && c.mode === "ASIAN" && (
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t(`Арилжаа нээлттэй. Stop, target эсвэл ${ub("04:00")} (${zone}) цагт хаагдана.`, `Trade open. It closes at the stop, the target or ${ub("04:00")} (${zone}).`) : t(`Дүрэм ажиллаж байна: өдөр бүр ${ub("15:00")}–${ub("00:00")} (${zone}) цагт breakout хүлээнэ. Stop дартал зогсохгүй.`, `The rule is running: every day it waits for a breakout between ${ub("15:00")} and ${ub("00:00")} (${zone}). It does not stop until you press Stop.`)}</p>
           )}
@@ -218,7 +223,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
                   <span className="min-w-0">
                     <span className={`flex flex-wrap items-center gap-2 font-semibold ${on ? "text-zinc-50" : "text-zinc-200"}`}>
                       {name}
-                      {id !== "ASIAN" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
+                      {id !== "ASIAN" && id !== "READING" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
                     </span>
                     <span className="mt-0.5 block text-xs leading-relaxed text-zinc-400">{about}</span>
                   </span>
@@ -232,7 +237,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             </p>
           )}
           <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4" key={tool}>
-            {((asian ? [
+            {((asian || reading ? [
               ["rLots", t("Лот", "Lots"), c.rule.lots, "0.01"],
             ] : basket ? [
               ["bLots", t("Лот (арилжаа бүрт)", "Lots (per trade)"), c.basket.lots, "0.01"], ["bCount", t("Арилжааны тоо (зэрэг)", "Number of trades (at once)"), c.basket.count, "1"],
@@ -252,7 +257,14 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>{t("Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх", "Allow trading on a real account")} <span className="block text-xs text-zinc-500">{t("Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.", "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.")}</span></span>
           </label>
-          {asian ? (
+          {reading ? (
+            <p className="text-xs leading-relaxed text-zinc-400">
+              {t(`Орох чиглэлийг дор хаяж ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} арга дэмжиж, эсрэг талаасаа олон байх үед орно (тоог доорх «Санал нийлэх арга» талбараас өөрчилнө). Stop нь 1 цагийн ATR-аас тооцогддог тул ихэвчлэн $10–25 зайтай: 0.01 лотод нэг арилжааны алдагдал тэр хэмжээний доллар. Жижиг дансанд энэ их тул «Арилжааны хэмжээ ба stop» хэсэгт эрсдэлээ $ эсвэл %-иар тавина; доод лот багтахгүй бол робот орохгүй.`,
+                `It enters when at least ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} methods back the side and outnumber the other (change the number in "Methods that must agree" below). The stop comes from the 1-hour ATR, so it is usually $10–25 away: at 0.01 lots a losing trade costs about that many dollars. That is a lot for a small account, so set your risk in $ or % under "Trade size and stop"; when the minimum lot does not fit, the robot does not enter.`)}
+              {" "}<span className="text-amber-300">{t("3 жилийн 15 минутын лаан дээр шалгасан (арилжаа бүрт $0.30 зардалтай): 9+ арга, stop 1.5 × ATR, ашиг 2R үед 2024 онд Profit Factor 1.51 (104 арилжаа), 2025 онд 1.54 (210), 2026 онд 1.40 (163); хамгийн их уналт 9–17R. Ялалтын хувь 42–44%: арилжааны талаас илүү нь алдагдалтай хаагдана, ашиг нь ялалт алдагдлаас 2 дахин том байдгаас гардаг. Дүгнэлтийн эсрэг арилжих нь бүх тохиолдолд алдсан. Хязгаар: энэ нь лааны дата дээрх тооцоо, бодит арилжаа биш; ирээдүйд давтагдах баталгаагүй. Эхлээд demo дансаар.",
+                "Checked on three years of 15-minute candles (with $0.30 cost a trade): at 9+ methods, stop 1.5 × ATR and a 2R target, Profit Factor was 1.51 in 2024 (104 trades), 1.54 in 2025 (210) and 1.40 in 2026 (163); the deepest drawdown was 9–17R. The win rate was 42–44%: more than half the trades close at a loss, and the profit comes from wins being twice the size of losses. Trading against the reading lost in every case. Limits: this is a calculation on candle data, not real trading, and nothing guarantees it repeats. Demo account first.")}</span>
+            </p>
+          ) : asian ? (
             <p className="text-xs leading-relaxed text-zinc-400">
               {t(`Өдөрт хамгийн ихдээ нэг арилжаа, ${c.rule.lots.toFixed(2)} лотоор: алт $1 хөдлөхөд ±${money(exposure)}. Хүрээ ${ub("08:00")}–${ub("15:00")} (${zone}); ${ub("15:00")}–${ub("00:00")} цагт өдрийн трендийн чиглэлд хүрээнээс гарч хаагдсан эхний 15 минутын лаагаар орно. Stop хүрээний дунд, target 2 дахин хол, ${ub("04:00")}-д хаана.`,
                 `At most one trade a day, at ${c.rule.lots.toFixed(2)} lots: ±${money(exposure)} for every $1 gold moves. The range is ${ub("08:00")}–${ub("15:00")} (${zone}); between ${ub("15:00")} and ${ub("00:00")} it enters on the first 15-minute candle that closes outside the range in the direction of the daily trend. The stop is the middle of the range, the target is twice as far, and it closes at ${ub("04:00")}.`)}
@@ -287,9 +299,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           <p className="mt-1 max-w-prose text-xs leading-relaxed text-zinc-400">{t("Нэг товчоор бүх талбарыг бөглөж хадгална. Дараа нь доорх талбаруудаас хүссэнээ өөрчилж болно. Гурвуулаа балансын хувиар хэмжээгээ тооцож, ашигтай арилжааг хамгаална.", "One press fills and saves every field below; change any of them afterwards. All three size by percent of balance and protect a winning trade.")}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
             {([
-              ["CAREFUL", t("Болгоомжтой", "Careful"), t("11+ арга · өдөрт 3 · эрсдэл 1%", "11+ methods · 3 a day · 1% risk")],
+              ["CAREFUL", t("Болгоомжтой", "Careful"), t("10+ арга · өдөрт 3 · эрсдэл 1%", "10+ methods · 3 a day · 1% risk")],
               ["BALANCED", t("Дунд", "Balanced"), t("9+ арга · өдөрт 5 · эрсдэл 2%", "9+ methods · 5 a day · 2% risk")],
-              ["ACTIVE", t("Идэвхтэй", "Active"), t("7+ арга · өдөрт 8 · эрсдэл 3%", "7+ methods · 8 a day · 3% risk")],
+              ["ACTIVE", t("Идэвхтэй", "Active"), t("8+ арга · өдөрт 8 · эрсдэл 3%", "8+ methods · 8 a day · 3% risk")],
             ] as const).map(([id, name, sub]) => (
               <button key={id} name="preset" value={id} disabled={gatePending} className="rounded-2xl border px-4 py-3 text-left transition-colors hover:bg-white/[0.04] disabled:opacity-50" style={{ borderColor: "var(--hairline)" }}>
                 <span className="block text-sm font-semibold text-zinc-100">{name}</span>
@@ -345,7 +357,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             ["gSpreadPct", t("Spread ≤ ATR-ийн %", "Spread ≤ % of ATR"), g.maxSpreadPct, "1", "100"],
             ["gRsiMax", t("RSI(14) хязгаар", "RSI(14) cap"), g.rsiMax, "1", "95"],
             ["gExtAtr", t("EMA20-оос ≤ ATR ×", "From EMA20 ≤ ATR ×"), g.maxExtAtr, "0.1", "20"],
-            ["gAgree", t("Санал нийлэх арга (16-аас)", "Methods that must agree (of 16)"), g.minAgree ?? 8, "1", "16"],
+            ["gAgree", t("Санал нийлэх арга (14-өөс)", "Methods that must agree (of 14)"), g.minAgree ?? 8, "1", "16"],
             ["gMaxTrades", t("Өдөрт орох дээд тоо", "Entries a day, at most"), g.maxTradesDay, "1", "100"],
             ["gDailyLoss", t("Өдрийн алдагдал, балансын %", "Daily loss stop, % of balance"), g.dailyLossPct, "0.5", "50"],
           ] as [string, string, number, string, string][]).map(([name, label, val, step, max]) => (

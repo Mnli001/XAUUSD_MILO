@@ -1,0 +1,115 @@
+candles: 15m 84985, 1h 24996, 4h 5000, 1d 1500; 2023-11-10 → 2026-11-23
+  10000 readings, 27s
+  20000 readings, 67s
+  30000 readings, 92s
+  40000 readings, 117s
+  50000 readings, 139s
+  60000 readings, 159s
+  70000 readings, 177s
+readings: 75514 in 187s; methods counted: 14
+
+FORECAST: share of times price was higher after the horizon, by net lean (buy − sell)
+lean bucket      n      up% 1h  avg$ 1h   up% 4h  avg$ 4h   up% 24h  avg$ 24h
+sell ≥ 8 net     1231    49.9%   -1.63      44.6%   -4.69      51.4%   -9.57
+sell 4–7 net    11705    52.7%   -0.04      52.6%   -0.24      56.5%   -0.00
+−3…+3           39852    52.0%    0.07      52.7%    0.02      52.1%    0.20
+buy 4–7 net     19340    51.3%    0.23      52.8%    1.27      55.4%    5.12
+buy ≥ 8 net      3386    52.5%    0.16      55.8%    1.19      60.3%    7.29
+all readings (the base rate, gold rose over the period): 51.9% / 52.7% / 54.0%
+
+TRADING IT (cost $0.3 a trade). First 70% of history | last 30% (from 2026-04-01)
+
+all hours, with the reading
+  ≥ 7 methods, stop 1.5×ATR, RR 2:   835 tr   38% win  +  86.6R  PF 1.16  DD 23.2R  |   310 tr   36% win  +  20.9R  PF 1.10  DD 28.3R
+  ≥ 7 methods, stop 1×ATR, RR 1.5:  1659 tr   43% win  +  75.2R  PF 1.08  DD 47.3R  |   600 tr   43% win  +  22.5R  PF 1.06  DD 41.7R
+  ≥ 7 methods, stop 2×ATR, RR 1:   942 tr   54% win  +  64.6R  PF 1.15  DD 14.5R  |   337 tr   53% win  +  13.2R  PF 1.08  DD 20.0R
+  ≥ 8 methods, stop 1.5×ATR, RR 2:   602 tr   38% win  +  76.4R  PF 1.20  DD 21.5R  |   208 tr   38% win  +  25.8R  PF 1.20  DD 18.8R
+  ≥ 8 methods, stop 1×ATR, RR 1.5:  1117 tr   44% win  +  68.8R  PF 1.11  DD 37.7R  |   390 tr   44% win  +  26.4R  PF 1.12  DD 27.1R
+  ≥ 8 methods, stop 2×ATR, RR 1:   692 tr   55% win  +  59.1R  PF 1.19  DD 14.3R  |   237 tr   54% win  +  14.3R  PF 1.13  DD 15.7R
+  ≥ 9 methods, stop 1.5×ATR, RR 2:   364 tr   45% win  + 116.0R  PF 1.56  DD 9.4R  |   113 tr   39% win  +  17.5R  PF 1.25  DD 16.5R
+  ≥ 9 methods, stop 1×ATR, RR 1.5:   655 tr   46% win  +  77.9R  PF 1.21  DD 14.5R  |   198 tr   44% win  +  18.1R  PF 1.16  DD 22.6R
+  ≥ 9 methods, stop 2×ATR, RR 1:   432 tr   60% win  +  78.0R  PF 1.44  DD 9.3R  |   135 tr   55% win  +  11.7R  PF 1.19  DD 14.5R
+  ≥10 methods, stop 1.5×ATR, RR 2:   157 tr   47% win  +  61.0R  PF 1.72  DD 10.3R  |    57 tr   40% win  +  11.3R  PF 1.33  DD 10.4R
+  ≥10 methods, stop 1×ATR, RR 1.5:   236 tr   46% win  +  24.9R  PF 1.19  DD 14.1R  |    76 tr   43% win  +   5.0R  PF 1.11  DD 14.5R
+  ≥10 methods, stop 2×ATR, RR 1:   174 tr   61% win  +  36.6R  PF 1.54  DD 6.2R  |    56 tr   54% win  +   3.5R  PF 1.13  DD 11.2R
+  ≥11 methods, stop 1.5×ATR, RR 2:    40 tr   38% win  +   3.9R  PF 1.15  DD 5.6R  |    12 tr   42% win  +   2.8R  PF 1.40  DD 3.0R
+  ≥11 methods, stop 1×ATR, RR 1.5:    47 tr   34% win    -8.9R  PF 0.73  DD 12.4R  |    14 tr   57% win  +   5.7R  PF 1.93  DD 3.6R
+  ≥11 methods, stop 2×ATR, RR 1:    40 tr   48% win    -2.8R  PF 0.87  DD 6.6R  |    14 tr   36% win    -4.1R  PF 0.54  DD 5.1R
+  ≥12 methods, stop 1.5×ATR, RR 2:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 1×ATR, RR 1.5:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 2×ATR, RR 1:     1 tr  100% win  +   1.0R  PF ∞  DD 0.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+
+all hours, AGAINST the reading
+  ≥ 7 methods, stop 1.5×ATR, RR 2:   969 tr   30% win  -135.6R  PF 0.81  DD 157.1R  |   336 tr   32% win   -19.9R  PF 0.91  DD 32.4R
+  ≥ 7 methods, stop 1×ATR, RR 1.5:  1782 tr   36% win  -235.3R  PF 0.80  DD 256.5R  |   623 tr   38% win   -40.5R  PF 0.90  DD 43.5R
+  ≥ 7 methods, stop 2×ATR, RR 1:   942 tr   45% win  -103.4R  PF 0.80  DD 115.6R  |   337 tr   47% win   -20.8R  PF 0.88  DD 28.3R
+  ≥ 8 methods, stop 1.5×ATR, RR 2:   726 tr   30% win   -96.6R  PF 0.82  DD 116.1R  |   248 tr   32% win   -14.5R  PF 0.92  DD 25.5R
+  ≥ 8 methods, stop 1×ATR, RR 1.5:  1203 tr   36% win  -177.8R  PF 0.78  DD 184.9R  |   424 tr   37% win   -40.9R  PF 0.85  DD 46.8R
+  ≥ 8 methods, stop 2×ATR, RR 1:   692 tr   44% win   -90.9R  PF 0.77  DD 98.8R  |   237 tr   46% win   -21.7R  PF 0.83  DD 27.4R
+  ≥ 9 methods, stop 1.5×ATR, RR 2:   470 tr   26% win  -115.5R  PF 0.68  DD 127.8R  |   144 tr   31% win   -10.9R  PF 0.89  DD 21.6R
+  ≥ 9 methods, stop 1×ATR, RR 1.5:   707 tr   32% win  -163.2R  PF 0.67  DD 166.5R  |   217 tr   35% win   -31.3R  PF 0.78  DD 38.1R
+  ≥ 9 methods, stop 2×ATR, RR 1:   432 tr   40% win   -96.0R  PF 0.64  DD 97.3R  |   135 tr   44% win   -16.3R  PF 0.78  DD 24.1R
+  ≥10 methods, stop 1.5×ATR, RR 2:   186 tr   25% win   -52.8R  PF 0.63  DD 55.8R  |    56 tr   32% win    -2.7R  PF 0.93  DD 11.2R
+  ≥10 methods, stop 1×ATR, RR 1.5:   259 tr   33% win   -54.0R  PF 0.70  DD 54.8R  |    82 tr   38% win    -6.1R  PF 0.88  DD 13.0R
+  ≥10 methods, stop 2×ATR, RR 1:   174 tr   38% win   -45.4R  PF 0.59  DD 46.4R  |    56 tr   45% win    -6.5R  PF 0.79  DD 11.2R
+  ≥11 methods, stop 1.5×ATR, RR 2:    38 tr   39% win  +   6.0R  PF 1.25  DD 4.3R  |    14 tr   29% win    -2.2R  PF 0.78  DD 5.1R
+  ≥11 methods, stop 1×ATR, RR 1.5:    49 tr   47% win  +   6.6R  PF 1.24  DD 9.9R  |    16 tr   25% win    -6.3R  PF 0.48  DD 6.8R
+  ≥11 methods, stop 2×ATR, RR 1:    40 tr   53% win  +   1.2R  PF 1.06  DD 5.1R  |    14 tr   64% win  +   3.9R  PF 1.76  DD 1.0R
+  ≥12 methods, stop 1.5×ATR, RR 2:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 1×ATR, RR 1.5:     1 tr  100% win  +   1.5R  PF ∞  DD 0.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 2×ATR, RR 1:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+
+15:00–01:00 UB, with the reading
+  ≥ 7 methods, stop 1.5×ATR, RR 2:   617 tr   37% win  +  51.8R  PF 1.13  DD 19.7R  |   200 tr   37% win  +  16.1R  PF 1.13  DD 20.5R
+  ≥ 7 methods, stop 1×ATR, RR 1.5:  1107 tr   42% win  +   4.6R  PF 1.01  DD 41.3R  |   355 tr   44% win  +  27.6R  PF 1.14  DD 16.1R
+  ≥ 7 methods, stop 2×ATR, RR 1:   693 tr   55% win  +  54.2R  PF 1.17  DD 16.1R  |   222 tr   54% win  +  13.7R  PF 1.13  DD 16.4R
+  ≥ 8 methods, stop 1.5×ATR, RR 2:   430 tr   38% win  +  54.3R  PF 1.20  DD 21.3R  |   144 tr   37% win  +  12.9R  PF 1.14  DD 13.5R
+  ≥ 8 methods, stop 1×ATR, RR 1.5:   739 tr   43% win  +  35.9R  PF 1.08  DD 27.4R  |   247 tr   43% win  +  10.4R  PF 1.07  DD 17.8R
+  ≥ 8 methods, stop 2×ATR, RR 1:   483 tr   58% win  +  64.0R  PF 1.31  DD 10.4R  |   164 tr   54% win  +  10.2R  PF 1.13  DD 11.4R
+  ≥ 9 methods, stop 1.5×ATR, RR 2:   268 tr   45% win  +  85.2R  PF 1.56  DD 8.5R  |    86 tr   37% win  +   8.8R  PF 1.16  DD 12.6R
+  ≥ 9 methods, stop 1×ATR, RR 1.5:   466 tr   44% win  +  33.5R  PF 1.12  DD 13.3R  |   138 tr   43% win  +   6.8R  PF 1.08  DD 19.6R
+  ≥ 9 methods, stop 2×ATR, RR 1:   316 tr   60% win  +  57.9R  PF 1.45  DD 11.4R  |    97 tr   56% win  +  10.0R  PF 1.23  DD 9.4R
+  ≥10 methods, stop 1.5×ATR, RR 2:   140 tr   44% win  +  42.3R  PF 1.53  DD 11.3R  |    50 tr   40% win  +   9.4R  PF 1.31  DD 11.3R
+  ≥10 methods, stop 1×ATR, RR 1.5:   205 tr   45% win  +  17.0R  PF 1.14  DD 13.9R  |    69 tr   43% win  +   4.7R  PF 1.12  DD 15.0R
+  ≥10 methods, stop 2×ATR, RR 1:   152 tr   61% win  +  29.0R  PF 1.47  DD 7.2R  |    52 tr   52% win  +   1.5R  PF 1.06  DD 12.2R
+  ≥11 methods, stop 1.5×ATR, RR 2:    40 tr   38% win  +   3.9R  PF 1.15  DD 5.6R  |    12 tr   42% win  +   2.8R  PF 1.40  DD 3.0R
+  ≥11 methods, stop 1×ATR, RR 1.5:    47 tr   34% win    -8.9R  PF 0.73  DD 12.4R  |    13 tr   54% win  +   4.2R  PF 1.69  DD 3.6R
+  ≥11 methods, stop 2×ATR, RR 1:    40 tr   48% win    -2.8R  PF 0.87  DD 6.6R  |    13 tr   38% win    -3.1R  PF 0.61  DD 5.1R
+  ≥12 methods, stop 1.5×ATR, RR 2:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 1×ATR, RR 1.5:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 2×ATR, RR 1:     1 tr  100% win  +   1.0R  PF ∞  DD 0.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+
+15:00–01:00 UB, AGAINST the reading
+  ≥ 7 methods, stop 1.5×ATR, RR 2:   717 tr   29% win  -102.3R  PF 0.80  DD 123.5R  |   227 tr   31% win   -20.0R  PF 0.87  DD 30.4R
+  ≥ 7 methods, stop 1×ATR, RR 1.5:  1193 tr   37% win  -125.1R  PF 0.84  DD 144.8R  |   370 tr   37% win   -35.1R  PF 0.85  DD 41.0R
+  ≥ 7 methods, stop 2×ATR, RR 1:   693 tr   45% win   -83.8R  PF 0.78  DD 96.2R  |   222 tr   46% win   -20.3R  PF 0.83  DD 27.0R
+  ≥ 8 methods, stop 1.5×ATR, RR 2:   518 tr   30% win   -72.4R  PF 0.81  DD 85.3R  |   177 tr   32% win    -8.4R  PF 0.93  DD 18.0R
+  ≥ 8 methods, stop 1×ATR, RR 1.5:   802 tr   35% win  -122.2R  PF 0.77  DD 129.8R  |   262 tr   36% win   -32.4R  PF 0.81  DD 38.8R
+  ≥ 8 methods, stop 2×ATR, RR 1:   483 tr   42% win   -84.0R  PF 0.70  DD 87.7R  |   164 tr   46% win   -15.8R  PF 0.82  DD 23.5R
+  ≥ 9 methods, stop 1.5×ATR, RR 2:   346 tr   25% win   -90.8R  PF 0.66  DD 98.1R  |   107 tr   28% win   -18.4R  PF 0.76  DD 23.3R
+  ≥ 9 methods, stop 1×ATR, RR 1.5:   499 tr   31% win  -128.3R  PF 0.64  DD 128.5R  |   148 tr   33% win   -28.4R  PF 0.72  DD 32.7R
+  ≥ 9 methods, stop 2×ATR, RR 1:   316 tr   40% win   -72.1R  PF 0.63  DD 74.5R  |    97 tr   43% win   -14.0R  PF 0.75  DD 18.8R
+  ≥10 methods, stop 1.5×ATR, RR 2:   163 tr   24% win   -50.3R  PF 0.60  DD 54.3R  |    53 tr   32% win    -2.7R  PF 0.93  DD 10.2R
+  ≥10 methods, stop 1×ATR, RR 1.5:   229 tr   34% win   -43.0R  PF 0.73  DD 44.3R  |    74 tr   38% win    -5.4R  PF 0.88  DD 13.4R
+  ≥10 methods, stop 2×ATR, RR 1:   152 tr   39% win   -37.0R  PF 0.61  DD 39.0R  |    52 tr   46% win    -4.5R  PF 0.84  DD 10.2R
+  ≥11 methods, stop 1.5×ATR, RR 2:    38 tr   39% win  +   6.0R  PF 1.25  DD 4.3R  |    13 tr   31% win    -1.2R  PF 0.87  DD 5.1R
+  ≥11 methods, stop 1×ATR, RR 1.5:    49 tr   47% win  +   6.6R  PF 1.24  DD 9.9R  |    15 tr   27% win    -5.3R  PF 0.53  DD 5.8R
+  ≥11 methods, stop 2×ATR, RR 1:    40 tr   53% win  +   1.2R  PF 1.06  DD 5.1R  |    13 tr   62% win  +   2.9R  PF 1.57  DD 2.0R
+  ≥12 methods, stop 1.5×ATR, RR 2:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 1×ATR, RR 1.5:     1 tr  100% win  +   1.5R  PF ∞  DD 0.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+  ≥12 methods, stop 2×ATR, RR 1:     1 tr    0% win    -1.0R  PF 0.00  DD 1.0R  |     0 tr    0% win  +   0.0R  PF 0.00  DD 0.0R
+
+BY SIDE (all hours, with the reading, stop 1.5×ATR, RR 2): is it more than a rising market?
+  ≥ 8 methods, BUY only :   457 tr   41% win  +  89.4R  PF 1.32  DD 10.4R  |    66 tr   27% win   -13.2R  PF 0.73  DD 17.5R
+  ≥ 8 methods, SELL only:   148 tr   31% win   -13.1R  PF 0.87  DD 23.9R  |   144 tr   42% win  +  36.9R  PF 1.44  DD 10.3R
+  ≥ 9 methods, BUY only :   294 tr   47% win  + 112.5R  PF 1.70  DD 9.3R  |    30 tr   23% win    -9.4R  PF 0.60  DD 9.4R
+  ≥ 9 methods, SELL only:    71 tr   37% win  +   5.5R  PF 1.12  DD 10.5R  |    83 tr   45% win  +  26.9R  PF 1.58  DD 11.4R
+  ≥10 methods, BUY only :   129 tr   47% win  +  50.6R  PF 1.72  DD 10.3R  |    12 tr   33% win    -0.2R  PF 0.98  DD 5.1R
+  ≥10 methods, SELL only:    28 tr   46% win  +  10.4R  PF 1.67  DD 3.1R  |    45 tr   42% win  +  11.4R  PF 1.43  DD 9.3R
+
+BY YEAR (≥9 methods, stop 1.5×ATR, RR 2, all hours)
+  2024:   104 tr   44% win  +  30.5R  PF 1.51  DD 7.3R
+  2025:   210 tr   44% win  +  64.1R  PF 1.54  DD 9.4R
+  2026:   163 tr   42% win  +  38.9R  PF 1.40  DD 16.5R
+
+COST SENSITIVITY is in COST at the top; this run used $0.3

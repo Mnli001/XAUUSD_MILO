@@ -221,9 +221,9 @@ describe("entries, presets and trade notices", () => {
     await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "2", slAtr: "1", tpAtr: "2" });
     expect(await saveGateConfig(admin.id, { preset: "CAREFUL" })).toEqual({});
     const c = (await getLive(admin.id)).config;
-    expect(c).toMatchObject({ lots: 0.3, gate: { on: true, minAgree: 11, maxTradesDay: 3, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true, sessionStartUb: 15 } });
+    expect(c).toMatchObject({ lots: 0.3, gate: { on: true, minAgree: 10, maxTradesDay: 3, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true, sessionStartUb: 15 } });
     await startBot(admin.id, now);
-    expect(await handleSync(token, report(), now)).toMatchObject({ cMin: 11, rMode: 2, rVal: 1, sMode: 1, protect: true });
+    expect(await handleSync(token, report(), now)).toMatchObject({ cMin: 10, rMode: 2, rVal: 1, sMode: 1, protect: true });
   });
   test("the notices name the side, the price and the result in the owner's language", async () => {
     const { tradeOpenedText, tradeClosedText } = await import("@/lib/bot/liveDb");
