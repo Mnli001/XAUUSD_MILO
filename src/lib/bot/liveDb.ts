@@ -6,6 +6,8 @@ import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
 import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
+import { getReasoning } from "../reasoningLive";
+import type { ConsensusCounts } from "./live";
 
 export const ONLINE_WITHIN_MS = 15_000;
 
@@ -54,6 +56,17 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 }
 
 /** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
+/** The many-method reading as counts, when this bot waits for it. Null when it cannot be computed: the robot then holds back. */
+async function consensusFor(config: LiveConfig, now: Date): Promise<ConsensusCounts | null> {
+  if (!config.gate?.on || !((config.gate.minAgree ?? 0) > 0)) return null;
+  try {
+    const view = await getReasoning(now, "en");
+    if (!view) return null;
+    const { buy, sell, neutral } = view.reasoning;
+    return { buy, sell, total: buy + sell + neutral };
+  } catch { return null; }
+}
+
 async function blackoutsFor(config: LiveConfig, now: Date): Promise<string> {
   const g = config.gate;
   if (!g.on || (g.newsBeforeMin <= 0 && g.newsAfterMin <= 0)) return "";
@@ -146,7 +159,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now));
+  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now), await consensusFor(live.config, now));
   if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 

@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "2.80"
+#property version   "2.90"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -77,12 +77,14 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 6             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 7             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
 int      gGStart = 15, gGEnd = 1, gGMaxTrades = 6;
 double   gGAtrMin = 1.5, gGAtrMax = 25.0, gGSpreadPct = 10.0, gGRsiMax = 70.0, gGExtAtr = 2.0, gGDailyLossPct = 3.0;
+// Вэбийн олон аргын дүгнэлт: орох чиглэлийг дор хаяж gCMin арга дэмжсэн үед л орно (0 = шалгахгүй)
+int      gCMin = 0, gCBuy = 0, gCSell = 0, gCTotal = 0;
 string   gBlackouts = "";          // "from-to;from-to" UTC unix секунд, вэбээс (HIGH мэдээний өмнө/дараа)
 string   gBlock = "";              // шүүлтүүр хаасан шалтгааны код, "" = нэвтэрнэ
 string   gBlockDetail = "";        // тоон дэлгэрэнгүй (хэлнээс хамаарахгүй)
@@ -215,6 +217,7 @@ int OnInit()
       gGExtAtr = TesterExtAtr;
       gGMaxTrades = TesterMaxTradesDay;
       gGDailyLossPct = TesterDailyLossPct;
+      gCMin = 0;                                                   // Tester дотор вэбийн дүгнэлт байхгүй
       if(gGStart < 0 || gGStart > 23 || gGEnd < 0 || gGEnd > 23 || gGAtrMin < 0 || gGAtrMax < 0 || (gGAtrMax > 0 && gGAtrMin >= gGAtrMax) ||
          gGSpreadPct < 0 || gGRsiMax < 0 || gGRsiMax > 100 || gGExtAtr < 0 || gGMaxTrades < 0 || gGDailyLossPct < 0)
         {
@@ -673,6 +676,13 @@ bool GateCheck(const int dir)
       int h1 = (hf > hs) ? 1 : ((hf < hs) ? -1 : 0), m15 = (mf > ms) ? 1 : ((mf < ms) ? -1 : 0);
       if(h1 != dir || m15 != dir) return(GateBlock("TREND", "H1 " + Arrow(h1) + " · M15 " + Arrow(m15)));
      }
+   if(gCMin > 0)                                                  // вэбийн олон аргын дүгнэлт орох чиглэлийг дэмжиж байх ёстой
+     {
+      if(gCTotal <= 0) return(GateBlock("CONSENSUS", L("вэбийн дүгнэлт ирээгүй", "no reading from the web yet")));
+      int with = (dir > 0) ? gCBuy : gCSell, against = (dir > 0) ? gCSell : gCBuy;
+      if(with < gCMin || with <= against)
+         return(GateBlock("CONSENSUS", (dir > 0 ? "BUY " : "SELL ") + (string)with + " / " + (string)gCTotal + L(", эсрэг ", ", against ") + (string)against + L(", шаардлага ", ", needs ") + (string)gCMin));
+     }
    if(gGRsiMax > 0)
      {
       double rs = Buf(hGM15Rsi, 0);
@@ -702,6 +712,7 @@ string GateText(const string code)
    if(code == "ATR_HIGH")   return(L("зах хэт огцом хөдөлж байна", "market moving too violently"));
    if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
    if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
+   if(code == "CONSENSUS")  return(L("олон аргын дүгнэлт орох чиглэлийг дэмжихгүй байна", "the many-method reading does not back this side"));
    if(code == "RSI")        return(L("RSI хэт сунасан", "RSI overstretched"));
    if(code == "EXTENDED")   return(L("үнэ EMA20-оос хэт холдсон", "price too far from EMA20"));
    return(code);
@@ -1961,6 +1972,10 @@ void Sync()
       gGMaxTrades    = (int)MathMax(0.0, JNum(body, "gMaxTrades"));
       gGDailyLossPct = MathMax(0.0, JNum(body, "gDailyLossPct"));
       gBlackouts     = JStr(body, "blackouts");
+      gCMin          = (int)MathMax(0.0, JNum(body, "cMin"));
+      gCBuy          = (int)MathMax(0.0, JNum(body, "cBuy"));
+      gCSell         = (int)MathMax(0.0, JNum(body, "cSell"));
+      gCTotal        = (int)MathMax(0.0, JNum(body, "cTotal"));
       gStatsAt       = 0;
      }
    if(Language == LANG_WEB)

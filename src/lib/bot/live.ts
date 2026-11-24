@@ -28,11 +28,12 @@ export type GateConfig = {
   rsiMax: number; // no BUY with M15 RSI(14) above this, no SELL below 100 minus it
   maxExtAtr: number; // no entry when price is more than this many M15 ATRs past EMA20 in the entry's direction
   maxTradesDay: number; // entries a day (a basket counts once); the day starts 08:00 UB
+  minAgree: number; // how many of the site's methods must read the entry's side (0 = not checked)
   dailyLossPct: number; // % of the day's starting balance: the robot closes its trades and stops entering
 };
 export const DEFAULT_GATE: GateConfig = {
   on: true, trend: true, sessionStartUb: 15, sessionEndUb: 1, newsBeforeMin: 30, newsAfterMin: 60,
-  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3,
+  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8,
 };
 
 export type LiveConfig = {
@@ -114,6 +115,7 @@ const gateSchema = (t: T) => z.object({
   gRsiMax: within(0, 95, t("RSI-ийн хязгаар 0 (үгүй) эсвэл 55–95", "The RSI cap must be 0 (off) or 55–95")).refine((v) => v === 0 || v >= 55, t("RSI-ийн хязгаар 0 (үгүй) эсвэл 55–95", "The RSI cap must be 0 (off) or 55–95")),
   gExtAtr: within(0, 20, t("EMA20-оос холдох хязгаар 0–20 ATR", "The stretch cap must be 0–20 ATR")),
   gMaxTrades: wholeWithin(0, 100, t("Өдрийн орох тоо 0–100 бүхэл тоо", "Entries a day must be a whole number, 0–100")),
+  gAgree: wholeWithin(0, 16, t("Санал нийлэх аргын тоо 0 (шалгахгүй) – 16", "Methods that must agree: 0 (off) to 16")).optional(),
   gDailyLoss: within(0, 50, t("Өдрийн алдагдлын хязгаар балансын 0–50%", "The daily loss stop must be 0–50% of balance")),
 }).refine((g) => !(g.gAtrMin > 0 && g.gAtrMax > 0 && g.gAtrMin >= g.gAtrMax), { message: t("ATR-ийн доод хязгаар дээд хязгаараасаа бага байх ёстой", "The lowest ATR must be below the highest") });
 
@@ -124,7 +126,7 @@ export function parseGate(input: unknown, current: LiveConfig = DEFAULT_LIVE_CON
   const g = r.data;
   return { config: { ...current, gate: {
     on: g.gOn, trend: g.gTrend, sessionStartUb: g.gStart, sessionEndUb: g.gEnd, newsBeforeMin: g.gNewsBefore, newsAfterMin: g.gNewsAfter,
-    atrMin: g.gAtrMin, atrMax: g.gAtrMax, maxSpreadPct: g.gSpreadPct, rsiMax: g.gRsiMax, maxExtAtr: g.gExtAtr, maxTradesDay: g.gMaxTrades, dailyLossPct: g.gDailyLoss,
+    atrMin: g.gAtrMin, atrMax: g.gAtrMax, maxSpreadPct: g.gSpreadPct, rsiMax: g.gRsiMax, maxExtAtr: g.gExtAtr, maxTradesDay: g.gMaxTrades, dailyLossPct: g.gDailyLoss, minAgree: g.gAgree ?? current.gate?.minAgree ?? DEFAULT_GATE.minAgree,
   } } };
 }
 
@@ -166,6 +168,8 @@ export type Command = {
   gateOn: boolean; gTrend: boolean; gSessionStart: number; gSessionEnd: number; gAtrMin: number; gAtrMax: number;
   gSpreadPct: number; gRsiMax: number; gExtAtr: number; gMaxTrades: number; gDailyLossPct: number;
   blackouts: string; // see blackoutWindows
+  // The site's many-method reading (robot v2.90 and newer): the entry's side needs cMin methods; 0 = not checked.
+  cMin: number; cBuy: number; cSell: number; cTotal: number;
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -175,24 +179,31 @@ export const ASIAN_ROBOT_VERSION = 3;
  * Robot v2.80 (protocol 6) is the first with the entry filter and the order-handling fixes. An older
  * file would trade without the filter the owner set here, so no tool runs on it.
  */
-export const GATE_ROBOT_VERSION = 6;
+export const GATE_ROBOT_VERSION = 7;
+/** Robot v2.90 (protocol 7) is the first that waits for the site's many-method reading. */
+export const CONSENSUS_ROBOT_VERSION = 7;
+/** What the methods read right now, as counts. */
+export type ConsensusCounts = { buy: number; sell: number; total: number };
 export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
 /** The filter as flat fields. With the filter off, every check goes out switched off as well. */
-function gateFields(g: GateConfig, blackouts: string) {
+function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null) {
   const on = g.on;
+  const cMin = on ? (g.minAgree ?? 0) : 0;
   return {
     gateOn: on, gTrend: on && g.trend, gSessionStart: g.sessionStartUb, gSessionEnd: on ? g.sessionEndUb : g.sessionStartUb,
     gAtrMin: on ? g.atrMin : 0, gAtrMax: on ? g.atrMax : 0, gSpreadPct: on ? g.maxSpreadPct : 0, gRsiMax: on ? g.rsiMax : 0,
     gExtAtr: on ? g.maxExtAtr : 0, gMaxTrades: on ? g.maxTradesDay : 0, gDailyLossPct: on ? g.dailyLossPct : 0,
     blackouts: on ? blackouts : "",
+    // With no reading to send, the counts go out as zero and the robot waits rather than guesses.
+    cMin, cBuy: consensus?.buy ?? 0, cSell: consensus?.sell ?? 0, cTotal: consensus?.total ?? 0,
   };
 }
 
-export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = ""): Command {
+export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
-  const gate = gateFields(c.gate ?? DEFAULT_GATE, blackouts);
+  const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus);
   const tool = c.mode === "ASIAN"
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
     : basket
@@ -202,6 +213,8 @@ export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVe
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
   if ((robotVersion ?? 1) < minRobotVersion(c.mode)) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
+  // An older file would ignore the reading and trade without it.
+  if (gate.cMin > 0 && (robotVersion ?? 1) < CONSENSUS_ROBOT_VERSION) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
   return { ...base, state: "RUNNING", closeAll: false, reason: "" };
 }
 

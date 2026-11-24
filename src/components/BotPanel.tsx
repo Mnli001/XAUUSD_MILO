@@ -16,12 +16,13 @@ const stopReasons = (t: T): Record<string, string> => ({
   TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v2.80-аас өмнөх, орох шүүлтүүргүй)", "the robot file on MT5 is old (before v2.80, without the entry filter)"),
+  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v2.90-ээс өмнөх): шинэ XauBot.ex5 татаж солино уу", "the robot file on MT5 is old (before v2.90): download the new XauBot.ex5 and replace it"),
 });
 /** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
   DAILY_LOSS: t(`өдрийн алдагдлын хязгаарт хүрсэн: арилжааг хаасан, ${dayStart}-аас дахин орно`, `the daily loss stop was reached: trades closed, entries resume at ${dayStart}`),
   MAX_TRADES: t("өнөөдрийн орох тоо дууссан", "today's entries are used up"),
+  CONSENSUS: t("сайтын олон аргын дүгнэлт орох чиглэлийг хангалттай дэмжихгүй байна", "the site's many-method reading does not back the entry side strongly enough"),
   SESSION: t("арилжааны цагаас гадуур", "outside the trading hours"),
   ROLLOVER: t("брокерын өдрийн солилт, spread тэлдэг", "the broker's daily rollover, when spreads widen"),
   NEWS: t("чухал мэдээний өмнө/дараа", "around a high-impact release"),
@@ -297,6 +298,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             ["gSpreadPct", t("Spread ≤ ATR-ийн %", "Spread ≤ % of ATR"), g.maxSpreadPct, "1", "100"],
             ["gRsiMax", t("RSI(14) хязгаар", "RSI(14) cap"), g.rsiMax, "1", "95"],
             ["gExtAtr", t("EMA20-оос ≤ ATR ×", "From EMA20 ≤ ATR ×"), g.maxExtAtr, "0.1", "20"],
+            ["gAgree", t("Санал нийлэх арга (16-аас)", "Methods that must agree (of 16)"), g.minAgree ?? 8, "1", "16"],
             ["gMaxTrades", t("Өдөрт орох дээд тоо", "Entries a day, at most"), g.maxTradesDay, "1", "100"],
             ["gDailyLoss", t("Өдрийн алдагдал, балансын %", "Daily loss stop, % of balance"), g.dailyLossPct, "0.5", "50"],
           ] as [string, string, number, string, string][]).map(([name, label, val, step, max]) => (

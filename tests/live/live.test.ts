@@ -1,7 +1,7 @@
 import { parseConfig, commandFor, newToken, hashToken, reportSchema, DEFAULT_LIVE_CONFIG, type LiveConfig } from "@/lib/bot/live";
 
 /** Robot v2.80, the first file with the entry filter; the web runs no tool on an older one. */
-const V = 6;
+const V = 7;
 
 const cfg = (o: Partial<LiveConfig> = {}): LiveConfig => ({ ...DEFAULT_LIVE_CONFIG, ...o });
 const demo = { mode: "DEMO" as const };
@@ -29,6 +29,7 @@ test("a running bot sends its settings as flat numbers", () => {
   expect(c).toEqual({
     state: "RUNNING", runId: "r1", lang: "mn", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "",
     gateOn: true, gTrend: true, gSessionStart: 15, gSessionEnd: 1, gAtrMin: 1.5, gAtrMax: 25, gSpreadPct: 10, gRsiMax: 70, gExtAtr: 2, gMaxTrades: 6, gDailyLossPct: 3, blackouts: "",
+    cMin: 8, cBuy: 0, cSell: 0, cTotal: 0,
   });
 });
 test("a real account is traded only when the owner switched that on", () => {

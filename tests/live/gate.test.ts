@@ -101,3 +101,23 @@ describe("the robot's report of the filter", () => {
     expect(r.blockDetail).toHaveLength(120);
   });
 });
+
+describe("the many-method reading", () => {
+  const run = (config: LiveConfig) => ({ state: "RUNNING" as const, runId: "r", closeAll: false, config });
+  test("the counts and the threshold reach the robot", () => {
+    expect(commandFor(run(DEFAULT_LIVE_CONFIG), { mode: "DEMO" }, GATE_ROBOT_VERSION, "mn", "", { buy: 11, sell: 2, total: 16 })).toMatchObject({ state: "RUNNING", cMin: 8, cBuy: 11, cSell: 2, cTotal: 16 });
+  });
+  test("with no reading the counts are zero, so the robot waits", () => {
+    expect(commandFor(run(DEFAULT_LIVE_CONFIG), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ cMin: 8, cBuy: 0, cSell: 0, cTotal: 0 });
+  });
+  test("switching the filter off switches this check off", () => {
+    const off = { ...DEFAULT_LIVE_CONFIG, gate: { ...DEFAULT_GATE, on: false } };
+    expect(commandFor(run(off), { mode: "DEMO" }, GATE_ROBOT_VERSION, "mn", "", { buy: 9, sell: 1, total: 16 })).toMatchObject({ cMin: 0 });
+  });
+  test("the threshold is saved from the form and 0 turns it off", () => {
+    expect(parseGate(form({ gAgree: "11" })).config!.gate.minAgree).toBe(11);
+    expect(parseGate(form({ gAgree: "0" })).config!.gate.minAgree).toBe(0);
+    expect(parseGate(form({ gAgree: "17" })).error).toBeTruthy();
+    expect(parseGate(form({})).config!.gate.minAgree).toBe(8);
+  });
+});
