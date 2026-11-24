@@ -82,6 +82,11 @@ async function main() {
     ["London/NY + reading net ≥ 2", (s) => (s.hour >= 15 || s.hour < 1) && s.lean >= 2],
   ];
   const variants: [string, Partial<SmcOptions>][] = [
+    ["stop under sweep, TP at liquidity (BSL/SSL)", { reaction: true, swing: 3, stopAt: "sweep", targetAt: "liquidity" }],
+    ["stop under FVG/OB, TP at liquidity", { reaction: true, swing: 3, stopAt: "zone", targetAt: "liquidity", minRisk: 1.5 }],
+    ["stop under FVG/OB, TP at liquidity, min 2R", { reaction: true, swing: 3, stopAt: "zone", targetAt: "liquidity", minRisk: 1.5, minRR: 2 }],
+    ["stop under FVG/OB, TP 2R", { reaction: true, swing: 3, stopAt: "zone", rr: 2, minRisk: 1.5 }],
+    ["stop under FVG/OB, TP 3R", { reaction: true, swing: 3, stopAt: "zone", rr: 3, minRisk: 1.5 }],
     ["reaction entry, RR 2", { reaction: true, rr: 2 }],
     ["reaction entry, RR 3", { reaction: true, rr: 3 }],
     ["touch entry (limit at the zone), RR 2", { reaction: false, rr: 2 }],

@@ -7,7 +7,8 @@ import type { Candle } from "./indicators";
  *   3. shift (MSS): price then closes above the last swing high before the sweep;
  *   4. zone: the nearest fair value gap left by that move up, or the last down candle before it (order block);
  *   5. return and reaction: price comes back into the zone and a candle closes back above it.
- * The stop goes under the sweep's low, the target a fixed multiple of that risk away.
+ * The stop goes under the sweep's low or under the zone; the target is a fixed multiple of the risk,
+ * or the nearest resting liquidity (an untouched swing high above a long, swing low below a short).
  * Shorts are the mirror image. Everything is decided on closed candles, so nothing here looks ahead.
  */
 export type SmcSide = "BUY" | "SELL";
@@ -24,6 +25,8 @@ export type SmcSetup = {
   sweepAt: number;
   shiftAt: number;
   zone: { kind: SmcZoneKind; top: number; bottom: number };
+  /** The resting liquidity the target was put on (BSL above a long, SSL below a short); null with a fixed-RR target. */
+  pool: number | null;
 };
 export type SmcOptions = {
   swing: number; // candles on each side that make a swing point
@@ -36,8 +39,16 @@ export type SmcOptions = {
   stopBuffer: number; // dollars beyond the sweep extreme
   minRisk: number; // skip setups whose stop is closer than this
   maxRisk: number; // ...or further than this
+  /** "sweep": stop beyond the sweep's extreme. "zone": stop just beyond the FVG / order block. */
+  stopAt: "sweep" | "zone";
+  /** "rr": target at rr × risk. "liquidity": target at the nearest unswept swing high (BSL) above a long, swing low (SSL) below a short. */
+  targetAt: "rr" | "liquidity";
+  /** With a liquidity target: skip the trade when the pool is closer than this many R (not worth the risk). */
+  minRR: number;
+  /** With a liquidity target: cap it at this many R when the nearest pool is further away. */
+  maxRR: number;
 };
-export const SMC_DEFAULTS: SmcOptions = { swing: 2, lookback: 96, reclaimBars: 2, shiftBars: 12, returnBars: 16, reaction: true, rr: 2, stopBuffer: 0.3, minRisk: 2, maxRisk: 40 };
+export const SMC_DEFAULTS: SmcOptions = { swing: 2, lookback: 96, reclaimBars: 2, shiftBars: 12, returnBars: 16, reaction: true, rr: 2, stopBuffer: 0.3, minRisk: 2, maxRisk: 40, stopAt: "sweep", targetAt: "rr", minRR: 1.5, maxRR: 4 };
 
 type Bar = { o: number; h: number; l: number; c: number };
 
@@ -87,9 +98,25 @@ function longs(b: Bar[], o: SmcOptions): Omit<SmcSetup, "side">[] {
       const reacted = b[x].c > zone.top && b[x].c > b[x].o;
       if (o.reaction && !reacted) continue;
       const entry = o.reaction ? b[x].c : zone.top;
-      const stop = low - o.stopBuffer, risk = entry - stop;
+      const stop = (o.stopAt === "zone" ? Math.min(zone.bottom, b[x].l) : low) - o.stopBuffer, risk = entry - stop;
       if (risk < o.minRisk || risk > o.maxRisk) break;
-      out.push({ at: x, entry, stop, target: entry + o.rr * risk, risk, level, sweepAt: s, shiftAt: shift, zone });
+      let target = entry + o.rr * risk, pool: number | null = null;
+      if (o.targetAt === "liquidity") {
+        // The nearest swing high above the entry that price has not traded through since it formed: buy-side liquidity.
+        let best = Infinity;
+        for (let i = x - k; i >= Math.max(k, x - 4 * o.lookback); i--) {
+          if (!swingHigh[i] || b[i].h <= entry) continue;
+          let taken = false;
+          for (let j = i + 1; j <= x; j++) if (b[j].h >= b[i].h) { taken = true; break; }
+          if (!taken && b[i].h < best) best = b[i].h;
+        }
+        if (!Number.isFinite(best)) break; // no pool above: nothing to aim at
+        const rr = (best - entry) / risk;
+        if (rr < o.minRR) break;
+        pool = best;
+        target = entry + Math.min(rr, o.maxRR) * risk;
+      }
+      out.push({ at: x, entry, stop, target, risk, level, sweepAt: s, shiftAt: shift, zone, pool });
       busyUntil = x;
       break;
     }
@@ -104,7 +131,7 @@ export function findSmcSetups(candles: Candle[], opts: Partial<SmcOptions> = {})
   const down: Bar[] = candles.map((c) => ({ o: -c.open, h: -c.low, l: -c.high, c: -c.close }));
   const buys = longs(up, o).map((s) => ({ ...s, side: "BUY" as const }));
   const sells = longs(down, o).map((s) => ({
-    ...s, side: "SELL" as const, entry: -s.entry, stop: -s.stop, target: -s.target, level: -s.level,
+    ...s, side: "SELL" as const, entry: -s.entry, stop: -s.stop, target: -s.target, level: -s.level, pool: s.pool === null ? null : -s.pool,
     zone: { kind: s.zone.kind, top: -s.zone.bottom, bottom: -s.zone.top },
   }));
   return [...buys, ...sells].sort((a, b) => a.at - b.at);
