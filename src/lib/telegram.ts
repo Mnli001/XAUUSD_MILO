@@ -60,7 +60,7 @@ async function call<T = unknown>(method: string, body: Record<string, unknown>):
   for (let attempt = 1; ; attempt++) {
     let err: TelegramError;
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token()}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(`https://api.telegram.org/bot${token()}/${method}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: AbortSignal.timeout(25_000) });
       const json = (await res.json().catch(() => null)) as ApiReply<T> | null;
       if (res.ok && json?.ok) return json.result ?? null;
       err = new TelegramError(method, json?.error_code ?? res.status, json?.description ?? res.statusText, json?.parameters?.retry_after);
