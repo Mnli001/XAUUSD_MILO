@@ -51,7 +51,7 @@ export function LivePrice({ last, prevClose, updatedAt }: { last: number; prevCl
   const spread = q?.live && q.bid !== null && q.ask !== null ? q.ask - q.bid : null;
   return (
     <>
-      <p className={`font-display mt-2 text-[52px] leading-none tabular-nums transition-colors duration-500 sm:text-[72px] ${flash > 0 ? "text-emerald-300" : flash < 0 ? "text-red-300" : "text-zinc-50"}`} aria-live="off">{money(price)}</p>
+      <p className={`num mt-2 text-[52px] leading-none transition-colors duration-500 sm:text-[72px] ${flash > 0 ? "text-emerald-300" : flash < 0 ? "text-red-300" : "text-zinc-50"}`} aria-live="off">{money(price)}</p>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
         {pct !== null && (
           <span className={`rounded-full px-2.5 py-1 font-bold whitespace-nowrap tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>

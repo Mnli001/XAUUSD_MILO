@@ -67,7 +67,7 @@ export function BiasBar({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias"> & {
           {rest.length > 0 && <span className="self-end pb-1 text-base font-medium text-zinc-300 sm:text-lg">{rest.join(" ")}</span>}
         </p>
         <p className="flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0.5">
-          <span className={`font-display text-[32px] leading-none sm:text-[40px] ${tone}`}>{signed(bias.total)}</span>
+          <span className={`num text-[34px] leading-none sm:text-[44px] ${tone}`}>{signed(bias.total)}</span>
           <span className="text-xs text-zinc-500">{t("нийт оноо / 100", "total score / 100")}</span>
         </p>
       </div>

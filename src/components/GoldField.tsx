@@ -1,49 +1,58 @@
 "use client";
 import { useEffect, useRef } from "react";
 
+/*
+ * A slow field of poured gold. Built to stay smooth on a laptop with integrated graphics:
+ *   - the flow is evaluated once per pixel and reused; the surface normal costs two cheap samples
+ *     of the last layer instead of two more full evaluations (7 noise layers a pixel, not 15);
+ *   - it is drawn into a small buffer (at most ~230k pixels) and stretched, which suits a soft field;
+ *   - frames are capped at 30 a second, and the buffer shrinks further if frames still run long;
+ *   - nothing is drawn while the canvas is off screen or the tab is hidden.
+ */
 const FRAG = `
 precision highp float;
 uniform vec2 r; uniform float t; uniform vec2 m;
 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
   return mix(mix(h(i), h(i+vec2(1.0,0.0)), f.x), mix(h(i+vec2(0.0,1.0)), h(i+vec2(1.0,1.0)), f.x), f.y); }
-float fbm(vec2 p){ float a = 0.5, s = 0.0; for(int i=0;i<5;i++){ s += a*n(p); p = p*2.03 + vec2(3.1,1.7); a *= 0.5; } return s; }
-float field(vec2 p, float tt){
+float fbm(vec2 p){ float a = 0.5, s = 0.0; for(int i=0;i<4;i++){ s += a*n(p); p = p*2.03 + vec2(3.1,1.7); a *= 0.5; } return s; }
+// The flow that bends the surface: computed once per pixel and reused for the two slope samples.
+vec2 warp(vec2 p, float tt){
   vec2 q = vec2(fbm(p + tt), fbm(p + vec2(5.2,1.3) - tt));
-  vec2 w = vec2(fbm(p + 2.6*q + vec2(1.7,9.2) + tt*0.7), fbm(p + 2.6*q + vec2(8.3,2.8) - tt*0.5));
-  return fbm(p + 3.2*w);
+  return vec2(fbm(p + 2.6*q + vec2(1.7,9.2) + tt*0.7), fbm(p + 2.6*q + vec2(8.3,2.8) - tt*0.5));
 }
 void main(){
   vec2 uv = (gl_FragCoord.xy - 0.5*r) / r.y;
   vec2 p = uv*1.35 + vec2(t*0.035, 0.2 - t*0.02);
-  float tt = t*0.17;
-  float f = field(p, tt);
-  // The surface normal from the height field: this is what makes it read as poured metal.
+  vec2 w = 3.2 * warp(p, t*0.17);
+  float f = fbm(p + w);
+  // Slope of the height field: two more samples of the last layer only, with the flow held still.
   float e = 0.012;
-  float fx = field(p + vec2(e,0.0), tt) - f;
-  float fy = field(p + vec2(0.0,e), tt) - f;
-  vec3 nrm = normalize(vec3(-fx*38.0, -fy*38.0, 1.0));
+  vec2 g = vec2(fbm(p + w + vec2(e, 0.0)) - f, fbm(p + w + vec2(0.0, e)) - f);
+  vec3 nrm = normalize(vec3(-g * 85.0, 1.0));
   vec3 l = normalize(vec3(0.45 + m.x*0.9, 0.6 + m.y*0.9, 0.75));
   float diff = max(dot(nrm, l), 0.0);
   float spec = pow(max(dot(reflect(-l, nrm), vec3(0.0,0.0,1.0)), 0.0), 26.0);
   vec3 deep = vec3(0.16, 0.10, 0.03);
   vec3 gold = vec3(0.85, 0.69, 0.36);
   vec3 hi = vec3(1.0, 0.94, 0.78);
-  vec3 c = mix(deep, gold, smoothstep(0.15, 0.95, diff)) * (0.55 + 0.6*f);
-  c += hi * spec * 0.9;
-  // Fade into the page: darker at the left (where the words are) and at the edges.
+  vec3 c = mix(deep, gold, smoothstep(0.42, 0.98, diff)) * (0.25 + 1.05*f*f*1.6);
+  c += hi * spec * 0.75;
   float v = smoothstep(1.45, 0.25, length((uv - vec2(0.42, 0.05)) * vec2(0.85, 1.15)));
-  vec3 ground = vec3(0.043, 0.039, 0.035);
-  gl_FragColor = vec4(mix(ground, c, v), 1.0);
+  gl_FragColor = vec4(mix(vec3(0.043, 0.039, 0.035), c, v), 1.0);
 }`;
 const VERT = "attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }";
 
-/** A slow field of poured gold, rendered in a fragment shader. Decorative; slower under reduced motion. */
+const MAX_PIXELS = 230_000; // the buffer's budget at full quality
+const MIN_PIXELS = 60_000;
+const FRAME_MS = 1000 / 30;
+
+/** Decorative; slower under reduced motion; a still gradient when WebGL is unavailable. */
 export function GoldField({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
-    const gl = canvas?.getContext("webgl", { antialias: false, powerPreference: "low-power" });
+    const gl = canvas?.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power", preserveDrawingBuffer: false });
     if (!canvas || !gl) return;
     const sh = (type: number, src: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, src); gl.compileShader(s); return s; };
     const prog = gl.createProgram()!;
@@ -58,34 +67,49 @@ export function GoldField({ className = "" }: { className?: string }) {
     gl.enableVertexAttribArray(a);
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
     const ur = gl.getUniformLocation(prog, "r"), ut = gl.getUniformLocation(prog, "t"), um = gl.getUniformLocation(prog, "m");
+
+    let budget = MAX_PIXELS;
+    const size = () => {
+      const w = canvas.clientWidth || 1, hgt = canvas.clientHeight || 1;
+      const k = Math.min(1, Math.sqrt(budget / (w * hgt)));
+      canvas.width = Math.max(2, Math.round(w * k));
+      canvas.height = Math.max(2, Math.round(hgt * k));
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    size();
+
     // The light leans toward the pointer, eased so it glides.
     const aim = { x: 0, y: 0 }, at = { x: 0, y: 0 };
     const onMove = (e: PointerEvent) => { aim.x = e.clientX / window.innerWidth - 0.5; aim.y = 0.5 - e.clientY / window.innerHeight; };
     window.addEventListener("pointermove", onMove, { passive: true });
 
-    // Rendered at reduced resolution: the field is soft, and this keeps phones cool.
-    const size = () => {
-      const k = Math.min(window.devicePixelRatio || 1, 1.5) * 0.6;
-      canvas.width = Math.max(2, Math.round(canvas.clientWidth * k));
-      canvas.height = Math.max(2, Math.round(canvas.clientHeight * k));
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-    const draw = (ms: number) => {
-      at.x += (aim.x - at.x) * 0.05; at.y += (aim.y - at.y) * 0.05;
-      gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, (ms / 1000) * rate + 40); gl.uniform2f(um, at.x, at.y);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-    };
-    // Under reduced motion the field still drifts, at a third of the speed.
     const rate = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0.35 : 1;
-    size();
-    let raf = 0, visible = true;
-    const loop = (ms: number) => { if (visible) draw(ms); raf = requestAnimationFrame(loop); };
+    let raf = 0, onScreen = true, last = 0, clock = 40, slow = 0, measured = 0;
+    const loop = (ms: number) => {
+      raf = requestAnimationFrame(loop);
+      if (!onScreen || document.hidden) { last = 0; return; }
+      if (last && ms - last < FRAME_MS - 2) return; // 30 frames a second is plenty for a slow field
+      const dt = last ? Math.min(100, ms - last) : FRAME_MS;
+      last = ms;
+      clock += (dt / 1000) * rate;
+      at.x += (aim.x - at.x) * 0.08; at.y += (aim.y - at.y) * 0.08;
+      const began = performance.now();
+      gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, clock); gl.uniform2f(um, at.x, at.y);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      // Long frames mean a weak GPU: halve the buffer until it keeps up. gl.finish makes the measure honest.
+      if (measured < 90) {
+        gl.finish();
+        measured++;
+        if (performance.now() - began > 14 || dt > 60) slow++;
+        if (measured % 30 === 0) { if (slow > 10 && budget > MIN_PIXELS) { budget = Math.max(MIN_PIXELS, budget / 2); size(); } slow = 0; }
+      }
+    };
     raf = requestAnimationFrame(loop);
-    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
+    const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; });
     io.observe(canvas);
-    const onResize = () => size();
-    window.addEventListener("resize", onResize);
-    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener("resize", onResize); window.removeEventListener("pointermove", onMove); };
+    window.addEventListener("resize", size);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener("resize", size); window.removeEventListener("pointermove", onMove); };
   }, []);
-  return <canvas ref={ref} aria-hidden className={className} />;
+  // The canvas sits on a still gold gradient, which is what shows when WebGL cannot run.
+  return <canvas ref={ref} aria-hidden className={className} style={{ background: "radial-gradient(90% 80% at 68% 45%, #6b5122 0%, #2a2010 45%, #0b0a09 80%)" }} />;
 }

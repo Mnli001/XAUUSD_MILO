@@ -73,15 +73,15 @@ export default async function LandingPage() {
             </div>
 
             {/* The market right now, from the same data the app reads. */}
-            <aside className="rounded-[28px] border p-6 backdrop-blur-2xl sm:p-7" aria-label={t("Одоогийн зах зээл", "The market right now")}
-              style={{ borderColor: "rgb(255 255 255 / 0.14)", background: "linear-gradient(180deg, rgb(20 18 15 / 0.72), rgb(11 10 9 / 0.82))", boxShadow: "0 1px 0 rgb(255 255 255 / 0.12) inset, 0 40px 80px -30px rgb(0 0 0 / 0.9)" }}>
+            <aside className="rounded-[28px] border p-6 sm:p-7" aria-label={t("Одоогийн зах зээл", "The market right now")}
+              style={{ borderColor: "rgb(255 255 255 / 0.14)", background: "linear-gradient(180deg, rgb(24 21 17 / 0.9), rgb(11 10 9 / 0.94))", boxShadow: "0 1px 0 rgb(255 255 255 / 0.12) inset, 0 40px 80px -30px rgb(0 0 0 / 0.9)" }}>
               <div className="flex items-center justify-between text-[13px]">
                 <span className="font-semibold tracking-[0.08em] text-amber-400">XAUUSD</span>
                 <span className="text-zinc-400 tabular-nums">{v.time(now)} {v.zone}</span>
               </div>
               {snap.price ? (
                 <>
-                  <p className="font-display mt-3 text-[46px] leading-none text-zinc-50 sm:text-[54px]">{money(snap.price.last)}</p>
+                  <p className="num mt-3 text-[46px] leading-none text-zinc-50 sm:text-[56px]">{money(snap.price.last)}</p>
                   <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                     {snap.price.changePct !== null && <span className={`rounded-full px-2.5 py-1 font-bold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}><Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(snap.price.changePct).toFixed(2)}%</span>}
                     {snap.bias && <span className={`font-semibold ${dir > 0 ? "text-emerald-400" : dir < 0 ? "text-red-400" : "text-zinc-300"}`}>{biasLabelText(snap.bias.label, t)}</span>}
@@ -110,7 +110,7 @@ export default async function LandingPage() {
                   {SAMPLE_HOURS.map(([h, session, pct, up, news], i) => (
                     <tr key={h} className={`border-t first:border-t-0 ${i === 0 ? "bg-amber-400/[0.06]" : ""}`} style={{ borderColor: "var(--hairline)" }}>
                       <td className="py-5 pr-3 pl-5 sm:pl-7">
-                        <span className="flex items-center gap-3"><span aria-hidden className="h-7 w-[5px] rounded-full" style={{ background: sessionColor(session) }} /><span className="font-display text-[22px] text-zinc-50">{v.ub(h)}</span></span>
+                        <span className="flex items-center gap-3"><span aria-hidden className="h-7 w-[5px] rounded-full" style={{ background: sessionColor(session) }} /><span className="num text-[22px] text-zinc-50">{v.ub(h)}</span></span>
                       </td>
                       <td className="py-5 pr-3 text-zinc-400">{sessionLabel(session, t)}</td>
                       <td className="py-5 pr-5 sm:pr-7">
@@ -133,7 +133,7 @@ export default async function LandingPage() {
           <ol className="mt-10 border-t" style={{ borderColor: "var(--hairline)" }}>
             {stops(t).map(([q, a, page], i) => (
               <li key={q} className="grid gap-x-10 gap-y-2 border-b py-7 transition-colors duration-300 hover:bg-white/[0.02] sm:grid-cols-[4rem_minmax(0,22rem)_1fr_auto] sm:px-3" style={{ borderColor: "var(--hairline)" }}>
-                <span aria-hidden className="font-display gold-text text-[26px] leading-none">{String(i + 1).padStart(2, "0")}</span>
+                <span aria-hidden className="num gold-text text-[26px] leading-none">{String(i + 1).padStart(2, "0")}</span>
                 <h3 className="font-display text-[24px] leading-snug text-zinc-50">{q}</h3>
                 <p className="max-w-[52ch] text-[15px] leading-relaxed text-zinc-400">{a}</p>
                 <span className="self-start rounded-full border px-3 py-1 text-xs font-semibold whitespace-nowrap text-zinc-300" style={{ borderColor: "var(--hairline)" }}>{page}</span>

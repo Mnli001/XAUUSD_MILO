@@ -274,3 +274,6 @@ html[data-theme="light"] .gold-text { background: none; color: var(--color-amber
   .glass-bar, .glass-menu { background: var(--color-zinc-900); }
 }
 html[data-theme="light"] .gold-field { opacity: 0; }
+
+/* Large figures: thin, tight, unmistakable digits (the serif's 1 reads as an l). */
+.num { font-family: var(--font-sans); font-weight: 250; letter-spacing: -0.035em; font-variant-numeric: tabular-nums lining-nums; }
