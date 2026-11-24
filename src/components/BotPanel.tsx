@@ -43,8 +43,8 @@ const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
 const GATE_ROBOT = 6;
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 const toolList = (t: T) => [
+  ["DAY", "Day trader", t("15 минутын чарт дээр: ханш liquidity шүүрдээд (sweep), бүтэц эвдээд (MSS), ойрын FVG руу буцаж ирээд хариу үйлдэл үзүүлэхэд орно. Гэхдээ зөвхөн сайтын бусад аргуудын дүгнэлт ижил чиглэлд байвал. Stop нь sweep-ийн оргилын цаана, ашиг = stop × 2.", "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.")],
   ["READING", t("Дүгнэлт", "Reading"), t("Сайтын олон аргын дүгнэлтийг шууд дагана: 15 минут тутам шалгаж, хангалттай олон арга нэг чиглэл заахад орно. Stop = 1 цагийн ATR × 1.5, ашиг = stop × 2. Нэг удаад нэг арилжаа.", "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.")],
-  ["SCALPER", "Scalper", t("Нэг нэгээр орно. Арилжаа бүр өөрийн stop, target-тай. Хэр удаан ажиллахаа бот өөрөө тооцно.", "Enters one at a time. Each trade has its own stop and target. The bot works out how long to run.")],
   ["BASKET", t("Багц", "Basket"), t("Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана.", "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.")],
   ["ASIAN", t("Азийн breakout", "Asian breakout"), t("Өдөрт нэг арилжаа: Азийн хүрээнээс өдрийн трендийн чиглэлд гарахад орно. Stop, target, хаах цагийг дүрэм өөрөө тогтооно.", "One trade a day: enters when price leaves the Asian range in the direction of the daily trend. The rule sets the stop, target and closing time.")],
 ] as const;
@@ -106,15 +106,16 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const running = v.state === "RUNNING";
   const real = v.accountMode === "REAL";
   const c = v.config;
-  const [tool, setTool] = useState(c.mode);
+  const [tool, setTool] = useState(c.mode === "SCALPER" ? "DAY" : c.mode); // the scalper is retired
   const basket = tool === "BASKET";
   const reading = tool === "READING";
+  const day = tool === "DAY";
   const asian = tool === "ASIAN";
-  const exposure = (basket ? c.basket.lots * c.basket.count : asian || reading ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
+  const exposure = (basket ? c.basket.lots * c.basket.count : asian || reading || day ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
   const spread = v.bid !== null && v.ask !== null && v.ask > v.bid ? v.ask - v.bid : null;
   const oldRobot = (v.robotVersion ?? (v.online ? 1 : GATE_ROBOT)) < GATE_ROBOT;
   const g = c.gate;
-  const savedTool = TOOLS.find(([id]) => id === c.mode)![1];
+  const savedTool = (TOOLS.find(([id]) => id === c.mode) ?? TOOLS[0])[1]; // a bot still on the retired scalper shows as the day trader it will start as
 
   const accountField = <input type="hidden" name="account" value={v.account} />;
   const section = "text-[15px] font-semibold text-zinc-100";
@@ -195,6 +196,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               {v.positions.length > 0 ? t(`Багц нээлттэй. ${money(c.basket.profit)} ашигт хүрвэл эсвэл ${money(-c.basket.loss)} алдагдалд хүрвэл бүгдийг зэрэг хаана.`, `Basket open. All trades close together at ${money(c.basket.profit)} profit or ${money(-c.basket.loss)} loss.`) : t("Дохио хүлээж байна. Гармагц багцыг бүхэлд нь нээнэ.", "Waiting for a signal. The whole basket opens as soon as one appears.")}
             </p>
           )}
+          {running && c.mode === "DAY" && (
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop, target эсвэл 24 цагийн дараа хаагдана.", "Trade open. It closes at its stop, its target or after 24 hours.") : t("15 минутын лаа хаагдах бүрд setup хайж байна. Sweep → MSS → FVG → хариу үйлдэл бүрдэж, дүгнэлт таарвал орно.", "Looking for a setup at every 15-minute close. It enters when sweep → shift → FVG → reaction lines up and the reading agrees.")}</p>
+          )}
           {running && c.mode === "READING" && (
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop эсвэл target-аараа хаагдана.", "Trade open. It closes at its stop or its target.") : t("Дүгнэлтийг 15 минут тутам шалгаж байна. Хангалттай олон арга нэг чиглэл заахад орно.", "Checking the reading every 15 minutes. It enters when enough methods point one way.")}</p>
           )}
@@ -223,7 +227,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
                   <span className="min-w-0">
                     <span className={`flex flex-wrap items-center gap-2 font-semibold ${on ? "text-zinc-50" : "text-zinc-200"}`}>
                       {name}
-                      {id !== "ASIAN" && id !== "READING" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
+                      {id !== "ASIAN" && id !== "READING" && id !== "DAY" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
                     </span>
                     <span className="mt-0.5 block text-xs leading-relaxed text-zinc-400">{about}</span>
                   </span>
@@ -237,7 +241,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             </p>
           )}
           <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4" key={tool}>
-            {((asian || reading ? [
+            {((asian || reading || day ? [
               ["rLots", t("Лот", "Lots"), c.rule.lots, "0.01"],
             ] : basket ? [
               ["bLots", t("Лот (арилжаа бүрт)", "Lots (per trade)"), c.basket.lots, "0.01"], ["bCount", t("Арилжааны тоо (зэрэг)", "Number of trades (at once)"), c.basket.count, "1"],
@@ -257,7 +261,14 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
             <span>{t("Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх", "Allow trading on a real account")} <span className="block text-xs text-zinc-500">{t("Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.", "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.")}</span></span>
           </label>
-          {reading ? (
+          {day ? (
+            <p className="text-xs leading-relaxed text-zinc-400">
+              {t(`Орох дараалал: (1) сүүлийн swing оргил/ёроолыг шүүрдээд буцаж хаагдана, (2) эсрэг талын swing-ийг давж хаагдана (MSS), (3) тэр хөдөлгөөний үлдээсэн FVG, байхгүй бол order block руу буцна, (4) тэндээс буцаж хаагдсан лаа гарна, (5) сайтын аргуудын дор хаяж ${c.gate?.dayLean ?? 2}-оор илүү нь ижил чиглэл заана. Stop ихэвчлэн $5–20 зайтай: жижиг дансанд доорх «Арилжааны хэмжээ ба stop» хэсэгт эрсдэлээ тавина, доод лот багтахгүй бол орохгүй. Долоо хоногт дунджаар 1–2 арилжаа: цөөн боловч шалгуур өндөр.`,
+                `The sequence: (1) price sweeps the last swing high or low and closes back, (2) it closes beyond the opposite swing (MSS), (3) it returns to the fair value gap that move left, or the order block if there is none, (4) a candle closes back out of it, (5) at least ${c.gate?.dayLean ?? 2} more of the site's methods read that side than the other. The stop is usually $5–20 away: on a small account set your risk under "Trade size and stop" below; when the minimum lot does not fit, it does not enter. One or two trades a week on average: few, with a high bar.`)}
+              {" "}<span className="text-amber-300">{t("3 жилийн 15 минутын лаан дээр шалгасан ($0.30 зардалтай). Хэв маяг дангаараа ашиггүй байсан (Profit Factor 0.85–1.08). Дүгнэлттэй таарсан үед л: эхний 70%-д 161 арилжаа, 45% ашигтай, PF 1.37; сүүлийн 30%-д 55 арилжаа, 45%, PF 1.49. Дүгнэлтийн эсрэг орсон нь алдсан (PF 0.51–0.95). Хязгаар: лааны дата дээрх тооцоо, бодит арилжаа биш; олон хувилбараас сонгосон тул бодит үр дүн үүнээс доогуур байх магадлалтай. Эхлээд demo дансаар.",
+                "Checked on three years of 15-minute candles (with $0.30 cost). On its own the pattern showed no edge (Profit Factor 0.85–1.08). Only when the reading agreed: 161 trades in the first 70%, 45% won, PF 1.37; 55 trades in the last 30%, 45%, PF 1.49. Entries against the reading lost (PF 0.51–0.95). Limits: a calculation on candle data, not real trading; it was picked from several variants, so real results are likely to be lower. Demo account first.")}</span>
+            </p>
+          ) : reading ? (
             <p className="text-xs leading-relaxed text-zinc-400">
               {t(`Орох чиглэлийг дор хаяж ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} арга дэмжиж, эсрэг талаасаа олон байх үед орно (тоог доорх «Санал нийлэх арга» талбараас өөрчилнө). Stop нь 1 цагийн ATR-аас тооцогддог тул ихэвчлэн $10–25 зайтай: 0.01 лотод нэг арилжааны алдагдал тэр хэмжээний доллар. Жижиг дансанд энэ их тул «Арилжааны хэмжээ ба stop» хэсэгт эрсдэлээ $ эсвэл %-иар тавина; доод лот багтахгүй бол робот орохгүй.`,
                 `It enters when at least ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} methods back the side and outnumber the other (change the number in "Methods that must agree" below). The stop comes from the 1-hour ATR, so it is usually $10–25 away: at 0.01 lots a losing trade costs about that many dollars. That is a lot for a small account, so set your risk in $ or % under "Trade size and stop"; when the minimum lot does not fit, the robot does not enter.`)}
@@ -358,6 +369,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             ["gRsiMax", t("RSI(14) хязгаар", "RSI(14) cap"), g.rsiMax, "1", "95"],
             ["gExtAtr", t("EMA20-оос ≤ ATR ×", "From EMA20 ≤ ATR ×"), g.maxExtAtr, "0.1", "20"],
             ["gAgree", t("Санал нийлэх арга (14-өөс)", "Methods that must agree (of 14)"), g.minAgree ?? 8, "1", "16"],
+            ["gDayLean", t("Day trader: дүгнэлтийн зөрүү", "Day trader: reading margin"), g.dayLean ?? 2, "1", "10"],
             ["gMaxTrades", t("Өдөрт орох дээд тоо", "Entries a day, at most"), g.maxTradesDay, "1", "100"],
             ["gDailyLoss", t("Өдрийн алдагдал, балансын %", "Daily loss stop, % of balance"), g.dailyLossPct, "0.5", "50"],
           ] as [string, string, number, string, string][]).map(([name, label, val, step, max]) => (
@@ -376,6 +388,40 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         {gateState.ok && <p role="status" className="text-sm text-emerald-400">{gateState.ok}</p>}
         <button className="btn" disabled={gatePending}>{t("Шүүлтүүр хадгалах", "Save filter")}</button>
       </form>
+
+      {c.mode === "DAY" || tool === "DAY" ? (
+        <section className="card" aria-labelledby="day-h">
+          <h2 id="day-h" className="card-title mb-1">{t("Day trader-ийн сүүлийн setup-ууд ба шалтгаан", "The day trader's latest setups, and why")}</h2>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Хэв маяг бүрдэх бүрд энд гарна. «Орсон» гэдэг нь дүгнэлт таарч роботод дохио очсон, «алгассан» нь аргууд хангалттай дэмжээгүй гэсэн үг.", "Each time the pattern completes it appears here. \"Sent\" means the reading agreed and the robot was told; \"skipped\" means the methods did not back it enough.")}</p>
+          {v.day.recent.length === 0 ? (
+            <p className="mt-3 text-sm text-zinc-500">{t("Сүүлийн 4 хоногт бүрдсэн setup алга.", "No setup has completed in the last four days.")}</p>
+          ) : (
+            <ul className="mt-3 divide-y" style={{ borderColor: "var(--hairline)" }}>
+              {v.day.recent.map((s) => {
+                const known = s.total > 0, ok = known && s.lean >= (c.gate?.dayLean ?? 2);
+                const at = new Date(s.at), sweep = new Date(s.sweepAt), shift = new Date(s.shiftAt);
+                return (
+                  <li key={s.id} className="py-3 text-sm" style={{ borderColor: "var(--hairline)" }}>
+                    <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <SidePill side={s.side} />
+                      <span className="font-medium text-zinc-100 tabular-nums">{who.dateTime(at)}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${!known ? "bg-white/[0.06] text-zinc-400" : ok ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-400/15 text-amber-300"}`}>
+                        {!known ? t("дүгнэлт бүртгэгдээгүй", "reading not recorded") : ok ? t("орсон", "sent") : t("алгассан", "skipped")}
+                      </span>
+                    </p>
+                    <p className="mt-1.5 leading-relaxed text-zinc-400">
+                      {t(`${who.time(sweep)}-д ${s.level.toFixed(2)} түвшний liquidity-г шүүрдсэн → ${who.time(shift)}-д бүтэц эвдсэн (MSS) → ${s.zone.kind} ${s.zone.bottom.toFixed(2)}–${s.zone.top.toFixed(2)} руу буцаж хариу үйлдэл үзүүлсэн.`,
+                        `Swept the liquidity at ${s.level.toFixed(2)} at ${who.time(sweep)} → shifted structure (MSS) at ${who.time(shift)} → returned to the ${s.zone.kind} ${s.zone.bottom.toFixed(2)}–${s.zone.top.toFixed(2)} and reacted.`)}
+                      {" "}{known ? t(`Тэр мөчид ${s.total} аргын ${s.buy} нь өсөх, ${s.sell} нь унах гэж уншсан (зөрүү ${s.lean > 0 ? "+" : ""}${s.lean}).`, `At that moment ${s.buy} of ${s.total} methods read up and ${s.sell} down (margin ${s.lean > 0 ? "+" : ""}${s.lean}).`) : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500 tabular-nums">{t("Орох", "Entry")} {s.entry.toFixed(2)} · stop {s.stop.toFixed(2)} (${s.risk.toFixed(2)}) · target {s.target.toFixed(2)}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
 
       <section className="card" aria-labelledby="entry-h">
         <h2 id="entry-h" className="card-title mb-1">{t("Ямар нөхцөлд орсон арилжаа хэрхэн дууссан бэ", "How trades ended, by the conditions at entry")}</h2>

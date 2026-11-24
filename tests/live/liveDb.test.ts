@@ -13,7 +13,7 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 9, ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 11, ...o,
 });
 
 beforeEach(async () => {
@@ -73,7 +73,8 @@ test("start, sync, stop", async () => {
   expect((await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "5", slAtr: "1.5", tpAtr: "2", profitTarget: "40" })).error).toBeUndefined();
   await startBot(admin.id, now);
   const cmd = (await handleSync(token, report(), now))!;
-  expect(cmd).toMatchObject({ state: "RUNNING", lots: 0.3, maxPositions: 5, profitTarget: 40, closeAll: false });
+  // The scalper is retired: a bot still set to it starts as the day trader, one trade at a time, with the lot size it had.
+  expect(cmd).toMatchObject({ state: "RUNNING", mode: "DAY", lots: 0.3, maxPositions: 1, closeAll: false });
   expect(cmd.runId).toBeTruthy();
 
   const v = await getLiveView(admin.id, new Date(now.getTime() + 3000));

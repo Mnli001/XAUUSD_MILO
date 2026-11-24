@@ -169,3 +169,26 @@ describe("the reading tool", () => {
     expect(minRobotVersion("READING")).toBe(10);
   });
 });
+
+describe("the day trader", () => {
+  const run = (config: LiveConfig) => ({ state: "RUNNING" as const, runId: "r", closeAll: false, config });
+  const day = parseConfig({ mode: "DAY", rLots: "0.01" }, DEFAULT_LIVE_CONFIG).config!;
+  test("with a setup it sends the side and the stop distance; without one it sends nothing", () => {
+    const order = { id: 1795000000, dir: -1, risk: 8.4, rr: 2, ageSec: 12 };
+    expect(commandFor(run(day), { mode: "DEMO" }, 11, "mn", "", null, order)).toMatchObject({ state: "RUNNING", mode: "DAY", lots: 0.01, maxPositions: 1, dId: 1795000000, dDir: -1, dRisk: 8.4, dRR: 2, dAge: 12 });
+    expect(commandFor(run(day), { mode: "DEMO" }, 11)).toMatchObject({ state: "RUNNING", dId: 0, dDir: 0 });
+  });
+  test("other tools never carry a day order", () => {
+    const order = { id: 5, dir: 1, risk: 3, rr: 2, ageSec: 1 };
+    expect(commandFor(run(DEFAULT_LIVE_CONFIG), { mode: "DEMO" }, 11, "mn", "", null, order)).toMatchObject({ dId: 0, dDir: 0 });
+  });
+  test("it needs robot v3.40", () => {
+    expect(minRobotVersion("DAY")).toBe(11);
+    expect(commandFor(run(day), { mode: "DEMO" }, 10)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
+  });
+  test("the margin is saved from the filter form", () => {
+    expect(parseGate(form({ gDayLean: "4" })).config!.gate.dayLean).toBe(4);
+    expect(parseGate(form({})).config!.gate.dayLean).toBe(2);
+    expect(parseGate(form({ gDayLean: "11" })).error).toBeTruthy();
+  });
+});

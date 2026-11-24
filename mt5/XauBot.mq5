@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.30"
+#property version   "3.40"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -81,7 +81,7 @@ int    gMaxPos = 1;
 bool   gCloseAll = false;
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 10             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 11             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -352,6 +352,8 @@ void OnTimer()
       LiveAsianStep();
    else if(gMode == "READING")
       ReadingStep();
+   else if(gMode == "DAY")
+      DayStep();
    else
      {
       EvaluateSignal();
@@ -367,6 +369,7 @@ void OnTick()
    if(IsRuleTool()) { RetryClose(); DailyGuard(); RuleStep(); return; }
    if(gMode == "ASIAN") { RetryClose(); DailyGuard(); LiveAsianStep(); return; }
    if(gMode == "READING") { RetryClose(); DailyGuard(); ProtectAll(); ReadingStep(); return; }
+   if(gMode == "DAY") { RetryClose(); DailyGuard(); ProtectAll(); DayStep(); return; }
    TesterStep();
    RetryClose();
    DailyGuard();
@@ -2034,6 +2037,63 @@ string DealsJson()
   }
 
 //+------------------------------------------------------------------+
+//| Day trader (DAY): вэб 15 минутын хаагдсан лаа бүр дээр           |
+//| liquidity sweep → MSS → FVG руу буцах → хариу үйлдэл хэв маягийг |
+//| хайж, олон аргын дүгнэлт ижил чиглэлд байвал дохио илгээнэ.      |
+//| Робот зөвхөн захиалгыг тавина: stop нь вэбээс ирсэн $ зай,       |
+//| target = stop × RR. Нэг удаад нэг арилжаа, 24 цагаас хэтрэхгүй.  |
+//| Судалгаа: scripts/smc-research.ts                                 |
+//+------------------------------------------------------------------+
+long   gDId = 0, gDLast = -1;
+int    gDDir = 0, gDAge = 99999;
+double gDRisk = 0.0, gDRR = 2.0;
+
+void DayTimeExit()
+  {
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !IsMine(t)) continue;
+      if(TimeCurrent() - (datetime)PositionGetInteger(POSITION_TIME) >= 86400) trade.PositionClose(t);
+     }
+  }
+
+void DayStep()
+  {
+   DayTimeExit();
+   if(gState != "RUNNING" || gFinished != "") return;
+   if(gDLast < 0) gDLast = GlobalVariableCheck("xau_day_last") ? (long)GlobalVariableGet("xau_day_last") : 0;
+   if(WeekendQuiet()) { gSignal = "NONE"; gReason = L("Амралтын өдөр, зах хаалттай", "Weekend, market closed"); return; }
+   if(gDId <= 0 || gDDir == 0)
+     {
+      gSignal = "NONE"; gBlock = ""; gBlockDetail = "";
+      gReason = L("Setup хүлээж байна: sweep → MSS → FVG → хариу үйлдэл, дүгнэлттэй таарах", "Waiting for a setup: sweep → shift → FVG → reaction, in line with the reading");
+      return;
+     }
+   gSignal = (gDDir > 0) ? "BUY" : "SELL";
+   gReason = L("Setup: ", "Setup: ") + gSignal + ", stop $" + Num(gDRisk, 2) + ", RR " + Num(gDRR, 1);
+   if(gDId == gDLast) return;                                    // энэ дохиогоор аль хэдийн орсон
+   if(gDAge > 480) return;                                       // 8 минутаас хуучин дохио: үнэ хөдөлчихсөн
+   if(TimeLocal() - gLastSyncOk > 30) return;
+   if(CountPositions() + CountOrders() > 0) return;              // нэг удаад нэг арилжаа
+   if(RealBlocked() || !TradingAllowed()) return;
+   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(!GateCheck(0)) return;                                     // цаг, мэдээ, хэлбэлзэл, spread, өдрийн хязгаар
+   double slD = gDRisk, tpD = gDRisk * gDRR, lots = 0.0;
+   if(slD <= StopsMin()) return;
+   if(!SizeTrade(slD, tpD, lots, false)) return;                 // stop-ийг хөдөлгөхгүй: энэ нь setup-ийн өөрийнх нь түвшин
+   if(!FitsDayBudget(lots, slD)) return;
+   if(SendMarket(gDDir, lots, slD, tpD, "xau-bot:" + Num(slD, 2)))
+     {
+      gDLast = gDId;
+      GlobalVariableSet("xau_day_last", (double)gDId);
+      Print("XauBot: day trader ", gSignal, L(" орлоо, лот ", " entered, lots "), Num(lots, 2), ", stop ", Num(slD, 2), ", target ", Num(tpD, 2));
+     }
+   else
+      Print(L("XauBot: захиалга амжилтгүй — ", "XauBot: order failed — "), trade.ResultRetcodeDescription());
+  }
+
+//+------------------------------------------------------------------+
 //| Дүгнэлт (READING): вэбийн олон аргын дүгнэлтийг шууд дагана.      |
 //| Шинэ M15 лаа бүрд: орох чиглэлийг gCMin (эсвэл 9) арга дэмжиж,    |
 //| эсрэг талаасаа олон бол орно. Stop = H1 ATR × 1.5, target = × 2.  |
@@ -2154,7 +2214,12 @@ void Sync()
       if(lang == "en" || lang == "mn") gLang = lang;
      }
    string mode = JStr(body, "mode");
-   string newMode = (mode == "BASKET") ? "BASKET" : ((mode == "ASIAN") ? "ASIAN" : ((mode == "READING") ? "READING" : "SCALPER"));
+   string newMode = (mode == "BASKET") ? "BASKET" : ((mode == "ASIAN") ? "ASIAN" : ((mode == "READING") ? "READING" : ((mode == "DAY") ? "DAY" : "SCALPER")));
+   gDId   = (long)JNum(body, "dId");
+   gDDir  = (int)JNum(body, "dDir");
+   gDRisk = MathMax(0.0, JNum(body, "dRisk"));
+   gDRR   = (JNum(body, "dRR") > 0) ? JNum(body, "dRR") : 2.0;
+   gDAge  = (JRaw(body, "dAge") != "") ? (int)JNum(body, "dAge") : 99999;
    if(newMode != gMode) { gRuleLastBar = 0; gReadLastBar = 0; }
    gMode       = newMode;
 
@@ -2179,7 +2244,7 @@ void ShowStatus()
   {
    string s = "XauBot · " + AccountModeStr() + L(" данс · вэб: ", " account · web: ") + LinkText() + "\n";
    s += L("Төлөв: ", "State: ") + (gState == "RUNNING" ? (gFinished == "" ? L("АЖИЛЛАЖ БАЙНА", "RUNNING") : L("дуусгаж байна (", "finishing (") + gFinished + ")") : L("зогссон", "stopped")) + "\n";
-   s += L("Хэрэгсэл: ", "Tool: ") + (gMode == "BASKET" ? L("Багц", "Basket") : (gMode == "ASIAN" ? L("Азийн breakout", "Asian breakout") : (gMode == "READING" ? L("Дүгнэлт", "Reading") : "Scalper"))) + "\n";
+   s += L("Хэрэгсэл: ", "Tool: ") + (gMode == "BASKET" ? L("Багц", "Basket") : (gMode == "ASIAN" ? L("Азийн breakout", "Asian breakout") : (gMode == "READING" ? L("Дүгнэлт", "Reading") : (gMode == "DAY" ? "Day trader" : "Scalper")))) + "\n";
    s += L("Дохио: ", "Signal: ") + gSignal + " — " + gReason + "\n";
    s += GateLine() + "\n";
    if(gGateOn) s += L("Өнөөдөр: ", "Today: ") + (string)gTradesToday + (gGMaxTrades > 0 ? " / " + (string)gGMaxTrades : "") + L(" оролт · ", " entries · ") + Num(gDayPnl, 2) + (gDailyLossHit ? L(" · АЛДАГДЛЫН ХЯЗГААР", " · LOSS STOP") : "") + "\n";
@@ -2187,7 +2252,7 @@ void ShowStatus()
    if(gState == "RUNNING") s += L(" · энэ удаа: ", " · this run: ") + Num(RunPnl(), 2);
    if(gState == "RUNNING" && gMode == "BASKET" && gFirstEntry > 0) s += L("\nБагц (", "\nBasket (") + gRunSide + "): +" + Num(gTarget, 2) + L(" хүрвэл эсвэл -", " or -") + Num(gMaxLoss, 2) + L(" хүрвэл бүгдийг хаана", " closes everything");
    if(gState == "RUNNING" && gMode == "SCALPER" && gFirstEntry > 0) s += L("\nХугацаа: ", "\nTime: ") + (string)ElapsedSeconds() + " / " + (string)gPlannedSeconds + L(" сек (", " s (") + gRunSide + ")";
-   if(gState == "RUNNING" && gMode != "ASIAN" && gMode != "READING" && gFirstEntry <= 0) s += L("\nЭхний дохиог хүлээж байна", "\nWaiting for the first signal");
+   if(gState == "RUNNING" && gMode != "ASIAN" && gMode != "READING" && gMode != "DAY" && gFirstEntry <= 0) s += L("\nЭхний дохиог хүлээж байна", "\nWaiting for the first signal");
    if(RealBlocked()) s += L("\nЖИНХЭНЭ ДАНС: AllowRealAccount унтраалттай тул арилжаа хийхгүй", "\nREAL ACCOUNT: AllowRealAccount is off, so no trades are placed");
    Comment(s);
   }

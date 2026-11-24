@@ -7,6 +7,7 @@ import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
 import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
+import { DAY_MIN_LEAN, dayOrderFrom, getDayState } from "./daySignal";
 import { applyPreset, isPreset, type ConsensusCounts } from "./live";
 import { sessionOfUbHour, ubHour } from "../time";
 import { deliver, esc, telegramConfigured } from "../telegram";
@@ -61,6 +62,12 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 }
 
 /** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
+/** The day trader's order for this bot right now, if a setup just triggered and the reading backs it. */
+async function dayOrderFor(config: LiveConfig, now: Date) {
+  if (config.mode !== "DAY") return null;
+  try { return dayOrderFrom(await getDayState(now), config.gate?.dayLean ?? DAY_MIN_LEAN, now); } catch (e) { console.error("[bot] day signal failed", e); return null; }
+}
+
 /** The many-method reading as counts, when this bot waits for it. Null when it cannot be computed: the robot then holds back. */
 async function consensusFor(config: LiveConfig, now: Date): Promise<ConsensusCounts | null> {
   const needsCounts = !!config.gate?.on && (config.gate.minAgree ?? 0) > 0;
@@ -86,6 +93,8 @@ async function blackoutsFor(config: LiveConfig, now: Date): Promise<string> {
 
 export async function startBot(userId: string, now: Date, login?: string): Promise<void> {
   const live = await getLive(userId, login);
+  // The scalper is retired (its entries had no edge in testing): a bot still set to it starts as the day trader.
+  if (live.config.mode === "SCALPER") await update(userId, live.login, { config: { ...live.config, mode: "DAY", rule: { ...live.config.rule, lots: live.config.lots } } }); // keeps the lot size it had
   await update(userId, live.login, { state: "RUNNING", runId: crypto.randomUUID(), closeAll: false, startedAt: now, stoppedAt: null, stopReason: null });
 }
 
@@ -168,7 +177,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now), await consensusFor(live.config, now));
+  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now), await consensusFor(live.config, now), await dayOrderFor(live.config, now));
   if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
@@ -227,6 +236,7 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     dailyLossHit: status?.dailyLossHit ?? null,
     deals,
     entryStats: await getEntryStats(userId, live.login),
+    day: await getDayState(now).catch(() => ({ fresh: null, recent: [], asOf: 0 })),
     dealCount: n,
     pnl24h: Number(total ?? 0),
   };

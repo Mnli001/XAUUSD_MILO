@@ -6,7 +6,7 @@ import { z } from "zod";
  * What the owner sets on the web. Lot size is theirs to choose; there is no daily limit.
  * How long a run lasts is not a setting: the robot works that out itself from volatility.
  */
-export type BotMode = "SCALPER" | "BASKET" | "ASIAN" | "READING";
+export type BotMode = "SCALPER" | "BASKET" | "ASIAN" | "READING" | "DAY";
 /** The Asian range breakout: the rule decides entry, stop, target and exit; the owner only sets the lot. */
 export type RuleConfig = { lots: number };
 /** The basket tool: open `count` trades at once, close them all together at a total profit or a total loss. */
@@ -33,6 +33,7 @@ export type GateConfig = {
   riskValue: number; // USD: dollars per trade; PCT: % of balance; unused for LOTS
   protect: boolean; // move the stop to entry at +1R and trail from +1.5R (Scalper trades)
   siteStops: boolean; // stop and target from the site's reading (1-hour ATR) instead of the 1-minute ATR
+  dayLean: number; // day trader: how many more methods must read its side than the other
   minAgree: number; // how many of the site's methods must read the entry's side (0 = not checked)
   dailyLossPct: number; // % of the day's starting balance: the robot closes its trades and stops entering
 };
@@ -40,7 +41,7 @@ export type RiskMode = "LOTS" | "USD" | "PCT";
 export const RISK_MODES: RiskMode[] = ["LOTS", "USD", "PCT"];
 export const DEFAULT_GATE: GateConfig = {
   on: true, trend: true, sessionStartUb: 15, sessionEndUb: 1, newsBeforeMin: 30, newsAfterMin: 60,
-  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8, riskMode: "LOTS", riskValue: 0, siteStops: false, protect: false,
+  atrMin: 1.5, atrMax: 25, maxSpreadPct: 10, rsiMax: 70, maxExtAtr: 2, maxTradesDay: 6, dailyLossPct: 3, minAgree: 8, riskMode: "LOTS", riskValue: 0, siteStops: false, protect: false, dayLean: 2,
 };
 
 export type LiveConfig = {
@@ -89,8 +90,8 @@ const ruleSchema = (t: T) => z.object({ rLots: positive(t("Лот 0-ээс их 
 /** Each tool has its own form; saving one keeps the other's settings from `current`. */
 export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
   const asked = (input as { mode?: unknown } | null)?.mode;
-  const mode: BotMode = asked === "BASKET" || asked === "ASIAN" || asked === "READING" ? asked : "SCALPER";
-  if (mode === "ASIAN" || mode === "READING") {
+  const mode: BotMode = asked === "BASKET" || asked === "ASIAN" || asked === "READING" || asked === "DAY" ? asked : "SCALPER";
+  if (mode === "ASIAN" || mode === "READING" || mode === "DAY") {
     const r = ruleSchema(t).safeParse(input);
     if (!r.success) return { error: r.error.issues[0].message };
     return { config: { ...current, mode, allowReal: r.data.allowReal, rule: { lots: r.data.rLots } } };
@@ -123,6 +124,7 @@ const gateSchema = (t: T) => z.object({
   gExtAtr: within(0, 20, t("EMA20-оос холдох хязгаар 0–20 ATR", "The stretch cap must be 0–20 ATR")),
   gMaxTrades: wholeWithin(0, 100, t("Өдрийн орох тоо 0–100 бүхэл тоо", "Entries a day must be a whole number, 0–100")),
   gAgree: wholeWithin(0, 14, t("Санал нийлэх аргын тоо 0 (шалгахгүй) – 14", "Methods that must agree: 0 (off) to 14")).optional(),
+  gDayLean: wholeWithin(0, 10, t("Day trader-ийн зөрүү 0–10 бүхэл тоо", "The day trader's margin must be a whole number, 0–10")).optional(),
   gRiskMode: z.enum(["LOTS", "USD", "PCT"]).optional(),
   gRiskVal: within(0, 100000, t("Эрсдэлийн дүн 0-ээс их тоо байна", "The risk amount must be a number above 0")).optional(),
   gSiteStops: allowReal.optional(),
@@ -143,6 +145,7 @@ export function parseGate(input: unknown, current: LiveConfig = DEFAULT_LIVE_CON
     riskMode: g.gRiskMode ?? current.gate?.riskMode ?? "LOTS", riskValue: g.gRiskMode && g.gRiskMode !== "LOTS" ? (g.gRiskVal ?? 0) : g.gRiskMode ? 0 : (current.gate?.riskValue ?? 0),
     siteStops: g.gRiskMode !== undefined ? (g.gSiteStops ?? false) : (current.gate?.siteStops ?? false),
     protect: g.gRiskMode !== undefined ? (g.gProtect ?? false) : (current.gate?.protect ?? false),
+    dayLean: g.gDayLean ?? current.gate?.dayLean ?? DEFAULT_GATE.dayLean,
   } } };
 }
 
@@ -189,6 +192,8 @@ export type Command = {
   // Sizing and stops (robot v3.00 and newer). rMode 0 lots, 1 dollars per trade, 2 % of balance. sMode 1: stop = sStop × sAtr, target = stop × sRR.
   rMode: number; rVal: number; sMode: number; sAtr: number; sStop: number; sRR: number;
   protect: boolean; // robot v3.10 and newer
+  // The day trader's order (robot v3.40 and newer): dId 0 means "nothing now". dRisk is the stop distance in dollars.
+  dId: number; dDir: number; dRisk: number; dRR: number; dAge: number;
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -208,9 +213,12 @@ export const SITE_STOP_ATR = 1.5;
 export const SITE_RR = 2;
 /** Robot v3.30 (protocol 10) is the first that can trade the reading itself. */
 export const READING_ROBOT_VERSION = 10;
+/** Robot v3.40 (protocol 11) is the first with the day trader. */
+export const DAY_ROBOT_VERSION = 11;
+export type DayOrderFields = { id: number; dir: number; risk: number; rr: number; ageSec: number };
 /** The reading tool waits for this many methods when the owner set none: the level the research held up at. */
 export const READING_MIN_AGREE = 9;
-export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "READING" ? READING_ROBOT_VERSION : mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
+export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "DAY" ? DAY_ROBOT_VERSION : mode === "READING" ? READING_ROBOT_VERSION : mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
 /** The filter as flat fields. With the filter off, every check goes out switched off as well. */
 function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null, reading = false) {
@@ -232,16 +240,17 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
   };
 }
 
-export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null): Command {
+export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null, day: DayOrderFields | null = null): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
   const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus, c.mode === "READING");
-  const tool = c.mode === "ASIAN" || c.mode === "READING"
+  const tool = c.mode === "ASIAN" || c.mode === "READING" || c.mode === "DAY"
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
     : basket
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
     : { runId: s.runId ?? "", lang, mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
-  const base = { ...tool, ...gate };
+  const order = c.mode === "DAY" && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0 };
+  const base = { ...tool, ...gate, ...order };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
   if ((robotVersion ?? 1) < minRobotVersion(c.mode)) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
