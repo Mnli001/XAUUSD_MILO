@@ -2,7 +2,7 @@ import { getTodaySnapshot } from "@/lib/snapshot";
 import { SYMBOL, loadCandles } from "@/lib/ingest/prices";
 import { ubHour, weekdayName, zoneWeekday } from "@/lib/time";
 import { HourlyTable } from "@/components/HourlyTable";
-import { PriceHeader, BiasBar, LevelsCard, Empty } from "@/components/TodayCards";
+import { PriceHeader, BiasBar, LevelsCard, Empty, BiasBarLocked, LevelsCardLocked } from "@/components/TodayCards";
 import { SessionLine } from "@/components/SessionLine";
 import { getEvents, getNextHighEvent, getReactions } from "@/lib/events";
 import { Countdown } from "@/components/Countdown";
@@ -11,7 +11,12 @@ import { eventTitle } from "@/lib/data/calendarProvider";
 import { getT, getViewer, startGuideDone } from "@/lib/prefs.server";
 import { StartGuide } from "@/components/StartGuide";
 import { dismissStartGuide } from "@/lib/actions/startGuide";
-import { ReasoningPanel } from "@/components/ReasoningPanel";
+import { ReasoningPanel, ReasoningLocked } from "@/components/ReasoningPanel";
+import { requireUser } from "@/lib/auth";
+import { paywallFor } from "@/lib/paywall.server";
+import { lockedHourRows } from "@/lib/paywall";
+import { PlansCard } from "@/components/Paywall";
+import { choosePlanAction } from "@/lib/actions/payments";
 import { getReasoning } from "@/lib/reasoningLive";
 
 export const dynamic = "force-dynamic";
@@ -24,18 +29,21 @@ export default async function TodayPage() {
   const v = await getViewer();
   const { t } = v;
   const now = new Date();
+  // Without a plan the paid figures are never loaded into the page, so they cannot be read from it.
+  const { paid, payOn, contact } = paywallFor(await requireUser(), now);
   const [snap, upcoming, next, reactions, day, reasoning, guideDone] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
     getReactions(),
     loadCandles(SYMBOL, "15min", 96),
-    getReasoning(now, v.locale),
+    paid ? getReasoning(now, v.locale) : Promise.resolve(null),
     startGuideDone(),
   ]);
   const highSoon = upcoming.filter((e) => e.impact === "HIGH").map((e) => ({ time: e.time, title: e.title, type: e.type }));
   return (
     <div className="reveal space-y-5 sm:space-y-7">
+      {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
       {!guideDone && <StartGuide t={t} dismiss={dismissStartGuide} />}
       <section className="card group relative overflow-hidden sm:p-8 transition-all duration-500 hover:shadow-2xl" aria-labelledby="today-h">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />
@@ -52,8 +60,8 @@ export default async function TodayPage() {
       {/* Phones read top to bottom: the side, the next release, the hours, the levels. Wide screens pair them in two columns. */}
       <div className="grid items-start gap-5 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="min-w-0 space-y-5 sm:space-y-6">
-            <BiasBar bias={snap.bias} v={v} />
-            <ReasoningPanel initial={reasoning} compact />
+            {paid ? <BiasBar bias={snap.bias} v={v} /> : <BiasBarLocked v={v} />}
+            {paid ? <ReasoningPanel initial={reasoning} compact /> : <ReasoningLocked />}
         </div>
         <div className="min-w-0">
             <section className="card group relative overflow-hidden p-0 sm:p-0 transition-all duration-500 hover:shadow-2xl" aria-labelledby="next-h">
@@ -111,7 +119,7 @@ export default async function TodayPage() {
             </section>
         </div>
         <div className="min-w-0">
-            {snap.hourly ? (
+            {(paid ? snap.hourly : lockedHourRows()) ? (
               <section className="table-card overflow-hidden rounded-2xl border border-zinc-800/50 backdrop-blur-sm shadow-xl transition-shadow duration-300 hover:shadow-2xl" aria-labelledby="hours-h">
                 <div className="bg-gradient-to-b from-zinc-900/60 to-zinc-950/40 px-5 pt-5 pb-4 sm:px-6">
                   <h2 id="hours-h" className="flex items-center gap-2 text-base font-bold text-zinc-100">
@@ -124,12 +132,12 @@ export default async function TodayPage() {
                     {t("Сүүлийн 6 сарын 1 цагийн лаанаас. Одоогийн трендтэй ижил нөхцөлтэй өдрүүдээр тооцно; түүвэр 30-аас цөөн бол хувь гаргахгүй.", "From the last 6 months of 1-hour candles. Counted over days with the same trend as now; no percentage is shown when the sample is under 30.")}
                   </p>
                 </div>
-                <HourlyTable rows={snap.hourly} nowHour={ubHour(now)} events={highSoon} v={v} />
+                <HourlyTable rows={paid ? snap.hourly! : lockedHourRows()} nowHour={ubHour(now)} events={highSoon} v={v} locked={!paid} />
               </section>
             ) : <Empty title={t("Цагийн хуваарь", "Hour by hour")} v={v} />}
         </div>
         <div className="min-w-0 lg:sticky lg:top-8">
-            <LevelsCard levels={snap.levels} price={snap.price?.last} v={v} />
+            {paid ? <LevelsCard levels={snap.levels} price={snap.price?.last} v={v} /> : <LevelsCardLocked v={v} />}
         </div>
       </div>
     </div>

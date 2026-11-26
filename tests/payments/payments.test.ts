@@ -4,7 +4,7 @@ import { db, schema } from "@/lib/db";
 import { resetDb } from "../helpers/db";
 import { makeUser } from "../helpers/users";
 import { fakeQPay } from "../helpers/qpayFetch";
-import { startPayment, refreshPayment, paymentFor, listPayments, PAY_TTL_MS } from "@/lib/payments";
+import { startPayment, refreshPayment, paymentFor, listPayments, paymentsOf, PAY_TTL_MS } from "@/lib/payments";
 import { clearTokenCache, type QPayConfig } from "@/lib/qpay";
 
 const cfg: QPayConfig = { baseUrl: "https://merchant-sandbox.qpay.mn", username: "TEST_MERCHANT", password: "123456", invoiceCode: "TEST_INVOICE" };
@@ -140,5 +140,18 @@ describe("paymentFor and listPayments", () => {
     await startPayment(a.id, "PLUS", now, cfg, SITE);
     const rows = await listPayments(10);
     expect(rows[0]).toMatchObject({ plan: "PLUS", email: "a@x.mn", status: "PENDING" });
+  });
+});
+
+describe("paymentsOf", () => {
+  it("lists only this user's payments, newest first", async () => {
+    fakeQPay();
+    const a = await makeUser("a@x.mn"), b = await makeUser("b@x.mn");
+    await startPayment(a.id, "PLUS", now, cfg, SITE);
+    fakeQPay({ invoiceId: "inv-b" });
+    await startPayment(b.id, "PRO", now, cfg, SITE);
+    fakeQPay({ invoiceId: "inv-a2" });
+    await startPayment(a.id, "MAX", new Date(now.getTime() + 1000), cfg, SITE);
+    expect((await paymentsOf(a.id, 10)).map((p) => p.plan)).toEqual(["MAX", "PLUS"]);
   });
 });

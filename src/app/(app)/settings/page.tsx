@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { prefsOf } from "@/lib/prefsDb";
@@ -20,6 +21,7 @@ export default async function SettingsPage() {
   const { t } = v;
   const trades = await listTrades(user.id);
   const access = user.role === "ADMIN" ? t("хугацаагүй (админ)", "no expiry (admin)") : user.accessUntil ? t(`${v.dateTime(user.accessUntil)} хүртэл (${v.zone})`, `until ${v.dateTime(user.accessUntil)} (${v.zone})`) : "—";
+  const plan = user.role === "ADMIN" ? null : user.accessUntil && user.accessUntil > new Date() ? "active" : "none";
   const linked = !!user.telegramChatId;
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -31,6 +33,13 @@ export default async function SettingsPage() {
         <AppearanceForm prefs={prefsOf(user)} />
         <TimeZoneForm timeZone={v.timeZone} now={new Date()} />
         <ProfileForm name={user.name} email={user.email} access={access} />
+        {plan && (
+          <section className="card" aria-labelledby="plan-h">
+            <h2 id="plan-h" className="card-title">{t("Багц", "Plan")}</h2>
+            <p className="mt-2 text-sm text-zinc-300">{plan === "active" ? t("Таны багц идэвхтэй. Сунгавал үлдсэн хоног хасагдахгүй.", "Your plan is active. Renewing keeps the days left.") : t("Багцгүй үед өсөх/унах магадлал, setup, бот нууцлагдсан харагдана.", "Without a plan the odds, setups and the bot stay hidden.")}</p>
+            <Link href="/plans" className="btn mt-4">{plan === "active" ? t("Багц сунгах", "Renew plan") : t("Багц сонгох", "Choose a plan")}</Link>
+          </section>
+        )}
         <PasswordForm />
 
         <div className="md:col-span-2"><SoundToggle /></div>

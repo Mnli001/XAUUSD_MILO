@@ -25,6 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </span>
           <nav aria-label={t("Админ цэс", "Admin menu")} className="ml-2 flex min-w-0 flex-1 items-stretch overflow-x-auto">
             <SectionLink href="/admin/users">{t("Хэрэглэгчид", "Users")}</SectionLink>
+            <SectionLink href="/admin/payments">{t("Төлбөр", "Payments")}</SectionLink>
             <SectionLink href="/admin/events">{t("Мэдээ", "News")}</SectionLink>
             <SectionLink href="/admin/bot">{t("Ботын судалгаа", "Bot research")}</SectionLink>
           </nav>

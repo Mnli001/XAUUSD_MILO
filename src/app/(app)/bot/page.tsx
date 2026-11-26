@@ -4,6 +4,9 @@ import { getLiveView } from "@/lib/bot/liveDb";
 import { BotPanel } from "@/components/BotPanel";
 import { BotGuide, BacktestGuide } from "@/components/BotGuide";
 import { getT, getViewer } from "@/lib/prefs.server";
+import { paywallFor } from "@/lib/paywall.server";
+import { PlansCard } from "@/components/Paywall";
+import { choosePlanAction } from "@/lib/actions/payments";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -16,7 +19,9 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
   const { t } = v;
   const user = await requireUser();
   const { account } = await searchParams;
-  const view = await getLiveView(user.id, new Date(), typeof account === "string" ? account : undefined);
+  const { paid, payOn, contact } = paywallFor(user);
+  // Without a plan nothing about a robot (token, accounts, history) is loaded or shown.
+  const view = paid ? await getLiveView(user.id, new Date(), typeof account === "string" ? account : undefined) : null;
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
@@ -52,6 +57,8 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
         </div>
       </div>
       
+      {paid && view ? (
+        <>
       <div role="note" className="group relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-400/15 to-amber-400/5 p-5 backdrop-blur-sm transition-all duration-500 hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-400/10 sm:p-6">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-400/10 blur-3xl transition-all duration-700 group-hover:scale-150" aria-hidden />
         
@@ -75,6 +82,10 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
       <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} />
       <BotGuide origin={origin} hasToken={view.hasToken} online={view.online} v={v} />
       <BacktestGuide v={v} />
+        </>
+      ) : (
+        <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} />
+      )}
     </div>
   );
 }

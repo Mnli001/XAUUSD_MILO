@@ -4,6 +4,9 @@ import { CandleChart } from "@/components/CandleChart";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { SessionLine } from "@/components/SessionLine";
 import { TermHint } from "@/components/TermHint";
+import { requireUser } from "@/lib/auth";
+import { hasAccess } from "@/lib/access";
+import { UnlockLink } from "@/components/Paywall";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -14,6 +17,7 @@ export async function generateMetadata() {
 export default async function ChartPage() {
   const v = await getViewer();
   const { t } = v;
+  const paid = hasAccess(await requireUser(), new Date());
   const snap = await getTodaySnapshot(SYMBOL, new Date());
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -28,7 +32,13 @@ export default async function ChartPage() {
       <section className="card py-3 sm:py-4" aria-label={t("Өнөөдрийн сешнүүд", "Today's sessions")}>
         <SessionLine now={new Date()} v={v} />
       </section>
-      <CandleChart levels={snap.levels} />
+      <CandleChart levels={paid ? snap.levels : null} />
+      {!paid && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-400">
+          {t("Өнөөдрийн R1, Pivot, S1 түвшний шугам багцтай хэрэглэгчдэд харагдана.", "Today's R1, pivot and S1 lines show with a plan.")}
+          <UnlockLink t={t} />
+        </p>
+      )}
     </div>
   );
 }

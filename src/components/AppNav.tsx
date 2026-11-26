@@ -17,6 +17,7 @@ const mainLinks = (t: T) => [
 ] as const;
 const moreLinks = (t: T) => [
   ["/performance", t("Гүйцэтгэл", "Performance"), "M4 19h16M7 16V9m5 7V5m5 11v-4"],
+  ["/plans", t("Багц", "Plans"), "M4 7h16v12H4zM4 7l2-3h12l2 3M9 11h6"],
   ["/glossary", t("Нэр томьёо", "Glossary"), "M5 5.5A2.5 2.5 0 0 1 7.5 3H19v14H7.5A2.5 2.5 0 0 0 5 19.5m0-14v14m0 0A2.5 2.5 0 0 0 7.5 22H19v-5M9 7h6"],
   ["/settings", t("Тохиргоо", "Settings"), "M4 7h9m4 0h3M4 17h3m4 0h9M15 4.5v5M9 14.5v5"],
 ] as const;

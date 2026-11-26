@@ -97,3 +97,8 @@ export async function listPayments(limit = 200) {
   }).from(schema.payments).innerJoin(schema.users, eq(schema.users.id, schema.payments.userId))
     .orderBy(desc(schema.payments.createdAt)).limit(limit);
 }
+
+/** This user's own payments, newest first, for the plans page. */
+export async function paymentsOf(userId: string, limit = 10): Promise<Payment[]> {
+  return db.select().from(schema.payments).where(eq(schema.payments.userId, userId)).orderBy(desc(schema.payments.createdAt)).limit(limit);
+}
