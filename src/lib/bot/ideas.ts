@@ -12,7 +12,7 @@ type Score = number | null;
  * Between 07:00 and 16:00 UTC the first 15-minute close outside the range is followed, with the
  * stop at the middle of the range, and the trade is flat by 20:00 UTC. One trade per day.
  */
-export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[]; confirm?: Score[] }): (Order | null)[] {
+export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[]; confirm?: Score[]; minStop?: { atr: number[]; k: number } }): (Order | null)[] {
   const out: (Order | null)[] = new Array(m15.length).fill(null);
   let day = "";
   let high = -Infinity, low = Infinity, count = 0, done = false;
@@ -38,6 +38,8 @@ export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; p
     const closeAt = Date.UTC(bar.time.getUTCFullYear(), bar.time.getUTCMonth(), bar.time.getUTCDate(), 20);
     const maxBars = Math.floor((closeAt - at.getTime()) / M15);
     if (stopDist <= 0 || maxBars < 1) return;
+    // A breakout from a range too narrow for the day's usual move is noise: the day is passed.
+    if (o.minStop && !(stopDist >= o.minStop.k * o.minStop.atr[i])) { done = true; return; }
     out[i] = { side, stopDist, targetDist: stopDist * o.rr, maxBars };
     done = true;
   });
@@ -80,13 +82,15 @@ export function newsOrders(m15: Candle[], o: { atr15: number[]; news: Date[]; rr
   });
 }
 
-type Context = { m15: Candle[]; rsi15: number[]; atr15: number[]; daily: Score[]; h4: Score[]; news: Date[] };
+type Context = { m15: Candle[]; rsi15: number[]; atr15: number[]; daily: Score[]; h4: Score[]; atrD: number[]; news: Date[] };
 export type Idea = { name: string; params: BotParams; build: (c: Context) => (Order | null)[] };
 
 const base: BotParams = { ...DEFAULT_PARAMS, breakeven: false };
 const oneADay: BotParams = { ...base, maxTradesPerDay: 1 };
 // The order builder already allows one trade per UTC day. The simulator counts days on the Ulaanbaatar
 // clock, where a 16:00 UTC entry falls on the next day and would block that day's trade, so it is not asked to.
+/** The Asian rule passes a day whose stop (half the range plus the breakout) is under this share of the daily ATR. */
+export const ASIAN_MIN_STOP_ATR = 0.25;
 const asianDay: BotParams = { ...base, maxTradesPerDay: 2 };
 /** Records of a rule are in R; a balance this size never rounds a wide-stop day down to under 0.01 lot and skips it. */
 export const RECORD_BALANCE = 1_000_000;
@@ -102,9 +106,12 @@ export const IDEAS: Idea[] = [
   // Added 2026-11-26 after the all-history check (scripts/asian-deep-check.ts): asking the 4-hour trend to agree
   // and aiming for 3R each improved BOTH halves of the history, not just the whole.
   { name: "Азийн breakout + өдөр, 4 цагийн тренд, 3R", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: oneADay, trend: c.daily, confirm: c.h4 }) }, // i18n-ok: server log, machine reply or research-script name
+  // Added 2026-11-26 after the broker's own history 2019 → (scripts/broker-research.ts): passing days whose stop
+  // is under a quarter of the daily ATR helped both 2019–22 (chosen there) and 2023 → (untouched).
+  { name: "Азийн breakout + тренд, 3R, stop ≥ 0.25 өдрийн ATR", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: asianDay, trend: c.daily, confirm: c.h4, minStop: { atr: c.atrD, k: ASIAN_MIN_STOP_ATR } }) }, // i18n-ok: server log, machine reply or research-script name
 ];
 /** The Asian rule the Setup page, the Telegram signals and the robot's Asian tool all follow. */
-export const ASIAN_IDEA = IDEAS[6];
+export const ASIAN_IDEA = IDEAS[7];
 
 type IdeaInput = Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] };
 
@@ -118,6 +125,7 @@ export function ideaContext(input: IdeaInput): { ctx: Context; ready: number } {
     atr15: atrSeries(m15),
     daily: alignClosed(decisions, d1, scoreSeries(d1), "1day"),
     h4: alignClosed(decisions, h4, scoreSeries(h4), "4h"),
+    atrD: alignClosed(decisions, d1, atrSeries(d1), "1day").map((x) => x ?? NaN),
   };
   return { ctx, ready: m15.findIndex((_, i) => ctx.daily[i] !== null && ctx.h4[i] !== null) };
 }

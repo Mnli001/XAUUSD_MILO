@@ -7,7 +7,7 @@ function day(overrides: Record<number, Partial<Candle>> = {}, upToBar = 96, base
   const start = Date.UTC(2026, 10, 24, 0, 0);
   return Array.from({ length: upToBar }, (_, i) => ({ time: new Date(start + i * M15), open: base, high: base + 2, low: base - 2, close: base, ...overrides[i] }));
 }
-const UP = { daily: 30, h4: 20 }, DOWN = { daily: -30, h4: -20 };
+const UP = { daily: 30, h4: 20, atrD: 20 }, DOWN = { daily: -30, h4: -20, atrD: 20 };
 const at = (h: number, m = 0) => new Date(Date.UTC(2026, 10, 24, h, m));
 /** Bars from `from` on held around `price` (±2), so a trade opened before them neither stops nor targets. */
 const hold = (from: number, to: number, price: number) => Object.fromEntries(Array.from({ length: to - from }, (_, k) => [from + k, { open: price, high: price + 2, low: price - 2, close: price }]));
@@ -25,12 +25,12 @@ describe("Asian range breakout", () => {
     expect(asianSetup(day({}, 32), DOWN, [], at(8))).toMatchObject({ status: "WATCH", side: "SELL", entry: 3998, stop: 4000, target: 3992 });
   });
   test("the 4-hour trend must agree with the daily", () => {
-    expect(asianSetup(day({}, 32), { daily: 30, h4: -20 }, [], at(8))).toMatchObject({ status: "OFF", side: null });
-    expect(asianSetup(day({}, 32), { daily: 30, h4: null }, [], at(8)).status).toBe("OFF");
+    expect(asianSetup(day({}, 32), { daily: 30, h4: -20, atrD: 20 }, [], at(8))).toMatchObject({ status: "OFF", side: null });
+    expect(asianSetup(day({}, 32), { daily: 30, h4: null, atrD: 20 }, [], at(8)).status).toBe("OFF");
   });
   test("without a daily trend there is nothing to wait for", () => {
-    expect(asianSetup(day({}, 32), { daily: null, h4: 20 }, [], at(8))).toMatchObject({ status: "OFF", side: null, entry: null });
-    expect(asianSetup(day({}, 32), { daily: 0, h4: 0 }, [], at(8)).status).toBe("OFF");
+    expect(asianSetup(day({}, 32), { daily: null, h4: 20, atrD: 20 }, [], at(8))).toMatchObject({ status: "OFF", side: null, entry: null });
+    expect(asianSetup(day({}, 32), { daily: 0, h4: 0, atrD: 20 }, [], at(8)).status).toBe("OFF");
   });
   test("a close outside the range in the trend's direction is the entry: stop at the middle, target three times as far", () => {
     const bars = day({ ...hold(31, 96, 4006), 30: { high: 4007, close: 4006 } }, 34);
@@ -65,6 +65,12 @@ describe("Asian range breakout", () => {
     // a bar touching both counts as the stop, as in the replay
     const both = day({ ...hold(31, 96, 4006), 30: { high: 4007, close: 4006 }, 35: { high: 4025, low: 3999, close: 4006 } }, 40);
     expect(asianSetup(both, UP, [], at(10)).result).toBe(-1);
+  });
+  test("a breakout from a range too narrow for the daily ATR passes the day", () => {
+    const bars = day({ ...hold(31, 96, 4006), 30: { high: 4007, close: 4006 } }, 34); // stop $6
+    expect(asianSetup(bars, { ...UP, atrD: 30 }, [], at(8, 30))).toMatchObject({ status: "OFF", side: null }); // needs $7.50
+    expect(asianSetup(bars, { ...UP, atrD: 24 }, [], at(8, 30)).status).toBe("ACTIVE"); // needs $6
+    expect(asianSetup(bars, { ...UP, atrD: null }, [], at(8, 30)).status).toBe("OFF");
   });
   test("when prices stop arriving it says so instead of reading old bars", () => {
     const s = asianSetup(day({}, 40), UP, [], at(15)); // last bar closed 10:00, five hours ago

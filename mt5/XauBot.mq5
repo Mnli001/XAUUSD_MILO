@@ -1160,6 +1160,28 @@ int AsianTrend()
   }
 
 #define ASIAN_RR 3.0                 // сайтын ASIAN_RR (lib/setup/setups.ts)
+#define ASIAN_MIN_STOP_ATR 0.25      // stop өдрийн ATR-ийн үүнээс бага бол тэр өдөр орохгүй (lib/bot/ideas.ts)
+
+// Сүүлд хаагдсан өдрийн Wilder ATR(14) — сайтын atrSeries-тэй ижил
+datetime gAtrD1At = 0;
+double   gAtrD1 = EMPTY_VALUE;
+double DailyAtr()
+  {
+   datetime bar = iTime(_Symbol, PERIOD_D1, 1);
+   if(bar == gAtrD1At) return(gAtrD1);
+   gAtrD1At = bar;
+   gAtrD1 = EMPTY_VALUE;
+   MqlRates r[];
+   ArraySetAsSeries(r, false);
+   int n = CopyRates(_Symbol, PERIOD_D1, 1, 1500, r);
+   if(n <= 15) return(gAtrD1);
+   double v = 0.0;
+   for(int i = 1; i <= 14; i++) v += MathMax(r[i].high - r[i].low, MathMax(MathAbs(r[i].high - r[i - 1].close), MathAbs(r[i].low - r[i - 1].close)));
+   v /= 14.0;
+   for(int i = 15; i < n; i++) v = (v * 13.0 + MathMax(r[i].high - r[i].low, MathMax(MathAbs(r[i].high - r[i - 1].close), MathAbs(r[i].low - r[i - 1].close)))) / 14.0;
+   gAtrD1 = v;
+   return(gAtrD1);
+  }
 
 double RuleLots() { return(NormLots(gTester ? TesterLots : gLots)); }
 
@@ -1236,6 +1258,10 @@ void RuleStep()
       int trend = AsianTrend();
       int dir = (trend > 0 && c > gRangeHigh) ? 1 : ((trend < 0 && c < gRangeLow) ? -1 : 0);
       if(dir == 0) return;
+      gRuleTraded = true;                                        // эхний breakout өдрийг шийднэ (сайттай ижил)
+      double atrD = DailyAtr();
+      double closeDist = MathAbs(c - (gRangeHigh + gRangeLow) / 2.0);
+      if(atrD == EMPTY_VALUE || closeDist < ASIAN_MIN_STOP_ATR * atrD) return;   // хүрээ хэт нарийн
       double dist = MathAbs(price - (gRangeHigh + gRangeLow) / 2.0);
       if(RuleOpen(dir, dist, dist * ASIAN_RR, dayStartServer + 20 * 3600))
          Print("XauBot tester: asian ", (dir > 0 ? "BUY" : "SELL"), " utc ", TimeToString(utc + 15 * 60, TIME_DATE | TIME_MINUTES), " risk ", Num(dist, 2));

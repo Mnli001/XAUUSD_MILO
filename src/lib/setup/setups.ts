@@ -1,6 +1,7 @@
 import type { Candle } from "../analysis/indicators";
 import { type BotParams, type Side, DEFAULT_PARAMS, inNewsWindow } from "../bot/strategy";
 import { MN_VIEWER, type Viewer } from "../viewer";
+import { ASIAN_MIN_STOP_ATR } from "../bot/ideas";
 
 /**
  * A setup is a rule read against the market as it stands now: is it forming, worth watching,
@@ -44,7 +45,7 @@ export const STALE_FEED_MS = 90 * 6e4;
  */
 type Score = number | null;
 /** A trend score: one value for every bar, or a series aligned with the 15-minute bars (each bar read with the score it had). */
-export type AsianScores = { daily: Score | Score[]; h4: Score | Score[] };
+export type AsianScores = { daily: Score | Score[]; h4: Score | Score[]; atrD: Score | Score[] };
 const scoreAt = (x: Score | Score[], i: number): Score => (Array.isArray(x) ? (x[i] ?? null) : x);
 
 export function asianSetup(m15: Candle[], scores: AsianScores, news: Date[], now: Date, v: Viewer = MN_VIEWER): SetupNow {
@@ -96,6 +97,13 @@ export function asianSetup(m15: Candle[], scores: AsianScores, news: Date[], now
     const dir = trend === "BUY" ? 1 : -1;
     const sideWord = sideWordOf(trend);
     const done = [...checksAt(then), { label: t(`Хүрээнээс ${sideWord} хаагдсан (мэдээний цонхноос гадуур)`, `Closed ${sideWord} the range (outside a news window)`), ok: true }];
+    // As the replay: the first breakout decides the day; one from a range too narrow for the day's usual move is passed.
+    const atr = scoreAt(scores.atrD, m15.indexOf(breakout));
+    const need = atr === null || !Number.isFinite(atr) ? Infinity : ASIAN_MIN_STOP_ATR * atr;
+    if (!(Math.abs(breakout.close - mid) >= need)) {
+      const narrow = { label: t(`Stop өдрийн ATR-ийн ${ASIAN_MIN_STOP_ATR}-аас их`, `Stop at least ${ASIAN_MIN_STOP_ATR} of the daily ATR`), ok: false };
+      return off(t("Хүрээ хэт нарийн, өнөөдөр орохгүй", "Range too narrow, no trade today"), t(`Breakout гарсан ч stop ${px(Math.abs(breakout.close - mid))}$ нь өдрийн дундаж хэлбэлзлийн (ATR ${Number.isFinite(need) ? px(atr!) : "—"}$) дөрөвний нэгээс бага. Ийм нарийн хүрээний breakout түүхэнд ихэвчлэн хуурамч гарсан тул алгасна.`, `A breakout came, but its stop of $${px(Math.abs(breakout.close - mid))} is under a quarter of the day's usual move (ATR $${Number.isFinite(need) ? px(atr!) : "—"}). Breakouts from ranges this narrow were mostly false in the past, so the day is passed.`), { band, checks: [...done, narrow] });
+    }
     const entry = breakout.close, dist = Math.abs(entry - mid), target = entry + dir * dist * ASIAN_RR;
     const levels = { side: trend, band, entry, stop: mid, target, at: new Date(breakout.time.getTime() + M15) };
     // Walk the bars after the entry exactly as the replay does: a bar touching both counts as the stop.

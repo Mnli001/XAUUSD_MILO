@@ -26,7 +26,7 @@ async function main() {
     const now = new Date(Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10), 20));
     const from = Math.max(0, i - 199);
     const closed = m15.slice(from, i + 1);
-    const s = asianSetup(closed, { daily: ctx.daily.slice(from, i + 1), h4: ctx.h4.slice(from, i + 1) }, data.news, now);
+    const s = asianSetup(closed, { daily: ctx.daily.slice(from, i + 1), h4: ctx.h4.slice(from, i + 1), atrD: ctx.atrD.slice(from, i + 1) }, data.news, now);
     const pageTraded = s.result !== undefined;
     const rep = byDay.get(day);
     if (pageTraded && rep) {
