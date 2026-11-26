@@ -4,11 +4,15 @@ import { eventTitle } from "@/lib/data/calendarProvider";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
 import { sessionColor } from "./SessionLine";
 import { Dir } from "./Timetable";
+import { Masked } from "./Paywall";
 
 const pad = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
-/** Next 24 hours starting at the current UB hour, set like a departures board: one row per hour. */
-export function HourlyTable({ rows, nowHour, events, v = MN_VIEWER }: { rows: HourRow[]; nowHour: number; events: { time: Date; title: string; type?: string }[]; v?: Viewer }) {
+/**
+ * Next 24 hours starting at the current UB hour, set like a departures board: one row per hour. `locked` (no plan):
+ * the hours, sessions and news flags stay, the odds and the move show as masks (the rows given then carry no statistics).
+ */
+export function HourlyTable({ rows, nowHour, events, v = MN_VIEWER, locked = false }: { rows: HourRow[]; nowHour: number; events: { time: Date; title: string; type?: string }[]; v?: Viewer; locked?: boolean }) {
   const { t } = v;
   const byHour = new Map(rows.map((r) => [r.hour, r]));
   const newsHours = new Map<number, string>();
@@ -47,20 +51,20 @@ export function HourlyTable({ rows, nowHour, events, v = MN_VIEWER }: { rows: Ho
               <td className="td hidden text-zinc-300 sm:table-cell">{sessionLabel(r.session, t)}</td>
               <td className="td">
                 <span className="flex items-center gap-x-3">
-                  {pct === null ? (
+                  {locked ? <Masked t={t} /> : pct === null ? (
                     <span className="text-zinc-500">{t("Дата хангалтгүй", "Not enough data")}</span>
                   ) : pct >= 50 ? (
                     <span className="font-semibold whitespace-nowrap text-emerald-400"><Dir d={1} /> {pct}{t("% өсөх", "% up")}</span>
                   ) : (
                     <span className="font-semibold whitespace-nowrap text-red-400"><Dir d={-1} /> {100 - pct}{t("% унах", "% down")}</span>
                   )}
-                  {pct !== null && (
+                  {!locked && pct !== null && (
                     <span aria-hidden className="hidden h-[5px] w-20 overflow-hidden rounded-full bg-red-500/70 md:flex">
                       <span className="bg-emerald-500" style={{ width: `${pct}%` }} />
                     </span>
                   )}
                   {/* Sample size: always on wide screens; on phones only when it falls back to all days. */}
-                  <span className={`text-xs whitespace-nowrap text-zinc-500 ${pct !== null && cond ? "max-sm:sr-only" : ""}`}>n={n}{pct !== null && !cond ? t(" · бүх өдөр", " · all days") : ""}</span>
+                  {!locked && <span className={`text-xs whitespace-nowrap text-zinc-500 ${pct !== null && cond ? "max-sm:sr-only" : ""}`}>n={n}{pct !== null && !cond ? t(" · бүх өдөр", " · all days") : ""}</span>}
                   {newsHours.has(r.hour) && (
                     <span data-testid="news-flag" className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/15 px-1.5 py-1 text-xs font-medium whitespace-nowrap text-amber-300 sm:px-2 sm:py-0.5" title={newsHours.get(r.hour)}>
                       <span aria-hidden className="h-1.5 w-1.5 rotate-45 rounded-[1px] bg-amber-400" /><span className="max-sm:sr-only">{t("мэдээ", "news")}</span>
@@ -68,7 +72,7 @@ export function HourlyTable({ rows, nowHour, events, v = MN_VIEWER }: { rows: Ho
                   )}
                 </span>
               </td>
-              <td className="td text-right whitespace-nowrap text-zinc-400 tabular-nums">{r.avgMove === null ? "—" : `±$${r.avgMove.toFixed(1)}`}</td>
+              <td className="td text-right whitespace-nowrap text-zinc-400 tabular-nums">{locked ? <Masked t={t} /> : r.avgMove === null ? "—" : `±$${r.avgMove.toFixed(1)}`}</td>
             </tr>
           );
         })}

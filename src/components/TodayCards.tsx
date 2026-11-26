@@ -8,6 +8,7 @@ import { MN_VIEWER, type Viewer } from "@/lib/viewer";
 import { Dir } from "./Timetable";
 import { PriceSpark } from "./PriceSpark";
 import { LivePrice } from "./LiveQuote";
+import { Masked, UnlockLink } from "./Paywall";
 
 export const loadingText = (t: T) => t("Дата ачаалж байна", "Loading data");
 const tfLabels = (t: T): [Timeframe, string][] => [["1day", t("Өдөр", "Day")], ["4h", t("4ц", "4h")], ["1h", t("1ц", "1h")], ["15min", t("15м", "15m")]];
@@ -228,6 +229,66 @@ export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot,
           ))}
         </dl>
       </div>
+    </section>
+  );
+}
+
+/** The leading-side card for someone without a plan: the same frame, every figure masked. Takes no data on purpose. */
+export function BiasBarLocked({ v = MN_VIEWER }: { v?: Viewer }) {
+  const { t } = v;
+  return (
+    <section className="hallmark p-6 sm:p-8" aria-labelledby="bias-h">
+      <h2 id="bias-h" className="sr-only">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
+      <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-900/50 px-3 py-1.5">
+        <span className="text-xs font-bold tracking-wider uppercase text-zinc-400">{t("Өнөөдрийн чиглэл", "Today's Direction")}</span>
+      </div>
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <Masked t={t} className="text-[44px] leading-none sm:text-[60px]" />
+        <div className="text-right">
+          <Masked t={t} className="block text-[32px] leading-none sm:text-[40px]" />
+          <span className="mt-1 block text-xs text-zinc-500">{t("нийт оноо / 100", "total score / 100")}</span>
+        </div>
+      </div>
+      <div className="mt-6 mb-2 flex justify-between gap-3 text-sm">
+        <span className="flex items-center gap-2 text-zinc-400">{t("Худалдан авагч", "Buyers")} <Masked t={t} /></span>
+        <span className="flex items-center gap-2 text-zinc-400">{t("Худалдагч", "Sellers")} <Masked t={t} /></span>
+      </div>
+      <div aria-hidden className="h-2 rounded-full bg-zinc-800" />
+      <dl className="mt-5 grid grid-cols-4 divide-x divide-zinc-800/50 overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30">
+        {tfLabels(t).map(([tf, label]) => (
+          <div key={tf} className="px-2 py-3.5 text-center">
+            <dt className="text-xs font-medium text-zinc-500">{label}</dt>
+            <dd className="mt-1 text-base"><Masked t={t} /></dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-4"><UnlockLink t={t} /></div>
+    </section>
+  );
+}
+
+/** The key-levels card for someone without a plan: the level names, masked prices, no "now" marker. Takes no data on purpose. */
+export function LevelsCardLocked({ v = MN_VIEWER }: { v?: Viewer }) {
+  const { t } = v;
+  const names = ["R2", "R1", "Pivot", "S1", "S2"];
+  const extra = [t("Өчигдрийн оргил", "Yesterday's high"), t("Өчигдрийн ёроол", "Yesterday's low"), t("Өдрийн ATR", "Daily ATR")];
+  return (
+    <section className="card" aria-labelledby="levels-h">
+      <h2 id="levels-h" className="card-title flex items-center gap-2">{t("Гол түвшин", "Key levels")}<TermHint id="pivot" /></h2>
+      <ol className="mt-4">
+        {names.map((k) => (
+          <li key={k} className="flex items-baseline gap-3 py-2 text-sm">
+            <span className={`font-semibold ${k.startsWith("R") ? "text-red-400" : k.startsWith("S") ? "text-emerald-400" : "text-zinc-400"}`}>{k}</span>
+            <span className="ml-auto"><Masked t={t} /></span>
+          </li>
+        ))}
+      </ol>
+      <dl className="mt-4 space-y-2 rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4 text-sm">
+        {extra.map((k) => (
+          <div key={k} className="flex items-baseline justify-between gap-3"><dt className="font-medium text-zinc-400">{k}</dt><dd><Masked t={t} /></dd></div>
+        ))}
+      </dl>
+      <div className="mt-4"><UnlockLink t={t} /></div>
     </section>
   );
 }
