@@ -68,6 +68,8 @@ input int    TesterMaxTradesDay   = 6;        // Өдөрт орох дээд т
 input int    TesterRiskMode       = 0;        // Хэмжээ: 0 = TesterLots, 1 = арилжаа бүрт $, 2 = балансын % · Size: 0 lots, 1 $ per trade, 2 % of balance
 input double TesterRiskValue      = 2.0;      // Эрсдэл ($ эсвэл %) · Risk ($ or %)
 input bool   TesterH1Stops        = false;    // Stop = H1 ATR x 1.5, target = stop x 2 (Scalper) · Stops from the 1-hour ATR
+input bool   TesterWeekly         = false;
+input int    TesterMaxOpen        = 3;        // Setup: нэг дор нээлттэй байх дээд арилжаа · Most trades open at once    // Setup: долоо хоногийн тренд ч нэг чиглэлд байх · Weekly trend must agree too
 input bool   TesterProtect        = false;    // +1R-д stop-ийг орсон үнэ рүү, +1.5R-ээс дагуулах · Break-even at +1R, trail from +1.5R
 input double TesterDailyLossPct   = 3.0;      // Өдрийн алдагдал балансын % хүрвэл зогсох (0 = үгүй) · Daily loss stop, % of balance
 
@@ -1102,7 +1104,30 @@ double TrendScoreCalc(const ENUM_TIMEFRAMES tf)
   {
    MqlRates r[];
    ArraySetAsSeries(r, false);
-   int n = CopyRates(_Symbol, tf, 1, 1500, r);                  // хамгийн сүүлд хаагдсан лаа хүртэл, хуучнаас шинэ рүү
+   int n = 0;
+   if(tf == PERIOD_W1)
+     {
+      // Долоо хоногийг өдрийн лаанаас бүтээнэ (сайттай ижил, даваа гарагаас): дуусаагүй долоо хоногийг тооцохгүй
+      MqlRates d[];
+      ArraySetAsSeries(d, false);
+      int nd = CopyRates(_Symbol, PERIOD_D1, 1, 3000, d);
+      if(nd <= 0) return(EMPTY_VALUE);
+      ArrayResize(r, nd);
+      long curWeek = -1;
+      for(int i = 0; i < nd; i++)
+        {
+         MqlDateTime t;
+         TimeToStruct(d[i].time, t);
+         long wk = (long)(d[i].time / 86400) - ((t.day_of_week + 6) % 7);   // тухайн долоо хоногийн даваа гараг (хоногоор)
+         if(n > 0 && wk == curWeek) { r[n - 1].high = MathMax(r[n - 1].high, d[i].high); r[n - 1].low = MathMin(r[n - 1].low, d[i].low); r[n - 1].close = d[i].close; }
+         else { r[n] = d[i]; n++; curWeek = wk; }
+        }
+      MqlDateTime nowT;
+      TimeToStruct(iTime(_Symbol, PERIOD_D1, 0), nowT);
+      long thisWeek = (long)(iTime(_Symbol, PERIOD_D1, 0) / 86400) - ((nowT.day_of_week + 6) % 7);
+      if(n > 0 && curWeek == thisWeek) n--;                       // энэ долоо хоног дуусаагүй
+     }
+   else n = CopyRates(_Symbol, tf, 1, 1500, r);                  // хамгийн сүүлд хаагдсан лаа хүртэл, хуучнаас шинэ рүү
    if(n < 210) return(EMPTY_VALUE);
    double c[];
    ArrayResize(c, n);
@@ -1148,12 +1173,13 @@ double TrendScoreCalc(const ENUM_TIMEFRAMES tf)
    return(sc);
   }
 
-datetime gScD1At = 0, gScH4At = 0;
-double   gScD1 = EMPTY_VALUE, gScH4 = EMPTY_VALUE;
+datetime gScD1At = 0, gScH4At = 0, gScW1At = 0;
+double   gScD1 = EMPTY_VALUE, gScH4 = EMPTY_VALUE, gScW1 = EMPTY_VALUE;
 double TrendScore(const ENUM_TIMEFRAMES tf)
   {
    datetime bar = iTime(_Symbol, tf, 1);
    if(tf == PERIOD_D1) { if(bar != gScD1At) { gScD1 = TrendScoreCalc(tf); gScD1At = bar; } return(gScD1); }
+   if(tf == PERIOD_W1) { datetime dbar = iTime(_Symbol, PERIOD_D1, 1); if(dbar != gScW1At) { gScW1 = TrendScoreCalc(tf); gScW1At = dbar; } return(gScW1); }
    if(bar != gScH4At) { gScH4 = TrendScoreCalc(tf); gScH4At = bar; }
    return(gScH4);
   }
@@ -1163,6 +1189,11 @@ int AsianTrend()
   {
    double d = TrendScore(PERIOD_D1), h = TrendScore(PERIOD_H4);
    if(d == EMPTY_VALUE || h == EMPTY_VALUE || d == 0 || h == 0) return(0);
+   if(TesterWeekly)                                              // долоо хоногийн тренд ч нэг чиглэлд байх (туршилт)
+     {
+      double w = TrendScore(PERIOD_W1);
+      if(w == EMPTY_VALUE || w == 0 || (w > 0) != (d > 0)) return(0);
+     }
    if(d > 0 && h > 0) return(1);
    if(d < 0 && h < 0) return(-1);
    return(0);
@@ -1287,7 +1318,7 @@ void RuleStep()
             gSesBars[k]++;
             continue;
            }
-         if(gSesDone[k] || hf < SES_TO[k] || hf >= SES_ENTRY[k] || gSesBars[k] < SES_MINBARS[k] || CountPositions() >= 3) continue;
+         if(gSesDone[k] || hf < SES_TO[k] || hf >= SES_ENTRY[k] || gSesBars[k] < SES_MINBARS[k] || CountPositions() >= TesterMaxOpen) continue;
          int trend = AsianTrend();
          int dir = (trend > 0 && c > gSesHi[k]) ? 1 : ((trend < 0 && c < gSesLo[k]) ? -1 : 0);
          if(dir == 0) continue;
