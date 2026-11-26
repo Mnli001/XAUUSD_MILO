@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getLiveView } from "@/lib/bot/liveDb";
 import { BotPanel } from "@/components/BotPanel";
-import { BotGuide, BacktestGuide } from "@/components/BotGuide";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { paywallFor } from "@/lib/paywall.server";
 import { PlansCard } from "@/components/Paywall";
@@ -56,10 +55,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
 
       {paid && view ? (
         <>
-      {/* Status and controls first; the setup manual follows and opens on its own only until the robot is connected. */}
       <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} robot={robotNeeds()} setup={setupToolText(v)} />
-      <BotGuide origin={origin} hasToken={view.hasToken} online={view.online} v={v} record={BROKER_RECORD} />
-      <BacktestGuide v={v} />
         </>
       ) : (
         <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} />

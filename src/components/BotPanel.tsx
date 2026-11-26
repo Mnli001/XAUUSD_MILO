@@ -599,6 +599,13 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
           <span className={`ml-auto text-xs font-medium ${v.online ? "text-emerald-400" : "text-amber-300"}`}>{v.online ? t("холбогдсон", "connected") : t("холбогдоогүй", "not connected")}</span>
           <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 text-zinc-500 transition-transform group-open:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </summary>
+      <p className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-zinc-400">{t("Робот татах:", "Download the robot:")}</span>
+        <a className="btn-ghost min-h-9 px-3 text-xs sm:min-h-9" href="/api/bot/download?file=ex5">XauBot.ex5</a>
+        <a className="btn-ghost min-h-9 px-3 text-xs sm:min-h-9" href="/api/bot/download?file=mq5">XauBot.mq5 {t("(эх код)", "(source)")}</a>
+        <a className="btn-ghost min-h-9 px-3 text-xs sm:min-h-9" href="/api/bot/download?file=feed">XauFeed.mq5</a>
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("XauBot.ex5-ийг MT5 дээр File → Open Data Folder → MQL5 → Experts хавтсанд хуулж, Navigator дээр Refresh дарна. Дараа нь роботыг чарт руу чирж, доорх хаяг, токеныг оруулна.", "Copy XauBot.ex5 into MT5's File → Open Data Folder → MQL5 → Experts, then press Refresh in the Navigator. Drag the robot onto a chart and enter the address and token below.")}</p>
       <form action={tokAction} className="mt-4 space-y-3" aria-label={t("MT5 роботыг холбох", "Connect the MT5 robot")}>
         <p className="text-sm text-zinc-300">{t("Роботын тохиргоонд энэ хаягийг оруулна:", "Enter this address in the robot's settings:")}</p>
         <code className="block rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
