@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.51"
+#property version   "3.60"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -83,9 +83,10 @@ bool   gCloseAll = false;
 long   gDId = 0, gDLast = -1;      // вэбээс ирсэн захиалга (DAY, ASIAN): dId 0 = одоо юу ч байхгүй
 int    gDDir = 0, gDAge = 99999;
 double gDRisk = 0.0, gDRR = 2.0;
+long   gDExit = 0;               // вэбээс ирсэн захиалгын хаах цаг (UTC unix секунд), 0 = дүрмийн өөрийнх
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 12             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 13             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -1211,7 +1212,8 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    if(!gTester && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
-   bool ok = SendMarket(dir, lots, sl, tp, "xau-rule");
+   // Хаах цагийг арилжааны comment-д хадгална (серверийн цаг): робот дахин ачаалсан ч мэднэ
+   bool ok = SendMarket(dir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt));
    if(ok)
      {
       gRuleTraded = true;
@@ -1262,7 +1264,7 @@ void RuleStep()
       // Сайттай ижил: хүрээ 00:00-07:00 UTC. Өдөр, 4 цагийн тренд нэг чиглэлд бол 07:00-16:00 UTC-д
       // тэр чиглэлд хүрээнээс гарч хаагдсан эхний лаа. Stop: хүрээний дунд. Target: stop × 3. 20:00 UTC-д хаана.
       if(u.hour < 7) { RangeAdd(h, l); return; }
-      if(gRuleTraded || gRangeBars < 20 || u.hour >= 16 || CountPositions() > 0) return;
+      if(gRuleTraded || gRangeBars < 20 || u.hour >= 12 || CountPositions() > 0) return;   // сайттай ижил: 12:00 UTC хүртэл
       int trend = AsianTrend();
       int dir = (trend > 0 && c > gRangeHigh) ? 1 : ((trend < 0 && c < gRangeLow) ? -1 : 0);
       if(dir == 0) return;
@@ -1970,7 +1972,8 @@ bool RuleTradedSince(const datetime from)
       if(HistoryDealGetString(t, DEAL_SYMBOL) != _Symbol) continue;
       if(HistoryDealGetInteger(t, DEAL_MAGIC) != MagicNumber) continue;
       if(HistoryDealGetInteger(t, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
-      if(HistoryDealGetString(t, DEAL_COMMENT) == "xau-rule") return(true);
+      string cm = HistoryDealGetString(t, DEAL_COMMENT);
+      if(cm == "xau-rule" || StringFind(cm, "xau-r:") == 0) return(true);
      }
    return(false);
   }
@@ -1982,7 +1985,14 @@ void AsianTimeExit()
      {
       ulong ticket = PositionGetTicket(i);
       if(ticket == 0 || !IsMine(ticket)) continue;
-      if(PositionGetString(POSITION_COMMENT) != "xau-rule") continue;
+      string cm = PositionGetString(POSITION_COMMENT);
+      if(StringFind(cm, "xau-r:") == 0)
+        {
+         datetime own = (datetime)StringToInteger(StringSubstr(cm, 6));   // нээхдээ хадгалсан хаах цаг
+         if(own > 0 && TimeCurrent() >= own) trade.PositionClose(ticket);
+         continue;
+        }
+      if(cm != "xau-rule") continue;
       datetime opened = (datetime)PositionGetInteger(POSITION_TIME);
       datetime utc = opened - ServerUtcOffset(opened) * 3600;
       MqlDateTime u;
@@ -2002,15 +2012,15 @@ void LiveAsianStep()
    if(gDId <= 0 || gDDir == 0)
      {
       gSignal = "NONE";
-      gReason = L("Сайтын Азийн breakout дохиог хүлээж байна (Setup хуудас)", "Waiting for the site's Asian breakout signal (Setup page)");
+      gReason = L("Сайтын setup дохиог хүлээж байна (Ази, Нью-Йорк · Setup хуудас)", "Waiting for the site's setup signal (Asia, New York · Setup page)");
       return;
      }
    gSignal = (gDDir > 0) ? "BUY" : "SELL";
-   gReason = L("Азийн breakout: ", "Asian breakout: ") + gSignal + ", stop $" + Num(gDRisk, 2) + ", RR " + Num(gDRR, 1);
-   if(gDId == gDLast) { gReason += L(" · өнөөдрийн арилжаа хийгдсэн", " · today's trade is done"); return; }
+   gReason = L("Setup: ", "Setup: ") + gSignal + ", stop $" + Num(gDRisk, 2) + ", RR " + Num(gDRR, 1);
+   if(gDId == gDLast) { gReason += L(" · энэ дохиогоор орсон", " · this signal was taken"); return; }
    if(gDAge > 900) { gReason += L(" · дохио 15 минутаас хуучин, орохгүй", " · signal older than 15 minutes, no entry"); return; }
    if(gState != "RUNNING") return;
-   if(CountPositions() > 0) return;
+   if(CountPositions() >= 3) { gReason += L(" · 3 арилжаа нээлттэй байна", " · three trades already open"); return; }   // сешн бүрт нэг: Ази, NY нээлт, NY хоёр дахь цаг
    if(RealBlocked()) { gReason = L("Жинхэнэ данс зөвшөөрөгдөөгүй", "Real account not allowed"); return; }
    if(TimeLocal() - gLastSyncOk > 30) { gReason = L("Вэбтэй холбоо тасарсан тул орсонгүй", "No entry: the web connection was lost"); return; }
    if(!TradingAllowed()) { gReason = L("Algo Trading унтраалттай эсвэл брокер арилжаа хаасан тул орсонгүй", "No entry: Algo Trading is off or the broker has closed trading"); return; }
@@ -2021,6 +2031,7 @@ void LiveAsianStep()
    MqlDateTime u;
    TimeToStruct(now - ServerUtcOffset(now) * 3600, u);
    datetime exitAt = now - (u.hour * 3600 + u.min * 60 + u.sec) + 20 * 3600;   // өнөөдрийн 20:00 UTC, серверийн цагаар
+   if(gDExit > 0) exitAt = (datetime)(gDExit + ServerUtcOffset(now) * 3600);   // вэбийн setup-ийн өөрийн хаах цаг
    if(now >= exitAt) { gReason += L(" · хаах цаг өнгөрсөн", " · past the closing time"); return; }
    if(RuleOpen(gDDir, gDRisk, gDRisk * gDRR, exitAt))
      {
@@ -2335,6 +2346,7 @@ void Sync()
    gDRisk = MathMax(0.0, JNum(body, "dRisk"));
    gDRR   = (JNum(body, "dRR") > 0) ? JNum(body, "dRR") : 2.0;
    gDAge  = (JRaw(body, "dAge") != "") ? (int)JNum(body, "dAge") : 99999;
+   gDExit = (JRaw(body, "dExit") != "") ? (long)JNum(body, "dExit") : 0;
    if(newMode != gMode) { gRuleLastBar = 0; gReadLastBar = 0; }
    gMode       = newMode;
 

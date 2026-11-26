@@ -118,7 +118,7 @@ export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date })
 export function SignalPrefsForm({ paused, muted, news = false }: { paused: boolean; muted: string[]; news?: boolean }) {
   const t = useT();
   const [state, action, pending] = useActionState<SettingsState, FormData>(saveSignalPrefsAction, {});
-  const setups: [string, string][] = [["asian-breakout", t("Азийн хүрээний breakout", "Asian range breakout")]];
+  const setups: [string, string][] = [["asian-breakout", t("Азийн хүрээний breakout", "Asian range breakout")], ["ny-open-breakout", t("Нью-Йоркийн нээлтийн breakout", "New York opening breakout")], ["ny-late-breakout", t("Нью-Йоркийн хоёр дахь цагийн breakout", "New York second-hour breakout")]];
   const row = "flex min-h-11 cursor-pointer items-center gap-3 text-sm text-zinc-200";
   return (
     <form action={action} className="space-y-3">

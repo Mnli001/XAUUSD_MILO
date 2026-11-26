@@ -96,3 +96,17 @@ describe("history", () => {
     expect(historyOf(trades)).toEqual({ n: 50, winPct: 40, avgR: 0.2, profitFactor: 40 / 30 });
   });
 });
+
+describe("New York opening range", () => {
+  test("its range is 12:30–13:30 UTC, it waits until then, and a close outside in the trend's direction is the entry at 2R", async () => {
+    const { rangeSetup } = await import("@/lib/setup/setups");
+    const { ruleOf } = await import("@/lib/setup/sessionRules");
+    const ny = ruleOf("ny-open-breakout")!;
+    expect(rangeSetup(ny, day({}, 52), UP, [], at(13)).status).toBe("FORMING");
+    // bars 50–53 (12:30–13:30) form the range 3998–4002; bar 56 (14:00) closes at 4006
+    const bars = day({ ...hold(57, 96, 4006), 56: { high: 4007, close: 4006 } }, 58);
+    const s = rangeSetup(ny, bars, UP, [], at(14, 30));
+    expect(s).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4006, stop: 4000, target: 4018 });
+    expect(s.window?.entryTo).toBe(18);
+  });
+});

@@ -18,7 +18,7 @@ const stopReasons = (t: T): Record<string, string> => ({
   TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин: шинэ XauBot.ex5 (v3.50) татаж солино уу", "the robot file on MT5 is old: download the new XauBot.ex5 (v3.50) and replace it"),
+  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин: шинэ XauBot.ex5 (v3.60) татаж солино уу", "the robot file on MT5 is old: download the new XauBot.ex5 (v3.60) and replace it"),
 });
 /** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
@@ -47,7 +47,7 @@ const toolList = (t: T) => [
   ["DAY", "Day trader", t("15 минутын чарт дээр: ханш liquidity шүүрдээд (sweep), бүтэц эвдээд (MSS), ойрын FVG руу буцаж ирээд хариу үйлдэл үзүүлэхэд орно. Гэхдээ зөвхөн сайтын бусад аргуудын дүгнэлт ижил чиглэлд байвал. Stop нь sweep-ийн оргилын цаана, ашиг = stop × 2.", "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.")],
   ["READING", t("Дүгнэлт", "Reading"), t("Сайтын олон аргын дүгнэлтийг шууд дагана: 15 минут тутам шалгаж, хангалттай олон арга нэг чиглэл заахад орно. Stop = 1 цагийн ATR × 1.5, ашиг = stop × 2. Нэг удаад нэг арилжаа.", "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.")],
   ["BASKET", t("Багц", "Basket"), t("Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана.", "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.")],
-  ["ASIAN", t("Азийн breakout", "Asian breakout"), t("Өдөрт нэг арилжаа: Азийн хүрээнээс өдрийн трендийн чиглэлд гарахад орно. Stop, target, хаах цагийг дүрэм өөрөө тогтооно.", "One trade a day: enters when price leaves the Asian range in the direction of the daily trend. The rule sets the stop, target and closing time.")],
+  ["ASIAN", t("Setup дохио", "Setup signals"), t("Сайтын 3 setup (Ази, Нью-Йоркийн 2 нээлт): хүрээнээс тренд чиглэлд гарахад орно, сешн бүрт нэг, нэг дор 3 хүртэл. Stop, target, хаах цагийг дүрэм тогтооно.", "The site's 3 setups (Asia, two New York openings): enters when price leaves a range in the trend's direction, one per session, up to three at once. The rule sets the stop, target and closing time.")],
 ] as const;
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");

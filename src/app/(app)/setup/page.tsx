@@ -226,7 +226,7 @@ export default async function SetupPage() {
             </svg>
             <h1 className="page-title">Setup</h1>
           </div>
-          <p className="page-lede mt-3">{t("Азийн хүрээний breakout: одоо юу хүлээж байна, хаанаас орох, stop, target, түүхэн болон бодит үр дүн.", "Asian range breakout: what it waits for now, where to enter, the stop and target, and its past and live results.")}</p>
+          <p className="page-lede mt-3">{t("Ази, Нью-Йоркийн нээлтийн хүрээний breakout (3 setup): одоо юу хүлээж байна, хаанаас орох, stop, target, түүхэн болон бодит үр дүн.", "Asian and New York opening-range breakouts (3 setups): what each waits for now, where to enter, the stop and target, and their past and live results.")}</p>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <div className={`rounded-xl border px-4 py-2 ${stale ? "border-red-500/40 bg-red-500/10" : "border-zinc-800/50 bg-zinc-900/30"}`}>
@@ -347,10 +347,10 @@ export default async function SetupPage() {
               <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <Record t={t} title={view.historyFrom ? t(`${v.date(view.historyFrom).slice(0, 7)} → өнөөдөр`, `${v.date(view.historyFrom).slice(0, 7)} → today`) : t("Хадгалсан бүх дата", "All stored data")} h={s.history} />
               </div>
-              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
+              {s.id === "asian-breakout" && <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <Record t={t} title={t(`Брокерын 7 жил (${BROKER_RECORD.from} →)`, `Broker data, 7 years (${BROKER_RECORD.from} →)`)} h={BROKER_RECORD} />
                 <p className="mt-2 text-xs text-zinc-500">{t(`MT5 Strategy Tester, ${BROKER_RECORD.source}, ${BROKER_RECORD.checkedOn}-нд шалгасан.`, `MT5 Strategy Tester, ${BROKER_RECORD.source}, checked ${BROKER_RECORD.checkedOn}.`)}</p>
-              </div>
+              </div>}
             </div>
 
             <details className="group/details mt-4">
@@ -362,7 +362,7 @@ export default async function SetupPage() {
               </summary>
               <div className="mt-3 rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <p className="max-w-prose leading-relaxed text-zinc-300">{s.rule}</p>
-                <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("MT5 робот: Бот хуудсанд «Азийн breakout» хэрэгслийг сонговол яг энэ дүрмээр, өдөрт нэг удаа арилжаална.", "MT5 robot: choose the “Asian breakout” tool on the Bot page and it trades exactly this rule, once a day.")}</p>
+                <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("MT5 робот: Бот хуудсанд «Setup дохио» хэрэгслийг сонговол энэ болон бусад 2 setup-ийг яг энэ дүрмээр арилжаална (сешн бүрт нэг, нэг дор 3 хүртэл).", "MT5 robot: choose the “Setup signals” tool on the Bot page and it trades this and the other two setups by exactly these rules (one per session, up to three at once).")}</p>
               </div>
             </details>
           </section>

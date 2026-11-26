@@ -2,10 +2,43 @@ import { type Candle, rsi, atrSeries } from "../analysis/indicators";
 import { type BacktestInput, type Order, alignClosed, simulateOrders } from "./backtest";
 import { type BotParams, DEFAULT_PARAMS, inNewsWindow, scoreSeries } from "./strategy";
 import { type VariantRow, segmentStats, TRAIN_FRACTION } from "./variants";
+import { type SessionRule, SESSION_RULES, ruleExitAt } from "../setup/sessionRules";
 
 const M15 = 15 * 6e4;
 const decisionTime = (bar: Candle) => new Date(bar.time.getTime() + M15);
 type Score = number | null;
+
+/**
+ * A session-range breakout (lib/setup/sessionRules.ts) replayed: the opening range of `rule`, the first close
+ * outside it before `entryTo` in the direction both trends agree on (outside news windows), stop at the middle,
+ * `rr` times the stop as target, flat at the rule's time exit. The first qualifying breakout decides the day:
+ * one from a range narrower than `minStopAtr` of the daily ATR is passed.
+ */
+export function sessionOrders(m15: Candle[], rule: SessionRule, o: { news: Date[]; params: BotParams; trend: Score[]; confirm: Score[]; atr: number[] }): (Order | null)[] {
+  const out: (Order | null)[] = new Array(m15.length).fill(null);
+  let day = "", high = -Infinity, low = Infinity, count = 0, done = false;
+  m15.forEach((bar, i) => {
+    const key = bar.time.toISOString().slice(0, 10);
+    if (key !== day) { day = key; high = -Infinity; low = Infinity; count = 0; done = false; }
+    const h = bar.time.getUTCHours() + bar.time.getUTCMinutes() / 60;
+    if (h >= rule.rangeFrom && h < rule.rangeTo) { high = Math.max(high, bar.high); low = Math.min(low, bar.low); count++; return; }
+    if (done || h < rule.rangeTo || h >= rule.entryTo || count < rule.minBars) return;
+    const side = bar.close > high ? "BUY" : bar.close < low ? "SELL" : null;
+    if (!side) return;
+    const at = decisionTime(bar);
+    if (inNewsWindow(at, o.news, o.params)) return;
+    for (const series of [o.trend, o.confirm]) {
+      const t = series[i];
+      if (t === null || t === undefined || (side === "BUY" ? t <= 0 : t >= 0)) return;
+    }
+    done = true;
+    const stopDist = Math.abs(bar.close - (high + low) / 2);
+    const maxBars = Math.floor((ruleExitAt(rule, key).getTime() - at.getTime()) / M15);
+    if (!(stopDist > 0) || maxBars < 1 || !(stopDist >= rule.minStopAtr * o.atr[i])) return;
+    out[i] = { side, stopDist, targetDist: stopDist * rule.rr, maxBars };
+  });
+  return out;
+}
 
 /**
  * Idea 1 — Asian range breakout. The range is the high/low of 00:00–07:00 UTC (08:00–15:00 UB).
@@ -113,6 +146,8 @@ export const IDEAS: Idea[] = [
 ];
 /** The Asian rule the Setup page, the Telegram signals and the robot's Asian tool all follow. */
 export const ASIAN_IDEA = IDEAS[7];
+/** The four session rules as replayable ideas, in SESSION_RULES order (the records on the Setup page). */
+export const SESSION_IDEAS: Idea[] = SESSION_RULES.map((rule) => ({ name: rule.id, params: asianDay, build: (c) => sessionOrders(c.m15, rule, { news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, atr: c.atrD }) }));
 /** Candidate (2026-11-26, scripts/asian-improve-research.ts): breakouts before 12:00 UTC only, held to 07:00 UTC next day. */
 export const ASIAN_IDEA_V4: Idea = { name: "Азийн breakout v4: 12:00 UTC хүртэл, шөнө барих", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, minStop: { atr: c.atrD, k: ASIAN_MIN_STOP_ATR }, windowEnd: 12, holdOvernight: true }) }; // i18n-ok: server log, machine reply or research-script name
 

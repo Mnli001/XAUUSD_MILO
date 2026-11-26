@@ -107,7 +107,7 @@ export async function sendWeeklyReport(now: Date, send: (chat: string, html: str
   const chats = new Set<string>();
   for (const u of users) {
     const chat = u.telegramChatId!;
-    if (chats.has(chat) || !hasAccess(u, now) || !wantsSignal(u, "asian-breakout")) continue;
+    if (chats.has(chat) || !hasAccess(u, now) || !["asian-breakout", "ny-open-breakout", "ny-late-breakout"].some((id) => wantsSignal(u, id))) continue;
     chats.add(chat);
     if (await send(chat, weeklyText(week, outcomes.map((x) => x.o), viewer(prefsOf(u)))).catch(() => false)) sent++;
   }

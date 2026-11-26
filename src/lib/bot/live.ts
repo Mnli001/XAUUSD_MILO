@@ -194,12 +194,13 @@ export type Command = {
   protect: boolean; // robot v3.10 and newer
   // The day trader's or Asian tool's order (robot v3.40 / v3.50 and newer): dId 0 means "nothing now". dRisk is the stop distance in dollars.
   dId: number; dDir: number; dRisk: number; dRR: number; dAge: number;
+  dExit: number; // the order's own time exit, UTC unix seconds (robot v3.60+); 0 = the robot's default
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
 export const BASKET_ROBOT_VERSION = 2;
-/** 12: the Asian tool takes the site's breakout (daily + 4-hour trend, news windows, 3R) instead of its own EMA trend. */
-export const ASIAN_ROBOT_VERSION = 12;
+/** 12: the Asian tool takes the site's breakout instead of its own EMA trend. 13: any session's setup, with its own time exit (dExit). */
+export const ASIAN_ROBOT_VERSION = 13;
 /**
  * Robot v2.80 (protocol 6) is the first with the entry filter and the order-handling fixes. An older
  * file would trade without the filter the owner set here, so no tool runs on it.
@@ -216,7 +217,7 @@ export const SITE_RR = 2;
 export const READING_ROBOT_VERSION = 10;
 /** Robot v3.40 (protocol 11) is the first with the day trader. */
 export const DAY_ROBOT_VERSION = 11;
-export type DayOrderFields = { id: number; dir: number; risk: number; rr: number; ageSec: number };
+export type DayOrderFields = { id: number; dir: number; risk: number; rr: number; ageSec: number; exitAt?: number };
 /** The reading tool waits for this many methods when the owner set none: the level the research held up at. */
 export const READING_MIN_AGREE = 9;
 export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "DAY" ? DAY_ROBOT_VERSION : mode === "READING" ? READING_ROBOT_VERSION : mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
@@ -250,7 +251,7 @@ export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVe
     : basket
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
     : { runId: s.runId ?? "", lang, mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
-  const order = (c.mode === "DAY" || c.mode === "ASIAN") && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0 };
+  const order = (c.mode === "DAY" || c.mode === "ASIAN") && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec, dExit: day.exitAt ?? 0 } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0, dExit: 0 };
   const base = { ...tool, ...gate, ...order };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };

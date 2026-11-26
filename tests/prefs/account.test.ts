@@ -55,7 +55,7 @@ describe("Telegram signal choices", () => {
   });
   it("pausing stops every setup without unlinking", async () => {
     const u = await makeUser("a@x.mn");
-    await saveSignalPrefs(u.id, { paused: true, wanted: ["asian-breakout"] });
+    await saveSignalPrefs(u.id, { paused: true, wanted: ["asian-breakout", "ny-open-breakout", "ny-late-breakout"] });
     const saved = (await findUserByEmail("a@x.mn"))!;
     expect(wantsSignal(saved, "asian-breakout")).toBe(false);
     expect(saved.signalsMuted).toBe("");

@@ -1,4 +1,8 @@
 import type { Candle } from "./analysis/indicators";
+import { ruleExitAt, ruleOf } from "./setup/sessionRules";
+
+/** Signals before the session rules (2026-11-27) used the old Asian exit; the rule's own exit applies after. */
+const RULES_FROM = Date.UTC(2026, 10, 27);
 
 /**
  * How a recorded signal ended, judged on 15-minute candles the way the Setup replay judges it: the first bar to
@@ -24,7 +28,8 @@ export function signalOutcome(s: SignalLike, bars: readonly Candle[], now: Date)
   if (!(risk > 0)) return { kind: "OPEN", r: null, at: null };
   // The signal is recorded just after its breakout bar closes; the bar running at that moment is the first after entry.
   const from = Math.floor(s.createdAt.getTime() / M15) * M15;
-  const deadline = s.setupId === "asian-breakout" ? asianDeadline(s.createdAt).getTime() : Infinity;
+  const rule = ruleOf(s.setupId);
+  const deadline = rule ? (rule.id === "asian-breakout" && s.createdAt.getTime() < RULES_FROM ? asianDeadline(s.createdAt) : ruleExitAt(rule, s.createdAt.toISOString().slice(0, 10))).getTime() : Infinity;
   let last: Candle | null = null;
   for (const b of bars) {
     const t = b.time.getTime();

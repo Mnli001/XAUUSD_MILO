@@ -1,6 +1,7 @@
 import type { SetupNow } from "./setups";
 import type { Viewer } from "../viewer";
 import { relativeText } from "../relativeTime";
+import { hourUtc } from "./sessionRules";
 
 /**
  * The one line a trader needs: what the system is doing right now (waiting, enter, in a trade, done, nothing
@@ -23,32 +24,37 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
   const h = now.getUTCHours();
   const mk = (label: string, at: Date) => ({ label, at, in: relativeText(at.getTime() - now.getTime(), t) });
   const firstMissing = s.checks.find((c) => !c.ok)?.label ?? null;
+  // The rule's own hours (the Asian rule's when none are given).
+  const win = s.window ?? { rangeFrom: 0, rangeTo: 7, entryTo: 16, exitAt: utcAt(now, 20) };
+  const at = (hh: number) => ub(hourUtc((hh + 8) % 24));
+  const hAt = (hh: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + hh * H);
+  const hr = h + now.getUTCMinutes() / 60;
   if (s.stale) return { state: "NONE", title: t("Үнийн дата хоцорч байна", "Price data is behind"), waitingFor: t("Шинэ үнэ ирэхийг", "Fresh prices"), next: null, liveR: null };
   if (s.status === "ACTIVE" && s.side && s.entry !== null && s.stop !== null) {
     const dir = s.side === "BUY" ? 1 : -1, risk = Math.abs(s.entry - s.stop);
     const liveR = lastPrice !== null && risk > 0 ? Math.round(((dir * (lastPrice - s.entry)) / risk) * 100) / 100 : null;
-    return { state: "ENTER", title: t(`${s.side} арилжаа идэвхтэй`, `${s.side} trade is on`), waitingFor: t("Stop эсвэл target-д хүрэхийг", "The stop or the target"), next: mk(t(`Хаах цаг (${ub("04:00")} ${zone})`, `Closing time (${ub("04:00")} ${zone})`), utcAt(now, 20)), liveR };
+    return { state: "ENTER", title: t(`${s.side} арилжаа идэвхтэй`, `${s.side} trade is on`), waitingFor: t("Stop эсвэл target-д хүрэхийг", "The stop or the target"), next: mk(t(`Хаах цаг (${v.dateTime(win.exitAt).slice(5)} ${zone})`, `Closing time (${v.dateTime(win.exitAt).slice(5)} ${zone})`), win.exitAt), liveR };
   }
   if (s.result !== undefined) return { state: "DONE", title: t(`Өнөөдрийн арилжаа дууссан (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`, `Today's trade is done (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`), waitingFor: null, next: mk(t(`Маргаашийн Азийн хүрээ (${ub("08:00")} ${zone})`, `Tomorrow's Asian range (${ub("08:00")} ${zone})`), nextRangeStart(now)), liveR: null };
-  if (s.status === "FORMING") return { state: "WAIT", title: t("Азийн хүрээ бүрдэж байна", "The Asian range is forming"), waitingFor: t(`Хүрээ ${ub("15:00")} (${zone}) цагт хаагдахыг`, `The range to close at ${ub("15:00")} (${zone})`), next: mk(t(`Орох цонх нээгдэнэ (${ub("15:00")} ${zone})`, `Entry window opens (${ub("15:00")} ${zone})`), utcAt(now, 7)), liveR: null };
-  if (s.status === "WATCH" && !s.trends) return { state: "WAIT", title: s.headline, waitingFor: firstMissing ?? s.headline, next: mk(t(`Орох цонх хаагдана (${ub("00:00")} ${zone})`, `Entry window closes (${ub("00:00")} ${zone})`), utcAt(now, 16)), liveR: null };
+  if (s.status === "FORMING") return { state: "WAIT", title: s.headline, waitingFor: t(`Хүрээ ${at(win.rangeTo)} (${zone}) цагт хаагдахыг`, `The range to close at ${at(win.rangeTo)} (${zone})`), next: mk(t(`Орох цонх нээгдэнэ (${at(win.rangeTo)} ${zone})`, `Entry window opens (${at(win.rangeTo)} ${zone})`), hAt(win.rangeTo)), liveR: null };
+  if (s.status === "WATCH" && !s.trends) return { state: "WAIT", title: s.headline, waitingFor: firstMissing ?? s.headline, next: mk(t(`Орох цонх хаагдана (${at(win.entryTo)} ${zone})`, `Entry window closes (${at(win.entryTo)} ${zone})`), hAt(win.entryTo)), liveR: null };
   const closed = now.getUTCDay() === 0 || now.getUTCDay() === 6;
   // The trends keep the rule out, but the entry window is still open and the 4-hour trend can turn: keep waiting.
-  if (!closed && s.trends && h >= 7 && h < 16) {
+  if (!closed && s.trends && hr >= win.rangeTo && hr < win.entryTo) {
     const { daily, h4 } = s.trends;
     const side = daily === "BUY" ? t("BUY", "BUY") : daily === "SELL" ? t("SELL", "SELL") : null;
     return {
       state: "WAIT",
       title: side ? t(`${side} боломж: 4 цагийн тренд эргэхийг хүлээж байна`, `${side} possible: waiting for the 4-hour trend to turn`) : t("Өдрийн тренд тодорхой болохыг хүлээж байна", "Waiting for the daily trend to become clear"),
       waitingFor: daily === null ? t("Өдрийн тренд тодорхой болох", "The daily trend to become clear") : t(`4 цагийн тренд ${daily === "BUY" ? "дээш" : "доош"} эргэх (одоо ${h4 === null ? "тодорхойгүй" : h4 === "BUY" ? "дээш" : "доош"})`, `The 4-hour trend to turn ${daily === "BUY" ? "up" : "down"} (now ${h4 === null ? "unclear" : h4 === "BUY" ? "up" : "down"})`),
-      next: mk(t(`Орох цонх хаагдана (${ub("00:00")} ${zone})`, `Entry window closes (${ub("00:00")} ${zone})`), utcAt(now, 16)),
+      next: mk(t(`Орох цонх хаагдана (${at(win.entryTo)} ${zone})`, `Entry window closes (${at(win.entryTo)} ${zone})`), hAt(win.entryTo)),
       liveR: null,
     };
   }
   return {
     state: closed ? "CLOSED" : "NONE",
     title: s.headline,
-    waitingFor: h < 16 && firstMissing ? firstMissing : null,
+    waitingFor: hr < win.entryTo && firstMissing ? firstMissing : null,
     next: mk(t(`Дараагийн Азийн хүрээ (${ub("08:00")} ${zone})`, `Next Asian range (${ub("08:00")} ${zone})`), nextRangeStart(now)),
     liveR: null,
   };

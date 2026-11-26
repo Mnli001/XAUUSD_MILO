@@ -8,6 +8,7 @@ import { relativeText } from "./relativeTime";
 import { weekdayName, zoneWeekday } from "./time";
 import type { Viewer } from "./viewer";
 import { nowWindow } from "./setup/now";
+import { orderSetups } from "./setup/order";
 
 /**
  * Replies to /setup, /history and /news. Kept apart from telegram.ts so the webhook loads the
@@ -20,7 +21,7 @@ const px = (v: number) => v.toFixed(2);
 export async function setupReply(now: Date, v: Viewer): Promise<{ text: string; png: Buffer | null }> {
   const { t } = v;
   const view = await getSetups(now, v);
-  const s = view.setups[0];
+  const s = orderSetups(view.setups)[0];
   if (!s) return { text: esc(t("Setup одоогоор алга.", "No setup right now.")), png: null };
   const word = s.result !== undefined ? t("Дууссан", "Finished") : { ACTIVE: t("Идэвхтэй", "Active"), WATCH: t("Ажиглаж байна", "Watching"), FORMING: t("Бүрдэж байна", "Forming"), OFF: t("Одоо алга", "Not now") }[s.status];
   const w = nowWindow(s, now, view.candles.at(-1)?.close ?? null, v);
@@ -37,6 +38,8 @@ export async function setupReply(now: Date, v: Viewer): Promise<{ text: string; 
     lines.push("", t(`Орох ${px(s.entry)} · Stop ${px(s.stop)} · Target ${px(s.target)}`, `Entry ${px(s.entry)} · Stop ${px(s.stop)} · Target ${px(s.target)}`));
   }
   if (s.checks.length) lines.push("", ...s.checks.map((c) => `${c.ok ? "✅" : "⬜"} ${esc(c.label)}`));
+  const others = orderSetups(view.setups).slice(1);
+  if (others.length) lines.push("", t("<b>Бусад setup</b>", "<b>Other setups</b>"), ...others.map((o) => `• ${esc(o.name)}: ${esc(o.headline)}`));
   const h = s.history;
   if (h.winPct !== null) lines.push("", t(`Түүх: ${h.n} арилжаа, ${h.winPct}% ашигтай, дундаж ${h.avgR! > 0 ? "+" : ""}${h.avgR!.toFixed(2)}R`, `Record: ${h.n} trades, ${h.winPct}% profitable, average ${h.avgR! > 0 ? "+" : ""}${h.avgR!.toFixed(2)}R`));
   let png: Buffer | null = null;
