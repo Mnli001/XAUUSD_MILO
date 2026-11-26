@@ -45,7 +45,8 @@ async function main() {
     settle(t.openedAt.getTime());
     if (PARALLEL ? open.length >= 3 : open.length > 0 || t.openedAt.getTime() < busy) continue;
     const dist = Math.abs(t.entry - t.stop);
-    const lots = MODE === "cent" ? Math.max(MIN_LOT, Math.floor((balance * RISK) / (dist * OZ_PER_LOT) / MIN_LOT) * MIN_LOT) : MIN_LOT;
+    // Risk RISK of the balance, in the broker's lot steps; never under the smallest lot (on a tiny account that risks more).
+    const lots = Math.max(MIN_LOT, Math.round(Math.floor((balance * RISK) / (dist * OZ_PER_LOT) / MIN_LOT + 1e-9) * MIN_LOT * 1e4) / 1e4);
     if (balance <= 0) break;
     const margin = (t.entry * OZ_PER_LOT * lots) / LEVERAGE;
     const used = open.reduce((m, o) => m + o.margin, 0);
