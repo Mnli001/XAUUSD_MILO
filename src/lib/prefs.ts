@@ -19,7 +19,7 @@ export const TIME_ZONES = [
   "Asia/Tokyo", "Australia/Adelaide", "Australia/Brisbane", "Australia/Sydney", "Pacific/Auckland",
 ];
 
-export const COOKIE = { locale: "xau_locale", theme: "xau_theme", timeZone: "xau_tz", startDone: "xau_start_done" } as const;
+export const COOKIE = { locale: "xau_locale", theme: "xau_theme", timeZone: "xau_tz" } as const;
 
 export const parseLocale = (v: unknown): Locale => (v === "en" ? "en" : "mn");
 export const isLocale = (v: unknown): v is Locale => v === "mn" || v === "en";
