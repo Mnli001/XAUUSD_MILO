@@ -27,6 +27,9 @@ export const users = pgTable("users", {
   locale: text("locale").notNull().default("mn"),
   theme: text("theme").notNull().default("dark"),
   timeZone: text("time_zone").notNull().default("Asia/Ulaanbaatar"),
+  referralCode: text("referral_code").unique(), // this user's invite code, made the first time it is shown
+  referredBy: text("referred_by"), // the user whose invite this account came through
+  referralRewardedAt: ts("referral_rewarded_at"), // when the inviter got their days for this account's first payment
   renewRemindedFor: ts("renew_reminded_for"), // the access end a renewal reminder was already sent for
   consentAt: ts("consent_at"), // when the privacy policy and terms were accepted
   consentVersion: text("consent_version"), // which version (LEGAL_VERSION) was accepted

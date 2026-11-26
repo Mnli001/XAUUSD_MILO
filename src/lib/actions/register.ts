@@ -1,5 +1,8 @@
 "use server";
 import { recordConsent } from "../legal";
+import { referrerOf } from "../referral";
+import { eq } from "drizzle-orm";
+import { db, schema } from "../db";
 import { createUser, findUserByEmail } from "../users";
 import { mnT, type T } from "../i18n";
 import type { Prefs } from "../prefs";
@@ -15,6 +18,8 @@ export async function registerUser(form: FormData, t: T = mnT, prefs?: Prefs): P
   const created = typeof email === "string" ? await findUserByEmail(email) : null;
   if (created) {
     await recordConsent(created.id);
+    const by = await referrerOf(form.get("ref"));
+    if (by && by !== created.id) await db.update(schema.users).set({ referredBy: by }).where(eq(schema.users.id, created.id));
     if (prefs) await savePrefs(created.id, prefs);
   }
   return {};

@@ -2,19 +2,19 @@
 import { render, screen, within, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
 
-let path = "/journal/new";
+let path = "/performance";
 vi.mock("next/navigation", () => ({ usePathname: () => path }));
 vi.mock("@/lib/actions/session", () => ({ logoutAction: async () => {} }));
 import { AppNav, currentHref } from "@/components/AppNav";
 
-const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Журнал", "Бот", "Ботын түүх", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо"];
+const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Гүйцэтгэл", "Бот", "Ботын түүх", "Багц", "Нэр томьёо", "Тохиргоо"];
 
 test("the section you are in is marked as current, in both the rail and the phone tab bar", () => {
-  path = "/journal/new";
+  path = "/performance";
   render(<AppNav name="Ану" isAdmin={false} />);
   for (const label of ["Үндсэн цэс", "Доод цэс"]) {
     const nav = screen.getByRole("navigation", { name: label });
-    expect(within(nav).getByRole("link", { name: "Журнал" })).toHaveAttribute("aria-current", "page");
+    expect(within(nav).getByRole("link", { name: "Гүйцэтгэл" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Өнөөдөр" })).not.toHaveAttribute("aria-current");
   }
 });
@@ -30,7 +30,7 @@ test("Bot history is its own page: on it, Bot history is current and Bot is not"
   expect(currentHref("/botx", ["/bot"])).toBeNull();
 });
 
-test("on a phone, the Menu button drops down every page, and closes again", () => {
+test("on a phone, the Menu button drops down every page (there is no journal any more), and closes again", () => {
   path = "/today";
   render(<AppNav name="Ану" isAdmin={false} />);
   expect(within(screen.getByRole("navigation", { name: "Доод цэс" })).getAllByRole("link")).toHaveLength(6);
@@ -42,6 +42,7 @@ test("on a phone, the Menu button drops down every page, and closes again", () =
   expect(button).toHaveAttribute("aria-expanded", "true");
   const all = screen.getByRole("navigation", { name: "Бүх хуудас" });
   expect(within(all).getAllByRole("link").map((a) => a.textContent)).toEqual(ALL);
+  expect(within(all).queryByRole("link", { name: "Журнал" })).toBeNull();
   expect(within(all).getByRole("link", { name: "Өнөөдөр" })).toHaveAttribute("aria-current", "page");
   expect(within(all).getByRole("link", { name: "Ботын түүх" })).toHaveAttribute("href", "/bot/history");
   expect(within(all).getByRole("button", { name: "Гарах" })).toBeInTheDocument();

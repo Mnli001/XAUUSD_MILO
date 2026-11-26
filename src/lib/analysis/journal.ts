@@ -46,20 +46,26 @@ function add<K extends string | number>(m: Record<K, Bucket>, k: K, pnl: number)
   b.pnl += pnl;
 }
 
+/** One closed trade, reduced to what the statistics need: its result in dollars, when it opened and closed, its R. */
+export type ClosedTrade = { pnl: number; openedAt: Date; closedAt: Date; r: number | null };
+
 /** Statistics over closed trades only. */
 export function performance(trades: TradeInput[]): Performance {
-  const closed = trades
-    .flatMap((t) => { const pnl = tradePnl(t); return pnl === null ? [] : [{ t, pnl }]; })
-    .sort((a, b) => a.t.closedAt!.getTime() - b.t.closedAt!.getTime());
+  return performanceOf(trades.flatMap((t) => { const pnl = tradePnl(t); return pnl === null ? [] : [{ pnl, openedAt: t.openedAt, closedAt: t.closedAt!, r: tradeR(t) }]; }));
+}
+
+/** The same statistics from trades whose dollar result is already known (the robot's closed deals). */
+export function performanceOf(trades: ClosedTrade[]): Performance {
+  const closed = [...trades].sort((a, b) => a.closedAt.getTime() - b.closedAt.getTime());
 
   const out: Performance = { count: closed.length, winRate: null, totalPnl: 0, profitFactor: null, avgR: null, maxDrawdown: 0, equity: [], byHour: {}, byWeekday: {}, bySession: {} };
   let wins = 0, grossProfit = 0, grossLoss = 0, rSum = 0, rCount = 0, peak = 0;
-  for (const { t, pnl } of closed) {
+  for (const t of closed) {
+    const pnl = t.pnl;
     out.totalPnl += pnl;
     if (pnl > 0) { wins++; grossProfit += pnl; } else grossLoss -= pnl;
-    const r = tradeR(t);
-    if (r !== null) { rSum += r; rCount++; }
-    out.equity.push({ time: t.closedAt!, value: out.totalPnl });
+    if (t.r !== null) { rSum += t.r; rCount++; }
+    out.equity.push({ time: t.closedAt, value: out.totalPnl });
     peak = Math.max(peak, out.totalPnl);
     out.maxDrawdown = Math.max(out.maxDrawdown, peak - out.totalPnl);
     const h = ubHour(t.openedAt);

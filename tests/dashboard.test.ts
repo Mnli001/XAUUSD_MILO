@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { db, schema } from "@/lib/db";
 import { resetDb } from "./helpers/db";
 import { makeUser } from "./helpers/users";
-import { planSummary, journalSummary, botSummary, latestPaidPlan } from "@/lib/dashboard";
-import type { TradeInput } from "@/lib/analysis/journal";
+import { planSummary, tradeSummary, botSummary, latestPaidPlan } from "@/lib/dashboard";
 
 const DAY = 864e5;
 const now = new Date("2026-11-26T10:00:00Z");
@@ -30,29 +29,21 @@ describe("planSummary", () => {
   });
 });
 
-describe("journalSummary", () => {
-  const tr = (o: Partial<TradeInput>): TradeInput => ({ direction: "BUY", lots: 0.1, entryPrice: 2000, exitPrice: 2010, stopLoss: null, openedAt: ago(2), closedAt: ago(1), ...o });
+describe("tradeSummary", () => {
+  const tr = (pnl: number, closedDaysAgo: number) => ({ pnl, openedAt: ago(closedDaysAgo + 0.1), closedAt: ago(closedDaysAgo), r: null });
 
-  it("sums the last 30 days of closed trades: profit, wins, losses, win rate", () => {
-    const s = journalSummary([
-      tr({}), // +100
-      tr({ exitPrice: 1995 }), // −50
-      tr({ direction: "SELL", exitPrice: 1990 }), // +100
-    ], now);
+  it("sums the robot's last 30 days of closed trades: profit, wins, losses, win rate", () => {
+    const s = tradeSummary([tr(100, 1), tr(-50, 2), tr(100, 3)], 0, now);
     expect(s.month).toEqual({ closed: 3, wins: 2, losses: 1, pnl: 150, winRate: 67 });
   });
-  it("leaves older trades out of the month but in the all-time total, and counts open trades apart", () => {
-    const s = journalSummary([
-      tr({ openedAt: ago(60), closedAt: ago(59) }), // +100, too old for the month
-      tr({}), // +100
-      tr({ exitPrice: null, closedAt: null }), // open
-    ], now);
+  it("leaves older trades out of the month but in the all-time total, and takes open positions from the robot", () => {
+    const s = tradeSummary([tr(100, 59), tr(100, 1)], 2, now);
     expect(s.month).toMatchObject({ closed: 1, pnl: 100 });
     expect(s.allTime).toEqual({ closed: 2, pnl: 200 });
-    expect(s.open).toBe(1);
+    expect(s.open).toBe(2);
   });
   it("has no win rate with nothing closed", () => {
-    expect(journalSummary([], now)).toEqual({ month: { closed: 0, wins: 0, losses: 0, pnl: 0, winRate: null }, allTime: { closed: 0, pnl: 0 }, open: 0 });
+    expect(tradeSummary([], 0, now)).toEqual({ month: { closed: 0, wins: 0, losses: 0, pnl: 0, winRate: null }, allTime: { closed: 0, pnl: 0 }, open: 0 });
   });
 });
 

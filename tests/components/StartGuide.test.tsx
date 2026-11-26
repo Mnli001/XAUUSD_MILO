@@ -10,7 +10,7 @@ test("a newcomer gets three steps in order, where the words are explained, and a
   expect(steps[0]).toHaveTextContent(/Өнөөдөр/);
   expect(steps[1]).toHaveTextContent(/Setup/);
   expect(steps[1]).toHaveTextContent(/Идэвхтэй/);
-  expect(steps[2]).toHaveTextContent(/Журнал/);
+  expect(steps[2]).toHaveTextContent(/Гүйцэтгэл/);
   expect(screen.getByRole("link", { name: /Нэр томьёо/ })).toHaveAttribute("href", "/glossary");
   expect(screen.getByRole("button", { name: "Ойлголоо" })).toBeInTheDocument();
 });

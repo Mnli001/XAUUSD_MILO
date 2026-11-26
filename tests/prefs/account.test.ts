@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, schema } from "@/lib/db";
 import { resetDb } from "../helpers/db";
 import { makeUser } from "../helpers/users";
 import { createUser, findUserByEmail } from "@/lib/users";
-import { saveTrade, listTrades } from "@/lib/trades";
+import { listTrades } from "@/lib/trades";
 import { getLive } from "@/lib/bot/liveDb";
 import { deleteAccount, saveSignalPrefs, wantsSignal } from "@/lib/account";
 import { tradesCsv } from "@/lib/export";
@@ -25,7 +25,7 @@ describe("deleting an account", () => {
   });
   it("removes the user together with their journal and bot", async () => {
     const u = await withPassword("a@x.mn");
-    await saveTrade(u.id, null, { direction: "BUY", lots: "0.1", entryPrice: "4000", openedAt: "2026-11-20T02:00:00Z" });
+    await db.insert(schema.trades).values({ userId: u.id, direction: "BUY", lots: 0.1, entryPrice: 4000, openedAt: new Date("2026-11-20T02:00:00Z") });
     await getLive(u.id); // creates the user's bot row
     expect(await listTrades(u.id)).toHaveLength(1);
     expect(await deleteAccount(u.id, "password123")).toEqual({});

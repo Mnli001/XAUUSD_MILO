@@ -6,6 +6,9 @@ import { paymentsOf } from "@/lib/payments";
 import { PLANS, isPlanId, tugrik } from "@/lib/plans";
 import { PlansCard } from "@/components/Paywall";
 import { choosePlanAction } from "@/lib/actions/payments";
+import { InviteCard } from "@/components/InviteCard";
+import { referralCodeFor, referralStats, REFERRAL_DAYS } from "@/lib/referral";
+import { siteUrl } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -20,7 +23,8 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
   const now = new Date();
   const { paid, payOn, contact } = paywallFor(user, now);
   const { pay } = await searchParams;
-  const mine = await paymentsOf(user.id, 6);
+  const [mine, code, stats] = await Promise.all([paymentsOf(user.id, 6), referralCodeFor(user.id), referralStats(user.id)]);
+  const site = siteUrl();
   const until = user.role !== "ADMIN" && paid && user.accessUntil ? v.date(user.accessUntil) : null;
   const statusWord = (s: string, expired: boolean) =>
     s === "PAID" ? t("Төлөгдсөн", "Paid") : s === "EXPIRED" || expired ? t("Хугацаа дууссан", "Expired") : t("Төлбөр хүлээгдэж байна", "Awaiting payment");
@@ -34,6 +38,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
       {pay === "off" && <p role="alert" className="card text-sm text-zinc-300">{t("Онлайн төлбөр хараахан тохируулагдаагүй байна.", "Online payments are not set up yet.")}</p>}
       {user.role === "ADMIN" && <p className="text-sm text-zinc-400">{t("Та админ тул бүх зүйл хугацаагүй нээлттэй. Туршихын тулд багц сонгож болно.", "As an admin everything is open with no end date. You can still choose a plan to test.")}</p>}
       <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} until={until} />
+      {site && <InviteCard link={`${site}/register?ref=${code}`} days={REFERRAL_DAYS} stats={stats} />}
       {mine.length > 0 && (
         <section className="table-card" aria-labelledby="mine-h">
           <h2 id="mine-h" className="px-4 pt-4 pb-2 text-[15px] font-semibold text-zinc-100 sm:px-5 sm:pt-5">{t("Таны төлбөрүүд", "Your payments")}</h2>
