@@ -132,10 +132,10 @@ export default async function SetupPage() {
   const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15), getReasoning(now, v.locale)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
   
-  // Sort setups: highest win rate first (from recent data), then ACTIVE > WATCH > FORMING > OFF
+  // Sort setups: FORMING first (most important), then ACTIVE, WATCH, OFF. Within same status, sort by win rate
   const sortedSetups = [...view.setups].sort((a, b) => {
-    // Priority 1: Status (ACTIVE highest)
-    const statusPriority = { ACTIVE: 4, WATCH: 3, FORMING: 2, OFF: 1 };
+    // Priority 1: Status - FORMING is most important as it's currently developing
+    const statusPriority = { FORMING: 5, ACTIVE: 4, WATCH: 3, OFF: 1 };
     const statusDiff = (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0);
     if (statusDiff !== 0) return statusDiff;
     
@@ -186,9 +186,10 @@ export default async function SetupPage() {
         const [label, tone, dot] = STATUS[s.status];
         const live = s.status !== "OFF" && s.side !== null;
         const isTopPerformer = index === 0 && s.recent.winPct && s.recent.winPct >= 60;
+        const isForming = s.status === "FORMING";
         
         return (
-          <section key={s.id} className={`card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl ${isTopPerformer ? 'ring-2 ring-amber-400/30' : ''}`}>
+          <section key={s.id} className={`card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl ${isTopPerformer ? 'ring-2 ring-amber-400/30' : ''} ${isForming ? 'ring-2 ring-blue-400/40 shadow-lg shadow-blue-400/10' : ''}`}>
             {isTopPerformer && (
               <div className="absolute right-0 top-0 z-20">
                 <div className="flex items-center gap-2 rounded-bl-2xl bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-2 shadow-lg">
@@ -200,8 +201,21 @@ export default async function SetupPage() {
               </div>
             )}
             
+            {isForming && (
+              <div className="absolute left-0 top-0 z-20">
+                <div className="flex items-center gap-2 rounded-br-2xl bg-gradient-to-r from-blue-500 to-blue-400 px-4 py-2 shadow-lg shadow-blue-500/30">
+                  <svg className="h-4 w-4 animate-pulse text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-xs font-bold text-white">{t("Бүрдэж байна!", "Forming Now!")}</span>
+                </div>
+              </div>
+            )}
+            
             <div className={`absolute -right-10 -top-10 h-48 w-48 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${
-              live 
+              isForming
+                ? "bg-blue-500/15 group-hover:bg-blue-500/20"
+                : live 
                 ? s.side === "BUY" 
                   ? "bg-emerald-500/10 group-hover:bg-emerald-500/15" 
                   : "bg-red-500/10 group-hover:bg-red-500/15"
