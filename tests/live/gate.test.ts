@@ -57,7 +57,7 @@ describe("the entry filter in the command", () => {
     expect(commandFor(running(old as LiveConfig), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ gateOn: true, gMaxTrades: 6 });
   });
   test("no tool runs on a robot file older than the filter, and the real-account checks still come first", () => {
-    for (const mode of ["SCALPER", "BASKET", "ASIAN"] as const) {
+    for (const mode of ["SCALPER", "BASKET"] as const) {
       expect(minRobotVersion(mode)).toBe(GATE_ROBOT_VERSION);
       const config = { ...DEFAULT_LIVE_CONFIG, mode };
       expect(commandFor(running(config), { mode: "DEMO" }, GATE_ROBOT_VERSION - 1)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });

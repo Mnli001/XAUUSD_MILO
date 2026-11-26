@@ -62,14 +62,12 @@ test("an active setup is recorded once and sent to linked users who have access"
   expect(list[0]).toMatchObject({ setupId: "asian-breakout", side: "BUY", entry: 4006, stop: 4000, target: 4018, sentTo: 2 });
 });
 test("setups that are only being watched, or off, send nothing", async () => {
-  expect(await emitSignals(now, { view: view([setup({ status: "WATCH" }), setup({ id: "trend-dip", status: "OFF", side: null, entry: null, stop: null, target: null })]), send })).toBe(0);
+  expect(await emitSignals(now, { view: view([setup({ status: "WATCH" })]), send })).toBe(0);
   expect(sent).toHaveLength(0);
 });
-test("the Asian breakout can signal again the next day; the dip rule waits out its eight-hour trade", async () => {
-  const dip = setup({ id: "trend-dip", name: "Тренд доторх уналтыг авах" });
-  expect(await emitSignals(now, { view: view([setup(), dip]), send })).toBe(2);
-  expect(await emitSignals(new Date(now.getTime() + 3 * 36e5), { view: view([dip]), send })).toBe(0);
-  expect(await emitSignals(new Date(now.getTime() + 9 * 36e5), { view: view([dip]), send })).toBe(1);
+test("the Asian breakout signals once a day, and again the next day", async () => {
+  expect(await emitSignals(now, { view: view([setup()]), send })).toBe(1);
+  expect(await emitSignals(new Date(now.getTime() + 3 * 36e5), { view: view([setup()]), send })).toBe(0);
   expect(await emitSignals(new Date(now.getTime() + 24 * 36e5), { view: view([setup()]), send })).toBe(1);
 });
 test("a failed send does not stop the others or lose the signal", async () => {
@@ -81,10 +79,8 @@ test("a failed send does not stop the others or lose the signal", async () => {
 test("a user who paused signals, or muted this setup, is skipped; the others still get it", async () => {
   await db.execute(sql`UPDATE users SET signals_paused = true WHERE telegram_chat_id = '111'`);
   await db.execute(sql`UPDATE users SET signals_muted = 'asian-breakout' WHERE telegram_chat_id = '999'`);
-  const dip = setup({ id: "trend-dip", name: "Тренд доторх уналтыг авах" });
-  expect(await emitSignals(now, { view: view([setup(), dip]), send })).toBe(2);
-  expect(sent.map((s) => s.chatId)).toEqual(["999"]); // only the dip, only to the user who muted the other one
-  expect(sent[0].text).toContain("Тренд доторх уналтыг авах");
+  expect(await emitSignals(now, { view: view([setup()]), send })).toBe(1);
+  expect(sent).toHaveLength(0); // recorded, but nobody wanted it
 });
 test("each user gets the message in their own language", async () => {
   await db.execute(sql`UPDATE users SET locale = 'en', time_zone = 'Europe/London' WHERE telegram_chat_id = '999'`);

@@ -18,7 +18,7 @@ const stopReasons = (t: T): Record<string, string> => ({
   TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин (v3.00-аас өмнөх): шинэ XauBot.ex5 татаж солино уу", "the robot file on MT5 is old (before v3.00): download the new XauBot.ex5 and replace it"),
+  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин: шинэ XauBot.ex5 (v3.50) татаж солино уу", "the robot file on MT5 is old: download the new XauBot.ex5 (v3.50) and replace it"),
 });
 /** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({

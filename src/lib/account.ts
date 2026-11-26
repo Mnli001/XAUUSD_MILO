@@ -4,7 +4,7 @@ import { db, schema } from "./db";
 import type { User } from "./db/schema";
 import { findUserById } from "./users";
 
-export const SIGNAL_SETUPS = ["asian-breakout", "trend-dip"] as const;
+export const SIGNAL_SETUPS = ["asian-breakout"] as const;
 export type SignalSetup = (typeof SIGNAL_SETUPS)[number];
 
 const muted = (u: Pick<User, "signalsMuted">) => u.signalsMuted.split(",").filter(Boolean);

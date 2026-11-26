@@ -69,6 +69,7 @@ test("the idea list is fixed in advance", () => {
     "Азийн хүрээний breakout", "Азийн хүрээний breakout + өдрийн тренд",
     "Трендийн доторх уналтыг авах (RSI 30)", "Трендийн доторх уналтыг авах (RSI 25)",
     "Мэдээний дараах хөдөлгөөнийг дагах", "Мэдээний дараах хөдөлгөөний эсрэг",
+    "Азийн breakout + өдөр, 4 цагийн тренд, 3R", // added after the all-history check; earlier entries keep their places
   ]);
 });
 test("compareIdeas returns a train/validation row per idea", () => {
@@ -87,7 +88,7 @@ test("compareIdeas returns a train/validation row per idea", () => {
     if (l && l.time.getTime() === t) { l.high = Math.max(l.high, c.high); l.low = Math.min(l.low, c.low); l.close = c.close; } else out.push({ ...c, time: new Date(t) }); } return out; };
   const news = Array.from({ length: 12 }, (_, k) => new Date(Date.UTC(2026, k, 14, 13, 30))).filter((d) => d.getUTCDay() % 6 !== 0);
   const { rows, splitAt, from, to } = compareIdeas({ m15, h1: agg(36e5), h4: agg(4 * 36e5), d1: agg(864e5), news });
-  expect(rows).toHaveLength(6);
+  expect(rows).toHaveLength(7);
   expect(from!.getTime()).toBeLessThan(splitAt!.getTime());
   expect(splitAt!.getTime()).toBeLessThan(to!.getTime());
   expect(rows[0].train.n + rows[0].test.n).toBeGreaterThan(50); // a breakout most days

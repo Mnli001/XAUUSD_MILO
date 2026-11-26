@@ -19,7 +19,7 @@ beforeEach(async () => { await resetDb(); clearSetupCache(); });
 
 test("with no candles every setup is off and nothing is drawn", async () => {
   const r = await getSetups(now);
-  expect(r.setups).toHaveLength(2);
+  expect(r.setups).toHaveLength(1);
   expect(r.setups.every((s) => s.status === "OFF")).toBe(true);
   expect(r.candles).toHaveLength(0);
   expect(r.setups.every((s) => s.history.n === 0 && s.history.winPct === null)).toBe(true);
@@ -27,13 +27,12 @@ test("with no candles every setup is off and nothing is drawn", async () => {
 test("with history it reads both rules against the latest candles and reports each rule's own record", async () => {
   for (const [tf, step, n, drift] of [["1day", 1440, 320, 4], ["4h", 240, 1900, 0.7], ["15min", 15, 30000, 0.04]] as [Timeframe, number, number, number][]) await upsertCandles(SYMBOL, tf, series(step, n, drift));
   const r = await getSetups(now);
-  expect(r.setups.map((s) => s.id)).toEqual(["asian-breakout", "trend-dip"]);
+  expect(r.setups.map((s) => s.id)).toEqual(["asian-breakout"]);
   expect(r.candles.length).toBeGreaterThan(50);
   expect(r.candles.at(-1)!.time.getTime()).toBeLessThanOrEqual(now.getTime());
-  const [asian, dip] = r.setups;
+  const [asian] = r.setups;
   expect(asian.band).not.toBeNull(); // today's 00:00–07:00 UTC range exists
   expect(["WATCH", "ACTIVE", "OFF"]).toContain(asian.status);
   expect(asian.history.n).toBeGreaterThan(0);
-  expect(dip.checks.length).toBeGreaterThan(0);
   expect(r.lastCandleAt).not.toBeNull();
 });

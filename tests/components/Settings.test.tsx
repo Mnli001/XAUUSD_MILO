@@ -36,9 +36,11 @@ test("the time zone list has the saved zone selected and shows each zone's offse
 });
 
 test("signal choices show each setup, with a muted one unticked, and a pause switch", () => {
-  render(<SignalPrefsForm paused={false} muted={["trend-dip"]} />);
+  const { unmount } = render(<SignalPrefsForm paused={false} muted={[]} />);
   expect(screen.getByRole("checkbox", { name: "Азийн хүрээний breakout" })).toBeChecked();
-  expect(screen.getByRole("checkbox", { name: "Тренд доторх уналтыг авах" })).not.toBeChecked();
+  unmount();
+  render(<SignalPrefsForm paused={false} muted={["asian-breakout"]} />);
+  expect(screen.getByRole("checkbox", { name: "Азийн хүрээний breakout" })).not.toBeChecked();
   expect(screen.getByRole("checkbox", { name: /түр зогсоох/ })).not.toBeChecked();
 });
 

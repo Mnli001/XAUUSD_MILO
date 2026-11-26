@@ -46,18 +46,16 @@ describe("Telegram signal choices", () => {
   it("everything is wanted until the user says otherwise", async () => {
     const u = await makeUser("a@x.mn");
     expect(wantsSignal(u, "asian-breakout")).toBe(true);
-    expect(wantsSignal(u, "trend-dip")).toBe(true);
   });
-  it("a muted setup is not wanted, the other still is", async () => {
+  it("an unticked setup is muted", async () => {
     const u = await makeUser("a@x.mn");
-    expect(await saveSignalPrefs(u.id, { paused: false, wanted: ["asian-breakout"] })).toEqual({});
+    expect(await saveSignalPrefs(u.id, { paused: false, wanted: [] })).toEqual({});
     const saved = (await findUserByEmail("a@x.mn"))!;
-    expect(wantsSignal(saved, "asian-breakout")).toBe(true);
-    expect(wantsSignal(saved, "trend-dip")).toBe(false);
+    expect(wantsSignal(saved, "asian-breakout")).toBe(false);
   });
   it("pausing stops every setup without unlinking", async () => {
     const u = await makeUser("a@x.mn");
-    await saveSignalPrefs(u.id, { paused: true, wanted: ["asian-breakout", "trend-dip"] });
+    await saveSignalPrefs(u.id, { paused: true, wanted: ["asian-breakout"] });
     const saved = (await findUserByEmail("a@x.mn"))!;
     expect(wantsSignal(saved, "asian-breakout")).toBe(false);
     expect(saved.signalsMuted).toBe("");

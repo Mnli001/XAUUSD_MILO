@@ -51,8 +51,8 @@ function Record({ title, h, t }: { title: string; h: SetupHistory; t: T }) {
       ) : (
         <>
           <div className="relative overflow-hidden rounded-xl">
-            <div className="flex h-2 overflow-hidden rounded-xl bg-red-500/70 shadow-inner" role="img" aria-label={t(`${h.winPct}% ашигтай хаагдсан`, `${h.winPct}% closed in profit`)}>
-              <div className="bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg transition-all duration-700" style={{ width: `${h.winPct}%` }} />
+            <div className="flex h-2 overflow-hidden rounded-xl bg-red-500/70" role="img" aria-label={t(`${h.winPct}% ашигтай хаагдсан`, `${h.winPct}% closed in profit`)}>
+              <div className="bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: `${h.winPct}%` }} />
             </div>
             <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
           </div>
@@ -133,36 +133,36 @@ export default async function SetupPage() {
   const user = await requireUser();
   const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15), getReasoning(now, v.locale)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
-  
+
   // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.
   const sortedSetups = orderSetups(view.setups);
   const best = bestRecent(view.setups);
+  const stale = view.setups.some((s) => s.stale);
 
   return (
     <div className="reveal space-y-5 sm:space-y-7">
-      <div className="card group relative overflow-hidden sm:p-8">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />
-        
-        <div className="relative z-10">
+      <div className="card sm:p-8">
+        <div>
           <div className="flex items-center gap-3">
             <svg className="h-7 w-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <h1 className="page-title">Setup</h1>
           </div>
-          <p className="page-lede mt-4">{t("Хоёр тогтсон дүрмийг одоогийн зах дээр уншиж, орох боломж бүрдэж байгаа эсэх, хаанаас орж, хаана stop, target тавихыг зургаар харуулна. Дүрэм бүрийн хажууд түүхэнд яг энэ дүрэм ямар үр дүн өгснийг тавьсан.", "Two fixed rules are read against the current market: whether an entry is forming, where to enter, and where the stop and target go, drawn on a chart. Next to each rule is how exactly that rule has done in the past.")}</p>
-          
+          <p className="page-lede mt-4">{t("Азийн хүрээний breakout дүрмийг одоогийн зах дээр уншиж, орох боломж бүрдэж байгаа эсэх, хаанаас орж, хаана stop, target тавихыг зургаар харуулна. Хажууд нь яг энэ дүрэм хадгалагдсан бүх түүхэн дата дээр ямар үр дүн өгснийг тавьсан.", "The Asian range breakout rule is read against the current market: whether an entry is forming, where to enter, and where the stop and target go, drawn on a chart. Next to it is how exactly this rule did over all stored history.")}</p>
+
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-zinc-800/50 bg-zinc-900/30 px-4 py-2 backdrop-blur-sm">
-              <p className="flex items-center gap-2 text-xs text-zinc-400 tabular-nums">
+            <div className={`rounded-xl border px-4 py-2 ${stale ? "border-red-500/40 bg-red-500/10" : "border-zinc-800/50 bg-zinc-900/30"}`}>
+              <p className={`flex items-center gap-2 text-xs tabular-nums ${stale ? "font-semibold text-red-300" : "text-zinc-400"}`}>
                 <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {view.lastCandleAt ? t(`Сүүлийн лаа ${v.dateTime(view.lastCandleAt)} (${v.zone})`, `Last candle ${v.dateTime(view.lastCandleAt)} (${v.zone})`) : t("Лааны дата ачаалж байна", "Loading candle data")}
+                {stale && <span>· {t("үнийн дата хоцорч байна", "price data is behind")}</span>}
               </p>
             </div>
             {next && (
-              <div className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 backdrop-blur-sm">
+              <div className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2">
                 <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-400" aria-hidden />
                 <span className="text-xs font-semibold text-amber-300">
                   {t("Дараагийн чухал мэдээ", "Next release")} {v.time(next.time)}: {eventTitle(next, t)}
@@ -176,21 +176,17 @@ export default async function SetupPage() {
       <ReasoningPanel initial={reasoning} />
 
       {sortedSetups.map((s) => {
-        const [label, tone, dot] = STATUS[s.status];
+        const done = s.result !== undefined;
+        const [label, tone, dot] = done
+          ? [t("Дууссан", "Finished"), s.result! > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400", s.result! > 0 ? "bg-emerald-400" : "bg-red-400"]
+          : STATUS[s.status];
         const live = s.status !== "OFF" && s.side !== null;
+        const headTone = done ? (s.result! > 0 ? "text-emerald-400" : "text-red-400") : !live ? "text-zinc-200" : s.side === "BUY" ? "text-emerald-400" : "text-red-400";
         const isBest = best?.id === s.id;
 
         return (
-          <section key={s.id} className="card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl">
-            <div className={`absolute -right-10 -top-10 h-48 w-48 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${
-              live
-                ? s.side === "BUY"
-                  ? "bg-emerald-500/10 group-hover:bg-emerald-500/15"
-                  : "bg-red-500/10 group-hover:bg-red-500/15"
-                : "bg-zinc-800/10"
-            }`} aria-hidden />
-
-            <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+          <section key={s.id} className="card">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
               <div className="min-w-0 space-y-5">
                 <div>
                   {/* In the normal flow, above the title, so it can never cover it on a narrow screen. */}
@@ -202,28 +198,31 @@ export default async function SetupPage() {
                   )}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-bold text-zinc-100">{s.name}</h2>
-                    <span className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-300 group-hover:scale-105 ${tone}`}>
+                    <span className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold ${tone}`}>
                       <span aria-hidden className={`h-2 w-2 rounded-full ${dot} ${s.status === 'ACTIVE' ? 'animate-pulse' : ''}`} />
                       {label}
                     </span>
                   </div>
-                  
-                  <div className={`mt-4 flex items-baseline gap-3 text-2xl leading-tight font-bold tracking-tight transition-all duration-300 group-hover:scale-105 ${
-                    !live ? "text-zinc-200" : s.side === "BUY" ? "text-emerald-400" : "text-red-400"
-                  }`}>
-                    {live && <Dir d={s.side === "BUY" ? 1 : -1} className="text-3xl" />}
+
+                  <div className={`mt-4 flex items-baseline gap-3 text-2xl leading-tight font-bold tracking-tight ${headTone}`}>
+                    {(live || done) && s.side && <Dir d={s.side === "BUY" ? 1 : -1} className="text-3xl" />}
                     <span>{s.headline}</span>
                   </div>
-                  
+
                   <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{s.detail}</p>
+                  {done && s.entry !== null && s.stop !== null && (
+                    <p className={`mt-3 text-sm font-semibold tabular-nums ${s.result! > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                      {t("Үр дүн", "Result")}: {s.result! > 0 ? "+" : ""}{s.result!.toFixed(2)}R · 0.01 lot {s.result! > 0 ? "+" : "−"}${Math.abs(s.result! * Math.abs(s.entry - s.stop)).toFixed(2)}
+                    </p>
+                  )}
                 </div>
 
-                <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 backdrop-blur-sm">
+                <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                   <Ladder s={s} t={t} />
                 </div>
 
                 {s.checks.length > 0 && (
-                  <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 backdrop-blur-sm">
+                  <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                     <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-300">
                       <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -234,10 +233,10 @@ export default async function SetupPage() {
                       {s.checks.length > 1 && <span aria-hidden className="absolute top-3.5 bottom-3.5 left-[6px] w-[3px] rounded-full bg-zinc-800" />}
                       <ul className="space-y-1 text-sm">
                         {s.checks.map((c) => (
-                          <li key={c.label} className={`group/check relative flex items-start gap-3 rounded-lg py-2 px-1 transition-all duration-200 hover:bg-white/5 ${c.ok ? "text-zinc-200" : "text-zinc-500"}`}>
-                            <span aria-hidden className={`relative z-10 mt-[3.5px] flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full border-[3px] transition-all duration-300 group-hover/check:scale-110 ${
-                              c.ok 
-                                ? "border-emerald-400 bg-emerald-400 shadow-lg shadow-emerald-400/20" 
+                          <li key={c.label} className={`relative flex items-start gap-3 rounded-lg py-2 px-1 ${c.ok ? "text-zinc-200" : "text-zinc-500"}`}>
+                            <span aria-hidden className={`relative z-10 mt-[3.5px] flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-full border-[3px] ${
+                              c.ok
+                                ? "border-emerald-400 bg-emerald-400"
                                 : "border-zinc-600 bg-zinc-900"
                             }`}>
                               {c.ok && <svg className="h-2.5 w-2.5 text-zinc-900" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
@@ -250,32 +249,33 @@ export default async function SetupPage() {
                   </div>
                 )}
               </div>
-              
+
               <div className="min-w-0">
-                <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-4 backdrop-blur-sm">
+                <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-4">
                   <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} v={v} />
                 </div>
               </div>
             </div>
 
             <div className="mt-6 grid gap-5 border-t border-zinc-800/50 pt-6 sm:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 backdrop-blur-sm transition-all duration-300 hover:border-zinc-700/50 hover:bg-zinc-900/50">
+              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <Record t={t} title={t("Түүхэн үр дүн, бүх хугацаа", "Historical record, all time")} h={s.history} />
               </div>
-              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 backdrop-blur-sm transition-all duration-300 hover:border-zinc-700/50 hover:bg-zinc-900/50">
+              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <Record t={t} title={t("Сүүлийн 12 сар", "Last 12 months")} h={s.recent} />
               </div>
             </div>
-            
+
             <details className="group/details mt-4">
-              <summary className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-zinc-400 transition-all duration-200 hover:bg-zinc-800/50 hover:text-zinc-200">
+              <summary className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800/50 hover:text-zinc-200">
                 <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 transition-transform duration-300 group-open/details:rotate-180">
                   <path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 {t("Дүрмийг бүтнээр нь унших", "Read the full rule")}
               </summary>
-              <div className="mt-3 rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 backdrop-blur-sm">
+              <div className="mt-3 rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <p className="max-w-prose leading-relaxed text-zinc-300">{s.rule}</p>
+                <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("MT5 робот: Бот хуудсанд «Азийн breakout» хэрэгслийг сонговол яг энэ дүрмээр, өдөрт нэг удаа арилжаална.", "MT5 robot: choose the “Asian breakout” tool on the Bot page and it trades exactly this rule, once a day.")}</p>
               </div>
             </details>
           </section>
@@ -306,8 +306,8 @@ export default async function SetupPage() {
       </section>
 
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
-        {t(`Түүхэн үр дүн нь хадгалагдсан лаанууд дээр (${view.historyFrom ? `${v.date(view.historyFrom)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Энэ хоёр дүрмийн аль нь ч урьдчилан тавьсан шалгуурыг (шалгах хэсэгт дундаж R ≥ 0.1, profit factor ≥ 1.2) бүрэн даваагүй. Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.`,
-          `The historical record comes from replaying the rule over the stored candles (${view.historyFrom ? `from ${v.date(view.historyFrom)}` : "once data arrives"}): a $0.30 spread, and a stop inside a candle counted before the target. R is the unit of risk (the distance to the stop). Neither of these two rules fully cleared the criteria set in advance (average R ≥ 0.1 and profit factor ≥ 1.2 on the test period). It does not guarantee future results and is not financial advice.`)}
+        {t(`Түүхэн үр дүн нь хадгалагдсан лаанууд дээр (${view.historyFrom ? `${v.date(view.historyFrom)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.`,
+          `The historical record comes from replaying the rule over the stored candles (${view.historyFrom ? `from ${v.date(view.historyFrom)}` : "once data arrives"}): a $0.30 spread, and a stop inside a candle counted before the target. R is the unit of risk (the distance to the stop). It does not guarantee future results and is not financial advice.`)}
       </p>
     </div>
   );

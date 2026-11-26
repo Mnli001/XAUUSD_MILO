@@ -1,4 +1,4 @@
-import { parseConfig, commandFor, newToken, hashToken, reportSchema, DEFAULT_LIVE_CONFIG, type LiveConfig } from "@/lib/bot/live";
+import { parseConfig, commandFor, newToken, hashToken, reportSchema, ASIAN_ROBOT_VERSION, DEFAULT_LIVE_CONFIG, type LiveConfig } from "@/lib/bot/live";
 
 /** Robot v2.80, the first file with the entry filter; the web runs no tool on an older one. */
 const V = 9;
@@ -101,7 +101,15 @@ describe("the Asian breakout tool", () => {
   });
   test("the terminal is told to run the rule with one position and no money stops", () => {
     const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
-    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, V)).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.03, maxPositions: 1, profitTarget: 0, maxLoss: 0 });
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, ASIAN_ROBOT_VERSION)).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.03, maxPositions: 1, profitTarget: 0, maxLoss: 0 });
+  });
+  test("the robot is handed the site's Asian breakout, the same one Telegram sends", () => {
+    const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;
+    const order = { id: 1764147600, dir: -1, risk: 7.5, rr: 3, ageSec: 40 };
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, ASIAN_ROBOT_VERSION, "mn", "", null, order)).toMatchObject({ dId: 1764147600, dDir: -1, dRisk: 7.5, dRR: 3, dAge: 40 });
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, ASIAN_ROBOT_VERSION)).toMatchObject({ dId: 0, dDir: 0 });
+    // an older file decided the trend on its own (an EMA cross) and would trade other days than the signal
+    expect(commandFor({ state: "RUNNING", runId: "r", closeAll: false, config }, { mode: "DEMO" }, ASIAN_ROBOT_VERSION - 1, "mn", "", null, order)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   });
   test("it needs the robot file that carries the rule", () => {
     const config = parseConfig({ mode: "ASIAN", rLots: "0.03" }).config!;

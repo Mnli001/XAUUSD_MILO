@@ -192,13 +192,14 @@ export type Command = {
   // Sizing and stops (robot v3.00 and newer). rMode 0 lots, 1 dollars per trade, 2 % of balance. sMode 1: stop = sStop × sAtr, target = stop × sRR.
   rMode: number; rVal: number; sMode: number; sAtr: number; sStop: number; sRR: number;
   protect: boolean; // robot v3.10 and newer
-  // The day trader's order (robot v3.40 and newer): dId 0 means "nothing now". dRisk is the stop distance in dollars.
+  // The day trader's or Asian tool's order (robot v3.40 / v3.50 and newer): dId 0 means "nothing now". dRisk is the stop distance in dollars.
   dId: number; dDir: number; dRisk: number; dRR: number; dAge: number;
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
 export const BASKET_ROBOT_VERSION = 2;
-export const ASIAN_ROBOT_VERSION = 3;
+/** 12: the Asian tool takes the site's breakout (daily + 4-hour trend, news windows, 3R) instead of its own EMA trend. */
+export const ASIAN_ROBOT_VERSION = 12;
 /**
  * Robot v2.80 (protocol 6) is the first with the entry filter and the order-handling fixes. An older
  * file would trade without the filter the owner set here, so no tool runs on it.
@@ -249,7 +250,7 @@ export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVe
     : basket
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
     : { runId: s.runId ?? "", lang, mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
-  const order = c.mode === "DAY" && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0 };
+  const order = (c.mode === "DAY" || c.mode === "ASIAN") && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0 };
   const base = { ...tool, ...gate, ...order };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };

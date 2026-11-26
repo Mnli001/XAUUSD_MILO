@@ -11,7 +11,6 @@ import { MN_VIEWER, viewer, type Viewer } from "./viewer";
 
 const px = (v: number) => v.toFixed(2);
 const usd = (v: number) => `$${v.toFixed(2)}`;
-const DIP_QUIET_MS = 8 * 36e5; // the dip rule holds a trade for up to eight hours
 const STALE_MS = 60 * 6e4; // a setup that went active over an hour ago (the job was down) is recorded, not sent
 const SEND_GAP_MS = 40; // about 25 messages a second, under Telegram's 30 a second
 export const NEWS_LEAD_MS = 30 * 6e4; // the heads-up goes out up to 30 minutes before a HIGH-impact release
@@ -83,12 +82,7 @@ export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?
     if (s.status !== "ACTIVE" || !s.side || s.entry === null || s.stop === null || s.target === null) continue;
     const at = s.at ?? view.lastCandleAt ?? now; // when the bar that made it active closed (for the message)
     const bar = s.at ?? now; // keyed by the bar, so two runners reading the same bar agree
-    let key: string;
-    if (s.id === "trend-dip") {
-      const [recent] = await db.select({ id: schema.signals.id }).from(schema.signals).where(and(eq(schema.signals.setupId, s.id), gt(schema.signals.createdAt, new Date(now.getTime() - DIP_QUIET_MS)))).limit(1);
-      if (recent) continue;
-      key = `${s.id}:${bar.toISOString().slice(0, 16)}`;
-    } else key = `${s.id}:${bar.toISOString().slice(0, 10)}`; // the Asian breakout: once per UTC day
+    const key = `${s.id}:${bar.toISOString().slice(0, 10)}`; // the Asian breakout: once per UTC day
     const [row] = await db.insert(schema.signals).values({ key, setupId: s.id, name: s.name, side: s.side, entry: s.entry, stop: s.stop, target: s.target, createdAt: now }).onConflictDoNothing({ target: schema.signals.key }).returning({ id: schema.signals.id });
     if (!row) continue;
     created++;

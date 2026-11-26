@@ -8,6 +8,7 @@ import { parseLocale } from "../prefs";
 import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
 import { DAY_MIN_LEAN, dayOrderFrom, getDayState } from "./daySignal";
+import { getAsianOrder } from "../setup/build";
 import { applyPreset, isPreset, type ConsensusCounts } from "./live";
 import { sessionOfUbHour, ubHour } from "../time";
 import { deliver, esc, telegramConfigured } from "../telegram";
@@ -64,6 +65,8 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 /** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
 /** The day trader's order for this bot right now, if a setup just triggered and the reading backs it. */
 async function dayOrderFor(config: LiveConfig, now: Date) {
+  // The Asian tool trades the Setup page's own breakout, so the robot and the Telegram signal never disagree.
+  if (config.mode === "ASIAN") { try { return await getAsianOrder(now); } catch (e) { console.error("[bot] asian signal failed", e); return null; } }
   if (config.mode !== "DAY") return null;
   try { return dayOrderFrom(await getDayState(now), config.gate?.dayLean ?? DAY_MIN_LEAN, now); } catch (e) { console.error("[bot] day signal failed", e); return null; }
 }

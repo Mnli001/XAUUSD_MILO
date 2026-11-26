@@ -5,7 +5,7 @@ import { scoreSeries } from "./strategy";
 import { type SegmentStats, segmentStats, MIN_TEST_AVG_R, MIN_TEST_PROFIT_FACTOR } from "./variants";
 
 const M15 = 15 * 6e4;
-/** The one hypothesis being tested forward: Asian range breakout in the direction of the daily trend. */
+/** The one hypothesis being tested forward: Asian range breakout in the direction of the daily trend. Fixed when the test began. */
 export const PAPER_IDEA = IDEAS[1];
 export const PAPER_RR = 2;
 /** Fixed before the forward test started. */

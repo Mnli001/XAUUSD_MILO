@@ -12,7 +12,7 @@ type Score = number | null;
  * Between 07:00 and 16:00 UTC the first 15-minute close outside the range is followed, with the
  * stop at the middle of the range, and the trade is flat by 20:00 UTC. One trade per day.
  */
-export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[] }): (Order | null)[] {
+export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[]; confirm?: Score[] }): (Order | null)[] {
   const out: (Order | null)[] = new Array(m15.length).fill(null);
   let day = "";
   let high = -Infinity, low = Infinity, count = 0, done = false;
@@ -28,6 +28,10 @@ export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; p
     if (inNewsWindow(at, o.news, o.params)) return;
     if (o.trend) {
       const t = o.trend[i];
+      if (t === null || t === undefined || (side === "BUY" ? t <= 0 : t >= 0)) return;
+    }
+    if (o.confirm) {
+      const t = o.confirm[i];
       if (t === null || t === undefined || (side === "BUY" ? t <= 0 : t >= 0)) return;
     }
     const stopDist = Math.abs(bar.close - (high + low) / 2);
@@ -81,6 +85,11 @@ export type Idea = { name: string; params: BotParams; build: (c: Context) => (Or
 
 const base: BotParams = { ...DEFAULT_PARAMS, breakeven: false };
 const oneADay: BotParams = { ...base, maxTradesPerDay: 1 };
+// The order builder already allows one trade per UTC day. The simulator counts days on the Ulaanbaatar
+// clock, where a 16:00 UTC entry falls on the next day and would block that day's trade, so it is not asked to.
+const asianDay: BotParams = { ...base, maxTradesPerDay: 2 };
+/** Records of a rule are in R; a balance this size never rounds a wide-stop day down to under 0.01 lot and skips it. */
+export const RECORD_BALANCE = 1_000_000;
 
 /** Fixed before looking at any result: three different kinds of entry, two settings each. */
 export const IDEAS: Idea[] = [
@@ -90,7 +99,12 @@ export const IDEAS: Idea[] = [
   { name: "Трендийн доторх уналтыг авах (RSI 25)", params: base, build: (c) => dipOrders(c.m15, { ...c, params: base, rsiLow: 25 }) }, // i18n-ok: server log, machine reply or research-script name
   { name: "Мэдээний дараах хөдөлгөөнийг дагах", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 2 }) }, // i18n-ok: server log, machine reply or research-script name
   { name: "Мэдээний дараах хөдөлгөөний эсрэг", params: base, build: (c) => newsOrders(c.m15, { atr15: c.atr15, news: c.news, rr: 1, fade: true }) }, // i18n-ok: server log, machine reply or research-script name
+  // Added 2026-11-26 after the all-history check (scripts/asian-deep-check.ts): asking the 4-hour trend to agree
+  // and aiming for 3R each improved BOTH halves of the history, not just the whole.
+  { name: "Азийн breakout + өдөр, 4 цагийн тренд, 3R", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: oneADay, trend: c.daily, confirm: c.h4 }) }, // i18n-ok: server log, machine reply or research-script name
 ];
+/** The Asian rule the Setup page, the Telegram signals and the robot's Asian tool all follow. */
+export const ASIAN_IDEA = IDEAS[6];
 
 type IdeaInput = Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] };
 
