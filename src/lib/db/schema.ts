@@ -179,7 +179,7 @@ export const botEntries = pgTable("bot_entries", {
   session: text("session").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] })]);
 
-/** One QPay invoice for a plan. PAID once QPay's own check says the full amount came in; that payment extends access once. */
+/** One Wire payment for a plan. PAID once Wire's own record says the intent succeeded for the full amount; that payment extends access once. */
 export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "PAID", "EXPIRED"]);
 export const payments = pgTable("payments", {
   id: id(),
@@ -188,17 +188,13 @@ export const payments = pgTable("payments", {
   amount: integer("amount").notNull(), // tögrög
   days: integer("days").notNull(),
   status: paymentStatusEnum("status").notNull().default("PENDING"),
-  senderInvoiceNo: text("sender_invoice_no").notNull(),
-  qpayInvoiceId: text("qpay_invoice_id"),
-  qrImage: text("qr_image"), // base64 PNG from QPay
-  qrText: text("qr_text"),
-  shortUrl: text("short_url"),
-  urls: jsonb("urls").notNull().default([]), // bank-app links from QPay
-  qpayPaymentId: text("qpay_payment_id"),
+  senderInvoiceNo: text("sender_invoice_no").notNull(), // our order number, shown to the payer and the admin
+  providerRef: text("provider_ref"), // Wire PaymentIntent id (pi_…)
+  checkoutUrl: text("checkout_url"), // Wire hosted checkout (https://pay.wire.mn/c/…)
   createdAt: ts("created_at").notNull().defaultNow(),
   expiresAt: ts("expires_at").notNull(),
   checkedAt: ts("checked_at"),
   paidAt: ts("paid_at"),
   accessUntil: ts("access_until"), // the end of access this payment produced
-}, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_qpay_invoice").on(t.qpayInvoiceId), index("payments_user_created").on(t.userId, t.createdAt)]);
+}, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_provider_ref").on(t.providerRef), index("payments_user_created").on(t.userId, t.createdAt)]);
 export type Payment = typeof payments.$inferSelect;

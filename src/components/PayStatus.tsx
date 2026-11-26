@@ -6,7 +6,7 @@ import { useT } from "./PrefsProvider";
 const EVERY_MS = 5000;
 
 /**
- * On the payment page: asks the server every 5 seconds whether QPay has the money (the server asks QPay).
+ * On the payment page: asks the server every 5 seconds whether Wire has the money (the server asks Wire).
  * The moment it is paid or expired the page reloads to show it; after that it stops asking.
  */
 export function PayStatus({ id }: { id: string }) {

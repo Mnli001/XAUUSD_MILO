@@ -78,6 +78,20 @@
       "when": 1795690065839,
       "tag": "0010_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795691966129,
+      "tag": "0011_payments_drop_qpay",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795691970938,
+      "tag": "0012_payments_wire",
+      "breakpoints": true
     }
   ]
 }

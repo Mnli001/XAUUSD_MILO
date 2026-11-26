@@ -26,7 +26,7 @@ const period = (id: PlanId, t: T) => ({ PLUS: t("1 сар", "1 month"), PRO: t("
 const months: Record<PlanId, number> = { PLUS: 1, PRO: 6, MAX: 12 };
 
 /**
- * The three plans side by side, each a form that posts its plan id. `payOn` is false until the QPay settings are
+ * The three plans side by side, each a form that posts its plan id. `payOn` is false until the Wire settings are
  * entered: the plans still show, the buttons wait, and the admin's contact is given instead.
  */
 export function PlansCard({ t, choose, payOn, contact, until, compact = false }: {
@@ -39,7 +39,7 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
       <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">
         {until
           ? t(`Таны эрх ${until} хүртэл. Одоо сунгавал үлдсэн хоног тань хасагдахгүй, дээр нь нэмэгдэнэ.`, `Your access runs until ${until}. Renew now and the days left are kept, the new ones added on top.`)
-          : t("Өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот — QPay-аар төлмөгц шууд нээгдэнэ.", "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay with QPay.")}
+          : t("Өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот — төлмөгц шууд нээгдэнэ.", "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.")}
       </p>
       <ul className={`mt-4 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
         {PLAN_IDS.map((id) => {
@@ -66,11 +66,11 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
       </ul>
       {!payOn && (
         <div className="mt-4 rounded-2xl border border-zinc-700/60 p-4 text-sm text-zinc-300">
-          <p>{t("QPay-аар төлөх боломж удахгүй нээгдэнэ.", "Paying with QPay opens soon.")}{contact ? ` ${t("Одоо авах бол админд хандаарай:", "To buy now, contact the admin:")}` : ""}</p>
+          <p>{t("Онлайн төлбөр удахгүй нээгдэнэ.", "Online payment opens soon.")}{contact ? ` ${t("Одоо авах бол админд хандаарай:", "To buy now, contact the admin:")}` : ""}</p>
           {contact && <p className="mt-1 font-semibold text-amber-200">{contact.url ? <a href={contact.url} target="_blank" rel="noopener noreferrer" className="underline decoration-amber-400/50 underline-offset-4">{contact.text}</a> : contact.text}</p>}
         </div>
       )}
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t("Төлбөр QPay-аар (банкны апп эсвэл QR). Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.", "Paid through QPay (bank app or QR). Information based on historical statistics, not financial advice.")}</p>
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t("Төлбөр Wire-аар: QPay, банкны апп, карт, Toki. Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.", "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.")}</p>
     </section>
   );
 }

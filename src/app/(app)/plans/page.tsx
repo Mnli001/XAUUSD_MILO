@@ -28,10 +28,10 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
     <div className="space-y-5 sm:space-y-6">
       <div>
         <h1 className="page-title">{t("Багц", "Plans")}</h1>
-        <p className="page-lede">{t("Багц авмагц өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот бүгд нээгдэнэ. QPay-аар төлмөгц шууд идэвхжинэ.", "A plan opens the odds, the leading side, setup entries and the bot. It turns on the moment QPay confirms the payment.")}</p>
+        <p className="page-lede">{t("Багц авмагц өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот бүгд нээгдэнэ. Төлбөр баталгаажмагц шууд идэвхжинэ.", "A plan opens the odds, the leading side, setup entries and the bot. It turns on the moment the payment is confirmed.")}</p>
       </div>
-      {pay === "error" && <p role="alert" className="card border-red-400/40 text-sm text-red-300">{t("QPay-тэй холбогдож чадсангүй. Түр хүлээгээд дахин оролдоно уу.", "Could not reach QPay. Please wait a moment and try again.")}</p>}
-      {pay === "off" && <p role="alert" className="card text-sm text-zinc-300">{t("QPay төлбөр хараахан тохируулагдаагүй байна.", "QPay payments are not set up yet.")}</p>}
+      {pay === "error" && <p role="alert" className="card border-red-400/40 text-sm text-red-300">{t("Төлбөрийн системтэй холбогдож чадсангүй. Түр хүлээгээд дахин оролдоно уу.", "Could not reach the payment system. Please wait a moment and try again.")}</p>}
+      {pay === "off" && <p role="alert" className="card text-sm text-zinc-300">{t("Онлайн төлбөр хараахан тохируулагдаагүй байна.", "Online payments are not set up yet.")}</p>}
       {user.role === "ADMIN" && <p className="text-sm text-zinc-400">{t("Та админ тул бүх зүйл хугацаагүй нээлттэй. Туршихын тулд багц сонгож болно.", "As an admin everything is open with no end date. You can still choose a plan to test.")}</p>}
       <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} until={until} />
       {mine.length > 0 && (

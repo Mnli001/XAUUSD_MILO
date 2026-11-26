@@ -1,16 +1,16 @@
 import { getViewer } from "@/lib/prefs.server";
 import { listPayments } from "@/lib/payments";
 import { PLANS, isPlanId, tugrik } from "@/lib/plans";
-import { qpayConfig } from "@/lib/qpay";
+import { wireConfig } from "@/lib/wire";
 
 export const dynamic = "force-dynamic";
 
-/** Every QPay payment, newest first. Access opens by itself; this page is for checking and answering questions. */
+/** Every Wire payment, newest first. Access opens by itself; this page is for checking and answering questions. */
 export default async function AdminPaymentsPage() {
   const v = await getViewer();
   const { t } = v;
   const rows = await listPayments(300);
-  const cfg = qpayConfig(process.env);
+  const cfg = wireConfig(process.env);
   const paidTotal = rows.filter((r) => r.status === "PAID").reduce((s, r) => s + r.amount, 0);
   const tone = (s: string) => (s === "PAID" ? "text-emerald-400" : s === "PENDING" ? "text-amber-300" : "text-zinc-500");
   const word = (s: string) => (s === "PAID" ? t("Төлөгдсөн", "Paid") : s === "PENDING" ? t("Хүлээгдэж буй", "Pending") : t("Хугацаа дууссан", "Expired"));
@@ -19,7 +19,11 @@ export default async function AdminPaymentsPage() {
       <div>
         <h1 className="page-title">{t("Төлбөр", "Payments")}</h1>
         <p className="page-lede">
-          {cfg ? t(`QPay: ${cfg.baseUrl.includes("sandbox") ? "туршилтын (sandbox)" : "жинхэнэ"} горим.`, `QPay: ${cfg.baseUrl.includes("sandbox") ? "sandbox" : "live"} mode.`) : t("QPay тохируулаагүй: Railway-д QPAY_USERNAME, QPAY_PASSWORD, QPAY_INVOICE_CODE оруулна уу.", "QPay is not set up: add QPAY_USERNAME, QPAY_PASSWORD, QPAY_INVOICE_CODE on Railway.")}
+          {cfg
+            ? (cfg.webhookSecret
+              ? t("Wire холбогдсон, webhook идэвхтэй.", "Wire is connected, with the webhook on.")
+              : t("Wire холбогдсон. Webhook-ийн нууц (WIRE_WEBHOOK_SECRET) оруулаагүй тул төлбөр хуудас шалгах үед л баталгаажна.", "Wire is connected. No webhook secret (WIRE_WEBHOOK_SECRET) yet, so payments confirm only when the payment page checks."))
+            : t("Wire тохируулаагүй: Railway-д WIRE_API_KEY оруулна уу.", "Wire is not set up: add WIRE_API_KEY on Railway.")}
           {" "}{t(`Нийт төлөгдсөн: ${tugrik(paidTotal)}.`, `Paid in total: ${tugrik(paidTotal)}.`)}
         </p>
       </div>

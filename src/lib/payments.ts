@@ -3,53 +3,56 @@ import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Payment } from "./db/schema";
 import { PLANS, extendAccess, type PlanId } from "./plans";
-import { cancelInvoice, checkInvoice, createInvoice, type BankLink, type QPayConfig } from "./qpay";
+import { cancelIntent, createCheckout, createIntent, retrieveIntent, type WireConfig } from "./wire";
 
-/** How long one of our invoices can be paid from the payment page. */
+/** How long one payment can be paid (Wire cancels the intent at the same moment). */
 export const PAY_TTL_MS = 30 * 60e3;
-/** The payment page asks every 5 seconds; QPay is asked at most this often per invoice unless forced (the callback). */
+/** The payment page asks every 5 seconds; Wire is asked at most this often per payment unless forced (the webhook). */
 const MIN_CHECK_MS = 3000;
-/** A pending invoice for the same plan is reused while this much of its time is left. */
+/** A pending payment for the same plan is reused while this much of its time is left. */
 const REUSE_LEFT_MS = 5 * 60e3;
 
 export type { Payment };
-export const bankLinks = (p: Payment): BankLink[] => (Array.isArray(p.urls) ? (p.urls as BankLink[]) : []);
 
-const senderNo = (now: Date) => `XAU-${now.getTime().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+const orderNo = (now: Date) => `XAU-${now.getTime().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
 
-/** Opens a QPay invoice for a plan (or hands back the one still open for that plan). */
-export async function startPayment(userId: string, plan: PlanId, now: Date, cfg: QPayConfig, siteUrl: string): Promise<Payment> {
+/** Opens a Wire payment and its hosted checkout for a plan (or hands back the one still open for that plan). */
+export async function startPayment(userId: string, plan: PlanId, now: Date, cfg: WireConfig, siteUrl: string): Promise<Payment> {
   const [open] = await db.select().from(schema.payments)
     .where(and(eq(schema.payments.userId, userId), eq(schema.payments.plan, plan), eq(schema.payments.status, "PENDING"), gt(schema.payments.expiresAt, new Date(now.getTime() + REUSE_LEFT_MS))))
     .orderBy(desc(schema.payments.createdAt)).limit(1);
-  if (open) return open;
+  if (open?.checkoutUrl) return open;
 
   const p = PLANS[plan];
   const id = randomUUID();
-  const sender = senderNo(now);
-  const inv = await createInvoice(cfg, {
-    senderInvoiceNo: sender,
+  const order = orderNo(now);
+  const expiresAt = new Date(now.getTime() + PAY_TTL_MS);
+  const site = siteUrl.replace(/\/+$/, "");
+  const intent = await createIntent(cfg, {
     amount: p.amount,
-    description: `XAU Analytics · ${p.name} · ${p.days}`,
-    callbackUrl: `${siteUrl.replace(/\/+$/, "")}/api/payments/qpay/callback?id=${id}`,
+    description: `XAU Analytics · ${p.name} · ${order}`,
+    expiresAt,
+    metadata: { payment: id, order, user: userId, plan },
+    idempotencyKey: `xau-${id}-intent`,
   });
+  const cancel = () => cancelIntent(cfg, intent.id, `xau-${id}-cancel`).catch(() => {}); // nobody can pay what we could not record
   try {
+    const checkout = await createCheckout(cfg, { paymentIntent: intent.id, successUrl: `${site}/pay/${id}`, cancelUrl: `${site}/plans`, idempotencyKey: `xau-${id}-checkout` });
     const [row] = await db.insert(schema.payments).values({
-      id, userId, plan, amount: p.amount, days: p.days, status: "PENDING", senderInvoiceNo: sender,
-      qpayInvoiceId: inv.invoiceId, qrImage: inv.qrImage, qrText: inv.qrText, shortUrl: inv.shortUrl, urls: inv.urls,
-      createdAt: now, expiresAt: new Date(now.getTime() + PAY_TTL_MS),
+      id, userId, plan, amount: p.amount, days: p.days, status: "PENDING", senderInvoiceNo: order,
+      providerRef: intent.id, checkoutUrl: checkout.url, createdAt: now, expiresAt,
     }).returning();
     return row;
   } catch (e) {
-    await cancelInvoice(cfg, inv.invoiceId).catch(() => {}); // nobody can pay an invoice we could not record
+    await cancel();
     throw e;
   }
 }
 
-/** Marks a paid invoice PAID and extends the payer's access, exactly once however many checks race here. */
-async function activate(id: string, now: Date, qpayPaymentId: string | null): Promise<void> {
+/** Marks a paid payment PAID and extends the payer's access, exactly once however many checks race here. */
+async function activate(id: string, now: Date): Promise<void> {
   await db.transaction(async (tx) => {
-    const [won] = await tx.update(schema.payments).set({ status: "PAID", paidAt: now, qpayPaymentId })
+    const [won] = await tx.update(schema.payments).set({ status: "PAID", paidAt: now })
       .where(and(eq(schema.payments.id, id), ne(schema.payments.status, "PAID"))).returning();
     if (!won) return; // another check got here first
     const [u] = await tx.execute<{ access_until: Date | string | null }>(sql`SELECT access_until FROM users WHERE id = ${won.userId} FOR UPDATE`).then((r) => r.rows);
@@ -61,25 +64,31 @@ async function activate(id: string, now: Date, qpayPaymentId: string | null): Pr
 }
 
 /**
- * Asks QPay about an invoice and acts on the answer: paid in full → access opens; unpaid past its time → EXPIRED
- * (after this last check). An EXPIRED invoice is still checked, so money that arrives late is honoured.
- * `force` skips the few-seconds throttle (QPay's callback).
+ * Asks Wire about a payment's intent and acts on the answer: succeeded for the full amount in tögrög → access opens;
+ * canceled, or unpaid past its time → EXPIRED. An EXPIRED payment is still checked, so money that arrives late is honoured.
+ * `force` skips the few-seconds throttle (the webhook).
  */
-export async function refreshPayment(id: string, now: Date, cfg: QPayConfig, o: { force?: boolean } = {}): Promise<Payment | null> {
+export async function refreshPayment(id: string, now: Date, cfg: WireConfig, o: { force?: boolean } = {}): Promise<Payment | null> {
   const [p] = await db.select().from(schema.payments).where(eq(schema.payments.id, id));
   if (!p) return null;
-  if (p.status === "PAID" || !p.qpayInvoiceId) return p;
+  if (p.status === "PAID" || !p.providerRef) return p;
   if (!o.force && p.checkedAt && now.getTime() - p.checkedAt.getTime() < MIN_CHECK_MS) return p;
 
-  const r = await checkInvoice(cfg, p.qpayInvoiceId);
+  const r = await retrieveIntent(cfg, p.providerRef);
   await db.update(schema.payments).set({ checkedAt: now }).where(eq(schema.payments.id, id));
-  if (r.paidAmount >= p.amount) {
-    await activate(id, now, r.paymentId);
-  } else if (p.status === "PENDING" && now.getTime() >= p.expiresAt.getTime()) {
+  if (r.status === "succeeded" && r.currency === "MNT" && r.amount >= p.amount) {
+    await activate(id, now);
+  } else if (p.status === "PENDING" && (r.status === "canceled" || now.getTime() >= p.expiresAt.getTime())) {
     await db.update(schema.payments).set({ status: "EXPIRED" }).where(and(eq(schema.payments.id, id), eq(schema.payments.status, "PENDING")));
   }
   const [fresh] = await db.select().from(schema.payments).where(eq(schema.payments.id, id));
   return fresh ?? null;
+}
+
+/** The webhook's way in: the payment whose Wire intent this is, checked now. Null when the intent is not ours. */
+export async function refreshByRef(ref: string, now: Date, cfg: WireConfig): Promise<Payment | null> {
+  const [p] = await db.select({ id: schema.payments.id }).from(schema.payments).where(eq(schema.payments.providerRef, ref));
+  return p ? refreshPayment(p.id, now, cfg, { force: true }) : null;
 }
 
 /** The payment, only if it belongs to this user. */
