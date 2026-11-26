@@ -350,3 +350,8 @@ html[data-theme="light"] .skeleton { background: rgb(23 20 14 / 0.07); }
 /* The panels are no longer blurred live, so they carry a little more of their own colour instead. */
 :root { --panel-bg: linear-gradient(180deg, rgb(255 255 255 / 0.085) 0%, rgb(255 255 255 / 0.035) 55%, rgb(255 255 255 / 0.05) 100%), rgb(19 18 16 / 0.82); }
 html[data-theme="light"] { --panel-bg: linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.8)); }
+
+/* The phone menu drops down from the top bar. */
+.menu-drop { transform-origin: top; animation: menu-drop 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes menu-drop { from { opacity: 0; transform: translateY(-6px) scaleY(0.97); } }
+@media (prefers-reduced-motion: reduce) { .menu-drop { animation: none; } }

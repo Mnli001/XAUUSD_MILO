@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { paywallFor } from "@/lib/paywall.server";
@@ -23,8 +22,7 @@ export default async function BotHistoryPage() {
   return (
     <div className="reveal space-y-5 sm:space-y-7">
       <div>
-        <Link href="/bot" className="inline-flex min-h-9 items-center text-sm font-semibold text-zinc-400 hover:text-zinc-200">← {t("Бот", "Bot")}</Link>
-        <h1 className="page-title mt-1">{t("Ботын түүх", "Bot history")}</h1>
+        <h1 className="page-title">{t("Ботын түүх", "Bot history")}</h1>
         <p className="page-lede mt-3">{t("Setup-ийн гаргасан дохио бүр болон хэрхэн дууссан нь. Ногоон: ашигтай хаагдсан, улаан: алдагдалтай хаагдсан. Target, Stop: аль нь эхэлж хүрсэн; Цагаар: аль нь ч хүрээгүй, цагаар хаагдсан.", "Every signal the setups gave and how it ended. Green: closed in profit, red: closed at a loss. Target, Stop: which was reached first; On time: neither, closed at the set hour.")}</p>
       </div>
       {paid ? (
