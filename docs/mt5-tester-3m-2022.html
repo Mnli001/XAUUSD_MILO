@@ -1,0 +1,59 @@
+<title>MT5 tester · 3 сар 2022</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one report column; summary tiles, balance line, month ledger, then the comparison. */
+:root { --bg:#f6f3ec; --surface:#fff; --fg:#1d1a14; --muted:#6c6556; --line:#e5dfd2; --gold:#a5791d; --gold-soft:#f2e6c6; --up:#1f8a5b; --down:#c0392b;
+  --display:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; }
+body { background:var(--bg); color:var(--fg); font:15px/1.6 var(--display); }
+.wrap { max-width:860px; margin:0 auto; padding-block:36px 64px; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); display:grid; gap:30px; }
+h1,h2 { margin:0; text-wrap:balance; line-height:1.2; } h1 { font-size:clamp(26px,5vw,38px); font-weight:800; letter-spacing:-.02em; } h2 { font-size:19px; font-weight:800; }
+p { margin:0; } .eyebrow { font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--gold); } .muted { color:var(--muted); }
+section { display:grid; gap:12px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:grid; gap:2px; }
+.tile b { font:700 22px var(--mono); font-variant-numeric:tabular-nums; } .tile span { font-size:13px; color:var(--muted); }
+.up { color:var(--up); } .down { color:var(--down); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:14px; } th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); white-space:nowrap; } tr:last-child td { border-bottom:0; }
+th { font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+td.num { font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; }
+td.bar { width:28%; min-width:90px; } td.bar span { display:block; height:10px; border-radius:5px; } td.bar span.up { background:var(--up); } td.bar span.down { background:var(--down); }
+.note { border-left:3px solid var(--gold); padding:4px 0 4px 14px; color:var(--muted); }
+svg text { fill:var(--muted); font:11px var(--mono); }
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <p class="eyebrow">MetaTrader 5 Strategy Tester · XauBot v3.60 · санамсаргүй 3 сар · 2022-01-29 → 2022-04-30</p>
+    <h1>MT5 tester: санамсаргүй 3 сар (2022 оны 2–4-р сар)</h1>
+    <p class="muted">JustMarkets XAUUSD.m, 15 минут, 1 минутын OHLC, брокерын бодит spread. Хөшүүрэг 1:1000, арилжаа бүрт балансын 5% эрсдэл, нэг дор 3 хүртэл арилжаа. Setup: Азийн хүрээ (5 арилжаа), Нью-Йоркийн нээлт (10), Нью-Йоркийн хоёр дахь цаг (12).</p>
+  </header>
+  <section><div class="tiles">
+    <div class="tile"><b>1,500.00$ → 1,739.73$</b><span>Эхлэл → төгсгөл</span></div>
+    <div class="tile"><b class="up">+16.0%</b><span>3 сарын өгөөж (+239.73$)</span></div>
+    <div class="tile"><b>27</b><span>Арилжаа (7 хоногт 2.1)</span></div>
+    <div class="tile"><b>40.74%</b><span>Ашигтай (11)</span></div>
+    <div class="tile"><b>1.25</b><span>Profit factor</span></div>
+    <div class="tile"><b>1 : 1.82</b><span>Бодит RR (109.18$ / 60.08$)</span></div>
+    <div class="tile"><b class="down">14.68%</b><span>Балансын хамгийн их уналт (299.40$)</span></div>
+    <div class="tile"><b>2 / 3</b><span>Ашигтай сар</span></div>
+  </div></section>
+  <section><h2>Дансны үлдэгдэл</h2><div class="card"><svg viewBox="0 0 760 220" width="100%" role="img" aria-label="Үлдэгдэл 1,500.00$-аас 1,739.73$">
+    <line x1="28" x2="732" y1="140.3" y2="140.3" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="4 4"/><text x="28" y="134.3">эхлэл 1,500.00$</text>
+    <path d="M28.0,140.3 L54.1,155.5 L80.1,169.6 L106.2,176.9 L132.3,178.1 L158.4,180.6 L184.4,192.0 L210.5,167.3 L236.6,142.1 L262.7,112.8 L288.7,89.1 L314.8,107.0 L340.9,84.3 L367.0,102.7 L393.0,80.6 L419.1,78.8 L445.2,93.7 L471.3,111.0 L497.3,82.8 L523.4,47.7 L549.5,65.3 L575.6,59.8 L601.6,28.0 L627.7,36.4 L653.8,57.1 L679.9,68.9 L705.9,87.9 L732.0,90.4" fill="none" stroke="var(--gold)" stroke-width="2.2"/><text x="732" y="82.4" text-anchor="end">1,739.73$</text>
+  </svg></div></section>
+  <section><h2>Сар сараар</h2><div class="card"><table>
+    <thead><tr><th>Сар</th><th>Арилжаа</th><th>Ашигтай</th><th>Ашиг/алдагдал</th><th>Өөрчлөлт</th><th></th><th>Үлдэгдэл</th></tr></thead><tbody><tr><td>2022 2-р сар</td><td class="num">16</td><td class="num">7/16</td><td class="num up">+223.60$</td><td class="num up">+14.9%</td><td class="bar"><span class="up" style="width:81%"></span></td><td class="num">1,723.60$</td></tr><tr><td>2022 3-р сар</td><td class="num">7</td><td class="num">4/7</td><td class="num up">+275.23$</td><td class="num up">+16.0%</td><td class="bar"><span class="up" style="width:100%"></span></td><td class="num">1,998.83$</td></tr><tr><td>2022 4-р сар</td><td class="num">4</td><td class="num">0/4</td><td class="num down">−259.10$</td><td class="num down">-13.0%</td><td class="bar"><span class="down" style="width:94%"></span></td><td class="num">1,739.73$</td></tr></tbody></table></div>
+    <p class="muted">Хамгийн сайн сар 2022.03 (+275.23$), хамгийн муу сар 2022.04 (−259.10$). 2–3-р сард Украины дайнаар алт 2,070$ хүртэл огцом өссөн үед ашигтай байсан. 4-р сард алт эргэж унахад 4 арилжаа бүгд алдагдалтай хаагдсан. 1-р сарын 29–31-нд арилжаа гараагүй.</p></section>
+  <section><h2>Эрсдэл</h2><div class="card"><table><tbody>
+    <tr><td>Балансын хамгийн их уналт</td><td class="num down">299.40 (14.68%)</td></tr>
+    <tr><td>Equity-ийн хамгийн их уналт (нээлттэй арилжаатай)</td><td class="num down">449.54 (27.14%)</td></tr>
+    <tr><td>Хамгийн том ашигтай арилжаа</td><td class="num up">+168.42$</td></tr>
+    <tr><td>Хамгийн том алдагдалтай арилжаа</td><td class="num down">−99.66$</td></tr>
+  </tbody></table></div></section>
+  <section><h2>Дүгнэлт</h2>
+  <p class="muted">3 сард 27 арилжаа (7 хоногт ~2), 41% ашигтай боловч дундаж ашиг дундаж алдагдлаас 1.8 дахин их тул нийтдээ ашигтай. Нээлттэй арилжаатай үеийн хамгийн их уналт 27% байсан нь 5% эрсдэл дээр нэг дор хэд хэдэн арилжаа алдагдалтай байх үед гардаг.</p></section>
+  <p class="note">Strategy Tester-ийн дахин тоглуулалт. Бодит арилжаанд slippage, мэдээний үеийн spread, сервер холболт нөлөөлнө. Өнгөрсөн үр дүн ирээдүйг батлахгүй.</p>
+</div>
