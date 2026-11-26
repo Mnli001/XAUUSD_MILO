@@ -1,10 +1,10 @@
+import Link from "next/link";
 import { getSetups, type Setup } from "@/lib/setup/build";
 import type { SetupHistory } from "@/lib/setup/setups";
 import { getNextHighEvent } from "@/lib/events";
 import { SetupChart } from "@/components/SetupChart";
 import { TelegramCard } from "@/components/TelegramCard";
 import { requireUser } from "@/lib/auth";
-import { listSignals } from "@/lib/signals";
 import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
 import { getViewer } from "@/lib/prefs.server";
 import { eventTitle } from "@/lib/data/calendarProvider";
@@ -184,7 +184,7 @@ export default async function SetupPage() {
   const now = new Date();
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? listSignals(15) : Promise.resolve([]), paid ? getReasoning(now, v.locale) : Promise.resolve(null)]);
+  const [view, next, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
 
   // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.
@@ -340,34 +340,13 @@ export default async function SetupPage() {
 
       <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
 
-      {paid ? (
-      <section className="table-card" aria-labelledby="signals-h">
-        <h2 id="signals-h" className="px-4 pt-4 pb-2 text-[15px] font-semibold text-zinc-100 sm:px-5 sm:pt-5">{t("Сүүлийн дохионууд", "Recent signals")}</h2>
-        {signals.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Одоогоор дохио гараагүй. Setup идэвхжих бүрд энд бүртгэгдэнэ.", "No signals yet. Each time a setup becomes active it is recorded here.")}</p> : (
-          <table className="w-full border-collapse">
-            <thead><tr className="border-b border-zinc-800">{([[`${t("Гарсан", "Time")} (${v.zone})`, ""], ["", ""], [t("Дүрэм", "Rule"), "hidden sm:table-cell"], [t("Орох", "Entry"), "text-right"], ["Stop", "text-right"], ["Target", "text-right"]] as const).map(([h, cls], i) => <th key={i} className={`th ${cls}`}>{h}</th>)}</tr></thead>
-            <tbody>
-              {signals.map((g) => (
-                <tr key={g.id} className="border-t border-zinc-800/70 first:border-t-0">
-                  <td className="td whitespace-nowrap text-zinc-400 tabular-nums">{v.dateTime(g.createdAt).slice(5)}</td>
-                  <td className={`td font-semibold whitespace-nowrap ${g.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}><Dir d={g.side === "BUY" ? 1 : -1} /> {g.side}</td>
-                  <td className="td hidden text-zinc-300 sm:table-cell">{view.setups.find((x) => x.id === g.setupId)?.name ?? g.name}</td>
-                  <td className="td text-right font-medium text-zinc-100 tabular-nums">{px(g.entry)}</td>
-                  <td className="td text-right text-red-400 tabular-nums">{px(g.stop)}</td>
-                  <td className="td text-right text-emerald-400 tabular-nums">{px(g.target)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <section className="card flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="card-title">{t("Дохионы түүх", "Signal history")}</h2>
+          <p className="mt-1 text-sm text-zinc-400">{t("Өмнө гарсан дохио бүр, target-д хүрсэн эсэх нь Ботын түүх хуудсанд.", "Every past signal and whether it reached its target is on the Bot history page.")}</p>
+        </div>
+        <Link href="/bot/history" className="btn">{t("Ботын түүх", "Bot history")}</Link>
       </section>
-      ) : (
-        <section className="card" aria-labelledby="signals-h">
-          <h2 id="signals-h" className="card-title">{t("Сүүлийн дохионууд", "Recent signals")}</h2>
-          <p className="mt-2 text-sm text-zinc-400">{t("Setup-ийн дохионууд (орох үнэ, stop, target) болон Telegram мэдэгдэл багцтай хэрэглэгчдэд.", "Setup signals (entry, stop, target) and Telegram alerts come with a plan.")}</p>
-          <div className="mt-3"><UnlockLink t={t} /></div>
-        </section>
-      )}
 
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
         {t(`Түүхэн үр дүн нь хадгалагдсан лаанууд дээр (${view.historyFrom ? `${v.date(view.historyFrom)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.`,

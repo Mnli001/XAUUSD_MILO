@@ -198,3 +198,4 @@ export const payments = pgTable("payments", {
   accessUntil: ts("access_until"), // the end of access this payment produced
 }, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_provider_ref").on(t.providerRef), index("payments_user_created").on(t.userId, t.createdAt)]);
 export type Payment = typeof payments.$inferSelect;
+export type Signal = typeof signals.$inferSelect;

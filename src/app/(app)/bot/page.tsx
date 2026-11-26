@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getLiveView } from "@/lib/bot/liveDb";
@@ -37,6 +38,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
             </svg>
             <h1 className="page-title">{t("Бот", "Bot")}</h1>
+            <Link href="/bot/history" className="btn ml-auto">{t("Ботын түүх", "Bot history")}</Link>
           </div>
           <p className="page-lede mt-4">{t("Өөрийн MT5 дээрх роботыг эндээс асааж, зогсоож, тохируулж, хянана. Энэ хуудас зөвхөн таных: таны токен, тохиргоо, арилжааны түүх бусад хэрэглэгчид харагдахгүй.", "Start, stop, configure and watch the robot on your own MT5 from here. This page is yours alone: other users cannot see your token, settings or trade history.")}</p>
           

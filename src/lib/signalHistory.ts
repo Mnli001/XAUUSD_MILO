@@ -1,0 +1,18 @@
+import { listSignals } from "./signals";
+import { loadCandles, SYMBOL } from "./ingest/prices";
+import { signalOutcome, type Outcome } from "./signalOutcome";
+import type { Signal } from "./db/schema";
+
+const M15 = 15 * 6e4;
+const MAX_BARS = 20_000; // about seven months of 15-minute candles
+
+export type SignalRow = Signal & { outcome: Outcome };
+
+/** The latest recorded signals, newest first, each judged on the stored 15-minute candles. */
+export async function signalHistory(now: Date, limit = 60): Promise<SignalRow[]> {
+  const signals = await listSignals(limit);
+  if (signals.length === 0) return [];
+  const oldest = Math.min(...signals.map((s) => s.createdAt.getTime()));
+  const bars = await loadCandles(SYMBOL, "15min", Math.min(MAX_BARS, Math.ceil((now.getTime() - oldest) / M15) + 8));
+  return signals.map((s) => ({ ...s, outcome: signalOutcome(s, bars, now) }));
+}
