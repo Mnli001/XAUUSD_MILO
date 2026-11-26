@@ -1,4 +1,5 @@
 "use client";
+import { TermHint } from "./TermHint";
 import { useActionState, useEffect, useState } from "react";
 import type { LiveView } from "@/lib/bot/liveDb";
 import type { T } from "@/lib/i18n";
@@ -252,7 +253,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               ["profitTarget", t("Ашиг $… хүрвэл зогс", "Stop at $… profit"), c.profitTarget ?? "", "1"], ["maxLoss", t("Алдагдал $… хүрвэл зогс", "Stop at $… loss"), c.maxLoss ?? "", "1"],
             ]) as [string, string, number | string, string][]).map(([name, label, val, step]) => (
               <div key={name}>
-                <label className="label" htmlFor={name}>{label}</label>
+                {/lots$/i.test(name)
+                  ? <div className="flex items-center gap-1.5"><label className="label" htmlFor={name}>{label}</label><TermHint id="lot" /></div>
+                  : <label className="label" htmlFor={name}>{label}</label>}
                 <input className="input tabular-nums" id={name} name={name} type="number" inputMode="decimal" step={step} min="0" defaultValue={val} disabled={running} />
               </div>
             ))}
@@ -349,12 +352,8 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             </div>
           </div>
           <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
-            <input type="checkbox" name="gSiteStops" defaultChecked={g.siteStops ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
-            <span>{t("Stop, target-ыг сайтын шинжилгээнээс авах", "Take the stop and target from the site's reading")} <span className="block text-xs text-zinc-500">{t("Stop = 1 цагийн ATR × 1.5, target = stop × 2 (Өнөөдөр хуудсын шинжилгээтэй ижил). Унтраалттай бол Scalper 1 минутын ATR-аа хэрэглэнэ. Зөвхөн Scalper хэрэгсэлд.", "Stop = 1-hour ATR × 1.5, target = stop × 2 (the same levels as the reading on Today). Off: the Scalper uses its 1-minute ATR. Scalper tool only.")}</span></span>
-          </label>
-          <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
             <input type="checkbox" name="gProtect" defaultChecked={g.protect ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
-            <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Зөвхөн Scalper хэрэгсэлд.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Scalper tool only.")}</span></span>
+            <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Day trader болон Дүгнэлт хэрэгсэлд ажиллана; Азийн breakout болон Багц өөрийн дүрмээр хаагдана.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Asian breakout and Basket close by their own rules.")}</span></span>
           </label>
         </fieldset>
         <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-4">

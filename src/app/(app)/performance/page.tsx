@@ -1,3 +1,5 @@
+import { TermHint } from "@/components/TermHint";
+import { profitFactorNote } from "@/lib/glossary";
 import { requireUser } from "@/lib/auth";
 import { listTrades } from "@/lib/trades";
 import { performance } from "@/lib/analysis/journal";
@@ -78,12 +80,18 @@ export default async function PerformancePage() {
     <div className="space-y-4 sm:space-y-5">
       {head}
       <Figures label={t("Гол үзүүлэлт", "Key figures")} items={[
-        { label: t("Нийт P&L", "Total P&L"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl)}</>, tone: tone(p.totalPnl) },
-        { label: "Win rate", value: `${p.winRate!.toFixed(1)}%` },
-        { label: "Profit factor", value: p.profitFactor === null ? "—" : p.profitFactor.toFixed(2) },
-        { label: t("Дундаж R", "Average R"), value: p.avgR === null ? "—" : `${p.avgR > 0 ? "+" : p.avgR < 0 ? "−" : ""}${Math.abs(p.avgR).toFixed(2)}R`, tone: p.avgR === null ? undefined : tone(p.avgR) },
-        { label: t("Хамгийн их drawdown", "Max drawdown"), value: p.maxDrawdown > 0 ? <><Dir d={-1} /> {signedUsd(-p.maxDrawdown)}</> : signedUsd(0), tone: p.maxDrawdown > 0 ? "text-red-400" : undefined },
-        { label: t("Арилжааны тоо", "Trades"), value: String(p.count) },
+        { label: t("Нийт P&L", "Total P&L"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl)}</>, tone: tone(p.totalPnl), hint: <TermHint id="pnl" />,
+          note: t("Хаагдсан бүх арилжааны нийт ашиг, алдагдал", "All closed trades, profit and loss added up") },
+        { label: "Win rate", value: `${p.winRate!.toFixed(1)}%`, hint: <TermHint id="win-rate" />,
+          note: t("Ашигтай хаагдсан арилжааны хувь", "Share of trades closed in profit") },
+        { label: "Profit factor", value: p.profitFactor === null ? "—" : p.profitFactor.toFixed(2), hint: <TermHint id="profit-factor" />,
+          note: profitFactorNote(p.profitFactor, t) },
+        { label: t("Дундаж R", "Average R"), value: p.avgR === null ? "—" : `${p.avgR > 0 ? "+" : p.avgR < 0 ? "−" : ""}${Math.abs(p.avgR).toFixed(2)}R`, tone: p.avgR === null ? undefined : tone(p.avgR), hint: <TermHint id="r" />,
+          note: p.avgR === null ? t("Stop тавьсан арилжаа алга", "No trades with a stop yet") : t("Арилжаа тутмын дундаж үр дүн, эрсдэлийнхээ хэмжээгээр", "Average result per trade, measured in units of the risk taken") },
+        { label: t("Хамгийн их drawdown", "Max drawdown"), value: p.maxDrawdown > 0 ? <><Dir d={-1} /> {signedUsd(-p.maxDrawdown)}</> : signedUsd(0), tone: p.maxDrawdown > 0 ? "text-red-400" : undefined, hint: <TermHint id="drawdown" />,
+          note: t("Өмнөх оргилоосоо хамгийн их унасан дүн", "Largest drop from a previous peak") },
+        { label: t("Арилжааны тоо", "Trades"), value: String(p.count),
+          note: t("Тооцоонд орсон хаагдсан арилжаа", "Closed trades counted") },
       ]} />
       <section className="card" aria-labelledby="curve-h">
         <h2 id="curve-h" className="mb-3 text-[15px] font-semibold text-zinc-100">{t("Нийт P&L-ийн муруй", "Cumulative P&L curve")}</h2>

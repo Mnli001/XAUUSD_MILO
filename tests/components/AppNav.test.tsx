@@ -33,3 +33,9 @@ test("admins get the admin link in the account menu", () => {
   fireEvent.click(screen.getByRole("button", { name: /Очир/ }));
   expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: "Админ" })).toHaveAttribute("href", "/admin/users");
 });
+test("the glossary is one tap away in the account menu", () => {
+  path = "/today";
+  render(<AppNav name="Ану" isAdmin={false} />);
+  fireEvent.click(screen.getByRole("button", { name: /Ану/ }));
+  expect(within(screen.getByRole("menu")).getByRole("menuitem", { name: "Нэр томьёо" })).toHaveAttribute("href", "/glossary");
+});

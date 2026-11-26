@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { hasAccess } from "@/lib/access";
 import { logoutAction } from "@/lib/actions/session";
 import { getT } from "@/lib/prefs.server";
+import { LockedCard, adminContact } from "@/components/LockedCard";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,7 @@ export default async function LockedPage() {
   if (hasAccess(u, new Date())) redirect("/today");
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <div className="card w-full max-w-md space-y-4 text-center sm:p-6">
-        <span aria-hidden className="mx-auto block h-[13px] w-[13px] rounded-full border-[3px] border-amber-400" />
-        <h1 className="page-title">{t("Эрх идэвхгүй", "Access inactive")}</h1>
-        <p className="text-zinc-300">{t("Таны эрх идэвхжээгүй байна. Админтай холбогдож эрхээ нээлгэнэ үү.", "Your access is not active. Contact the admin to have it opened.")}</p>
-        <p className="text-sm text-zinc-500">{t("Бүртгэлтэй имэйл:", "Registered email:")} {u.email}</p>
-        <form action={logoutAction}><button className="btn-ghost">{t("Гарах", "Sign out")}</button></form>
-      </div>
+      <LockedCard t={t} email={u.email} contact={adminContact({ ADMIN_CONTACT: process.env.ADMIN_CONTACT, ADMIN_CONTACT_URL: process.env.ADMIN_CONTACT_URL })} signOut={logoutAction} />
     </main>
   );
 }

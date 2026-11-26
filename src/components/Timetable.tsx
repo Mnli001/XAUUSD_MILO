@@ -61,7 +61,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
   );
 }
 
-export type Figure ={ label: string; value: ReactNode; tone?: string; note?: ReactNode };
+export type Figure ={ label: string; value: ReactNode; tone?: string; note?: ReactNode; hint?: ReactNode };
 
 /** A compact ruled board of figures: one plate, cells divided by fine rules, numbers tabular. */
 export function Figures({ items, className = "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6", label, inset = false }: { items: Figure[]; className?: string; label?: string; inset?: boolean }) {
@@ -70,7 +70,7 @@ export function Figures({ items, className = "grid-cols-2 sm:grid-cols-3 lg:grid
     <dl aria-label={label} className={`grid gap-px overflow-hidden border ${inset ? "rounded-[16px]" : "rounded-[20px]"} ${className}`} style={{ borderColor: "var(--hairline)", background: "var(--hairline)", boxShadow: inset ? undefined : "var(--shadow-panel)" }}>
       {items.map((f) => (
         <div key={f.label} className={`min-w-0 ${inset ? "px-3 py-2.5" : "px-4 py-3"}`} style={{ background: "var(--cell-bg)" }}>
-          <dt className="text-xs leading-snug break-words text-zinc-500">{f.label}</dt>
+          <dt className="flex items-center gap-1.5 text-xs leading-snug break-words text-zinc-500">{f.label}{f.hint}</dt>
           {/* A long figure shrinks and wraps; it is never cut off. */}
           <dd className={`mt-0.5 text-[clamp(0.8rem,3.9vw,1.125rem)] leading-tight font-semibold break-words tabular-nums ${f.tone ?? "text-zinc-50"}`}>{f.value}</dd>
           {f.note && <dd className="mt-0.5 text-xs leading-snug break-words text-zinc-500">{f.note}</dd>}

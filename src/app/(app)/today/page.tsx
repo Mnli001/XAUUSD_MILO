@@ -8,7 +8,9 @@ import { getEvents, getNextHighEvent, getReactions } from "@/lib/events";
 import { Countdown } from "@/components/Countdown";
 import { ReactionRows } from "@/components/NewsList";
 import { eventTitle } from "@/lib/data/calendarProvider";
-import { getT, getViewer } from "@/lib/prefs.server";
+import { getT, getViewer, startGuideDone } from "@/lib/prefs.server";
+import { StartGuide } from "@/components/StartGuide";
+import { dismissStartGuide } from "@/lib/actions/startGuide";
 import { ReasoningPanel } from "@/components/ReasoningPanel";
 import { getReasoning } from "@/lib/reasoningLive";
 
@@ -22,17 +24,19 @@ export default async function TodayPage() {
   const v = await getViewer();
   const { t } = v;
   const now = new Date();
-  const [snap, upcoming, next, reactions, day, reasoning] = await Promise.all([
+  const [snap, upcoming, next, reactions, day, reasoning, guideDone] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
     getReactions(),
     loadCandles(SYMBOL, "15min", 96),
     getReasoning(now, v.locale),
+    startGuideDone(),
   ]);
   const highSoon = upcoming.filter((e) => e.impact === "HIGH").map((e) => ({ time: e.time, title: e.title, type: e.type }));
   return (
     <div className="reveal space-y-5 sm:space-y-7">
+      {!guideDone && <StartGuide t={t} dismiss={dismissStartGuide} />}
       <section className="card group relative overflow-hidden sm:p-8 transition-all duration-500 hover:shadow-2xl" aria-labelledby="today-h">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />
         

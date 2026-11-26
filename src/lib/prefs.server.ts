@@ -29,4 +29,9 @@ export async function rememberPrefs(p: Partial<Prefs>): Promise<void> {
   if (p.timeZone) c.set(COOKIE.timeZone, p.timeZone, opts);
 }
 
+/** Whether this browser has put away the "where to start" guide on Today. */
+export async function startGuideDone(): Promise<boolean> {
+  return (await cookies()).get(COOKIE.startDone)?.value === "1";
+}
+
 export const getViewer = cache(async (): Promise<Viewer> => viewer(await getPrefs()));

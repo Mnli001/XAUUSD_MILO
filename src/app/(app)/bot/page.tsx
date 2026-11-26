@@ -66,7 +66,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
           <div className="min-w-0 flex-1">
             <h2 className="font-bold text-amber-200">{t("Анхааруулга: Эрсдэлтэй", "Warning: Risk Involved")}</h2>
             <p className="mt-2 text-sm leading-relaxed text-amber-200/90">
-              {t("Scalper арга шалгагдаагүй: өнгөрсөн дата дээр ашигтай гэдэг нь нотлогдоогүй. Ашиг баталгаагүй, алдагдал хүлээх эрсдэлтэй. Санхүүгийн зөвлөгөө биш. Арилжаа таны өөрийн дансанд, таны шийдвэрээр хийгдэнэ.", "The Scalper method is unproven: it has not been shown to be profitable on past data. Profit is not guaranteed and you can lose money. Not financial advice. Trades are placed in your own account, by your own decision.")}
+              {t("Бот таны MT5 дансанд жинхэнэ арилжаа хийнэ. Хэрэгсэл бүрийн өнгөрсөн дата дээрх үр дүн ирээдүйн ашгийг баталгаажуулахгүй, алдагдал хүлээж болно. Эхлээд demo дансанд туршаад үзээрэй. Санхүүгийн зөвлөгөө биш; арилжаа таны дансанд, таны шийдвэрээр хийгдэнэ.", "The bot places real trades in your MT5 account. How a tool did on past data does not guarantee future profit, and you can lose money. Try it on a demo account first. Not financial advice; trades are placed in your own account, by your own decision.")}
             </p>
           </div>
         </div>

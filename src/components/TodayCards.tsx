@@ -1,4 +1,6 @@
 import type { TodaySnapshot } from "@/lib/snapshot";
+import { TermHint } from "./TermHint";
+import type { GlossaryId } from "@/lib/glossary";
 import type { Timeframe } from "@/lib/analysis/indicators";
 import { biasLabelText } from "@/lib/analysis/bias";
 import type { T } from "@/lib/i18n";
@@ -150,7 +152,7 @@ export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot,
   const { t } = v;
   if (!levels) return <Empty title={t("Гол түвшин", "Key levels")} v={v} />;
   const ladder: [string, number][] = [["R2", levels.r2], ["R1", levels.r1], ["Pivot", levels.p], ["S1", levels.s1], ["S2", levels.s2]];
-  const extra: [string, number | null][] = [[t("Өчигдрийн оргил", "Yesterday's high"), levels.prevHigh], [t("Өчигдрийн ёроол", "Yesterday's low"), levels.prevLow], [t("Өдрийн ATR", "Daily ATR"), levels.atr]];
+  const extra: [string, number | null, GlossaryId?][] = [[t("Өчигдрийн оргил", "Yesterday's high"), levels.prevHigh], [t("Өчигдрийн ёроол", "Yesterday's low"), levels.prevLow], [t("Өдрийн ATR", "Daily ATR"), levels.atr, "atr"]];
   // Where the price sits on the ladder: the row it is just above gets the marker.
   const idx = price === undefined ? -1 : ladder.findIndex(([, val]) => price >= val);
   return (
@@ -163,6 +165,7 @@ export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot,
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           {t("Гол түвшин", "Key levels")}
+          <TermHint id="pivot" />
         </h2>
         
         <ol className="relative mt-4 space-y-0">
@@ -215,9 +218,9 @@ export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot,
         </ol>
         
         <dl className="mt-4 space-y-2 rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4 backdrop-blur-sm text-sm">
-          {extra.map(([k, val]) => (
+          {extra.map(([k, val, hint]) => (
             <div key={k} className="group/stat flex items-baseline justify-between gap-3 transition-all duration-200 hover:scale-105">
-              <dt className="font-medium text-zinc-400 transition-colors duration-200 group-hover/stat:text-zinc-300">{k}</dt>
+              <dt className="flex items-center gap-1.5 font-medium text-zinc-400 transition-colors duration-200 group-hover/stat:text-zinc-300">{k}{hint && <TermHint id={hint} />}</dt>
               <dd className="font-mono font-semibold tabular-nums text-zinc-100 transition-colors duration-200 group-hover/stat:text-amber-400">
                 {val === null ? "—" : money(val)}
               </dd>

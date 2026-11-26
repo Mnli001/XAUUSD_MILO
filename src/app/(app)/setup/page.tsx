@@ -12,6 +12,8 @@ import type { T } from "@/lib/i18n";
 import { Dir } from "@/components/Timetable";
 import { ReasoningPanel } from "@/components/ReasoningPanel";
 import { getReasoning } from "@/lib/reasoningLive";
+import { orderSetups, bestRecent } from "@/lib/setup/order";
+import { TermHint } from "@/components/TermHint";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Setup — XAU Analytics" };
@@ -30,7 +32,7 @@ function Record({ title, h, t }: { title: string; h: SetupHistory; t: T }) {
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-semibold text-zinc-200">{title}</h3>
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/50 px-2.5 py-1 text-xs font-medium text-zinc-400 tabular-nums">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-800/50 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-zinc-400 tabular-nums">
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
@@ -70,12 +72,14 @@ function Record({ title, h, t }: { title: string; h: SetupHistory; t: T }) {
                 {h.avgR! > 0 ? "+" : ""}{h.avgR!.toFixed(2)}R
               </span>
               <span className="text-zinc-400">{t("дундаж", "avg")}</span>
+              <TermHint id="r" />
             </div>
             <div className="flex items-center gap-2">
               <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               <span className="text-zinc-400">PF</span>
+              <TermHint id="profit-factor" />
               <span className="font-semibold text-zinc-100 tabular-nums">{h.profitFactor === null ? "—" : h.profitFactor.toFixed(2)}</span>
             </div>
           </div>
@@ -114,14 +118,12 @@ function Ladder({ s, t }: { s: Setup; t: T }) {
         </dl>
       </div>
       <dl className="mt-1 flex items-baseline justify-between gap-3 border-t border-zinc-800 pt-2 text-sm">
-        <dt className="text-zinc-400">R:R</dt>
+        <dt className="flex items-center gap-1.5 text-zinc-400">R:R <TermHint id="rr" /></dt>
         <dd className="font-semibold text-zinc-100 tabular-nums">{rr === null ? "—" : `1 : ${rr.toFixed(1)}`}</dd>
       </dl>
     </div>
   );
 }
-
-const chevron = <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 transition-transform group-open:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 
 export default async function SetupPage() {
   const v = await getViewer();
@@ -132,19 +134,10 @@ export default async function SetupPage() {
   const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15), getReasoning(now, v.locale)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
   
-  // Sort setups: FORMING first (most important), then ACTIVE, WATCH, OFF. Within same status, sort by win rate
-  const sortedSetups = [...view.setups].sort((a, b) => {
-    // Priority 1: Status - FORMING is most important as it's currently developing
-    const statusPriority = { FORMING: 5, ACTIVE: 4, WATCH: 3, OFF: 1 };
-    const statusDiff = (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0);
-    if (statusDiff !== 0) return statusDiff;
-    
-    // Priority 2: Win rate from recent history (last 12 months)
-    const aWin = a.recent.winPct ?? 0;
-    const bWin = b.recent.winPct ?? 0;
-    return bWin - aWin;
-  });
-  
+  // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.
+  const sortedSetups = orderSetups(view.setups);
+  const best = bestRecent(view.setups);
+
   return (
     <div className="reveal space-y-5 sm:space-y-7">
       <div className="card group relative overflow-hidden sm:p-8">
@@ -182,49 +175,31 @@ export default async function SetupPage() {
 
       <ReasoningPanel initial={reasoning} />
 
-      {sortedSetups.map((s, index) => {
+      {sortedSetups.map((s) => {
         const [label, tone, dot] = STATUS[s.status];
         const live = s.status !== "OFF" && s.side !== null;
-        const isTopPerformer = index === 0 && s.recent.winPct && s.recent.winPct >= 60;
-        const isForming = s.status === "FORMING";
-        
+        const isBest = best?.id === s.id;
+
         return (
-          <section key={s.id} className={`card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl ${isTopPerformer ? 'ring-2 ring-amber-400/30' : ''} ${isForming ? 'ring-2 ring-blue-400/40 shadow-lg shadow-blue-400/10' : ''}`}>
-            {isTopPerformer && (
-              <div className="absolute right-0 top-0 z-20">
-                <div className="flex items-center gap-2 rounded-bl-2xl bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-2 shadow-lg">
-                  <svg className="h-4 w-4 text-zinc-900" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="text-xs font-bold text-zinc-900">{t("Хамгийн өндөр", "Top Performer")}</span>
-                </div>
-              </div>
-            )}
-            
-            {isForming && (
-              <div className="absolute left-0 top-0 z-20">
-                <div className="flex items-center gap-2 rounded-br-2xl bg-gradient-to-r from-blue-500 to-blue-400 px-4 py-2 shadow-lg shadow-blue-500/30">
-                  <svg className="h-4 w-4 animate-pulse text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <span className="text-xs font-bold text-white">{t("Бүрдэж байна!", "Forming Now!")}</span>
-                </div>
-              </div>
-            )}
-            
+          <section key={s.id} className="card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl">
             <div className={`absolute -right-10 -top-10 h-48 w-48 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${
-              isForming
-                ? "bg-blue-500/15 group-hover:bg-blue-500/20"
-                : live 
-                ? s.side === "BUY" 
-                  ? "bg-emerald-500/10 group-hover:bg-emerald-500/15" 
+              live
+                ? s.side === "BUY"
+                  ? "bg-emerald-500/10 group-hover:bg-emerald-500/15"
                   : "bg-red-500/10 group-hover:bg-red-500/15"
                 : "bg-zinc-800/10"
             }`} aria-hidden />
-            
+
             <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
               <div className="min-w-0 space-y-5">
                 <div>
+                  {/* In the normal flow, above the title, so it can never cover it on a narrow screen. */}
+                  {isBest && best && (
+                    <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300">
+                      <svg aria-hidden className="h-3.5 w-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.07 3.29a1 1 0 0 0 .95.69h3.46c.97 0 1.37 1.24.59 1.81l-2.8 2.03a1 1 0 0 0-.36 1.12l1.07 3.3c.3.91-.76 1.68-1.54 1.11l-2.8-2.03a1 1 0 0 0-1.18 0l-2.8 2.03c-.78.57-1.84-.2-1.54-1.12l1.07-3.29a1 1 0 0 0-.36-1.12L2.98 8.72c-.78-.57-.38-1.81.59-1.81h3.46a1 1 0 0 0 .95-.69l1.07-3.3Z" /></svg>
+                      {t(`Сүүлийн 12 сард арилжаа тутмын дундаж үр дүн хамгийн өндөр (+${best.avgR.toFixed(2)}R)`, `Best average result per trade over the last 12 months (+${best.avgR.toFixed(2)}R)`)}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-bold text-zinc-100">{s.name}</h2>
                     <span className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-300 group-hover:scale-105 ${tone}`}>

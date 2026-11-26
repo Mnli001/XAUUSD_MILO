@@ -103,7 +103,7 @@ export default async function LandingPage() {
                 </Link>
                 <Link 
                   href="/login" 
-                  className="btn-ghost min-h-14 px-9 text-base font-semibold backdrop-blur-xl transition-all duration-300 hover:bg-white/10 hover:scale-105 active:scale-95 max-sm:flex-1"
+                  className="btn-ghost bg-zinc-950/70 min-h-14 px-9 text-base font-semibold text-zinc-50 backdrop-blur-xl transition-all duration-300 hover:bg-zinc-950/85 hover:scale-105 active:scale-95 max-sm:flex-1"
                 >
                   {t("Нэвтрэх", "Sign in")}
                 </Link>
@@ -353,12 +353,13 @@ export default async function LandingPage() {
                     {a}
                   </p>
                   
-                  <div className="mt-6 flex items-center gap-2 text-sm font-semibold transition-all duration-300 group-hover:gap-3" style={{ color }}>
-                    <span>{t("Дэлгэрэнгүй", "Learn more")}</span>
-                    <svg className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <Link href="/register" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:gap-3" style={{ color }}>
+                    <span>{t("Бүртгүүлээд үзэх", "Register to see it")}</span>
+                    <span className="sr-only">: {q}</span>
+                    <svg aria-hidden className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </div>
+                  </Link>
                 </div>
               </div>
             ))}
