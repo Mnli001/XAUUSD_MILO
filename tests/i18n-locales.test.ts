@@ -72,7 +72,9 @@ describe("translation files", () => {
       for (const [h, text] of Object.entries(cat)) {
         const en = byHash.get(h);
         if (en === undefined) { stale.push(h); continue; }
-        if (typeof text !== "string" || text === "" || holes(text) !== holes(en)) broken.push(`${h}: ${en} → ${text}`);
+        // Every {n} of the translation must exist in the English; one may be left out (an English plural ending).
+        const known = new Set(holes(en).split(","));
+        if (typeof text !== "string" || text === "" || !holes(text).split(",").filter(Boolean).every((n) => known.has(n))) broken.push(`${h}: ${en} → ${text}`);
       }
       expect(broken).toEqual([]);
       // Wordings that left the code are pruned by `npm run i18n:extract` (also run before every build).
