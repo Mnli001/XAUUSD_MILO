@@ -24,13 +24,16 @@ describe("Asian range breakout", () => {
     expect(s).toMatchObject({ status: "WATCH", side: "BUY", entry: 4002, stop: 4000, target: 4008 });
     expect(asianSetup(day({}, 32), DOWN, [], at(8))).toMatchObject({ status: "WATCH", side: "SELL", entry: 3998, stop: 4000, target: 3992 });
   });
-  test("the 4-hour trend must agree with the daily", () => {
-    expect(asianSetup(day({}, 32), { daily: 30, h4: -20, atrD: 20 }, [], at(8))).toMatchObject({ status: "OFF", side: null });
-    expect(asianSetup(day({}, 32), { daily: 30, h4: null, atrD: 20 }, [], at(8)).status).toBe("OFF");
+  test("the 4-hour trend must agree with the daily; while the window is open the rule keeps watching for it", () => {
+    const s = asianSetup(day({}, 32), { daily: 30, h4: -20, atrD: 20 }, [], at(8));
+    expect(s).toMatchObject({ status: "WATCH", side: null, entry: null, trends: { daily: "BUY", h4: "SELL" } });
+    expect(s.checks.find((c) => !c.ok)?.label).toBe("4 цагийн тренд: доош · өдрийнх дээш тул зөрж байна");
+    expect(asianSetup(day({}, 32), { daily: 30, h4: null, atrD: 20 }, [], at(8))).toMatchObject({ status: "WATCH", side: null });
+    expect(asianSetup(day({}, 70), { daily: 30, h4: -20, atrD: 20 }, [], at(17)).status).toBe("OFF"); // window shut
   });
-  test("without a daily trend there is nothing to wait for", () => {
-    expect(asianSetup(day({}, 32), { daily: null, h4: 20, atrD: 20 }, [], at(8))).toMatchObject({ status: "OFF", side: null, entry: null });
-    expect(asianSetup(day({}, 32), { daily: 0, h4: 0, atrD: 20 }, [], at(8)).status).toBe("OFF");
+  test("without a daily trend there is no side, so nothing can be entered", () => {
+    expect(asianSetup(day({}, 32), { daily: null, h4: 20, atrD: 20 }, [], at(8))).toMatchObject({ side: null, entry: null });
+    expect(asianSetup(day({}, 32), { daily: 0, h4: 0, atrD: 20 }, [], at(8)).side).toBeNull();
   });
   test("a close outside the range in the trend's direction is the entry: stop at the middle, target three times as far", () => {
     const bars = day({ ...hold(31, 96, 4006), 30: { high: 4007, close: 4006 } }, 34);

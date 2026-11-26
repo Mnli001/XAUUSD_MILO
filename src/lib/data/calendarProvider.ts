@@ -12,6 +12,18 @@ export type EventType = {
  * Release ids come from https://api.stlouisfed.org/fred/releases — run `npm run check-fred`
  * with a FRED_API_KEY to confirm each id still names the release written next to it.
  */
+/**
+ * FOMC decision days (the second day of each meeting; the statement comes at 14:00 New York). FRED does not publish
+ * these, so they are copied from https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm (last update
+ * 2026-11-18). 2027 dates are tentative until confirmed at the meeting before. Add next year's when the Fed posts them.
+ */
+export const FOMC_DECISION_DAYS = [
+  "2024-01-31", "2024-03-20", "2024-05-01", "2024-06-12", "2024-07-31", "2024-09-18", "2024-11-07", "2024-12-18",
+  "2025-01-29", "2025-03-19", "2025-05-07", "2025-06-18", "2025-07-30", "2025-09-17", "2025-10-29", "2025-12-10",
+  "2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17", "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09",
+  "2027-01-27", "2027-03-17", "2027-04-28", "2027-06-09", "2027-07-28", "2027-09-15", "2027-10-27", "2027-11-17",
+] as const;
+
 export const EVENT_TYPES: EventType[] = [
   { type: "CPI", title: "Хэрэглээний үнийн индекс (CPI)", titleEn: "Consumer Price Index (CPI)", country: "АНУ", impact: "HIGH", nyTime: "08:30", fredReleaseId: 10 }, // i18n-ok: a stored key, shown through its label function
   { type: "NFP", title: "Ажил эрхлэлтийн тайлан (NFP)", titleEn: "Jobs report (NFP)", country: "АНУ", impact: "HIGH", nyTime: "08:30", fredReleaseId: 50 }, // i18n-ok: a stored key, shown through its label function

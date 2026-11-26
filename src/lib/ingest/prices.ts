@@ -6,6 +6,7 @@ import { pivots } from "../analysis/levels";
 import { hourlyTable } from "../analysis/hourly";
 import { type PriceProvider, ProviderError } from "../data/priceProvider";
 
+import { TF_MS } from "../liveBar";
 export const SYMBOL = "XAUUSD";
 const LOAD_LIMIT: Record<Timeframe, number> = { "15min": 400, "1h": 5000, "4h": 400, "1day": 400 };
 
@@ -63,6 +64,18 @@ export async function recomputeSnapshot(symbol: string, now: Date): Promise<void
   await db.delete(schema.biasSnapshots).where(and(eq(schema.biasSnapshots.symbol, symbol), lt(schema.biasSnapshots.computedAt, new Date(now.getTime() - 7 * 864e5))));
 }
 
+/**
+ * How many candles to ask for so that nothing is left out: everything since the newest stored candle (plus two
+ * for the one still forming), at least 20, at most 5000 (the provider's limit). After an outage of any length the
+ * hole is filled on the next run instead of staying empty for good.
+ */
+export async function gapSize(symbol: string, tf: Timeframe, now: Date): Promise<number> {
+  const [last] = await loadCandles(symbol, tf, 1);
+  if (!last) return 20;
+  const missing = Math.ceil((now.getTime() - last.time.getTime()) / TF_MS[tf]) + 2;
+  return Math.min(5000, Math.max(20, missing));
+}
+
 /** Pulls fresh candles. A provider failure leaves stored data untouched and is reported, never thrown. */
 export async function ingestPrices(
   provider: PriceProvider,
@@ -71,7 +84,7 @@ export async function ingestPrices(
   const symbol = opts.symbol ?? SYMBOL;
   const fetched: [Timeframe, Candle[]][] = [];
   try {
-    for (const tf of opts.tfs) fetched.push([tf, await provider.fetchCandles(symbol, tf, { outputsize: opts.outputsize ?? 20 })]);
+    for (const tf of opts.tfs) fetched.push([tf, await provider.fetchCandles(symbol, tf, { outputsize: opts.outputsize ?? (await gapSize(symbol, tf, opts.now)) })]);
   } catch (e) {
     if (e instanceof ProviderError) return { ok: false, stored: 0, error: e.message };
     throw e;

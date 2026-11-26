@@ -31,8 +31,20 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
   }
   if (s.result !== undefined) return { state: "DONE", title: t(`Өнөөдрийн арилжаа дууссан (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`, `Today's trade is done (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`), waitingFor: null, next: mk(t(`Маргаашийн Азийн хүрээ (${ub("08:00")} ${zone})`, `Tomorrow's Asian range (${ub("08:00")} ${zone})`), nextRangeStart(now)), liveR: null };
   if (s.status === "FORMING") return { state: "WAIT", title: t("Азийн хүрээ бүрдэж байна", "The Asian range is forming"), waitingFor: t(`Хүрээ ${ub("15:00")} (${zone}) цагт хаагдахыг`, `The range to close at ${ub("15:00")} (${zone})`), next: mk(t(`Орох цонх нээгдэнэ (${ub("15:00")} ${zone})`, `Entry window opens (${ub("15:00")} ${zone})`), utcAt(now, 7)), liveR: null };
-  if (s.status === "WATCH") return { state: "WAIT", title: s.headline, waitingFor: firstMissing ?? s.headline, next: mk(t(`Орох цонх хаагдана (${ub("00:00")} ${zone})`, `Entry window closes (${ub("00:00")} ${zone})`), utcAt(now, 16)), liveR: null };
+  if (s.status === "WATCH" && !s.trends) return { state: "WAIT", title: s.headline, waitingFor: firstMissing ?? s.headline, next: mk(t(`Орох цонх хаагдана (${ub("00:00")} ${zone})`, `Entry window closes (${ub("00:00")} ${zone})`), utcAt(now, 16)), liveR: null };
   const closed = now.getUTCDay() === 0 || now.getUTCDay() === 6;
+  // The trends keep the rule out, but the entry window is still open and the 4-hour trend can turn: keep waiting.
+  if (!closed && s.trends && h >= 7 && h < 16) {
+    const { daily, h4 } = s.trends;
+    const side = daily === "BUY" ? t("BUY", "BUY") : daily === "SELL" ? t("SELL", "SELL") : null;
+    return {
+      state: "WAIT",
+      title: side ? t(`${side} боломж: 4 цагийн тренд эргэхийг хүлээж байна`, `${side} possible: waiting for the 4-hour trend to turn`) : t("Өдрийн тренд тодорхой болохыг хүлээж байна", "Waiting for the daily trend to become clear"),
+      waitingFor: daily === null ? t("Өдрийн тренд тодорхой болох", "The daily trend to become clear") : t(`4 цагийн тренд ${daily === "BUY" ? "дээш" : "доош"} эргэх (одоо ${h4 === null ? "тодорхойгүй" : h4 === "BUY" ? "дээш" : "доош"})`, `The 4-hour trend to turn ${daily === "BUY" ? "up" : "down"} (now ${h4 === null ? "unclear" : h4 === "BUY" ? "up" : "down"})`),
+      next: mk(t(`Орох цонх хаагдана (${ub("00:00")} ${zone})`, `Entry window closes (${ub("00:00")} ${zone})`), utcAt(now, 16)),
+      liveR: null,
+    };
+  }
   return {
     state: closed ? "CLOSED" : "NONE",
     title: s.headline,

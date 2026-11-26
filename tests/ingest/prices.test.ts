@@ -51,3 +51,14 @@ test("cron route rejects requests without the bearer secret", async () => {
   const bad = await POST(new Request("http://x/api/cron/prices?scope=fast", { method: "POST", headers: { authorization: "Bearer nope" } }));
   expect(bad.status).toBe(401);
 });
+test("after an outage it asks for every missing candle, within the provider's limits", async () => {
+  const { gapSize } = await import("@/lib/ingest/prices");
+  expect(await gapSize("XAUUSD", "15min", new Date())).toBe(20); // nothing stored yet: the backfill does the rest
+  await seedCandles("15min", 5, { lastAt: new Date("2026-11-20T10:00:00Z") });
+  expect(await gapSize("XAUUSD", "15min", new Date("2026-11-20T11:00:00Z"))).toBe(20);
+  expect(await gapSize("XAUUSD", "15min", new Date("2026-11-21T10:00:00Z"))).toBe(98); // a day down: 96 + 2
+  expect(await gapSize("XAUUSD", "15min", new Date("2027-11-21T10:00:00Z"))).toBe(5000);
+  let asked = 0;
+  await ingestPrices({ fetchCandles: async (_s, _t, o) => { asked = o.outputsize; return []; } }, { tfs: ["15min"], now: new Date("2026-11-21T10:00:00Z") });
+  expect(asked).toBe(98);
+});

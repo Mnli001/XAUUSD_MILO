@@ -19,6 +19,12 @@ import { getReasoning } from "@/lib/reasoningLive";
 import { orderSetups, bestRecent } from "@/lib/setup/order";
 import { TermHint } from "@/components/TermHint";
 import { nowWindow, type NowWindow } from "@/lib/setup/now";
+import { relativeText } from "@/lib/relativeTime";
+import { dayLabel } from "@/components/NewsList";
+import { weekdayName, zoneWeekday } from "@/lib/time";
+import { signalHistory } from "@/lib/signalHistory";
+import { outcomeTotals } from "@/lib/signalOutcome";
+import { BROKER_RECORD } from "@/lib/setup/build";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Setup — XAU Analytics" };
@@ -200,7 +206,8 @@ export default async function SetupPage() {
   const now = new Date();
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [view, next, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null)]);
+  const [view, next, reasoning, live] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null), paid ? signalHistory(now, 40) : Promise.resolve([])]);
+  const liveTotals = outcomeTotals(live.map((r) => r.outcome));
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
 
   // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.
@@ -210,7 +217,7 @@ export default async function SetupPage() {
 
   return (
     <div className="reveal space-y-5 sm:space-y-7">
-      <div className="card sm:p-8">
+      <div className="card sm:p-6">
         <div>
           <div className="flex items-center gap-3">
             <svg className="h-7 w-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,9 +225,9 @@ export default async function SetupPage() {
             </svg>
             <h1 className="page-title">Setup</h1>
           </div>
-          <p className="page-lede mt-4">{t("Азийн хүрээний breakout дүрмийг одоогийн зах дээр уншиж, орох боломж бүрдэж байгаа эсэх, хаанаас орж, хаана stop, target тавихыг зургаар харуулна. Хажууд нь яг энэ дүрэм хадгалагдсан бүх түүхэн дата дээр ямар үр дүн өгснийг тавьсан.", "The Asian range breakout rule is read against the current market: whether an entry is forming, where to enter, and where the stop and target go, drawn on a chart. Next to it is how exactly this rule did over all stored history.")}</p>
+          <p className="page-lede mt-3">{t("Азийн хүрээний breakout: одоо юу хүлээж байна, хаанаас орох, stop, target, түүхэн болон бодит үр дүн.", "Asian range breakout: what it waits for now, where to enter, the stop and target, and its past and live results.")}</p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <div className={`rounded-xl border px-4 py-2 ${stale ? "border-red-500/40 bg-red-500/10" : "border-zinc-800/50 bg-zinc-900/30"}`}>
               <p className={`flex items-center gap-2 text-xs tabular-nums ${stale ? "font-semibold text-red-300" : "text-zinc-400"}`}>
                 <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -234,7 +241,7 @@ export default async function SetupPage() {
               <div className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2">
                 <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-400" aria-hidden />
                 <span className="text-xs font-semibold text-amber-300">
-                  {t("Дараагийн чухал мэдээ", "Next release")} {v.time(next.time)}: {eventTitle(next, t)}
+                  {t("Дараагийн чухал мэдээ", "Next important release")}: {eventTitle(next, t)} · {dayLabel(v.date(next.time), t)}, {weekdayName(zoneWeekday(next.time, v.timeZone), t)} {v.time(next.time)} ({v.zone}) · {relativeText(next.time.getTime() - now.getTime(), t)}
                 </span>
               </div>
             )}
@@ -245,8 +252,6 @@ export default async function SetupPage() {
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
 
       {paid && sortedSetups[0] && <NowCard w={nowWindow(sortedSetups[0], now, view.candles.at(-1)?.close ?? null, v)} t={t} />}
-
-      {paid ? <ReasoningPanel initial={reasoning} /> : <ReasoningLocked />}
 
       {sortedSetups.map((s) => {
         if (!paid) return <SetupLocked key={s.id} s={s} candles={candles} v={v} />;
@@ -260,9 +265,9 @@ export default async function SetupPage() {
 
         return (
           <section key={s.id} className="card">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-              <div className="min-w-0 space-y-5">
-                <div>
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-6">
+                {/* Phones read top to bottom: what it is, the chart, then the levels and checks. Wide screens put the chart on the right. */}
+                <div className="min-w-0 lg:col-start-1 lg:row-start-1">
                   {/* In the normal flow, above the title, so it can never cover it on a narrow screen. */}
                   {isBest && best && (
                     <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300">
@@ -291,9 +296,18 @@ export default async function SetupPage() {
                   )}
                 </div>
 
-                <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
-                  <Ladder s={s} t={t} />
+              <div className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+                <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-3 sm:p-4">
+                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} v={v} />
                 </div>
+              </div>
+
+              <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-2">
+                {s.entry !== null && (
+                  <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
+                    <Ladder s={s} t={t} />
+                  </div>
+                )}
 
                 {s.checks.length > 0 && (
                   <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
@@ -323,20 +337,18 @@ export default async function SetupPage() {
                   </div>
                 )}
               </div>
-
-              <div className="min-w-0">
-                <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-4">
-                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} v={v} />
-                </div>
-              </div>
             </div>
 
-            <div className="mt-6 grid gap-5 border-t border-zinc-800/50 pt-6 sm:grid-cols-2">
-              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
-                <Record t={t} title={t("Түүхэн үр дүн, бүх хугацаа", "Historical record, all time")} h={s.history} />
-              </div>
+            <div className="mt-6 grid gap-4 border-t border-zinc-800/50 pt-6 sm:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                 <Record t={t} title={t("Сүүлийн 12 сар", "Last 12 months")} h={s.recent} />
+              </div>
+              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
+                <Record t={t} title={view.historyFrom ? t(`${v.date(view.historyFrom).slice(0, 7)} → өнөөдөр`, `${v.date(view.historyFrom).slice(0, 7)} → today`) : t("Хадгалсан бүх дата", "All stored data")} h={s.history} />
+              </div>
+              <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
+                <Record t={t} title={t(`Брокерын 7 жил (${BROKER_RECORD.from} →)`, `Broker data, 7 years (${BROKER_RECORD.from} →)`)} h={BROKER_RECORD} />
+                <p className="mt-2 text-xs text-zinc-500">{t(`MT5 Strategy Tester, ${BROKER_RECORD.source}, ${BROKER_RECORD.checkedOn}-нд шалгасан.`, `MT5 Strategy Tester, ${BROKER_RECORD.source}, checked ${BROKER_RECORD.checkedOn}.`)}</p>
               </div>
             </div>
 
@@ -356,15 +368,41 @@ export default async function SetupPage() {
         );
       })}
 
+      <section className="card" aria-labelledby="live-h">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="live-h" className="card-title">{t("Бодит дохионы үр дүн", "Live signal results")}</h2>
+          <Link href="/bot/history" className="text-sm font-medium text-amber-300 hover:text-amber-200">{t("Бүх түүх →", "Full history →")}</Link>
+        </div>
+        {!paid ? <p className="mt-2 text-sm text-zinc-400">{t("Бодит дохионууд, тэдгээрийн үр дүн багцтай хэрэглэгчдэд.", "Live signals and how they ended come with a plan.")}</p>
+          : live.length === 0 ? <p className="mt-2 text-sm text-zinc-400">{t("Одоогоор дохио гараагүй. Дохио бүр, TP/SL үр дүнтэйгээ энд бүртгэгдэнэ.", "No signals yet. Each one appears here with how it ended.")}</p> : (
+          <>
+            <dl className="mt-3 grid grid-cols-3 gap-3 text-sm tabular-nums">
+              <div><dt className="text-xs text-zinc-500">{t("Хаагдсан", "Closed")}</dt><dd className="mt-0.5 text-lg font-bold text-zinc-100">{liveTotals.closed}{liveTotals.open ? <span className="ml-1 text-xs font-normal text-zinc-500">+{liveTotals.open} {t("нээлттэй", "open")}</span> : null}</dd></div>
+              <div><dt className="text-xs text-zinc-500">{t("Ашигтай", "Profitable")}</dt><dd className="mt-0.5 text-lg font-bold text-zinc-100">{liveTotals.winPct === null ? "—" : `${liveTotals.winPct}%`}</dd></div>
+              <div><dt className="text-xs text-zinc-500">{t("Нийт", "Total")}</dt><dd className={`mt-0.5 text-lg font-bold ${liveTotals.totalR > 0 ? "text-emerald-400" : liveTotals.totalR < 0 ? "text-red-400" : "text-zinc-100"}`}>{liveTotals.totalR > 0 ? "+" : ""}{liveTotals.totalR.toFixed(2)}R</dd></div>
+            </dl>
+            <ul className="mt-3 divide-y divide-zinc-800/70 text-sm">
+              {live.slice(0, 5).map((r) => {
+                const o = r.outcome;
+                const tone = o.kind === "OPEN" ? "text-amber-300" : (o.r ?? 0) > 0 ? "text-emerald-400" : "text-red-400";
+                const word = o.kind === "WIN" ? "TP" : o.kind === "LOSS" ? "SL" : o.kind === "TIME" ? t("Цагаар", "On time") : t("Нээлттэй", "Open");
+                return (
+                  <li key={r.id} className="flex items-center gap-3 py-2 tabular-nums">
+                    <span className="w-24 shrink-0 text-zinc-400">{v.dateTime(r.createdAt).slice(5)}</span>
+                    <span className={`w-12 shrink-0 font-semibold ${r.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{r.side}</span>
+                    <span className="hidden text-zinc-300 sm:inline">{px(r.entry)}</span>
+                    <span className={`ml-auto font-bold ${tone}`}>{word}{o.r !== null ? ` ${o.r > 0 ? "+" : ""}${o.r.toFixed(2)}R` : ""}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        )}
+      </section>
+
       <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
 
-      <section className="card flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="card-title">{t("Дохионы түүх", "Signal history")}</h2>
-          <p className="mt-1 text-sm text-zinc-400">{t("Өмнө гарсан дохио бүр, target-д хүрсэн эсэх нь Ботын түүх хуудсанд.", "Every past signal and whether it reached its target is on the Bot history page.")}</p>
-        </div>
-        <Link href="/bot/history" className="btn">{t("Ботын түүх", "Bot history")}</Link>
-      </section>
+      {paid ? <ReasoningPanel initial={reasoning} /> : <ReasoningLocked />}
 
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
         {t(`Түүхэн үр дүн нь хадгалагдсан лаанууд дээр (${view.historyFrom ? `${v.date(view.historyFrom)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.`,

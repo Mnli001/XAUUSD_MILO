@@ -22,6 +22,7 @@ export type SetupNow = {
   checks: { label: string; ok: boolean }[];
   at?: Date; // when the 15-minute bar that made it active closed (kept after the trade ends)
   stale?: boolean; // the price feed has stopped; nothing here is current
+  trends?: { daily: Side | null; h4: Side | null }; // the trends as they stand now (set when they keep the rule out)
   result?: number; // a trade that already ended today: its result in R (+2 target, −1 stop, or the time exit)
 };
 
@@ -64,7 +65,7 @@ export function asianSetup(m15: Candle[], scores: AsianScores, news: Date[], now
   const band = range.length ? { high: Math.max(...range.map((b) => b.high)), low: Math.min(...range.map((b) => b.low)) } : null;
   const hour = now.getUTCHours();
   const sideOf = (x: Score): Side | null => (x === null || x === 0 ? null : x > 0 ? "BUY" : "SELL");
-  const word = (s: Side | null) => (s === null ? "" : s === "BUY" ? t(" (дээш)", " (up)") : t(" (доош)", " (down)"));
+  const dirWord = (s: Side | null) => (s === null ? t("тодорхойгүй", "unclear") : s === "BUY" ? t("дээш", "up") : t("доош", "down"));
   // The trends as they stood at bar i: the 4-hour score moves during the day, so a breakout is judged by the one it had.
   const reading = (i: number) => {
     const daily = sideOf(scoreAt(scores.daily, i)), h4 = sideOf(scoreAt(scores.h4, i));
@@ -73,8 +74,15 @@ export function asianSetup(m15: Candle[], scores: AsianScores, news: Date[], now
   };
   const checksAt = ({ daily, h4, trend }: ReturnType<typeof reading>) => [
     { label: t(`Азийн хүрээ бүрдсэн (${ub("15:00")} ${zone})`, `Asian range complete (${ub("15:00")} ${zone})`), ok: hour >= 7 && range.length >= ASIAN_MIN_BARS },
-    { label: t(`Өдрийн тренд тодорхой${word(daily)}`, `Daily trend is clear${word(daily)}`), ok: daily !== null },
-    { label: t(`4 цагийн тренд өдрийнхтэй нэг чиглэлд${word(h4)}`, `4-hour trend agrees with the daily${word(h4)}`), ok: trend !== null },
+    { label: t(`Өдрийн тренд: ${dirWord(daily)}`, `Daily trend: ${dirWord(daily)}`), ok: daily !== null },
+    {
+      label: daily === null || h4 === null
+        ? t(`4 цагийн тренд: ${dirWord(h4)}`, `4-hour trend: ${dirWord(h4)}`)
+        : trend !== null
+          ? t(`4 цагийн тренд: ${dirWord(h4)} · өдрийнхтэй нэг чиглэлд`, `4-hour trend: ${dirWord(h4)} · agrees with the daily`)
+          : t(`4 цагийн тренд: ${dirWord(h4)} · өдрийнх ${dirWord(daily)} тул зөрж байна`, `4-hour trend: ${dirWord(h4)} · the daily is ${dirWord(daily)}, so they disagree`),
+      ok: trend !== null,
+    },
   ];
   const latest = reading(m15.length - 1);
   const checks = checksAt(latest);
@@ -132,7 +140,7 @@ export function asianSetup(m15: Candle[], scores: AsianScores, news: Date[], now
   }
   if (hour >= 16) return off(t("Өнөөдөр breakout гараагүй", "No breakout today"), t(`Орох цонх ${ub("00:00")} (${zone}) цагт хаагдсан. Маргаашийн хүрээг хүлээнэ.`, `The entry window closed at ${ub("00:00")} (${zone}). Waiting for tomorrow's range.`), { band, checks });
   const trend = latest.trend;
-  if (!trend) return off(latest.daily === null ? t("Өдрийн тренд тодорхойгүй", "Daily trend is unclear") : t("4 цагийн тренд өдрийнхтэй зөрж байна", "The 4-hour trend disagrees with the daily"), t("Энэ дүрэм өдөр, 4 цагийн тренд нэг чиглэлд байхад л тэр чиглэлд breakout авдаг. Хоёулаа таарах хүртэл орохгүй.", "This rule takes a breakout only when the daily and 4-hour trends point the same way, and only in that direction. Until they agree there is no entry."), { band, checks });
+  if (!trend) return { ...off(latest.daily === null ? t("Өдрийн тренд тодорхойгүй", "Daily trend is unclear") : t("4 цагийн тренд өдрийнхтэй зөрж байна", "The 4-hour trend disagrees with the daily"), t("Энэ дүрэм өдөр, 4 цагийн тренд нэг чиглэлд байхад л тэр чиглэлд breakout авдаг. Хоёулаа таарах хүртэл орохгүй.", "This rule takes a breakout only when the daily and 4-hour trends point the same way, and only in that direction. Until they agree there is no entry."), { band, checks }), status: "WATCH", trends: { daily: latest.daily, h4: latest.h4 } }; // the window is still open: the 4-hour trend can turn
   const dir = trend === "BUY" ? 1 : -1;
   const sideWord = sideWordOf(trend);
   const level = trend === "BUY" ? band.high : band.low;

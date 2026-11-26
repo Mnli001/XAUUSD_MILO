@@ -26,3 +26,11 @@ test("a finished day points to the next weekday's range, skipping the weekend", 
   expect(w.next?.at.toISOString()).toBe(at(30, 0).toISOString()); // Monday
   expect(nowWindow(base, at(28, 12), null, MN_VIEWER).state).toBe("CLOSED");
 });
+
+test("trends apart while the entry window is open: still waiting, not 'no trade today'", () => {
+  const w = nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 13, 50), null, MN_VIEWER);
+  expect(w.state).toBe("WAIT");
+  expect(w.waitingFor).toContain("4 цагийн тренд доош эргэх");
+  expect(w.next?.at.toISOString()).toBe(at(24, 16).toISOString());
+  expect(nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 17), null, MN_VIEWER).state).toBe("NONE"); // window shut
+});

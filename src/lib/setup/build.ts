@@ -14,6 +14,13 @@ export type Setup = SetupNow & {
   history: SetupHistory; // every stored year
   recent: SetupHistory; // the last 12 months
 };
+/**
+ * The rule replayed in the MT5 Strategy Tester on the broker's own history (JustMarkets XAUUSD.m, 1-minute OHLC,
+ * the broker's spread), 2019-01 → 2026-11. A dated research result (scripts/broker-research.ts and the tester run),
+ * shown beside the site's own replay so the short, strong period is not read as the whole story.
+ */
+export const BROKER_RECORD = { n: 380, winPct: 48.9, avgR: 0.123, profitFactor: 1.28, from: "2019-01", source: "JustMarkets XAUUSD", checkedOn: "2026-11-26" } as const;
+
 export type SetupsView = { setups: Setup[]; candles: Candle[]; lastCandleAt: Date | null; historyFrom: Date | null };
 
 const M15 = 15 * 6e4;

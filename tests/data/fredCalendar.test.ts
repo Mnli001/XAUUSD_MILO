@@ -37,3 +37,9 @@ test("a dropped connection is tried again before giving up", async () => {
   await expect(new FredCalendar("k", [{ ...cpi, fredReleaseId: 1 }]).fetchEvents(new Date("2026-01-01"), new Date("2026-02-01"))).rejects.toThrow(/ECONNRESET/);
   expect(FRED_ATTEMPTS).toBeGreaterThan(1);
 });
+test("FOMC decisions come from the Fed's schedule, at 14:00 New York", async () => {
+  stubFetch(200, { release_dates: [] });
+  const fomc = EVENT_TYPES.find((t) => t.type === "FOMC")!;
+  const r = await new FredCalendar("k", [fomc]).fetchEvents(new Date("2026-12-01"), new Date("2027-02-01"));
+  expect(r).toEqual([{ type: "FOMC", time: new Date("2026-12-09T19:00:00Z") }, { type: "FOMC", time: new Date("2027-01-27T19:00:00Z") }]);
+});

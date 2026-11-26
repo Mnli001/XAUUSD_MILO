@@ -1,4 +1,4 @@
-import { type CalendarProvider, type EventType, EVENT_TYPES, nyLocalToUtc } from "./calendarProvider";
+import { type CalendarProvider, type EventType, EVENT_TYPES, FOMC_DECISION_DAYS, nyLocalToUtc } from "./calendarProvider";
 import { ProviderError } from "./priceProvider";
 
 /** How often a dropped connection to FRED is tried, and the pause before the next try. */
@@ -44,6 +44,12 @@ export class FredCalendar implements CalendarProvider {
         const time = nyLocalToUtc(date, t.nyTime);
         if (time >= from && time <= to) out.push({ type: t.type, time });
       }
+    }
+    // FOMC has no FRED release: its decision days come from the Fed's published schedule.
+    const fomc = this.types.find((t) => t.type === "FOMC");
+    if (fomc) for (const day of FOMC_DECISION_DAYS) {
+      const time = nyLocalToUtc(day, fomc.nyTime);
+      if (time >= from && time <= to) out.push({ type: "FOMC", time });
     }
     return out.sort((a, b) => a.time.getTime() - b.time.getTime());
   }
