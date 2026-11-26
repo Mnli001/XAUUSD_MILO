@@ -178,3 +178,27 @@ export const botEntries = pgTable("bot_entries", {
   atrH1: doublePrecision("atr_h1"),
   session: text("session").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] })]);
+
+/** One QPay invoice for a plan. PAID once QPay's own check says the full amount came in; that payment extends access once. */
+export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "PAID", "EXPIRED"]);
+export const payments = pgTable("payments", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  plan: text("plan").notNull(), // PLUS | PRO | MAX
+  amount: integer("amount").notNull(), // tögrög
+  days: integer("days").notNull(),
+  status: paymentStatusEnum("status").notNull().default("PENDING"),
+  senderInvoiceNo: text("sender_invoice_no").notNull(),
+  qpayInvoiceId: text("qpay_invoice_id"),
+  qrImage: text("qr_image"), // base64 PNG from QPay
+  qrText: text("qr_text"),
+  shortUrl: text("short_url"),
+  urls: jsonb("urls").notNull().default([]), // bank-app links from QPay
+  qpayPaymentId: text("qpay_payment_id"),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  expiresAt: ts("expires_at").notNull(),
+  checkedAt: ts("checked_at"),
+  paidAt: ts("paid_at"),
+  accessUntil: ts("access_until"), // the end of access this payment produced
+}, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_qpay_invoice").on(t.qpayInvoiceId), index("payments_user_created").on(t.userId, t.createdAt)]);
+export type Payment = typeof payments.$inferSelect;
