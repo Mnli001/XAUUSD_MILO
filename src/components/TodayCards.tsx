@@ -56,52 +56,92 @@ export function BiasBar({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias"> & {
   const text = biasLabelText(bias.label, t);
   const [head, ...rest] = text.split(" ");
   const tone = dir > 0 ? "text-emerald-400" : dir < 0 ? "text-red-400" : "text-zinc-200";
+  const bgGlow = dir > 0 ? "bg-emerald-500/5" : dir < 0 ? "bg-red-500/5" : "bg-zinc-800/5";
+  
   return (
-    <section className="hallmark strike p-5 sm:p-7" aria-labelledby="bias-h">
-      <h2 id="bias-h" className="sr-only">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
-      {/* The hallmark: side struck in wide capitals, the score as its purity mark, the time as its serial. */}
-      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <p className={`flex items-center gap-3 ${tone}`}>
-          <Dir d={dir} className="text-[28px] sm:text-[34px]" />
-          <span className="stamp text-[46px] leading-none sm:text-[64px]">{head}</span>
-          {rest.length > 0 && <span className="self-end pb-1 text-base font-medium text-zinc-300 sm:text-lg">{rest.join(" ")}</span>}
-        </p>
-        <p className="flex items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0.5">
-          <span className={`num text-[34px] leading-none sm:text-[44px] ${tone}`}>{signed(bias.total)}</span>
-          <span className="text-xs text-zinc-500">{t("нийт оноо / 100", "total score / 100")}</span>
-        </p>
-      </div>
-      <p className="mt-4 border-t pt-3 text-[11px] font-semibold tracking-[0.14em] text-amber-400/90 uppercase tabular-nums" style={{ borderColor: "var(--hairline-gold)" }}>
-        XAUUSD · № {v.date(bias.computedAt)} · {v.time(bias.computedAt)} {v.zone}
-      </p>
+    <section className="hallmark strike group relative overflow-hidden p-6 sm:p-8 transition-all duration-500 hover:shadow-2xl" aria-labelledby="bias-h">
+      <div className={`absolute -right-10 -top-10 h-48 w-48 rounded-full blur-3xl transition-all duration-700 group-hover:scale-150 ${bgGlow}`} aria-hidden />
+      
+      <div className="relative z-10">
+        <h2 id="bias-h" className="sr-only">{t("Өнөөдрийн давамгай тал", "Today's dominant side")}</h2>
+        
+        <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-900/50 px-3 py-1.5 backdrop-blur-sm">
+          <svg className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+          </svg>
+          <span className="text-xs font-bold tracking-wider uppercase text-zinc-400">{t("Өнөөдрийн чиглэл", "Today's Direction")}</span>
+        </div>
+        
+        {/* The hallmark: side struck in wide capitals, the score as its purity mark, the time as its serial. */}
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div className={`flex items-center gap-4 ${tone}`}>
+            <Dir d={dir} className="text-[32px] sm:text-[40px] transition-transform duration-300 group-hover:scale-110" />
+            <div>
+              <span className="stamp block text-[52px] leading-none sm:text-[72px] transition-all duration-300 group-hover:scale-105">{head}</span>
+              {rest.length > 0 && <span className="mt-1 block text-lg font-medium text-zinc-300 sm:text-xl">{rest.join(" ")}</span>}
+            </div>
+          </div>
+          <div className="text-right">
+            <span className={`num block text-[40px] leading-none sm:text-[52px] transition-all duration-300 group-hover:scale-105 ${tone}`}>{signed(bias.total)}</span>
+            <span className="mt-1 block text-xs text-zinc-500">{t("нийт оноо / 100", "total score / 100")}</span>
+          </div>
+        </div>
+        
+        <div className="mt-5 rounded-xl border border-amber-400/20 bg-zinc-900/30 px-4 py-3 backdrop-blur-sm">
+          <p className="text-[11px] font-semibold tracking-[0.14em] text-amber-400/90 uppercase tabular-nums">
+            XAUUSD · № {v.date(bias.computedAt)} · {v.time(bias.computedAt)} {v.zone}
+          </p>
+        </div>
 
-      <div className="mt-4 sm:mt-5">
-        <div className="mb-1.5 flex justify-between gap-3 text-[13px]"><span className="text-emerald-400">{t("Худалдан авагч", "Buyers")} <b className="tabular-nums">{bias.buyerPct}%</b></span><span className="text-red-400">{t("Худалдагч", "Sellers")} <b className="tabular-nums">{100 - bias.buyerPct}%</b></span></div>
-        <div className="flex h-[7px] gap-1" role="img" aria-label={t(`Худалдан авагч ${bias.buyerPct}%`, `Buyers ${bias.buyerPct}%`)}>
-          <div className="rounded-full bg-emerald-500" style={{ width: `${bias.buyerPct}%` }} />
-          <div className="flex-1 rounded-full bg-red-500" />
+      <div className="mt-5 sm:mt-6">
+        <div className="mb-2 flex justify-between gap-3 text-sm">
+          <span className="flex items-center gap-2 font-semibold text-emerald-400">
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+            </svg>
+            {t("Худалдан авагч", "Buyers")} <b className="tabular-nums">{bias.buyerPct}%</b>
+          </span>
+          <span className="flex items-center gap-2 font-semibold text-red-400">
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+            </svg>
+            {t("Худалдагч", "Sellers")} <b className="tabular-nums">{100 - bias.buyerPct}%</b>
+          </span>
+        </div>
+        <div className="flex h-2 gap-1 overflow-hidden rounded-full" role="img" aria-label={t(`Худалдан авагч ${bias.buyerPct}%`, `Buyers ${bias.buyerPct}%`)}>
+          <div className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg shadow-emerald-500/20 transition-all duration-700" style={{ width: `${bias.buyerPct}%` }} />
+          <div className="flex-1 rounded-full bg-gradient-to-r from-red-400 to-red-500 shadow-lg shadow-red-500/20" />
         </div>
       </div>
 
-      <dl className="mt-4 sm:mt-5 grid grid-cols-4 divide-x divide-zinc-800 rounded-lg border border-zinc-800">
+      <dl className="mt-5 sm:mt-6 grid grid-cols-4 divide-x divide-zinc-800/50 overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm">
         {tfLabels(t).map(([tf, label]) => {
           const s = bias.perTimeframe[tf];
           const c = s === null || s === undefined ? "text-zinc-500" : s >= 20 ? "text-emerald-400" : s <= -20 ? "text-red-400" : "text-zinc-300";
+          const bgColor = s === null || s === undefined ? "" : s >= 20 ? "bg-emerald-500/5" : s <= -20 ? "bg-red-500/5" : "";
           return (
-            <div key={tf} className="px-2 py-2.5 text-center">
-              <dt className="text-xs text-zinc-500">{label}</dt>
-              <dd className={`mt-0.5 text-lg font-semibold tabular-nums ${c}`}>{s === null || s === undefined ? "—" : <><Dir d={s >= 20 ? 1 : s <= -20 ? -1 : 0} /> {signed(s)}</>}</dd>
+            <div key={tf} className={`group relative px-2 py-3.5 text-center transition-all duration-300 hover:bg-white/5 ${bgColor}`}>
+              <dt className="text-xs font-medium text-zinc-500 transition-colors duration-300 group-hover:text-zinc-400">{label}</dt>
+              <dd className={`mt-1 text-xl font-bold tabular-nums transition-all duration-300 group-hover:scale-110 ${c}`}>
+                {s === null || s === undefined ? "—" : <><Dir d={s >= 20 ? 1 : s <= -20 ? -1 : 0} /> {signed(s)}</>}
+              </dd>
             </div>
           );
         })}
       </dl>
-      <details className="group mt-3">
-        <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200">
-          <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 transition-transform group-open:rotate-90"><path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      
+      <details className="group mt-4">
+        <summary className="inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-zinc-400 transition-all duration-200 hover:bg-zinc-800/50 hover:text-zinc-200">
+          <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 transition-transform duration-300 group-open:rotate-90">
+            <path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
           {t("Оноо хэрхэн тооцогддог вэ", "How the score is built")}
         </summary>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t("Оноо −100…+100: тренд (EMA20/50/200), моментум (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%.")}</p>
+        <p className="mt-2 rounded-xl bg-zinc-900/50 px-4 py-3 text-xs leading-relaxed text-zinc-500">
+          {t("Оноо −100…+100: тренд (EMA20/50/200), моментум (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%.")}
+        </p>
       </details>
+      </div>
     </section>
   );
 }
@@ -114,35 +154,77 @@ export function LevelsCard({ levels, price, v = MN_VIEWER }: Pick<TodaySnapshot,
   // Where the price sits on the ladder: the row it is just above gets the marker.
   const idx = price === undefined ? -1 : ladder.findIndex(([, val]) => price >= val);
   return (
-    <section className="card" aria-labelledby="levels-h">
-      <h2 id="levels-h" className="card-title">{t("Гол түвшин", "Key levels")}</h2>
-      <ol className="relative space-y-0">
-        <span aria-hidden className="absolute top-3 bottom-3 left-[5px] w-[3px] rounded-full bg-zinc-800" />
-        {ladder.map(([k, val], i) => (
-          <li key={k}>
-            {i === idx && price !== undefined && (
-              <div className="relative flex items-center gap-3 py-1 text-xs font-semibold text-amber-300">
-                <span aria-hidden className="relative z-10 h-[13px] w-[13px] rounded-full border-[3px] border-zinc-50 bg-amber-400" />
-                {t("Одоо", "Now")} <span className="ml-auto tabular-nums">{money(price)}</span>
+    <section className="card group relative overflow-hidden transition-all duration-500 hover:shadow-2xl" aria-labelledby="levels-h">
+      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />
+      
+      <div className="relative z-10">
+        <h2 id="levels-h" className="card-title flex items-center gap-2">
+          <svg className="h-5 w-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          {t("Гол түвшин", "Key levels")}
+        </h2>
+        
+        <ol className="relative mt-4 space-y-0">
+          <span aria-hidden className="absolute top-4 bottom-4 left-[6px] w-[3px] rounded-full bg-gradient-to-b from-red-500/30 via-zinc-700 to-emerald-500/30" />
+          {ladder.map(([k, val], i) => (
+            <li key={k}>
+              {i === idx && price !== undefined && (
+                <div className="relative flex items-center gap-3 py-1.5 text-xs font-bold text-amber-300 transition-all duration-300 hover:scale-105">
+                  <span aria-hidden className="relative z-10 flex h-[15px] w-[15px] items-center justify-center rounded-full border-[3px] border-amber-400 bg-zinc-900">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                    </svg>
+                    {t("Одоо", "Now")}
+                  </span>
+                  <span className="ml-auto font-mono tabular-nums">{money(price)}</span>
+                </div>
+              )}
+              <div className="group/item relative flex items-baseline gap-3 py-2 text-sm transition-all duration-200 hover:scale-105">
+                <span aria-hidden className={`relative z-10 h-[15px] w-[15px] shrink-0 self-center rounded-full border-[3px] bg-zinc-900 shadow-lg transition-all duration-300 group-hover/item:scale-125 ${
+                  k.startsWith("R") 
+                    ? "border-red-400 shadow-red-400/20" 
+                    : k.startsWith("S") 
+                    ? "border-emerald-400 shadow-emerald-400/20" 
+                    : "border-zinc-400 shadow-zinc-400/20"
+                }`} />
+                <span className={`font-semibold transition-colors duration-200 group-hover/item:text-zinc-200 ${
+                  k.startsWith("R") ? "text-red-400" : k.startsWith("S") ? "text-emerald-400" : "text-zinc-400"
+                }`}>{k}</span>
+                <span className="ml-auto font-mono font-medium text-zinc-100 tabular-nums transition-colors duration-200 group-hover/item:text-amber-400">{money(val)}</span>
               </div>
-            )}
-            <div className="relative flex items-baseline gap-3 py-1.5 text-sm">
-              <span aria-hidden className={`relative z-10 h-[13px] w-[13px] shrink-0 self-center rounded-full border-[3px] bg-zinc-900 ${k.startsWith("R") ? "border-red-400" : k.startsWith("S") ? "border-emerald-400" : "border-zinc-400"}`} />
-              <span className="text-zinc-400">{k}</span>
-              <span className="ml-auto font-medium text-zinc-100 tabular-nums">{money(val)}</span>
+            </li>
+          ))}
+          {idx === -1 && price !== undefined && (
+            <li className="relative flex items-center gap-3 py-1.5 text-xs font-bold text-amber-300 transition-all duration-300 hover:scale-105">
+              <span aria-hidden className="relative z-10 flex h-[15px] w-[15px] items-center justify-center rounded-full border-[3px] border-amber-400 bg-zinc-900">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+              </span>
+              <span className="flex items-center gap-2">
+                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                </svg>
+                {t("Одоо", "Now")}
+              </span>
+              <span className="ml-auto font-mono tabular-nums">{money(price)}</span>
+            </li>
+          )}
+        </ol>
+        
+        <dl className="mt-4 space-y-2 rounded-xl border border-zinc-800/50 bg-zinc-900/30 p-4 backdrop-blur-sm text-sm">
+          {extra.map(([k, val]) => (
+            <div key={k} className="group/stat flex items-baseline justify-between gap-3 transition-all duration-200 hover:scale-105">
+              <dt className="font-medium text-zinc-400 transition-colors duration-200 group-hover/stat:text-zinc-300">{k}</dt>
+              <dd className="font-mono font-semibold tabular-nums text-zinc-100 transition-colors duration-200 group-hover/stat:text-amber-400">
+                {val === null ? "—" : money(val)}
+              </dd>
             </div>
-          </li>
-        ))}
-        {idx === -1 && price !== undefined && (
-          <li className="relative flex items-center gap-3 py-1 text-xs font-semibold text-amber-300">
-            <span aria-hidden className="relative z-10 h-[13px] w-[13px] rounded-full border-[3px] border-zinc-50 bg-amber-400" />
-            {t("Одоо", "Now")} <span className="ml-auto tabular-nums">{money(price)}</span>
-          </li>
-        )}
-      </ol>
-      <dl className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3 text-sm">
-        {extra.map(([k, val]) => <div key={k} className="flex items-baseline justify-between gap-2"><dt className="text-zinc-400">{k}</dt><dd className="tabular-nums">{val === null ? "—" : money(val)}</dd></div>)}
-      </dl>
+          ))}
+        </dl>
+      </div>
     </section>
   );
 }
