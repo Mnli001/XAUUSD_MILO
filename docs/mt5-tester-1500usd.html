@@ -1,0 +1,66 @@
+<title>MT5 tester · 1500$ · 1 жил</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one report column; summary tiles, balance line, month ledger, then the comparison. */
+:root { --bg:#f6f3ec; --surface:#fff; --fg:#1d1a14; --muted:#6c6556; --line:#e5dfd2; --gold:#a5791d; --gold-soft:#f2e6c6; --up:#1f8a5b; --down:#c0392b;
+  --display:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; }
+body { background:var(--bg); color:var(--fg); font:15px/1.6 var(--display); }
+.wrap { max-width:860px; margin:0 auto; padding-block:36px 64px; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); display:grid; gap:30px; }
+h1,h2 { margin:0; text-wrap:balance; line-height:1.2; } h1 { font-size:clamp(26px,5vw,38px); font-weight:800; letter-spacing:-.02em; } h2 { font-size:19px; font-weight:800; }
+p { margin:0; } .eyebrow { font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--gold); } .muted { color:var(--muted); }
+section { display:grid; gap:12px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:grid; gap:2px; }
+.tile b { font:700 22px var(--mono); font-variant-numeric:tabular-nums; } .tile span { font-size:13px; color:var(--muted); }
+.up { color:var(--up); } .down { color:var(--down); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:14px; } th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); white-space:nowrap; } tr:last-child td { border-bottom:0; }
+th { font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+td.num { font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; }
+td.bar { width:28%; min-width:90px; } td.bar span { display:block; height:10px; border-radius:5px; } td.bar span.up { background:var(--up); } td.bar span.down { background:var(--down); }
+.note { border-left:3px solid var(--gold); padding:4px 0 4px 14px; color:var(--muted); }
+svg text { fill:var(--muted); font:11px var(--mono); }
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <p class="eyebrow">MetaTrader 5 Strategy Tester · XauBot v3.60 · 2025-11-26 → 2026-11-25</p>
+    <h1>MT5 tester: 1500$ данс, 1 жил</h1>
+    <p class="muted">JustMarkets XAUUSD.m, 15 минут, 1 минутын OHLC, брокерын бодит spread. Хөшүүрэг 1:1000, арилжаа бүрт балансын 5% эрсдэл, нэг дор 3 хүртэл арилжаа. Setup: Азийн хүрээ (31 арилжаа), Нью-Йоркийн нээлт (25), Нью-Йоркийн хоёр дахь цаг (22).</p>
+  </header>
+  <section><div class="tiles">
+    <div class="tile"><b>1,500.00$ → 3,210.71$</b><span>Эхлэл → төгсгөл</span></div>
+    <div class="tile"><b class="up">+114.0%</b><span>Жилийн өгөөж (+1,710.71$)</span></div>
+    <div class="tile"><b>78</b><span>Арилжаа (7 хоногт 1.5)</span></div>
+    <div class="tile"><b>52.56%</b><span>Ашигтай (41)</span></div>
+    <div class="tile"><b>1.65</b><span>Profit factor</span></div>
+    <div class="tile"><b>1 : 1.49</b><span>Бодит RR (105.54$ / 70.71$)</span></div>
+    <div class="tile"><b class="down">23.96%</b><span>Балансын хамгийн их уналт (370.35$)</span></div>
+    <div class="tile"><b>7 / 12</b><span>Ашигтай сар</span></div>
+  </div></section>
+  <section><h2>Дансны үлдэгдэл</h2><div class="card"><svg viewBox="0 0 760 220" width="100%" role="img" aria-label="Үлдэгдэл 1,500.00$-аас 3,210.71$">
+    <line x1="28" x2="732" y1="167.6" y2="167.6" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="4 4"/><text x="28" y="161.6">эхлэл 1,500.00$</text>
+    <path d="M28.0,167.6 L37.0,172.7 L46.1,164.1 L55.1,169.9 L64.1,174.5 L73.1,179.3 L82.2,183.5 L91.2,188.2 L100.2,192.0 L109.2,188.8 L118.3,182.7 L127.3,175.1 L136.3,169.3 L145.3,173.4 L154.4,176.8 L163.4,169.3 L172.4,165.5 L181.4,165.7 L190.5,165.6 L199.5,167.0 L208.5,167.4 L217.5,171.9 L226.6,156.5 L235.6,148.8 L244.6,154.0 L253.6,158.1 L262.7,156.2 L271.7,161.1 L280.7,164.5 L289.7,165.0 L298.8,158.2 L307.8,163.0 L316.8,157.2 L325.8,161.6 L334.9,157.0 L343.9,151.7 L352.9,144.3 L361.9,134.9 L371.0,122.3 L380.0,110.9 L389.0,99.6 L398.1,100.7 L407.1,87.7 L416.1,96.6 L425.1,104.2 L434.2,94.3 L443.2,102.4 L452.2,99.2 L461.2,93.6 L470.3,93.2 L479.3,84.8 L488.3,81.6 L497.3,90.2 L506.4,80.9 L515.4,88.7 L524.4,83.0 L533.4,89.9 L542.5,86.5 L551.5,78.5 L560.5,81.8 L569.5,80.3 L578.6,85.9 L587.6,86.6 L596.6,72.3 L605.6,64.6 L614.7,46.6 L623.7,48.0 L632.7,59.0 L641.7,40.1 L650.8,50.6 L659.8,61.6 L668.8,51.6 L677.8,61.4 L686.9,39.6 L695.9,49.0 L704.9,37.4 L713.9,32.7 L723.0,28.0 L732.0,38.8" fill="none" stroke="var(--gold)" stroke-width="2.2"/><text x="732" y="30.8" text-anchor="end">3,210.71$</text>
+  </svg></div></section>
+  <section><h2>Сар сараар</h2><div class="card"><table>
+    <thead><tr><th>Сар</th><th>Арилжаа</th><th>Ашигтай</th><th>Ашиг/алдагдал</th><th>Өөрчлөлт</th><th></th><th>Үлдэгдэл</th></tr></thead><tbody><tr><td>2025 12-р сар</td><td class="num">4</td><td class="num">1/4</td><td class="num down">−91.53$</td><td class="num down">-6.1%</td><td class="bar"><span class="down" style="width:10%"></span></td><td class="num">1,408.47$</td></tr><tr><td>2026 1-р сар</td><td class="num">12</td><td class="num">6/12</td><td class="num up">+119.41$</td><td class="num up">+8.5%</td><td class="bar"><span class="up" style="width:13%"></span></td><td class="num">1,527.88$</td></tr><tr><td>2026 2-р сар</td><td class="num">4</td><td class="num">1/4</td><td class="num down">−25.07$</td><td class="num down">-1.6%</td><td class="bar"><span class="down" style="width:3%"></span></td><td class="num">1,502.81$</td></tr><tr><td>2026 3-р сар</td><td class="num">5</td><td class="num">2/5</td><td class="num up">+123.48$</td><td class="num up">+8.2%</td><td class="bar"><span class="up" style="width:13%"></span></td><td class="num">1,626.29$</td></tr><tr><td>2026 4-р сар</td><td class="num">2</td><td class="num">1/2</td><td class="num down">−40.73$</td><td class="num down">-2.5%</td><td class="bar"><span class="down" style="width:4%"></span></td><td class="num">1,585.56$</td></tr><tr><td>2026 5-р сар</td><td class="num">5</td><td class="num">2/5</td><td class="num up">+52.25$</td><td class="num up">+3.3%</td><td class="bar"><span class="up" style="width:6%"></span></td><td class="num">1,637.81$</td></tr><tr><td>2026 6-р сар</td><td class="num">10</td><td class="num">8/10</td><td class="num up">+923.29$</td><td class="num up">+56.4%</td><td class="bar"><span class="up" style="width:100%"></span></td><td class="num">2,561.10$</td></tr><tr><td>2026 7-р сар</td><td class="num">2</td><td class="num">0/2</td><td class="num down">−219.05$</td><td class="num down">-8.6%</td><td class="bar"><span class="down" style="width:24%"></span></td><td class="num">2,342.05$</td></tr><tr><td>2026 8-р сар</td><td class="num">7</td><td class="num">6/7</td><td class="num up">+300.62$</td><td class="num up">+12.8%</td><td class="bar"><span class="up" style="width:33%"></span></td><td class="num">2,642.67$</td></tr><tr><td>2026 9-р сар</td><td class="num">5</td><td class="num">2/5</td><td class="num down">−110.14$</td><td class="num down">-4.2%</td><td class="bar"><span class="down" style="width:12%"></span></td><td class="num">2,532.53$</td></tr><tr><td>2026 10-р сар</td><td class="num">12</td><td class="num">7/12</td><td class="num up">+661.02$</td><td class="num up">+26.1%</td><td class="bar"><span class="up" style="width:72%"></span></td><td class="num">3,193.55$</td></tr><tr><td>2026 11-р сар</td><td class="num">10</td><td class="num">5/10</td><td class="num up">+17.16$</td><td class="num up">+0.5%</td><td class="bar"><span class="up" style="width:2%"></span></td><td class="num">3,210.71$</td></tr></tbody></table></div>
+    <p class="muted">Хамгийн том ашиг 6-р сар (+923.29$) ба 10-р сард (+661.02$). Хамгийн муу сар 7-р сар (−219.05$).</p></section>
+  <section><h2>Эрсдэл</h2><div class="card"><table><tbody>
+    <tr><td>Балансын хамгийн их уналт</td><td class="num down">370.35 (23.96%)</td></tr>
+    <tr><td>Equity-ийн хамгийн их уналт (нээлттэй арилжаатай)</td><td class="num down">488.39 (16.63%)</td></tr>
+    <tr><td>Хамгийн том ашигтай арилжаа</td><td class="num up">+288.72$</td></tr>
+    <tr><td>Хамгийн том алдагдалтай арилжаа</td><td class="num down">−147.29$</td></tr>
+  </tbody></table></div></section>
+  <section><h2>Сайтын backtest-тэй харьцуулбал</h2><div class="card"><table>
+    <thead><tr><th></th><th>MT5 tester</th><th>Сайтын backtest</th></tr></thead><tbody>
+    <tr><td>Төгсгөл</td><td class="num">3,210.71$</td><td class="num">2,327.53$</td></tr>
+    <tr><td>Өгөөж</td><td class="num up">+114.0%</td><td class="num up">+55.2%</td></tr>
+    <tr><td>Арилжаа</td><td class="num">78</td><td class="num">84</td></tr>
+    <tr><td>Profit factor</td><td class="num">1.65</td><td class="num">1.30</td></tr>
+    <tr><td>Хамгийн их уналт</td><td class="num">23.96%</td><td class="num">34.1%</td></tr>
+  </tbody></table></div>
+  <p class="muted">Ялгаа: tester-т мэдээний календарь байхгүй (мэдээний цонхоор алгасах нь сайт дээр л бий), үнэ нь Twelve Data биш брокерынх, 4 цаг/өдрийн лаа брокерын цагаар хуваагддаг. Хоёулаа ижил дүрэм, хоёулаа ашигтай. Бодит арилжаанд аль нэгээс нь дунд хэсгийн дүн хүлээх нь бодитой.</p></section>
+  <p class="note">Strategy Tester-ийн дахин тоглуулалт. Бодит арилжаанд slippage, мэдээний үеийн spread, сервер холболт нөлөөлнө. Өнгөрсөн үр дүн ирээдүйг батлахгүй.</p>
+</div>

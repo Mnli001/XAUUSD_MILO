@@ -1170,6 +1170,19 @@ int AsianTrend()
 
 #define ASIAN_RR 3.0                 // сайтын ASIAN_RR (lib/setup/setups.ts)
 #define ASIAN_MIN_STOP_ATR 0.25      // stop өдрийн ATR-ийн үүнээс бага бол тэр өдөр орохгүй (lib/bot/ideas.ts)
+// Сайтын setup-ууд (lib/setup/sessionRules.ts), UTC цагаар: хүрээ эхлэх, дуусах, орох цонх дуусах
+#define SESSION_COUNT 3
+const string SES_NAME[SESSION_COUNT]    = { "asian", "ny-open", "ny-late" };
+const double SES_FROM[SESSION_COUNT]    = { 0.0, 12.5, 13.5 };
+const double SES_TO[SESSION_COUNT]      = { 7.0, 13.5, 14.5 };
+const double SES_ENTRY[SESSION_COUNT]   = { 12.0, 18.0, 17.0 };
+const double SES_RR[SESSION_COUNT]      = { 3.0, 2.0, 2.0 };
+const bool   SES_NEXT07[SESSION_COUNT]  = { false, false, true };
+const int    SES_MINBARS[SESSION_COUNT] = { 20, 3, 3 };
+int    gSesDay[SESSION_COUNT]  = { -1, -1, -1 };
+double gSesHi[SESSION_COUNT], gSesLo[SESSION_COUNT];
+int    gSesBars[SESSION_COUNT];
+bool   gSesDone[SESSION_COUNT];
 
 // Сүүлд хаагдсан өдрийн Wilder ATR(14) — сайтын atrSeries-тэй ижил
 datetime gAtrD1At = 0;
@@ -1209,7 +1222,7 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    if(slDist <= StopsMin() || tpDist <= StopsMin()) return(false);   // хүрээ хэт нарийн: stop тавих боломжгүй
    if(!GateCheck(dir)) return(false);
    double lots = RuleLots(), sl = slDist, tp = tpDist;
-   if(!gTester && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно
+   if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
    // Хаах цагийг арилжааны comment-д хадгална (серверийн цаг): робот дахин ачаалсан ч мэднэ
@@ -1234,7 +1247,8 @@ void RuleStep()
    if(TesterTool == TOOL_ICT)  { IctStep(); return; }
    if(TesterTool == TOOL_SMCX) { SxStep(); return; }
    if(TesterTool == TOOL_STRADDLE) { StStep(); return; }
-   if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
+   if(TesterTool == TOOL_ASIAN) AsianTimeExit();                // арилжаа бүр өөрийн хаах цагтай (comment-д)
+   else if(CountPositions() > 0 && gRuleExitAt > 0 && TimeCurrent() >= gRuleExitAt)
      {
       CloseAllMine();                                            // барих хугацаа дууслаа
       if(CountPositions() == 0) gRuleExitAt = 0;
@@ -1261,20 +1275,32 @@ void RuleStep()
 
    if(TesterTool == TOOL_ASIAN)
      {
-      // Сайттай ижил: хүрээ 00:00-07:00 UTC. Өдөр, 4 цагийн тренд нэг чиглэлд бол 07:00-16:00 UTC-д
-      // тэр чиглэлд хүрээнээс гарч хаагдсан эхний лаа. Stop: хүрээний дунд. Target: stop × 3. 20:00 UTC-д хаана.
-      if(u.hour < 7) { RangeAdd(h, l); return; }
-      if(gRuleTraded || gRangeBars < 20 || u.hour >= 12 || CountPositions() > 0) return;   // сайттай ижил: 12:00 UTC хүртэл
-      int trend = AsianTrend();
-      int dir = (trend > 0 && c > gRangeHigh) ? 1 : ((trend < 0 && c < gRangeLow) ? -1 : 0);
-      if(dir == 0) return;
-      gRuleTraded = true;                                        // эхний breakout өдрийг шийднэ (сайттай ижил)
-      double atrD = DailyAtr();
-      double closeDist = MathAbs(c - (gRangeHigh + gRangeLow) / 2.0);
-      if(atrD == EMPTY_VALUE || closeDist < ASIAN_MIN_STOP_ATR * atrD) return;   // хүрээ хэт нарийн
-      double dist = MathAbs(price - (gRangeHigh + gRangeLow) / 2.0);
-      if(RuleOpen(dir, dist, dist * ASIAN_RR, dayStartServer + 20 * 3600))
-         Print("XauBot tester: asian ", (dir > 0 ? "BUY" : "SELL"), " utc ", TimeToString(utc + 15 * 60, TIME_DATE | TIME_MINUTES), " risk ", Num(dist, 2));
+      // Сайтын 3 setup (lib/setup/sessionRules.ts): хүрээ бүрийн оргил/ёроол, өдөр + 4 цагийн тренд нэг чиглэлд
+      // байхад орох цонхонд хүрээнээс тэр чиглэлд гарч хаагдсан эхний лаа. Stop: хүрээний дунд. Target: stop × RR.
+      double hf = u.hour + u.min / 60.0;
+      for(int k = 0; k < SESSION_COUNT; k++)
+        {
+         if(gSesDay[k] != u.day_of_year) { gSesDay[k] = u.day_of_year; gSesHi[k] = 0.0; gSesLo[k] = 0.0; gSesBars[k] = 0; gSesDone[k] = false; }
+         if(hf >= SES_FROM[k] && hf < SES_TO[k])
+           {
+            if(gSesBars[k] == 0) { gSesHi[k] = h; gSesLo[k] = l; } else { gSesHi[k] = MathMax(gSesHi[k], h); gSesLo[k] = MathMin(gSesLo[k], l); }
+            gSesBars[k]++;
+            continue;
+           }
+         if(gSesDone[k] || hf < SES_TO[k] || hf >= SES_ENTRY[k] || gSesBars[k] < SES_MINBARS[k] || CountPositions() >= 3) continue;
+         int trend = AsianTrend();
+         int dir = (trend > 0 && c > gSesHi[k]) ? 1 : ((trend < 0 && c < gSesLo[k]) ? -1 : 0);
+         if(dir == 0) continue;
+         gSesDone[k] = true;                                     // эхний breakout өдрийг шийднэ (сайттай ижил)
+         double mid = (gSesHi[k] + gSesLo[k]) / 2.0;
+         double atrD = DailyAtr();
+         if(atrD == EMPTY_VALUE || MathAbs(c - mid) < ASIAN_MIN_STOP_ATR * atrD) continue;   // хүрээ хэт нарийн
+         double dist = MathAbs(price - mid);
+         bool friday = (u.day_of_week == 5);
+         datetime exitAt = dayStartServer + ((SES_NEXT07[k] && !friday) ? 31 : 20) * 3600;
+         if(RuleOpen(dir, dist, dist * SES_RR[k], exitAt))
+            Print("XauBot tester: ", SES_NAME[k], " ", (dir > 0 ? "BUY" : "SELL"), " utc ", TimeToString(utc + 15 * 60, TIME_DATE | TIME_MINUTES), " risk ", Num(dist, 2));
+        }
       return;
      }
    if(TesterTool == TOOL_LONDON)
