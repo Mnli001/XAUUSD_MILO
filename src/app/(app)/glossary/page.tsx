@@ -4,7 +4,7 @@ import { getT, getViewer } from "@/lib/prefs.server";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Нэр томьёо — XAU Analytics", "Glossary — XAU Analytics") };
+  return { title: t("Нэр томьёо", "Glossary") };
 }
 
 /** Every trading word the site uses, explained plainly. Each term has its own anchor (/glossary#atr) for the ? hints to link to. */

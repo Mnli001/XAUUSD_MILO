@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { db as database, schema } from "@/lib/db";
-import { emitNewsAlerts, emitSignals, listSignals, newsText, signalText } from "@/lib/signals";
+import { NOT_SENT, emitNewsAlerts, emitSignals, listSignals, newsText, signalText } from "@/lib/signals";
+import { ENTRY_FRESH_MS } from "@/lib/setup/build";
 import { telegramTiming } from "@/lib/telegram";
 import { viewer } from "@/lib/viewer";
 import type { Setup, SetupsView } from "@/lib/setup/build";
@@ -95,15 +96,30 @@ test("each user gets the message in their own language", async () => {
   expect(byChat["999"]).not.toMatch(/[Ѐ-ӿ]/);
 });
 
-test("a setup that went active over an hour ago (the job was down) is recorded but not sent", async () => {
+test("a setup that went active too long ago (the job was down) is recorded, marked not sent, and left out of the list", async () => {
   const late = setup({ at: new Date(now.getTime() - 3 * 36e5) });
   expect(await emitSignals(now, { view: view([late]), send })).toBe(1);
   expect(sent).toHaveLength(0);
-  expect((await listSignals(10))[0].sentTo).toBe(0);
+  expect(await listSignals(10)).toHaveLength(0);
+  const [row] = await listSignals(10, undefined, { includeUnsent: true });
+  expect(row).toMatchObject({ sentTo: NOT_SENT, createdAt: late.at });
+});
+test("Telegram and the robot share one freshness rule: 30 minutes after the bar closed", async () => {
+  expect(ENTRY_FRESH_MS).toBe(30 * 6e4);
+  expect(await emitSignals(now, { view: view([setup({ at: new Date(now.getTime() - 31 * 6e4) })]), send })).toBe(1);
+  expect(sent).toHaveLength(0);
 });
 test("the message shows when the triggering bar closed, not the latest candle", async () => {
-  await emitSignals(now, { view: view([setup({ at: new Date(now.getTime() - 40 * 6e4) })]), send });
-  expect(sent[0].text).toContain("40 минутын өмнө");
+  await emitSignals(now, { view: view([setup({ at: new Date(now.getTime() - 25 * 6e4) })]), send });
+  expect(sent[0].text).toContain("25 минутын өмнө");
+});
+test("a reading of today that went active and already ended between runs is recorded, not sent, never lost", async () => {
+  const ended = setup({ status: "OFF", result: 3, at: new Date(now.getTime() - 50 * 6e4) });
+  expect(await emitSignals(now, { view: view([ended]), send })).toBe(1);
+  expect(sent).toHaveLength(0);
+  expect(await listSignals(10, undefined, { includeUnsent: true })).toMatchObject([{ setupId: "asian-breakout", sentTo: NOT_SENT }]);
+  // yesterday's ended reading, or one with no levels, records nothing
+  expect(await emitSignals(now, { view: view([setup({ id: "ny-open-breakout", status: "OFF", at: new Date(now.getTime() - 30 * 36e5) }), setup({ id: "ny-late-breakout", status: "OFF", entry: null, at: now })]), send })).toBe(0);
 });
 test("two accounts on one chat get one message", async () => {
   await db.execute(sql`UPDATE users SET telegram_chat_id = '111' WHERE telegram_chat_id = '999'`);

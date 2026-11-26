@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { count, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { ensureAdmin, verifyCredentials } from "@/lib/users";
@@ -17,11 +18,14 @@ test("ensureAdmin creates the admin once and never resets an existing password",
   expect(await ensureAdmin(undefined, "x")).toBe("skipped");
   expect(await ensureAdmin("short@x.mn", "short")).toBe("invalid");
 });
-test("an existing ordinary user with the admin email is promoted, password untouched", async () => {
+test("an existing ordinary user with the admin email is NOT promoted (it may have been pre-registered by anyone)", async () => {
   await db.insert(schema.users).values({ email: "u@x.mn", name: "U", passwordHash: "hash" });
-  expect(await ensureAdmin("u@x.mn", "whatever-123")).toBe("exists");
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  expect(await ensureAdmin("u@x.mn", "whatever-123")).toBe("conflict");
+  expect(warn).toHaveBeenCalled();
+  warn.mockRestore();
   const [u] = await db.select().from(schema.users);
-  expect(u).toMatchObject({ role: "ADMIN", passwordHash: "hash" });
+  expect(u).toMatchObject({ role: "USER", passwordHash: "hash" });
 });
 
 const STEP: Record<Timeframe, number> = { "15min": 9e5, "1h": 36e5, "4h": 144e5, "1day": 864e5 };

@@ -16,6 +16,8 @@ export type EventType = {
  * FOMC decision days (the second day of each meeting; the statement comes at 14:00 New York). FRED does not publish
  * these, so they are copied from https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm (last update
  * 2026-11-18). 2027 dates are tentative until confirmed at the meeting before. Add next year's when the Fed posts them.
+ * Checked again 2026-11-27: the Fed's 2027 list has eight meetings and its last is November 16-17; there is no
+ * December 2027 meeting (the next is January 25-26, 2028), so 2027 is complete as written.
  */
 export const FOMC_DECISION_DAYS = [
   "2024-01-31", "2024-03-20", "2024-05-01", "2024-06-12", "2024-07-31", "2024-09-18", "2024-11-07", "2024-12-18",

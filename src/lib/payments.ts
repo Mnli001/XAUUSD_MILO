@@ -58,6 +58,12 @@ async function activate(id: string, now: Date): Promise<void> {
     const [won] = await tx.update(schema.payments).set({ status: "PAID", paidAt: now })
       .where(and(eq(schema.payments.id, id), ne(schema.payments.status, "PAID"))).returning();
     if (!won) return; // another check got here first
+    if (!won.userId) {
+      // the payer deleted their account while the payment was open and paid anyway: money in, nobody to give access to
+      await tx.update(schema.payments).set({ adminNote: "paid after the account was deleted: refund by hand" }).where(eq(schema.payments.id, id));
+      console.warn(`[wire] payment ${id} was paid after its account was deleted; the admin must refund it`);
+      return;
+    }
     const [u] = await tx.execute<{ access_until: Date | string | null }>(sql`SELECT access_until FROM users WHERE id = ${won.userId} FOR UPDATE`).then((r) => r.rows);
     const current = u?.access_until ? new Date(u.access_until) : null;
     const until = extendAccess(current, now, won.days);
@@ -102,14 +108,58 @@ export async function paymentFor(id: string, userId: string): Promise<Payment | 
   return p ?? null;
 }
 
-/** Every payment, newest first, with the payer's email: for the admin. */
+/** Every payment, newest first, with the payer's email (null once the account was deleted): admins only. */
 export async function listPayments(limit = 200) {
+  await (await import("./auth")).requireAdmin(); // loaded on call: this module is also used where next-auth is not
   return db.select({
     id: schema.payments.id, email: schema.users.email, plan: schema.payments.plan, amount: schema.payments.amount,
     status: schema.payments.status, createdAt: schema.payments.createdAt, paidAt: schema.payments.paidAt,
     accessUntil: schema.payments.accessUntil, senderInvoiceNo: schema.payments.senderInvoiceNo,
-  }).from(schema.payments).innerJoin(schema.users, eq(schema.users.id, schema.payments.userId))
+    refundedAt: schema.payments.refundedAt, adminNote: schema.payments.adminNote,
+  }).from(schema.payments).leftJoin(schema.users, eq(schema.users.id, schema.payments.userId))
     .orderBy(desc(schema.payments.createdAt)).limit(limit);
+}
+
+/** Wire webhook event types that mean money went back to the payer. */
+export const isRefundEvent = (type: string) => /refund|chargeback|dispute/i.test(type);
+
+/**
+ * Wire reported a refund or chargeback for this intent (signed webhook). A PAID payment becomes REFUNDED, the
+ * access it bought is taken back (the user's access end moves back by the plan's days; it never moves before
+ * what is already past) and an admin note records exactly what changed. A partial refund changes no access:
+ * it is only flagged for the admin. Repeated events change nothing. Returns the payment, or null if not ours.
+ */
+export async function markRefunded(ref: string, now: Date, ev: { type: string; amount?: number }): Promise<Payment | null> {
+  const [p] = await db.select().from(schema.payments).where(eq(schema.payments.providerRef, ref));
+  if (!p) return null;
+  if (p.status === "REFUNDED") return p;
+  if (p.status !== "PAID") {
+    await db.update(schema.payments).set({ adminNote: `${ev.type} received for a payment that was ${p.status}; check in Wire` }).where(eq(schema.payments.id, p.id));
+    console.warn(`[wire] ${ev.type} for payment ${p.id} in status ${p.status}; flagged for the admin`);
+    return (await db.select().from(schema.payments).where(eq(schema.payments.id, p.id)))[0] ?? null;
+  }
+  const partial = typeof ev.amount === "number" && ev.amount > 0 && ev.amount < p.amount;
+  await db.transaction(async (tx) => {
+    const [won] = await tx.update(schema.payments).set({ status: "REFUNDED", refundedAt: now })
+      .where(and(eq(schema.payments.id, p.id), eq(schema.payments.status, "PAID"))).returning();
+    if (!won) return; // another delivery got here first
+    let note = `${ev.type} at ${now.toISOString()}`;
+    if (partial) note += `: partial (${ev.amount} of ${p.amount}), access NOT changed; decide by hand`;
+    else if (!won.userId) note += ": account already deleted, no access to take back";
+    else {
+      const [u] = await tx.execute<{ access_until: Date | string | null; role: string }>(sql`SELECT access_until, role FROM users WHERE id = ${won.userId} FOR UPDATE`).then((r) => r.rows);
+      const before = u?.access_until ? new Date(u.access_until) : null;
+      if (!before || u.role === "ADMIN") note += ": user had no access end to move";
+      else {
+        const after = new Date(Math.max(before.getTime() - won.days * 864e5, Math.min(before.getTime(), now.getTime())));
+        await tx.update(schema.users).set({ accessUntil: after }).where(eq(schema.users.id, won.userId));
+        note += `: access end moved back ${won.days} days, ${before.toISOString()} -> ${after.toISOString()}`;
+      }
+    }
+    await tx.update(schema.payments).set({ adminNote: note }).where(eq(schema.payments.id, p.id));
+    console.warn(`[wire] payment ${p.id} refunded: ${note}`);
+  });
+  return (await db.select().from(schema.payments).where(eq(schema.payments.id, p.id)))[0] ?? null;
 }
 
 /** This user's own payments, newest first, for the plans page. */

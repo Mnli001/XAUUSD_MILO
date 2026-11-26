@@ -1,4 +1,4 @@
-import { and, eq, gte, lte, inArray } from "drizzle-orm";
+import { and, eq, gte, lte, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 import { type CalendarProvider, EVENT_TYPES } from "../data/calendarProvider";
 import { ProviderError } from "../data/priceProvider";
@@ -30,13 +30,18 @@ export async function recomputeReactions(now: Date, symbol = SYMBOL): Promise<vo
   }
 }
 
-/** Pulls release dates. Existing rows (including admin edits) are never overwritten. */
-export async function ingestCalendar(provider: CalendarProvider, now: Date, pastDays = 365): Promise<{ ok: boolean; stored: number; error?: string }> {
+/**
+ * Pulls release dates. Existing rows (including admin edits) are never overwritten. A FRED-sourced row inside the
+ * fetched window that the source no longer lists (a rescheduled release) is deleted, unless an admin has filled in
+ * its figures; only for release types the fetch returned at least one date for, so an empty answer wipes nothing.
+ */
+export async function ingestCalendar(provider: CalendarProvider, now: Date, pastDays = 365): Promise<{ ok: boolean; stored: number; removed: number; error?: string }> {
   let events: { type: string; time: Date }[];
+  const from = new Date(now.getTime() - pastDays * DAY), to = new Date(now.getTime() + 60 * DAY);
   try {
-    events = await provider.fetchEvents(new Date(now.getTime() - pastDays * DAY), new Date(now.getTime() + 60 * DAY));
+    events = await provider.fetchEvents(from, to);
   } catch (e) {
-    if (e instanceof ProviderError) return { ok: false, stored: 0, error: e.message };
+    if (e instanceof ProviderError) return { ok: false, stored: 0, removed: 0, error: e.message };
     throw e;
   }
   const meta = new Map(EVENT_TYPES.map((t) => [t.type, t]));
@@ -47,6 +52,14 @@ export async function ingestCalendar(provider: CalendarProvider, now: Date, past
   for (let i = 0; i < rows.length; i += 500) {
     await db.insert(schema.economicEvents).values(rows.slice(i, i + 500)).onConflictDoNothing({ target: [schema.economicEvents.type, schema.economicEvents.time] });
   }
+  const e = schema.economicEvents;
+  const listed = new Set(rows.map((r) => `${r.type}|${r.time.getTime()}`));
+  const types = [...new Set(rows.map((r) => r.type))];
+  const stored = types.length
+    ? await db.select({ id: e.id, type: e.type, time: e.time }).from(e).where(and(eq(e.source, "fred"), inArray(e.type, types), gte(e.time, from), lte(e.time, to), isNull(e.forecast), isNull(e.previous), isNull(e.actual)))
+    : [];
+  const gone = stored.filter((r) => !listed.has(`${r.type}|${r.time.getTime()}`)).map((r) => r.id);
+  if (gone.length) await db.delete(e).where(inArray(e.id, gone));
   await recomputeReactions(now);
-  return { ok: true, stored: rows.length };
+  return { ok: true, stored: rows.length, removed: gone.length };
 }

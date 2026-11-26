@@ -13,7 +13,7 @@ import { siteUrl } from "@/lib/telegram";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Багц — XAU Analytics", "Plans — XAU Analytics") };
+  return { title: t("Багц", "Plans") };
 }
 
 export default async function PlansPage({ searchParams }: { searchParams: Promise<{ pay?: string }> }) {
@@ -27,7 +27,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
   const site = siteUrl();
   const until = user.role !== "ADMIN" && paid && user.accessUntil ? v.date(user.accessUntil) : null;
   const statusWord = (s: string, expired: boolean) =>
-    s === "PAID" ? t("Төлөгдсөн", "Paid") : s === "EXPIRED" || expired ? t("Хугацаа дууссан", "Expired") : t("Төлбөр хүлээгдэж байна", "Awaiting payment");
+    s === "PAID" ? t("Төлөгдсөн", "Paid") : s === "REFUNDED" ? t("Буцаагдсан", "Refunded") : s === "EXPIRED" || expired ? t("Хугацаа дууссан", "Expired") : t("Төлбөр хүлээгдэж байна", "Awaiting payment");
   return (
     <div className="space-y-5 sm:space-y-6">
       <div>

@@ -28,9 +28,22 @@ test("a finished day points to the next weekday's range, skipping the weekend", 
 });
 
 test("trends apart while the entry window is open: still waiting, not 'no trade today'", () => {
-  const w = nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 13, 50), null, MN_VIEWER);
+  const w = nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 10, 50), null, MN_VIEWER);
   expect(w.state).toBe("WAIT");
   expect(w.waitingFor).toContain("4 цагийн тренд доош эргэх");
-  expect(w.next?.at.toISOString()).toBe(at(24, 16).toISOString());
-  expect(nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 17), null, MN_VIEWER).state).toBe("NONE"); // window shut
+  expect(w.next?.at.toISOString()).toBe(at(24, 12).toISOString()); // the Asian window now ends at 12:00 UTC
+  expect(nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 13), null, MN_VIEWER).state).toBe("NONE"); // window shut
+});
+
+test("a New York rule points to its own next range, not the Asian one", () => {
+  const ny = { rangeFrom: 12.5, rangeTo: 13.5, entryTo: 18, exitAt: at(24, 20) };
+  const done = nowWindow({ ...base, result: 2, side: "BUY", window: ny }, at(24, 19), null, MN_VIEWER);
+  expect(done.next?.at.toISOString()).toBe(at(25, 12, 30).toISOString());
+  expect(done.next?.label).toContain("нээлтийн хүрээ");
+  expect(done.next?.label).toContain("20:30");
+  expect(done.next?.label).not.toContain("Азийн");
+  const none = nowWindow({ ...base, window: ny }, at(24, 9), null, MN_VIEWER); // before today's range: today's is next
+  expect(none.next?.at.toISOString()).toBe(at(24, 12, 30).toISOString());
+  const en = nowWindow({ ...base, result: 3, side: "BUY" }, at(24, 18), null, { ...MN_VIEWER, t: (_mn: string, en: string) => en });
+  expect(en.next?.label).toContain("Tomorrow's Asian range");
 });

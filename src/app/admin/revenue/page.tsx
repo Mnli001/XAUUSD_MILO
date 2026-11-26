@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { getViewer } from "@/lib/prefs.server";
 import { getRevenue } from "@/lib/revenue";
 import { RevenueView } from "@/components/RevenueView";
@@ -6,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 /** Money in, who is paying, who is about to lapse and who left: the admin's view of the plans business. */
 export default async function AdminRevenuePage() {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const v = await getViewer();
   const { t } = v;
   const r = await getRevenue(new Date());

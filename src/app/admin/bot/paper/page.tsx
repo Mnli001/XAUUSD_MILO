@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { getPaperReport } from "@/lib/bot/paperDb";
 import { PAPER_MIN_TRADES, type PaperVerdict, type TodayStatus } from "@/lib/bot/paper";
 import { MIN_TEST_AVG_R, MIN_TEST_PROFIT_FACTOR } from "@/lib/bot/variants";
@@ -31,6 +32,7 @@ const reasonOf = (t: T): Record<ExitReason, string> => ({ TP: "Target", SL: "Sto
 const price = (v: number) => v.toFixed(2);
 
 export default async function PaperPage() {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const v = await getViewer();
   const { t } = v;
   const VERDICT = verdictOf(t), PHASE = phaseOf(t), REASON = reasonOf(t);

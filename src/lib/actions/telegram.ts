@@ -1,9 +1,8 @@
 "use server";
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "../auth";
 import { getT } from "../prefs.server";
-import { confirmPendingTelegram, rejectPendingTelegram, botUsername, ensureWebhook, esc, forgetChat, isChatGone, newLinkCode, sendMessage, siteUrl, telegramConfigured, unlinkTelegram } from "../telegram";
+import { confirmPendingTelegram, rejectPendingTelegram, botUsername, esc, forgetChat, isChatGone, newLinkCode, sendMessage, siteUrl, telegramConfigured, unlinkTelegram } from "../telegram";
 
 export type TelegramState = { error?: string; ok?: string; link?: string };
 
@@ -12,15 +11,11 @@ export async function linkTelegramAction(_prev: TelegramState, _form: FormData):
   const user = await requireUser();
   const t = await getT();
   if (!telegramConfigured()) return { error: t("Telegram бот тохируулагдаагүй байна.", "The Telegram bot is not set up.") };
+  // The webhook is set once at server start (instrumentation.ts) from APP_URL / RAILWAY_PUBLIC_DOMAIN only.
+  // A user's button never calls setWebhook, and request headers (Host, X-Forwarded-*) are never used to build
+  // the address, so nobody can point the bot and its secret header at another site.
+  if (!siteUrl()) return { error: t("Сайтын хаяг (APP_URL) тохируулагдаагүй тул Telegram холбох боломжгүй байна.", "The site address (APP_URL) is not set, so Telegram cannot be linked.") };
   try {
-    // The webhook address comes from configuration when it can: a client-supplied X-Forwarded-Host
-    // must never be able to point the bot (and its secret header) at another site.
-    let origin = siteUrl();
-    if (!origin) {
-      const h = await headers();
-      origin = `${h.get("x-forwarded-proto") === "http" ? "http" : "https"}://${h.get("host") ?? ""}`;
-    }
-    await ensureWebhook(origin);
     const name = await botUsername();
     if (!name) return { error: t("Telegram ботын нэрийг авч чадсангүй. Токеноо шалгана уу.", "Could not get the Telegram bot's name. Check the token.") };
     return { link: `https://t.me/${name}?start=${await newLinkCode(user.id)}` };

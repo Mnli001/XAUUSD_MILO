@@ -29,7 +29,7 @@ test("a running bot sends its settings as flat numbers", () => {
   expect(c).toEqual({
     state: "RUNNING", runId: "r1", lang: "mn", closeAll: false, mode: "SCALPER", lots: 0.5, maxPositions: 4, slAtr: 1.5, tpAtr: 2, profitTarget: 100, maxLoss: 0, reason: "",
     gateOn: true, gTrend: true, gSessionStart: 15, gSessionEnd: 1, gAtrMin: 1.5, gAtrMax: 25, gSpreadPct: 10, gRsiMax: 70, gExtAtr: 2, gMaxTrades: 6, gDailyLossPct: 3, blackouts: "",
-    cMin: 8, cBuy: 0, cSell: 0, cTotal: 0, rMode: 0, rVal: 0, sMode: 0, sAtr: 0, sStop: 1.5, sRR: 2, protect: false, dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0, dExit: 0,
+    cMin: 8, cBuy: 0, cSell: 0, cTotal: 0, rMode: 0, rVal: 0, sMode: 0, sAtr: 0, sStop: 1.5, sRR: 2, protect: false, dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0, dExit: 0, orders: "", oMaxAge: 1800, oSlipR: 0.3,
   });
 });
 test("a real account is traded only when the owner switched that on", () => {

@@ -1,10 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireAdmin, requireUser } from "../auth";
-import { grantAccess, revokeAccess, saveEvent, deleteEvent, changePassword, changeName } from "../admin";
+import { requireAdmin, requireUser, signIn } from "../auth";
+import { grantAccess, revokeAccess, saveEvent, deleteEvent, changePassword, changeName, adminResetPassword } from "../admin";
 import { getT } from "../prefs.server";
 
-export type AdminState = { error?: string; ok?: string };
+export type AdminState = { error?: string; ok?: string; password?: string };
 
 export async function grantAction(form: FormData) {
   const admin = await requireAdmin();
@@ -45,8 +45,25 @@ export async function changeNameAction(_prev: AdminState, form: FormData): Promi
 export async function changePasswordAction(_prev: AdminState, form: FormData): Promise<AdminState> {
   const user = await requireUser();
   const t = await getT();
-  const r = await changePassword(user.id, String(form.get("current") ?? ""), String(form.get("next") ?? ""), t);
-  return r.error ? r : { ok: t("Нууц үг солигдлоо", "Password changed") };
+  const next = String(form.get("next") ?? "");
+  const r = await changePassword(user.id, String(form.get("current") ?? ""), next, t);
+  if (r.error) return r;
+  // The change signed out every session, this one included; sign this browser back in with the new password.
+  try {
+    await signIn("credentials", { email: user.email, password: next, redirect: false });
+  } catch (e) {
+    console.warn("[auth] password changed, but re-signing this browser failed", e instanceof Error ? e.message : e);
+  }
+  return { ok: t("Нууц үг солигдлоо. Бусад төхөөрөмж дээрх нэвтрэлт хаагдлаа.", "Password changed. You were signed out on other devices.") };
+}
+
+/** Admin-assisted reset: a temporary password for the user, shown once to the admin; all the user's sessions end. */
+export async function resetUserPasswordAction(_prev: AdminState, form: FormData): Promise<AdminState> {
+  const admin = await requireAdmin();
+  const t = await getT();
+  const r = await adminResetPassword(admin.id, String(form.get("userId") ?? ""), t);
+  if (r.error || !r.password) return { error: r.error ?? t("Алдаа гарлаа", "Something went wrong") };
+  return { ok: t(`${r.email}: түр нууц үг. Хэрэглэгчид өгөөд, нэвтэрсний дараа Тохиргоо хуудаснаас солихыг хэлнэ үү.`, `${r.email}: temporary password. Give it to the user and ask them to change it on the Settings page after signing in.`), password: r.password };
 }
 
 export async function startPaperAction() {

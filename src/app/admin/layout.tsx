@@ -7,7 +7,7 @@ import { BrandMark } from "@/components/BrandMark";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Админ — XAU Analytics", "Admin — XAU Analytics") };
+  return { title: t("Админ", "Admin") };
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

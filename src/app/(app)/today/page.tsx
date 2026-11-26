@@ -23,7 +23,7 @@ import { orderSetups } from "@/lib/setup/order";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Өнөөдөр — XAU Analytics", "Today — XAU Analytics") };
+  return { title: t("Өнөөдөр", "Today") };
 }
 
 /*
@@ -61,8 +61,8 @@ export default async function TodayPage() {
     <div className="reveal space-y-4 sm:space-y-5">
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
 
-      <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0">
+      <header className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0 xl:shrink-0">
           <h1 className="sr-only">{t("Өнөөдөр", "Today")}</h1>
           <p className="font-display text-[26px] leading-tight text-zinc-50 sm:text-[30px]">{user.name ? t(`Сайн уу, ${user.name}`, `Hello, ${user.name}`) : t("Өнөөдөр", "Today")}</p>
           <p className="mt-1 text-sm text-zinc-500 tabular-nums">{weekdayName(zoneWeekday(now, v.timeZone), t)} · {v.date(now)} · {v.time(now)} {v.zone}</p>

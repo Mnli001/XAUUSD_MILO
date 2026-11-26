@@ -10,6 +10,8 @@ type Props = {
   stop: number | null;
   target: number | null;
   band: { high: number; low: number } | null;
+  /** The legend for the shaded range: whose range it is (each setup has its own hours). */
+  bandLabel?: string;
   /** WATCH: the move expected if the breakout comes. ACTIVE: the trade in play. Anything else: no arrow. */
   status?: "FORMING" | "WATCH" | "ACTIVE" | "OFF";
   /** When the trade's signal bar closed (ACTIVE), so its zones start there. */
@@ -26,7 +28,7 @@ const px = (v: number) => v.toFixed(2);
  * the right that stands for the hours ahead. Drawn twice (a tall frame for phones, a wide one for larger screens)
  * so text and arrowheads keep their shape at any width.
  */
-export function SetupChart({ candles, side, entry, stop, target, band, status = "OFF", at = null, v = MN_VIEWER }: Props) {
+export function SetupChart({ candles, side, entry, stop, target, band, bandLabel, status = "OFF", at = null, v = MN_VIEWER }: Props) {
   const { t } = v;
   const when = (iso: string) => v.dateTime(new Date(iso)).slice(5);
   if (candles.length === 0) return <div className="flex h-56 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-sm text-zinc-500">{t("Лааны дата алга", "No candle data")}</div>;
@@ -153,7 +155,7 @@ export function SetupChart({ candles, side, entry, stop, target, band, status = 
             <span>{name}</span><span className="font-medium text-zinc-200 tabular-nums">{px(price)}</span>
           </span>
         ))}
-        {band && <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-2.5 w-4 rounded-sm" style={{ background: GOLD, opacity: 0.3 }} /><span>{t("Азийн хүрээ", "Asian range")}</span><span className="font-medium text-zinc-200 tabular-nums">{px(band.low)}–{px(band.high)}</span></span>}
+        {band && <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><span aria-hidden className="h-2.5 w-4 rounded-sm" style={{ background: GOLD, opacity: 0.3 }} /><span>{bandLabel ?? t("Хүрээ", "Range")}</span><span className="font-medium text-zinc-200 tabular-nums">{px(band.low)}–{px(band.high)}</span></span>}
         {SESSIONS.map((s) => <span key={s.key} className="inline-flex items-center gap-1.5 whitespace-nowrap text-zinc-500"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: s.color }} />{sessionLabel(s.key, t)}</span>)}
       </figcaption>
     </figure>

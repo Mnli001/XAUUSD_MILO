@@ -73,7 +73,12 @@ export function rangeSetup(rule: SessionRule, m15: Candle[], scores: AsianScores
   const range = bars.filter((b) => hourOf(b) >= rule.rangeFrom && hourOf(b) < rule.rangeTo);
   const band = range.length ? { high: Math.max(...range.map((b) => b.high)), low: Math.min(...range.map((b) => b.low)) } : null;
   const hour = (now.getTime() - dayStart) / 36e5; // hours since that day's 00:00 UTC
-  const closeWord = rule.exit === "same20" || new Date(dayStart).getUTCDay() === 5 ? `${ub("04:00")} (${zone})` : t(`маргааш ${ub("15:00")} (${zone})`, `tomorrow ${ub("15:00")} (${zone})`);
+  // The time exit on the viewer's clock, with "today"/"tomorrow" told from the viewer's own date: a trade held
+  // overnight and read after midnight closes today, not tomorrow.
+  const exitDay = v.date(exitAt) === v.date(now) ? "today" : v.date(exitAt) === v.date(new Date(now.getTime() + 864e5)) ? "tomorrow" : "date";
+  const closeWord = exitDay === "today" ? t(`өнөөдөр ${v.time(exitAt)} (${zone})`, `today ${v.time(exitAt)} (${zone})`)
+    : exitDay === "tomorrow" ? t(`маргааш ${v.time(exitAt)} (${zone})`, `tomorrow ${v.time(exitAt)} (${zone})`)
+    : `${v.dateTime(exitAt).slice(5)} (${zone})`;
   const sideOf = (x: Score): Side | null => (x === null || x === 0 ? null : x > 0 ? "BUY" : "SELL");
   const dirWord = (s: Side | null) => (s === null ? t("тодорхойгүй", "unclear") : s === "BUY" ? t("дээш", "up") : t("доош", "down"));
   // The trends as they stood at bar i: the 4-hour score moves during the day, so a breakout is judged by the one it had.

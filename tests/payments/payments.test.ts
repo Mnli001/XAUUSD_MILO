@@ -4,7 +4,11 @@ import { db, schema } from "@/lib/db";
 import { resetDb } from "../helpers/db";
 import { makeUser } from "../helpers/users";
 import { fakeWire } from "../helpers/wireFetch";
-import { startPayment, refreshPayment, refreshByRef, paymentFor, listPayments, paymentsOf, PAY_TTL_MS } from "@/lib/payments";
+const requireAdmin = vi.fn(async () => ({ id: "admin", role: "ADMIN" }));
+vi.mock("@/lib/auth", () => ({ requireAdmin: () => requireAdmin() }));
+import { startPayment, refreshPayment, refreshByRef, paymentFor, listPayments, paymentsOf, markRefunded, PAY_TTL_MS } from "@/lib/payments";
+import { deleteAccount } from "@/lib/account";
+import bcrypt from "bcryptjs";
 import type { WireConfig } from "@/lib/wire";
 
 const cfg: WireConfig = { baseUrl: "https://api.wire.mn", apiKey: "sk_live_test", webhookSecret: "whsec_s" };
@@ -200,6 +204,90 @@ describe("paymentFor and listPayments", () => {
     await startPayment(a.id, "PLUS", now, cfg, SITE);
     const rows = await listPayments(10);
     expect(rows[0]).toMatchObject({ plan: "PLUS", email: "a@x.mn", status: "PENDING" });
+  });
+});
+
+describe("admin-only listing", () => {
+  it("listPayments checks the caller is an admin itself, not only the page", async () => {
+    requireAdmin.mockRejectedValueOnce(new Error("NEXT_NOT_FOUND"));
+    await expect(listPayments(10)).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+});
+
+describe("account deletion keeps the payment record", () => {
+  it("cancels open payments at Wire, marks them EXPIRED, and keeps paid ones with no user", async () => {
+    const w = fakeWire();
+    const u = await makeUser("a@x.mn");
+    await db.update(schema.users).set({ passwordHash: await bcrypt.hash("password1", 4) }).where(eq(schema.users.id, u.id));
+    const paid = await startPayment(u.id, "PLUS", now, cfg, SITE);
+    w.pay();
+    await refreshPayment(paid.id, now, cfg, { force: true });
+    const open = await startPayment(u.id, "PRO", now, cfg, SITE);
+    expect(await deleteAccount(u.id, "password1", cfg)).toEqual({});
+    const rows = await db.select().from(schema.payments);
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.userId === null)).toBe(true);
+    expect(rows.find((r) => r.id === paid.id)!.status).toBe("PAID");
+    expect(rows.find((r) => r.id === open.id)!.status).toBe("EXPIRED");
+    expect(w.intents.get(open.providerRef!)!.status).toBe("canceled");
+    const listed = await listPayments(10);
+    expect(listed.map((r) => r.email)).toEqual([null, null]); // the admin page shows them as a deleted account
+  });
+  it("money arriving after the account was deleted is flagged for the admin, not lost in an error", async () => {
+    const w = fakeWire();
+    const u = await makeUser("a@x.mn");
+    const p = await startPayment(u.id, "PLUS", now, cfg, SITE);
+    await db.delete(schema.users).where(eq(schema.users.id, u.id)); // set null, not cascade
+    w.pay();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await refreshPayment(p.id, now, cfg, { force: true });
+    warn.mockRestore();
+    expect(r).toMatchObject({ status: "PAID", userId: null });
+    expect(r!.adminNote).toMatch(/deleted/);
+  });
+});
+
+describe("refunds and chargebacks", () => {
+  const paidFor = async (plan: "PLUS" | "PRO" = "PLUS") => {
+    const w = fakeWire();
+    const u = await makeUser(`${plan}@x.mn`);
+    const p = await startPayment(u.id, plan, now, cfg, SITE);
+    w.pay();
+    await refreshPayment(p.id, now, cfg, { force: true });
+    return { u, p };
+  };
+  it("marks the payment REFUNDED, takes back the days it bought, and notes it for the admin; repeats change nothing", async () => {
+    const { u, p } = await paidFor();
+    expect((await accessOf(u.id))!.getTime()).toBe(now.getTime() + 30 * DAY);
+    const later = new Date(now.getTime() + 5 * DAY);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await markRefunded(p.providerRef!, later, { type: "charge.refunded" });
+    expect(r).toMatchObject({ status: "REFUNDED", refundedAt: later });
+    expect(r!.adminNote).toMatch(/moved back 30 days/);
+    expect((await accessOf(u.id))!.getTime()).toBe(later.getTime()); // never earlier than now: access simply ends
+    await markRefunded(p.providerRef!, later, { type: "charge.refunded" });
+    expect((await accessOf(u.id))!.getTime()).toBe(later.getTime());
+    warn.mockRestore();
+  });
+  it("only subtracts the refunded plan's days when the user has bought more since", async () => {
+    const { u, p } = await paidFor();
+    await db.update(schema.users).set({ accessUntil: new Date(now.getTime() + 210 * DAY) }).where(eq(schema.users.id, u.id));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await markRefunded(p.providerRef!, now, { type: "payment_intent.refunded" });
+    warn.mockRestore();
+    expect((await accessOf(u.id))!.getTime()).toBe(now.getTime() + 180 * DAY);
+  });
+  it("a partial refund is flagged but changes no access", async () => {
+    const { u, p } = await paidFor();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await markRefunded(p.providerRef!, now, { type: "refund.succeeded", amount: 10000 });
+    warn.mockRestore();
+    expect(r!.status).toBe("REFUNDED");
+    expect(r!.adminNote).toMatch(/partial/);
+    expect((await accessOf(u.id))!.getTime()).toBe(now.getTime() + 30 * DAY);
+  });
+  it("an intent that is not ours is ignored", async () => {
+    expect(await markRefunded("pi_unknown", now, { type: "charge.refunded" })).toBeNull();
   });
 });
 

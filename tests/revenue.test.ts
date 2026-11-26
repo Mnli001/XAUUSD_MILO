@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+const requireAdmin = vi.fn(async () => ({ id: "admin", role: "ADMIN" }));
+vi.mock("@/lib/auth", () => ({ requireAdmin: () => requireAdmin() }));
 import { revenueReport, getRevenue, ubMonth, type PaidRow, type UserRow } from "@/lib/revenue";
 import { db, schema } from "@/lib/db";
 import { resetDb } from "./helpers/db";
@@ -85,6 +87,14 @@ describe("getRevenue", () => {
     const r = await getRevenue(now);
     expect(r.thisMonth.revenue).toBe(50000);
     expect(r.active).toBe(1);
+  });
+  it("still counts money from accounts deleted since, and needs an admin", async () => {
+    await db.insert(schema.payments).values({ userId: null, days: 30, expiresAt: now, plan: "PLUS", amount: 50000, status: "PAID", senderInvoiceNo: "9", createdAt: now, paidAt: d("2026-11-21T00:00:00Z"), accessUntil: null });
+    const r = await getRevenue(now);
+    expect(r.thisMonth.revenue).toBe(50000);
+    expect(r.allTime.payers).toBe(1);
+    requireAdmin.mockRejectedValueOnce(new Error("NEXT_NOT_FOUND"));
+    await expect(getRevenue(now)).rejects.toThrow("NEXT_NOT_FOUND");
   });
 });
 

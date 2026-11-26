@@ -20,6 +20,20 @@ export async function loadCandles(symbol: string, tf: Timeframe, limit: number, 
   return rows.reverse().map(({ time, open, high, low, close }) => ({ time, open, high, low, close }));
 }
 
+/**
+ * The candles that are final. Ingestion stores the bar still forming (the live chart and the price fallback
+ * use it) and overwrites it on later runs, so a stored bar's close time having passed does not make it final:
+ * a 5-minute-old copy of a bar that has since closed is still partial. A bar is final once a NEWER bar of the same
+ * timeframe is stored, because the fetch that brought the newer bar ran after this one closed and, re-fetching
+ * from the newest stored bar (gapSize), rewrote it with its final values. So: everything but the newest stored
+ * bar, and only bars whose close time has passed. `candles` must end at the newest stored bar (loadCandles
+ * without `before`). The cost: when the provider has no tick in a new bar yet, the bar before waits one run.
+ */
+export function finalCandles(candles: Candle[], tf: Timeframe, now: Date): Candle[] {
+  const step = TF_MS[tf];
+  return candles.slice(0, -1).filter((c) => c.time.getTime() + step <= now.getTime());
+}
+
 export async function upsertCandles(symbol: string, tf: Timeframe, candles: Candle[]): Promise<number> {
   for (let i = 0; i < candles.length; i += 1000) {
     await db

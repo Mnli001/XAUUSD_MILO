@@ -1,24 +1,31 @@
 "use client";
 import { TermHint } from "./TermHint";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useCallback, useState } from "react";
 import type { LiveView } from "@/lib/bot/liveDb";
 import type { T } from "@/lib/i18n";
 import { useViewer } from "./PrefsProvider";
 import { Figures, Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
 import { saveBotConfigAction, saveGateAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
 import { sessionLabel } from "@/lib/time";
+import { recordSentence, robotFileLabel, stamp, type BrokerRecord } from "@/lib/siteCopy";
+import { usePoll } from "./usePoll";
+
+/** What the server knows about robot files (from lib/bot/live, which the browser cannot load). */
+export type RobotNeeds = { need: Record<string, number>; latest: number };
+/** The Setup signals tool's text, built on the server from SESSION_RULES and the Setup page's describe(). */
+export type SetupToolText = { lines: string[]; record: BrokerRecord | null };
 
 type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> & {
   startedAt: string | null; stoppedAt: string | null; lastSeenAt: string | null;
   deals: (Omit<LiveView["deals"][number], "closeTime"> & { closeTime: string })[];
 };
 
-const stopReasons = (t: T): Record<string, string> => ({
+const stopReasons = (t: T, file: string | null): Record<string, string> => ({
   MANUAL: t("гараар зогсоосон", "stopped by hand"), TARGET: t("ашгийн зорилтод хүрсэн", "profit target reached"), MAX_LOSS: t("алдагдлын хязгаарт хүрсэн", "loss limit reached"),
   TIME: t("ботын тооцсон хугацаа дууссан", "the time the bot planned has run out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("30 минутад орох нөхцөл бүрдээгүй (дохио гараагүй эсвэл шүүлтүүр хаасан)", "no entry for 30 minutes (no signal, or the entry filter held it back)"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
-  REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"),
-  OLD_ROBOT: t("MT5 дээрх роботын файл хуучин: шинэ XauBot.ex5 (v3.60) татаж солино уу", "the robot file on MT5 is old: download the new XauBot.ex5 (v3.60) and replace it"),
+  REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"), TOO_MANY_ACCOUNTS: t("нэг багцад 3 хүртэл MT5 данс холбоно", "a plan links up to 3 MT5 accounts"),
+  OLD_ROBOT: t(`MT5 дээрх роботын файл хуучин: шинэ XauBot.ex5${file ? ` (${file})` : ""} татаж солино уу`, `the robot file on MT5 is old: download the new XauBot.ex5${file ? ` (${file})` : ""} and replace it`),
 });
 /** Why the robot is holding back an entry, by the code it reports (GateCheck in XauBot.mq5). */
 const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
@@ -40,14 +47,12 @@ const blockReasons = (t: T, dayStart: string): Record<string, string> => ({
   RSI: t("RSI хэт сунасан: хөдөлгөөний араас хөөхгүй", "RSI is overstretched: it will not chase the move"),
   EXTENDED: t("үнэ EMA20-оос хэт холдсон", "price is too far from EMA20"),
 });
-/** Robot v2.80 (protocol 6) is the first with the entry filter; the web runs no tool on an older file (GATE_ROBOT_VERSION in lib/bot/live). */
-const GATE_ROBOT = 6;
 const hh = (h: number) => `${String(h).padStart(2, "0")}:00`;
 const toolList = (t: T) => [
-  ["DAY", "Day trader", t("15 минутын чарт дээр: ханш liquidity шүүрдээд (sweep), бүтэц эвдээд (MSS), ойрын FVG руу буцаж ирээд хариу үйлдэл үзүүлэхэд орно. Гэхдээ зөвхөн сайтын бусад аргуудын дүгнэлт ижил чиглэлд байвал. Stop нь sweep-ийн оргилын цаана, ашиг = stop × 2.", "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.")],
+  ["DAY", t("Өдрийн арилжаа (Day trader)", "Day trader"), t("15 минутын чарт дээр: ханш liquidity шүүрдээд (sweep), бүтэц эвдээд (MSS), ойрын FVG руу буцаж ирээд хариу үйлдэл үзүүлэхэд орно. Гэхдээ зөвхөн сайтын бусад аргуудын дүгнэлт ижил чиглэлд байвал. Stop нь sweep-ийн оргилын цаана, ашиг = stop × 2.", "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.")],
   ["READING", t("Дүгнэлт", "Reading"), t("Сайтын олон аргын дүгнэлтийг шууд дагана: 15 минут тутам шалгаж, хангалттай олон арга нэг чиглэл заахад орно. Stop = 1 цагийн ATR × 1.5, ашиг = stop × 2. Нэг удаад нэг арилжаа.", "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.")],
   ["BASKET", t("Багц", "Basket"), t("Дохио гармагц олон арилжааг зэрэг нээнэ. Нийт ашиг таны тавьсан дүнд хүрмэгц бүгдийг зэрэг хаана.", "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.")],
-  ["ASIAN", t("Setup дохио", "Setup signals"), t("Сайтын 3 setup (Ази, Нью-Йоркийн 2 нээлт): хүрээнээс тренд чиглэлд гарахад орно, сешн бүрт нэг, нэг дор 3 хүртэл. Stop, target, хаах цагийг дүрэм тогтооно.", "The site's 3 setups (Asia, two New York openings): enters when price leaves a range in the trend's direction, one per session, up to three at once. The rule sets the stop, target and closing time.")],
+  ["ASIAN", t("Setup дохио", "Setup signals"), t("Setup хуудасны 3 setup (Ази, Нью-Йоркийн 2 нээлт): хүрээнээс трендийн чиглэлд гарахад орно. Setup бүр өдөрт нэг, нийт өдөрт 3 хүртэл арилжаа. Stop, target (Ази 3R, Нью-Йорк 2R), хаах цагийг дүрэм тогтооно; нэмэлт шүүлтүүргүй.", "The 3 setups on the Setup page (Asia, two New York openings): enters when price leaves a range in the trend's direction. One trade per setup a day, up to three a day in all. The rule sets the stop, the target (Asia 3R, New York 2R) and the closing time; no extra filters.")],
 ] as const;
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
@@ -83,26 +88,24 @@ function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; cu
 
 const signedMoney = (v: number | null) => (v === null ? "—" : <>{v !== 0 && <><Dir d={v} />{" "}</>}{signedUsd(v)}</>);
 
-export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string }) {
+export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; syncUrl: string; robot: RobotNeeds; setup: SetupToolText }) {
   const who = useViewer();
   const { t, ub, zone } = who;
-  const STOP_REASON = stopReasons(t), TOOLS = toolList(t), BLOCK = blockReasons(t, `${ub("08:00")} (${zone})`);
+  const latestFile = robotFileLabel(robot.latest);
+  const STOP_REASON = stopReasons(t, latestFile), TOOLS = toolList(t), BLOCK = blockReasons(t, `${ub("08:00")} (${zone})`);
   const [v, setV] = useState<View>(initial);
   const [stale, setStale] = useState(false);
   const [cfgState, cfgAction, cfgPending] = useActionState<BotFormState, FormData>(saveBotConfigAction, {});
   const [tokState, tokAction, tokPending] = useActionState<BotFormState, FormData>(rotateTokenAction, {});
   const [gateState, gateAction, gatePending] = useActionState<BotFormState, FormData>(saveGateAction, {});
 
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      fetch(`/api/bot/status?account=${encodeURIComponent(initial.account)}`, { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((d: View) => { if (alive) { setV(d); setStale(false); } })
-        .catch(() => alive && setStale(true));
-    const id = setInterval(load, 2000);
-    return () => { alive = false; clearInterval(id); };
-  }, [initial.account]);
+  // Every 2 s while the tab is in view, one request at a time; the server-rendered view covers the first paint.
+  const load = useCallback(() =>
+    fetch(`/api/bot/status?account=${encodeURIComponent(initial.account)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: View) => { setV(d); setStale(false); })
+      .catch(() => setStale(true)), [initial.account]);
+  usePoll(load, 2000, true, false);
 
   const running = v.state === "RUNNING";
   const real = v.accountMode === "REAL";
@@ -114,7 +117,9 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
   const asian = tool === "ASIAN";
   const exposure = (basket ? c.basket.lots * c.basket.count : asian || reading || day ? c.rule.lots : c.lots * c.maxPositions) * 100; // $ per $1 move in gold
   const spread = v.bid !== null && v.ask !== null && v.ask > v.bid ? v.ask - v.bid : null;
-  const oldRobot = (v.robotVersion ?? (v.online ? 1 : GATE_ROBOT)) < GATE_ROBOT;
+  const needVersion = robot.need[tool] ?? robot.latest;
+  const needFile = robotFileLabel(needVersion);
+  const oldRobot = (v.robotVersion ?? (v.online ? 1 : needVersion)) < needVersion;
   const g = c.gate;
   const savedTool = (TOOLS.find(([id]) => id === c.mode) ?? TOOLS[0])[1]; // a bot still on the retired scalper shows as the day trader it will start as
 
@@ -147,14 +152,14 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         <div className="mt-4">
           <Figures inset className="grid-cols-2 sm:grid-cols-4" items={[
             { label: t("Данс", "Account"), value: v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : "—", tone: `text-sm sm:text-base ${real ? "text-red-300" : "text-zinc-100"}` },
-            { label: "Balance", value: money(v.balance) },
-            { label: "Equity", value: money(v.equity) },
+            { label: t("Үлдэгдэл (Balance)", "Balance"), value: money(v.balance) },
+            { label: t("Хөрөнгө (Equity)", "Equity"), value: money(v.equity) },
             { label: t("Сүүлийн 24ц", "Last 24h"), value: signedMoney(v.pnl24h), tone: tone(v.pnl24h) },
           ]} />
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
-          <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-6" disabled={running || !v.hasToken}>Start bot</button></form>
-          <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-6" disabled={!running}>Stop</button></form>
+          <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-6" disabled={running || !v.hasToken}>{t("Ботыг эхлүүлэх", "Start bot")}</button></form>
+          <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-6" disabled={!running}>{t("Зогсоох", "Stop")}</button></form>
           <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
           {v.closeAllPending && <span className="self-center text-xs font-medium text-amber-300">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
         </div>
@@ -204,7 +209,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop эсвэл target-аараа хаагдана.", "Trade open. It closes at its stop or its target.") : t("Дүгнэлтийг 15 минут тутам шалгаж байна. Хангалттай олон арга нэг чиглэл заахад орно.", "Checking the reading every 15 minutes. It enters when enough methods point one way.")}</p>
           )}
           {running && c.mode === "ASIAN" && (
-            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t(`Арилжаа нээлттэй. Stop, target эсвэл ${ub("04:00")} (${zone}) цагт хаагдана.`, `Trade open. It closes at the stop, the target or ${ub("04:00")} (${zone}).`) : t(`Дүрэм ажиллаж байна: өдөр бүр ${ub("15:00")}–${ub("00:00")} (${zone}) цагт breakout хүлээнэ. Stop дартал зогсохгүй.`, `The rule is running: every day it waits for a breakout between ${ub("15:00")} and ${ub("00:00")} (${zone}). It does not stop until you press Stop.`)}</p>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop, target эсвэл тухайн setup-ийн хаах цагт хаагдана (цагийг доор харна уу).", "Trade open. It closes at its stop, its target or its setup's closing time (times below).") : t("Дүрэм ажиллаж байна: 3 setup-ийн хүрээ бүрдэж, хүрээнээс гарахыг хүлээнэ. Stop дартал зогсохгүй.", "The rule is running: it waits for each of the 3 setups' ranges to form and break. It does not stop until you press Stop.")}</p>
           )}
           {running && c.mode === "SCALPER" && (
             <p className="mt-1 text-sm leading-relaxed text-zinc-400">
@@ -228,7 +233,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
                   <span className="min-w-0">
                     <span className={`flex flex-wrap items-center gap-2 font-semibold ${on ? "text-zinc-50" : "text-zinc-200"}`}>
                       {name}
-                      {id !== "ASIAN" && id !== "READING" && id !== "DAY" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("шалгагдаагүй", "unproven")}</span>}
+                      {id !== "ASIAN" && id !== "READING" && id !== "DAY" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("туршилтын", "experimental")}</span>}
                     </span>
                     <span className="mt-0.5 block text-xs leading-relaxed text-zinc-400">{about}</span>
                   </span>
@@ -238,7 +243,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           </div>
           {oldRobot && (
             <p role="alert" className="rounded-lg bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-200">
-              {t("MT5 дээрх роботын файл хуучин (v2.80-аас өмнөх, орох шүүлтүүргүй) тул бот эхлэхгүй.", "The robot file on MT5 is old (before v2.80, without the entry filter), so the bot will not start.")} <a className="font-semibold underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
+              {needFile ? t(`MT5 дээрх роботын файл энэ хэрэгсэлд хуучин (${needFile}-аас өмнөх) тул бот эхлэхгүй.`, `The robot file on MT5 is too old for this tool (older than ${needFile}), so the bot will not start.`) : t("MT5 дээрх роботын файл энэ хэрэгсэлд хуучин тул бот эхлэхгүй.", "The robot file on MT5 is too old for this tool, so the bot will not start.")} <a className="font-semibold underline" href="/api/bot/download?file=ex5">{t("Шинэ XauBot.ex5", "Download the new XauBot.ex5")}</a>{t("-ийг татаж Experts хавтсанд хуучныг нь дарж хуулаад MT5-аа дахин нээнэ үү.", ", copy it over the old one in the Experts folder and reopen MT5.")}
             </p>
           )}
           <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4" key={tool}>
@@ -275,16 +280,15 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
             <p className="text-xs leading-relaxed text-zinc-400">
               {t(`Орох чиглэлийг дор хаяж ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} арга дэмжиж, эсрэг талаасаа олон байх үед орно (тоог доорх «Санал нийлэх арга» талбараас өөрчилнө). Stop нь 1 цагийн ATR-аас тооцогддог тул ихэвчлэн $10–25 зайтай: 0.01 лотод нэг арилжааны алдагдал тэр хэмжээний доллар. Жижиг дансанд энэ их тул «Арилжааны хэмжээ ба stop» хэсэгт эрсдэлээ $ эсвэл %-иар тавина; доод лот багтахгүй бол робот орохгүй.`,
                 `It enters when at least ${(c.gate?.minAgree ?? 0) > 0 ? c.gate.minAgree : 9} methods back the side and outnumber the other (change the number in "Methods that must agree" below). The stop comes from the 1-hour ATR, so it is usually $10–25 away: at 0.01 lots a losing trade costs about that many dollars. That is a lot for a small account, so set your risk in $ or % under "Trade size and stop"; when the minimum lot does not fit, the robot does not enter.`)}
-              {" "}<span className="text-amber-300">{t("3 жилийн 15 минутын лаан дээр шалгасан (арилжаа бүрт $0.30 зардалтай): 9+ арга, stop 1.5 × ATR, ашиг 2R үед 2024 онд Profit Factor 1.51 (104 арилжаа), 2025 онд 1.54 (210), 2026 онд 1.40 (163); хамгийн их уналт 9–17R. Ялалтын хувь 42–44%: арилжааны талаас илүү нь алдагдалтай хаагдана, ашиг нь ялалт алдагдлаас 2 дахин том байдгаас гардаг. Дүгнэлтийн эсрэг арилжих нь бүх тохиолдолд алдсан. Хязгаар: энэ нь лааны дата дээрх тооцоо, бодит арилжаа биш; ирээдүйд давтагдах баталгаагүй. Эхлээд demo дансаар.",
-                "Checked on three years of 15-minute candles (with $0.30 cost a trade): at 9+ methods, stop 1.5 × ATR and a 2R target, Profit Factor was 1.51 in 2024 (104 trades), 1.54 in 2025 (210) and 1.40 in 2026 (163); the deepest drawdown was 9–17R. The win rate was 42–44%: more than half the trades close at a loss, and the profit comes from wins being twice the size of losses. Trading against the reading lost in every case. Limits: this is a calculation on candle data, not real trading, and nothing guarantees it repeats. Demo account first.")}</span>
+              {" "}<span className="text-amber-300">{t("Арилжааны талаас илүү нь алдагдалтай хаагдах нь энд хэвийн: ашиг нь ялалт алдагдлаас 2 дахин том байдгаас гардаг. Дүгнэлтийн эсрэг хэзээ ч орохгүй. Өнгөрсөн датан дээрх тооцоо ирээдүйд давтагдах баталгаагүй; эхлээд demo дансаар.",
+                "More than half the trades closing at a loss is normal here: the profit comes from wins being twice the size of losses. It never trades against the reading. Calculations on past data are no guarantee they repeat; demo account first.")}</span>
             </p>
           ) : asian ? (
-            <p className="text-xs leading-relaxed text-zinc-400">
-              {t(`Өдөрт хамгийн ихдээ нэг арилжаа, ${c.rule.lots.toFixed(2)} лотоор: алт $1 хөдлөхөд ±${money(exposure)}. Хүрээ ${ub("08:00")}–${ub("15:00")} (${zone}); ${ub("15:00")}–${ub("00:00")} цагт өдрийн трендийн чиглэлд хүрээнээс гарч хаагдсан эхний 15 минутын лаагаар орно. Stop хүрээний дунд, target 2 дахин хол, ${ub("04:00")}-д хаана.`,
-                `At most one trade a day, at ${c.rule.lots.toFixed(2)} lots: ±${money(exposure)} for every $1 gold moves. The range is ${ub("08:00")}–${ub("15:00")} (${zone}); between ${ub("15:00")} and ${ub("00:00")} it enters on the first 15-minute candle that closes outside the range in the direction of the daily trend. The stop is the middle of the range, the target is twice as far, and it closes at ${ub("04:00")}.`)}
-              {" "}<span className="text-amber-300">{t("MT5-ийн Strategy Tester дээр хоёр жилд шалгасан: 2024.11–2025.11-д Profit Factor 1.59 (146 арилжаа, уналт 5.6%), 2025.11–2026.11-д 1.43 (120 арилжаа, уналт 16–22%). 0.01 лотод нэг арилжааны дундаж алдагдал $12–26 байсан. Өнгөрсөн үр дүн ирээдүйг батлахгүй; эхлээд demo дээр ажиллуул. MT5 ба компьютер асаалттай үед л ажиллана.",
-                "Tested over two years in the MT5 Strategy Tester: Profit Factor 1.59 in 2024.11–2025.11 (146 trades, drawdown 5.6%) and 1.43 in 2025.11–2026.11 (120 trades, drawdown 16–22%). At 0.01 lots the average losing trade was $12–26. Past results do not guarantee the future; run it on a demo account first. It works only while MT5 and the computer are on.")}</span>
-            </p>
+            <div className="space-y-2 text-xs leading-relaxed text-zinc-400">
+              <p>{t(`Өдөрт 3 хүртэл арилжаа (setup бүрт нэг), тус бүр ${c.rule.lots.toFixed(2)} лот: алт $1 хөдлөхөд арилжаа бүрт ±${money(exposure)}. Stop хүрээний дунд. Цаг ${zone}-аар:`, `Up to 3 trades a day (one per setup), each at ${c.rule.lots.toFixed(2)} lots: ±${money(exposure)} per trade for every $1 gold moves. The stop is the middle of the range. Times in ${zone}:`)}</p>
+              <ul className="list-disc space-y-1 pl-4">{setup.lines.map((l) => <li key={l}>{l}</li>)}</ul>
+              <p className="text-amber-300">{setup.record ? `${recordSentence(setup.record, t)} ` : ""}{t("MT5 болон Windows компьютер эсвэл VPS асаалттай үед л ажиллана.", "It works only while MT5 and the Windows computer or VPS are on.")}</p>
+            </div>
           ) : basket ? (
             <p className="text-xs leading-relaxed text-zinc-400">
               {t(`Хадгалсан тохиргоогоор ${c.basket.count} арилжаа, нийт ${(c.basket.lots * c.basket.count).toFixed(2)} лот зэрэг нээгдэнэ: алт $1 хөдлөхөд ±${money(exposure)}.`,
@@ -306,7 +310,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
       <form action={gateAction} className="card space-y-4" aria-labelledby="gate-h">{accountField}
         <div>
           <h2 id="gate-h" className="card-title mb-1">{t("Орох шүүлтүүр", "Entry filter")}</h2>
-          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Гурван хэрэгсэл бүгд арилжаа нээхээс өмнө эдгээр нөхцөлийг давна: бот цөөн, илүү нөхцөл бүрдсэн үед л орно. Тоог 0 болговол тэр шалгалт унтарна. Хадгалсны дараагийн оролтоос үйлчилнэ.", "All three tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Set a number to 0 to switch that check off. Changes apply from the next entry.")}</p>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Day trader, Дүгнэлт, Багц хэрэгслүүд арилжаа нээхээс өмнө эдгээр нөхцөлийг давна: бот цөөн, илүү нөхцөл бүрдсэн үед л орно. Setup дохио нь Setup хуудасны дүрмийг яг дагадаг тул энэ шүүлтүүр түүнд үйлчлэхгүй. Тоог 0 болговол тэр шалгалт унтарна. Хадгалсны дараагийн оролтоос үйлчилнэ.", "The Day trader, Reading and Basket tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Setup signals follows the Setup page's rules exactly, so this filter does not apply to it. Set a number to 0 to switch that check off. Changes apply from the next entry.")}</p>
         </div>
         <div className="rounded-2xl border p-4" style={{ borderColor: "var(--hairline)" }}>
           <p className="text-sm font-semibold text-zinc-100">{t("Бэлэн тохиргоо", "Ready-made settings")}</p>
@@ -353,7 +357,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
           </div>
           <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
             <input type="checkbox" name="gProtect" defaultChecked={g.protect ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
-            <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Day trader болон Дүгнэлт хэрэгсэлд ажиллана; Азийн breakout болон Багц өөрийн дүрмээр хаагдана.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Asian breakout and Basket close by their own rules.")}</span></span>
+            <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Day trader болон Дүгнэлт хэрэгсэлд ажиллана; Setup дохио болон Багц өөрийн дүрмээр хаагдана.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Setup signals and Basket close by their own rules.")}</span></span>
           </label>
         </fieldset>
         <div className="grid grid-cols-2 items-end gap-3 border-t border-zinc-800 pt-4 sm:grid-cols-4">
@@ -426,7 +430,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
         <h2 id="entry-h" className="card-title mb-1">{t("Ямар нөхцөлд орсон арилжаа хэрхэн дууссан бэ", "How trades ended, by the conditions at entry")}</h2>
         <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Робот арилжаа нээх бүрд сайтын 16 аргын хэд нь тэр чиглэлийг дэмжиж байсныг хадгална. Хаагдсан арилжаануудыг тэр тоогоор бүлэглэв. Цөөн арилжаанаас дүгнэлт хийж болохгүй: 30-аас дээш болтол чиг хандлага гэж бүү үз.", "Each time the robot opens a trade, the site keeps how many of its 16 methods backed that side. Closed trades are grouped by that number. Few trades prove nothing: do not read a pattern into fewer than 30.")}</p>
         {v.entryStats.trades === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">{t("Одоогоор бүртгэгдсэн хаагдсан арилжаа алга. Робот v3.10-аар арилжаа хийж эхэлмэгц энд гарна.", "No closed trades recorded yet. They appear here once the robot (v3.10) has traded.")}</p>
+          <p className="mt-3 text-sm text-zinc-500">{t("Одоогоор бүртгэгдсэн хаагдсан арилжаа алга. Робот арилжаа хийж эхэлмэгц энд гарна.", "No closed trades recorded yet. They appear here once the robot has traded.")}</p>
         ) : (
           <div className="mt-3 grid gap-4 lg:grid-cols-2">
             {([[t("Дэмжсэн аргын тоогоор", "By methods backing the side"), v.entryStats.byBacking, (k: string) => k === "NONE" ? t("дүгнэлтгүй", "no reading") : t(`${k} арга`, `${k} methods`)], [t("Сешнээр", "By session"), v.entryStats.bySession, (k: string) => sessionLabel(k, t)]] as const).map(([title, rows, label]) => (
@@ -472,7 +476,7 @@ export function BotPanel({ initial, syncUrl }: { initial: View; syncUrl: string 
               <thead><tr className="border-b border-zinc-800">{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], ["", ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "hidden sm:table-cell text-right"], [t("Гарсан", "Exit"), "hidden sm:table-cell text-right"], ["P&L", "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
               <tbody>{v.deals.map((d) => (
                 <tr key={d.ticket} className="border-t border-zinc-800/70 first:border-t-0">
-                  <td className="td font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{who.dateTime(new Date(d.closeTime)).slice(5)}</td>
+                  <td className="td font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{stamp(who, new Date(d.closeTime))}</td>
                   <td className="td"><SidePill side={d.side} /></td>
                   <td className="td text-right tabular-nums">{d.lots}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{d.openPrice}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{d.closePrice}</td>
                   <td className="td text-right"><Pnl value={d.profit} /></td>

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { hashToken } from "@/lib/bot/live";
 import { findUserById } from "@/lib/users";
 import { z } from "zod";
+import { feedToken, safeEqual } from "@/lib/cron";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing authentication token" }, { status: 401 });
   }
 
-  // Check if token matches an ADMIN bot token or CRON_SECRET
+  // The feed's own shared secret (FEED_TOKEN; CRON_SECRET only while that is unset), compared in constant time,
+  // or an admin's bot token
   let isAuthorized = false;
-  if (process.env.CRON_SECRET && token === process.env.CRON_SECRET) {
+  const shared = feedToken();
+  if (shared && safeEqual(token, shared)) {
     isAuthorized = true;
   } else {
     const hashed = hashToken(token);

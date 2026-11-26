@@ -195,6 +195,14 @@ export type Command = {
   // The day trader's or Asian tool's order (robot v3.40 / v3.50 and newer): dId 0 means "nothing now". dRisk is the stop distance in dollars.
   dId: number; dDir: number; dRisk: number; dRR: number; dAge: number;
   dExit: number; // the order's own time exit, UTC unix seconds (robot v3.60+); 0 = the robot's default
+  /**
+   * Every live session order (robot v3.70+, Asian tool only), "id,dir,entry,sl,tp,ageSec,exitAt" joined by ";".
+   * id is unique per rule (see AsianOrder in lib/setup/build); entry, sl and tp are absolute prices. The first order
+   * is also sent as dId…dExit (dId = its bar's close, as before) for older robots, which take one order at a time.
+   */
+  orders: string;
+  oMaxAge: number; // seconds an order stays valid after its bar closed (ENTRY_FRESH_MS)
+  oSlipR: number; // no entry once price has run this share of the risk past the entry toward the target
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -218,12 +226,29 @@ export const READING_ROBOT_VERSION = 10;
 /** Robot v3.40 (protocol 11) is the first with the day trader. */
 export const DAY_ROBOT_VERSION = 11;
 export type DayOrderFields = { id: number; dir: number; risk: number; rr: number; ageSec: number; exitAt?: number };
+/** A session setup's order with its own prices (lib/setup/build AsianOrder). */
+export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number };
+/** The robot file the site serves (mt5/XauBot.mq5): its version number and the label people see. */
+export const ROBOT_FILE_VERSION = 14;
+export const ROBOT_FILE_LABEL = "3.70";
+/** Order freshness and price-run limits, the same ones Telegram uses (see ENTRY_FRESH_MS in lib/setup/build). */
+export const ORDER_MAX_AGE_SEC = 30 * 60;
+export const ORDER_SLIP_R = 0.3;
 /** The reading tool waits for this many methods when the owner set none: the level the research held up at. */
 export const READING_MIN_AGREE = 9;
 export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, mode === "DAY" ? DAY_ROBOT_VERSION : mode === "READING" ? READING_ROBOT_VERSION : mode === "ASIAN" ? ASIAN_ROBOT_VERSION : mode === "BASKET" ? BASKET_ROBOT_VERSION : 1);
 
-/** The filter as flat fields. With the filter off, every check goes out switched off as well. */
-function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null, reading = false) {
+/** The order list as the robot reads it: plain numbers, no nesting (the robot parses JSON by key lookups). */
+export const ordersField = (orders: SessionOrderFields[]): string =>
+  orders.map((o) => [o.id, o.dir, o.entry, o.sl, o.tp, Math.round(o.ageSec), o.exitAt ?? 0].join(",")).join(";");
+
+/**
+ * The filter as flat fields. With the filter off, every check goes out switched off as well. The session tool
+ * (ASIAN) trades exactly the site's rules: none of the filter's checks apply (they were never part of the replayed
+ * rule), only the sizing (rMode/rVal) is kept; the robot's own open-position cap still holds.
+ */
+function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts | null, reading = false, sessionRules = false) {
+  if (sessionRules) g = { ...g, on: false, protect: false, siteStops: false };
   const on = g.on;
   // The reading tool always needs a threshold and the site's stop distance, whatever the filter says.
   const cMin = reading ? ((g.minAgree ?? 0) > 0 ? g.minAgree : READING_MIN_AGREE) : on ? (g.minAgree ?? 0) : 0;
@@ -242,17 +267,20 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
   };
 }
 
-export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null, day: DayOrderFields | null = null): Command {
+export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null, day: DayOrderFields | null = null, sessionOrders: SessionOrderFields[] = []): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
-  const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus, c.mode === "READING");
+  const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus, c.mode === "READING", c.mode === "ASIAN");
+  // The Asian tool: the newest order doubles as the single order older robots read (dId = its bar's close, as before).
+  if (c.mode === "ASIAN" && sessionOrders.length && !day) { const f = sessionOrders[0]; day = { ...f, id: f.legacyId }; }
   const tool = c.mode === "ASIAN" || c.mode === "READING" || c.mode === "DAY"
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.rule.lots, maxPositions: 1, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: 0, maxLoss: 0 }
     : basket
     ? { runId: s.runId ?? "", lang, mode: c.mode, lots: c.basket.lots, maxPositions: c.basket.count, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.basket.profit, maxLoss: c.basket.loss }
     : { runId: s.runId ?? "", lang, mode: c.mode, lots: c.lots, maxPositions: c.maxPositions, slAtr: c.slAtr, tpAtr: c.tpAtr, profitTarget: c.profitTarget ?? 0, maxLoss: c.maxLoss ?? 0 };
   const order = (c.mode === "DAY" || c.mode === "ASIAN") && day ? { dId: day.id, dDir: day.dir, dRisk: day.risk, dRR: day.rr, dAge: day.ageSec, dExit: day.exitAt ?? 0 } : { dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0, dExit: 0 };
-  const base = { ...tool, ...gate, ...order };
+  const orders = { orders: c.mode === "ASIAN" ? ordersField(sessionOrders) : "", oMaxAge: ORDER_MAX_AGE_SEC, oSlipR: ORDER_SLIP_R };
+  const base = { ...tool, ...gate, ...order, ...orders };
   if (s.state !== "RUNNING") return { ...base, state: "STOPPED", closeAll: s.closeAll, reason: "" };
   if (account.mode === "REAL" && !c.allowReal) return { ...base, state: "STOPPED", closeAll: false, reason: "REAL_NOT_ALLOWED" };
   if ((robotVersion ?? 1) < minRobotVersion(c.mode)) return { ...base, state: "STOPPED", closeAll: false, reason: "OLD_ROBOT" };
@@ -264,6 +292,10 @@ export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVe
 export const newToken = () => randomBytes(24).toString("hex");
 export const hashToken = (t: string) => createHash("sha256").update(t).digest("hex");
 
+/** A robot writes at most a few hundred characters of reason; anything far longer is not a robot's report. */
+export const MAX_REASON_CHARS = 4000;
+/** A full report (300 positions, 200 deals) is well under this; a larger body is refused before it is parsed. */
+export const MAX_REPORT_CHARS = 256_000;
 const side = z.enum(["BUY", "SELL"]);
 const num = z.number().finite();
 export const reportSchema = z.object({
@@ -272,7 +304,7 @@ export const reportSchema = z.object({
   bid: num,
   ask: num,
   signal: z.enum(["BUY", "SELL", "NONE"]),
-  reason: z.string().transform((s) => s.slice(0, 300)), // cut, not refused: a long reason must not cut the robot off
+  reason: z.string().max(MAX_REASON_CHARS).transform((s) => s.slice(0, 300)), // cut, not refused: a long reason must not cut the robot off (only an absurd one is refused)
   runPnl: num,
   positions: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, sl: num, tp: num, profit: num })).max(300),
   deals: z.array(z.object({ ticket: z.string().max(40), side, lots: num, openPrice: num, closePrice: num, profit: num, closeTime: z.coerce.date(), position: z.string().max(40).optional() })).max(200),
@@ -283,7 +315,7 @@ export const reportSchema = z.object({
   // The entry filter's verdict (robot v2.80 and newer): the check that blocks an entry now, "" = none.
   gateOn: z.boolean().optional(),
   block: z.string().max(20).optional(),
-  blockDetail: z.string().transform((s) => s.slice(0, 120)).optional(),
+  blockDetail: z.string().max(MAX_REASON_CHARS).transform((s) => s.slice(0, 120)).optional(),
   tradesToday: num.optional(),
   dayPnl: num.optional(),
   dailyLossHit: z.boolean().optional(),
@@ -303,3 +335,17 @@ export const PRESETS: Record<PresetId, Partial<GateConfig>> = {
 };
 export const isPreset = (v: unknown): v is PresetId => v === "CAREFUL" || v === "BALANCED" || v === "ACTIVE";
 export const applyPreset = (current: LiveConfig, id: PresetId): LiveConfig => ({ ...current, gate: { ...DEFAULT_GATE, ...current.gate, ...PRESETS[id] } });
+
+/**
+ * A reply that tells the robot to stop and carries nothing else: no order, no reading, no news windows. Sent to a
+ * robot whose owner has no access or whose account cannot be served; built before any signal work is done.
+ */
+export function stoppedCommand(reason: string, lang: Locale = "mn"): Command {
+  return {
+    state: "STOPPED", runId: "", closeAll: false, reason, mode: "SCALPER", lang,
+    lots: 0, maxPositions: 1, slAtr: 0, tpAtr: 0, profitTarget: 0, maxLoss: 0,
+    gateOn: false, gTrend: false, gSessionStart: 0, gSessionEnd: 0, gAtrMin: 0, gAtrMax: 0, gSpreadPct: 0, gRsiMax: 0, gExtAtr: 0, gMaxTrades: 0, gDailyLossPct: 0,
+    blackouts: "", cMin: 0, cBuy: 0, cSell: 0, cTotal: 0, rMode: 0, rVal: 0, sMode: 0, sAtr: 0, sStop: SITE_STOP_ATR, sRR: SITE_RR, protect: false,
+    dId: 0, dDir: 0, dRisk: 0, dRR: 2, dAge: 0, dExit: 0, orders: "", oMaxAge: ORDER_MAX_AGE_SEC, oSlipR: ORDER_SLIP_R,
+  };
+}

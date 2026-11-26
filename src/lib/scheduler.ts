@@ -11,17 +11,28 @@ import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
 
 export type Job = "fast" | "hourly" | "calendar";
-/** When each job last started: fast = epoch ms, hourly = "YYYY-MM-DDTHH", calendar = "YYYY-MM-DD" (UTC). */
+/** When each job last ran: fast = the start of its quarter hour (epoch ms), hourly = "YYYY-MM-DDTHH", calendar = "YYYY-MM-DD" (UTC). */
 export type SchedulerState = { fast: number | null; hourly: string | null; calendar: string | null };
 
-const FAST_EVERY_MS = 5 * 60 * 1000;
+const QUARTER_MS = 15 * 60 * 1000;
+/** Prices are read this long after each quarter hour, when the bar that just closed is final at the provider. */
+export const FAST_OFFSET_MS = 60 * 1000;
 
-/** Which jobs should start now. Budget on the free price plan: 288 + 72 requests a day. */
+/** The quarter hour whose closed bar a run at `now` reads (its start, epoch ms). */
+export const quarterOf = (now: Date) => Math.floor((now.getTime() - FAST_OFFSET_MS) / QUARTER_MS) * QUARTER_MS;
+
+/**
+ * Which jobs should start now, in the order they must run. The 15-minute job runs once per quarter hour, from one
+ * minute after it (:01, :16, :31, :46), so it reads bars that have closed instead of copies of bars still forming.
+ * The hourly job (1h, 4h and daily candles) runs from the same minute and BEFORE it, so a 4-hour or daily bar that
+ * closed on the hour is stored before the 15-minute job reads the setups. Budget on the free price plan: 96 + 72 a day.
+ */
 export function dueJobs(now: Date, s: SchedulerState): Job[] {
   const iso = now.toISOString();
   const due: Job[] = [];
-  if (s.fast === null || now.getTime() - s.fast >= FAST_EVERY_MS) due.push("fast");
-  if (s.hourly === null || (s.hourly !== iso.slice(0, 13) && now.getUTCMinutes() >= 2)) due.push("hourly");
+  if (s.hourly === null || (s.hourly !== iso.slice(0, 13) && now.getUTCMinutes() >= 1)) due.push("hourly");
+  const q = quarterOf(now);
+  if (s.fast === null || q > s.fast) due.push("fast");
   if (s.calendar !== iso.slice(0, 10)) due.push("calendar");
   return due;
 }
@@ -75,7 +86,7 @@ export function startScheduler(): void {
       const now = new Date();
       for (const job of dueJobs(now, state)) {
         // mark first, so a failing job waits for its next slot instead of retrying every minute
-        if (job === "fast") state.fast = now.getTime();
+        if (job === "fast") state.fast = quarterOf(now);
         else if (job === "hourly") state.hourly = now.toISOString().slice(0, 13);
         else state.calendar = now.toISOString().slice(0, 10);
         try { await run(job, now); } catch (e) { console.error(`[scheduler] ${job} error`, e); }

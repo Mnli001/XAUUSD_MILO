@@ -18,6 +18,7 @@ import { PriceSpark } from "@/components/PriceSpark";
 import { getTodaySnapshot } from "@/lib/snapshot";
 import { SYMBOL, loadCandles } from "@/lib/ingest/prices";
 import { biasLabelText } from "@/lib/analysis/bias";
+import { SIGNAL_WINDOW, signalWindowLabel } from "@/lib/siteCopy";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ const stops = (t: T) => [
   [t("Алт хамгийн хүчтэй хөдөлдөг цагууд аль нь вэ?", "Which hours see the strongest gold volatility?"), t("Сүүлийн 6 сарын бодит түүхээс цаг бүрт алт өсөх эсвэл унах магадлалыг Улаанбаатарын цагаар нарийвчлан тооцно. Түүвэр хангалтгүй бол худал тоо харуулахгүй.", "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient."), t("Цагийн хуваарь", "Hour by hour"), "var(--color-london)"],
   [t("Эдийн засгийн хүчтэй мэдээнүүд хэзээ гарах вэ?", "When do high-impact economic releases drop?"), t("NFP, CPI, FOMC зэрэг алт савлуулах гол мэдээнүүд болон өмнө нь ижил мэдээний дараа алт 15, 30, 60 минутад дунджаар хэдэн ам.доллар хөдөлснийг шууд хянана.", "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases."), t("Мэдээ", "News"), "var(--color-ny)"],
   [t("Таны арилжааны чадвар бодитоор өсөж байна уу?", "Is your trading edge genuinely growing?"), t("MT5 роботын хаасан арилжаа бүрээс Win rate, P&L, Profit factor, Drawdown-ыг сешн, гариг, цагаар нь автоматаар задлан, юу ажиллаж байгааг харуулна. Гараар юу ч бичих шаардлагагүй.", "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in."), t("Гүйцэтгэл", "Performance"), "var(--color-zinc-400)"],
-  [t("MT5 роботоо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("MetaTrader 5 терминалтайгаа шууд холбогдож, ботынхоо төлөв, эрсдэл, Start/Stop-ийг гар утсаараа ч хялбар удирдах боломжтой.", "Connect directly with your MetaTrader 5 terminal to seamlessly monitor bot state, risk parameters, and Start/Stop commands even from your phone."), t("Бот", "Bot"), "var(--color-zinc-400)"],
+  [t("MT5 роботоо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("Windows компьютер эсвэл VPS дээр ажиллаж буй MetaTrader 5-тайгаа холбогдож, ботынхоо төлөв, эрсдэл, эхлүүлэх/зогсоохыг гар утаснаасаа ч удирдана. Робот арилжаа хийхийн тулд MT5 тэр компьютер дээр асаалттай байх ёстой.", "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade."), t("Бот", "Bot"), "var(--color-zinc-400)"],
 ] as const;
 
 /** Illustration only: shaped like the real table, labelled as a sample below it. */
@@ -48,7 +49,7 @@ export default async function LandingPage() {
       getEvents(now, new Date(now.getTime() + 24 * 36e5)),
       getTodaySnapshot(SYMBOL, now),
       loadCandles(SYMBOL, "15min", 96),
-      signalHistory(now, 60, { delayMs: PUBLIC_DELAY_MS }),
+      signalHistory(now, SIGNAL_WINDOW, { delayMs: PUBLIC_DELAY_MS }),
     ]);
     events = res[0];
     snap = res[1];
@@ -115,19 +116,19 @@ export default async function LandingPage() {
               
               <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-zinc-400">
                 <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>{t("Хуурамч таамаггүй", "No fake predictions")}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>{t("Бодит статистик", "Real statistics")}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                   <span>{t("MT5 робот нэгтгэлтэй", "MT5 bot integrated")}</span>
@@ -140,9 +141,9 @@ export default async function LandingPage() {
               className="group relative overflow-hidden rounded-[32px] border p-7 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:scale-[1.02]" 
               aria-label={t("Одоогийн зах зээл", "The market right now")}
               style={{ 
-                borderColor: "rgb(255 255 255 / 0.14)", 
-                background: "linear-gradient(180deg, rgb(24 21 17 / 0.95), rgb(11 10 9 / 0.98))", 
-                boxShadow: "0 1px 0 rgb(255 255 255 / 0.12) inset, 0 40px 100px -30px rgb(0 0 0 / 0.95), 0 20px 60px -20px rgb(217 181 102 / 0.1)" 
+                borderColor: "var(--hairline)",
+                background: "var(--cell-bg)",
+                boxShadow: "var(--shadow-panel)",
               }}
             >
               <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/15" aria-hidden />
@@ -231,7 +232,7 @@ export default async function LandingPage() {
             <div className="flex flex-col gap-3 pt-2">
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">
-                  <svg className="h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg aria-hidden className="h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -243,7 +244,7 @@ export default async function LandingPage() {
               
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20">
-                  <svg className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <svg aria-hidden className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -303,7 +304,7 @@ export default async function LandingPage() {
               </table>
             </div>
             <figcaption className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <svg aria-hidden className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
               {t("Загвар харагдац. Бодит статистикийг систем дотроос харна уу.", "Sample preview. View real statistics inside the platform.")}
@@ -375,7 +376,7 @@ export default async function LandingPage() {
             <h2 id="record-h" className="font-display text-center text-[40px] leading-[1.05] text-zinc-50 sm:text-[56px]">{t("Дохионы бодит үр дүн", "How the signals actually did")}</h2>
             <p className="mx-auto mt-4 max-w-[60ch] text-center text-lg leading-relaxed text-zinc-400">{t("Гарсан дохио бүр, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "Every signal given, the winners and the losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.")}</p>
             <div className="mt-10 space-y-5">
-              <SignalTotals rows={record} t={t} />
+              <SignalTotals rows={record} t={t} caption={signalWindowLabel(t)} />
               <div className="table-card"><SignalHistoryTable rows={record.slice(0, 8)} v={v} /></div>
               <p className="text-center text-sm text-zinc-500">{t("Spread, шимтгэл ороогүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. Past results do not guarantee future profit.")}</p>
             </div>
@@ -397,7 +398,7 @@ export default async function LandingPage() {
             <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-16">
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-950/30 px-4 py-2 backdrop-blur-sm">
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg aria-hidden className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   <span className="text-sm font-bold">{t("100% илэн далангүй", "100% Transparent")}</span>
@@ -408,12 +409,12 @@ export default async function LandingPage() {
                 </h2>
                 
                 <p className="max-w-[58ch] text-lg leading-relaxed font-medium opacity-90">
-                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Backtest-ийн үр дүн, роботын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Backtest results and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
+                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Дохионы ашигтай, алдагдалтай бүх үр дүн, роботын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
                 </p>
                 
                 <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                       <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                     </svg>
@@ -424,17 +425,17 @@ export default async function LandingPage() {
                   </div>
                   
                   <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                     </svg>
                     <div>
-                      <p className="font-bold">{t("Backtest үр дүн", "Backtest results")}</p>
-                      <p className="text-sm opacity-80">{t("Нээлттэй", "Open to view")}</p>
+                      <p className="font-bold">{t("Дохионы түүх", "Signal record")}</p>
+                      <p className="text-sm opacity-80">{t("Нүүр хуудсанд нээлттэй, 24 цагийн хоцролттой", "Public here, a day late")}</p>
                     </div>
                   </div>
                   
                   <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     <div>
@@ -450,7 +451,7 @@ export default async function LandingPage() {
                 className="relative z-10 inline-flex min-h-14 items-center justify-center rounded-2xl bg-zinc-950 px-10 text-base font-bold text-zinc-50 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)] active:scale-95 lg:min-h-16 lg:px-12 lg:text-lg"
               >
                 <span className="relative z-10">{t("Бүртгүүлэх", "Register")}</span>
-                <svg className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg aria-hidden className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </Link>

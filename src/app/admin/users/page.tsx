@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { desc, ilike } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { hasAccess } from "@/lib/access";
@@ -5,10 +6,12 @@ import { grantAction, revokeAction } from "@/lib/actions/admin";
 import { formatUbDateTime } from "@/lib/time";
 import { getT } from "@/lib/prefs.server";
 import { Station } from "@/components/Timetable";
+import { ResetPasswordButton } from "./ResetPasswordButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const t = await getT();
   const { q = "" } = await searchParams;
   const term = q.trim().replace(/[%_\\]/g, "\\$&");
@@ -49,6 +52,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                       <form key={d} action={grantAction}><input type="hidden" name="userId" value={u.id} /><input type="hidden" name="days" value={d} /><button className="btn-ghost w-full tabular-nums">+{d} {t("хоног", "days")}</button></form>
                     ))}
                     <form action={revokeAction}><input type="hidden" name="userId" value={u.id} /><button className="btn-ghost w-full text-red-400">{t("Эрх хаах", "Revoke access")}</button></form>
+                    <ResetPasswordButton userId={u.id} email={u.email} className="col-span-3" />
                   </div>
                 )}
               </li>
@@ -75,6 +79,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                             <form key={d} action={grantAction}><input type="hidden" name="userId" value={u.id} /><input type="hidden" name="days" value={d} /><button className="btn-ghost tabular-nums">+{d} {t("хоног", "days")}</button></form>
                           ))}
                           <form action={revokeAction}><input type="hidden" name="userId" value={u.id} /><button className="btn-ghost text-red-400">{t("Эрх хаах", "Revoke access")}</button></form>
+                          <ResetPasswordButton userId={u.id} email={u.email} />
                         </div>
                       )}
                     </td>

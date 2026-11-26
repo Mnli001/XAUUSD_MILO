@@ -7,7 +7,9 @@ import { useEffect, useRef } from "react";
  *     of the last layer instead of two more full evaluations (7 noise layers a pixel, not 15);
  *   - it is drawn into a small buffer (at most ~230k pixels) and stretched, which suits a soft field;
  *   - frames are capped at 30 a second, and the buffer shrinks further if frames still run long;
- *   - nothing is drawn while the canvas is off screen or the tab is hidden.
+ *   - nothing is drawn while the canvas is off screen or the tab is hidden;
+ *   - with reduced motion it draws one still frame and stops; on small or low-power devices
+ *     (narrow screens, little memory, data saver) it does not start WebGL at all.
  */
 const FRAG = `
 precision highp float;
@@ -47,13 +49,20 @@ const MAX_PIXELS = 230_000; // the buffer's budget at full quality
 const MIN_PIXELS = 60_000;
 const FRAME_MS = 1000 / 30;
 
-/** Decorative; slower under reduced motion; a still gradient when WebGL is unavailable. */
+/** Phones, low-memory devices and data saver get the still gradient: the field is decoration, not worth the battery. */
+function lowPower(): boolean {
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  return window.innerWidth < 640 || (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || nav.connection?.saveData === true;
+}
+
+/** Decorative; one still frame under reduced motion; a still gradient when WebGL is unavailable or the device is small. */
 export function GoldField({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
-    const gl = canvas?.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power", preserveDrawingBuffer: false });
-    if (!canvas || !gl) return;
+    if (!canvas || lowPower()) return;
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power", preserveDrawingBuffer: false });
+    if (!gl) return;
     const sh = (type: number, src: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, src); gl.compileShader(s); return s; };
     const prog = gl.createProgram()!;
     gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
@@ -83,24 +92,30 @@ export function GoldField({ className = "" }: { className?: string }) {
     const onMove = (e: PointerEvent) => { aim.x = e.clientX / window.innerWidth - 0.5; aim.y = 0.5 - e.clientY / window.innerHeight; };
     window.addEventListener("pointermove", onMove, { passive: true });
 
-    const rate = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0.35 : 1;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0, onScreen = true, last = 0, clock = 40, slow = 0, measured = 0;
+    const draw = () => { gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, clock); gl.uniform2f(um, at.x, at.y); gl.drawArrays(gl.TRIANGLES, 0, 3); };
+    if (still) {
+      // Reduced motion: one frame, redrawn only when the size changes. No pointer light, no loop.
+      window.removeEventListener("pointermove", onMove);
+      const redraw = () => { size(); draw(); };
+      draw();
+      window.addEventListener("resize", redraw);
+      return () => window.removeEventListener("resize", redraw);
+    }
     const loop = (ms: number) => {
       raf = requestAnimationFrame(loop);
       if (!onScreen || document.hidden) { last = 0; return; }
       if (last && ms - last < FRAME_MS - 2) return; // 30 frames a second is plenty for a slow field
       const dt = last ? Math.min(100, ms - last) : FRAME_MS;
       last = ms;
-      clock += (dt / 1000) * rate;
+      clock += dt / 1000;
       at.x += (aim.x - at.x) * 0.08; at.y += (aim.y - at.y) * 0.08;
-      const began = performance.now();
-      gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, clock); gl.uniform2f(um, at.x, at.y);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      // Long frames mean a weak GPU: halve the buffer until it keeps up. gl.finish makes the measure honest.
+      draw();
+      // Long gaps between frames mean a weak GPU: halve the buffer until it keeps up (no gl.finish, which stalls the page).
       if (measured < 90) {
-        gl.finish();
         measured++;
-        if (performance.now() - began > 14 || dt > 60) slow++;
+        if (dt > 60) slow++;
         if (measured % 30 === 0) { if (slow > 10 && budget > MIN_PIXELS) { budget = Math.max(MIN_PIXELS, budget / 2); size(); } slow = 0; }
       }
     };

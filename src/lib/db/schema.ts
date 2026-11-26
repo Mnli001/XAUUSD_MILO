@@ -21,6 +21,8 @@ export const users = pgTable("users", {
   telegramPendingChatId: text("telegram_pending_chat_id"), // a chat that gave this account's email to the bot and waits for a yes on the site
   telegramPendingName: text("telegram_pending_name"), // how that chat calls itself, shown beside the yes/no
   telegramPendingExpiresAt: ts("telegram_pending_expires_at"), // the request above lapses after this
+  telegramPendingUsername: text("telegram_pending_username"), // that chat's @username as Telegram reports it (the display name above is free text)
+  sessionVersion: integer("session_version").notNull().default(0), // in every session token; bumped on a password change or reset, which signs out every other session
   signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
   signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
   signalsNews: boolean("signals_news").notNull().default(false), // a Telegram heads-up before HIGH-impact releases (opt-in)
@@ -187,10 +189,10 @@ export const botEntries = pgTable("bot_entries", {
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] })]);
 
 /** One Wire payment for a plan. PAID once Wire's own record says the intent succeeded for the full amount; that payment extends access once. */
-export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "PAID", "EXPIRED"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "PAID", "EXPIRED", "REFUNDED"]);
 export const payments = pgTable("payments", {
   id: id(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }), // null once the payer deleted their account: the record of money stays
   plan: text("plan").notNull(), // PLUS | PRO | MAX
   amount: integer("amount").notNull(), // tögrög
   days: integer("days").notNull(),
@@ -203,6 +205,8 @@ export const payments = pgTable("payments", {
   checkedAt: ts("checked_at"),
   paidAt: ts("paid_at"),
   accessUntil: ts("access_until"), // the end of access this payment produced
+  refundedAt: ts("refunded_at"), // Wire reported the money returned (refund or chargeback)
+  adminNote: text("admin_note"), // something the admin must look at, e.g. what a refund did to access
 }, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_provider_ref").on(t.providerRef), index("payments_user_created").on(t.userId, t.createdAt)]);
 export type Payment = typeof payments.$inferSelect;
 export type Signal = typeof signals.$inferSelect;
@@ -212,4 +216,21 @@ export const appState = pgTable("app_state", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
   updatedAt: ts("updated_at").notNull(),
+});
+
+/** Attempts counted per key (an IP, an email, a Telegram chat) in fixed windows, so the counts hold across server instances. */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  windowStart: ts("window_start").notNull(),
+});
+
+/** One-time password reset links (sent by the Telegram bot). Only the SHA-256 of the token is stored. */
+export const passwordResets = pgTable("password_resets", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: ts("expires_at").notNull(),
+  usedAt: ts("used_at"),
+  createdAt: ts("created_at").notNull().defaultNow(),
 });

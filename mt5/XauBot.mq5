@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.60"
+#property version   "3.70"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -86,9 +86,16 @@ long   gDId = 0, gDLast = -1;      // вэбээс ирсэн захиалга (
 int    gDDir = 0, gDAge = 99999;
 double gDRisk = 0.0, gDRR = 2.0;
 long   gDExit = 0;               // вэбээс ирсэн захиалгын хаах цаг (UTC unix секунд), 0 = дүрмийн өөрийнх
+// v3.70: сешн бүрийн идэвхтэй захиалга "id,dir,entry,sl,tp,ageSec,exitAt;..." (id = дүрмийн дугаар × 1e10 + лааны хаалт)
+// Session orders from the web (v3.70+): every live setup, with absolute stop and target prices.
+string gOrders = "";
+bool   gHasOrders = false;         // сервер orders талбар илгээдэг (хуучин сервер: зөвхөн dId…dExit)
+int    gOMaxAge = 1800;            // захиалга лаа хаагдсанаас хойш хэдэн секунд хүчинтэй (Telegram-тай ижил дүрэм)
+double gOSlipR = 0.3;              // үнэ орох түвшнээс эрсдэлийн энэ хэсгээс илүү target руу явсан бол орохгүй
+datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэн цаг: брокерын хариу хоцорвол давхар илгээхгүй
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 13             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр)
+#define ROBOT_VERSION 14             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -353,8 +360,9 @@ void TesterStep()
 void OnTimer()
   {
    if(IsRuleTool()) return;
+   AsianTimeExit();                                              // дүрмийн арилжаа хэрэгслээс үл хамааран өөрийн цагтаа хаагдана
    RetryClose();
-   DailyGuard();
+   if(gMode != "ASIAN") DailyGuard();                            // Азийн (setup) хэрэгсэлд шүүлтүүр, өдрийн хязгаар үйлчлэхгүй
    if(gMode == "ASIAN")
       LiveAsianStep();
    else if(gMode == "READING")
@@ -366,7 +374,8 @@ void OnTimer()
       EvaluateSignal();
       ManageRun();
      }
-   GateCheck(SignalDir());                                       // самбарт "яагаад орохгүй байна" гэдгийг үргэлж шинэчилнэ
+   if(gMode == "ASIAN") { gBlock = ""; gBlockDetail = ""; }      // сайтын дүрмийг яг тэр чигээр нь: шүүлтүүргүй
+   else GateCheck(SignalDir());                                  // самбарт "яагаад орохгүй байна" гэдгийг үргэлж шинэчилнэ
    
    // Оновчлол: Ботыг зогсоосон бөгөөд арилжаагүй сул зогсох үед 3 сек тутамд, идэвхтэй үед тогтмол sync хийнэ
    static int idleCounter = 0;
@@ -392,7 +401,8 @@ void OnTimer()
 void OnTick()
   {
    if(IsRuleTool()) { RetryClose(); DailyGuard(); RuleStep(); return; }
-   if(gMode == "ASIAN") { RetryClose(); DailyGuard(); ProtectAll(); LiveAsianStep(); return; }
+   AsianTimeExit();                                              // хэрэгсэл солигдсон ч дүрмийн арилжаа цагтаа хаагдана
+   if(gMode == "ASIAN") { RetryClose(); LiveAsianStep(); return; }   // зөвхөн сайтын дүрэм: шүүлтүүр, хамгаалалт, өдрийн хязгааргүй
    if(gMode == "READING") { RetryClose(); DailyGuard(); ProtectAll(); ReadingStep(); return; }
    if(gMode == "DAY") { RetryClose(); DailyGuard(); ProtectAll(); DayStep(); return; }
    TesterStep();
@@ -2045,7 +2055,9 @@ void AsianTimeExit()
       string cm = PositionGetString(POSITION_COMMENT);
       if(StringFind(cm, "xau-r:") == 0)
         {
-         datetime own = (datetime)StringToInteger(StringSubstr(cm, 6));   // нээхдээ хадгалсан хаах цаг
+         string rest = StringSubstr(cm, 6);
+         int colon = StringFind(rest, ":");                                // v3.70: "xau-r:<хаах цаг>:<захиалгын id>"
+         datetime own = (datetime)StringToInteger(colon > 0 ? StringSubstr(rest, 0, colon) : rest);   // нээхдээ хадгалсан хаах цаг
          if(own > 0 && TimeCurrent() >= own) trade.PositionClose(ticket);
          continue;
         }
@@ -2059,13 +2071,160 @@ void AsianTimeExit()
      }
   }
 
+// Захиалгын id: дүрмийн дугаар × 1e10 + лааны хаалтын unix секунд. Дүрэм бүр сүүлд орсон id-гаа санана.
+#define ORDER_RULE_STEP 10000000000
+string OrderGlobal(const long id) { return("xau_ord_" + IntegerToString(id / ORDER_RULE_STEP)); }
+
+bool EndsWith(const string s, const string tail)
+  {
+   int n = StringLen(s), k = StringLen(tail);
+   return(n >= k && StringSubstr(s, n - k) == tail);
+  }
+
+// Энэ захиалгаар аль хэдийн орсон уу: дүрмийн тэмдэглэл, хуучин файлын тэмдэглэл, нээлттэй арилжаа эсвэл
+// сүүлийн 3 хоногийн оролтын comment-д id байвал тийм. Хариу хоцорсон (timeout) захиалгыг давхар нээхгүй.
+bool OrderTaken(const long id)
+  {
+   string g = OrderGlobal(id);
+   if(GlobalVariableCheck(g) && (long)GlobalVariableGet(g) == id) return(true);
+   if(id / ORDER_RULE_STEP == 0 && GlobalVariableCheck("xau_asian_last") && (long)GlobalVariableGet("xau_asian_last") == id % ORDER_RULE_STEP) return(true);
+   string tag = ":" + IntegerToString(id);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(t == 0 || !IsMine(t)) continue;
+      if(EndsWith(PositionGetString(POSITION_COMMENT), tag)) return(true);
+     }
+   if(HistorySelect(TimeCurrent() - 3 * 86400, TimeCurrent() + 60))
+      for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+        {
+         ulong t = HistoryDealGetTicket(i);
+         if(t == 0) continue;
+         if(HistoryDealGetInteger(t, DEAL_MAGIC) != MagicNumber || HistoryDealGetString(t, DEAL_SYMBOL) != _Symbol) continue;
+         if(HistoryDealGetInteger(t, DEAL_ENTRY) != DEAL_ENTRY_IN) continue;
+         if(EndsWith(HistoryDealGetString(t, DEAL_COMMENT), tag)) return(true);
+        }
+   return(false);
+  }
+
+void MarkTaken(const long id)
+  {
+   GlobalVariableSet(OrderGlobal(id), (double)id);
+   if(id / ORDER_RULE_STEP == 0) { gDLast = id % ORDER_RULE_STEP; GlobalVariableSet("xau_asian_last", (double)gDLast); }
+  }
+
+// Зах зээлийн захиалга, stop ба target нь үнээр (сайтын setup-ийн өөрийн түвшин). Stops level-ээс ойр бол түүнд хүртэл холдуулна.
+bool SendMarketAt(const int dir, const double lots, const double slPrice, const double tpPrice, const string cm)
+  {
+   if(lots <= 0 || dir == 0) return(false);
+   for(int attempt = 0; attempt < 2; attempt++)
+     {
+      double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      if(ask <= 0 || bid <= 0) return(false);
+      double minD = StopsMin();
+      bool sent;
+      if(dir > 0) sent = trade.Buy(lots, _Symbol, 0.0, PriceDown(MathMin(slPrice, bid - minD)), PriceUp(MathMax(tpPrice, bid + minD)), cm);
+      else        sent = trade.Sell(lots, _Symbol, 0.0, PriceUp(MathMax(slPrice, ask + minD)), PriceDown(MathMin(tpPrice, ask - minD)), cm);
+      if(sent && TradeOk()) { gStatsAt = 0; return(true); }
+      uint rc = trade.ResultRetcode();
+      if(rc != TRADE_RETCODE_REQUOTE && rc != TRADE_RETCODE_PRICE_CHANGED && rc != TRADE_RETCODE_PRICE_OFF) break;
+     }
+   return(false);
+  }
+
+// Захиалгын хаах цаг серверийн цагаар: вэбийнх (UTC unix секунд), эс бөгөөс өнөөдрийн 20:00 UTC
+datetime OrderExitAt(const long exitUtc)
+  {
+   datetime now = TimeCurrent();
+   if(exitUtc > 0) return((datetime)(exitUtc + ServerUtcOffset(now) * 3600));
+   MqlDateTime u;
+   TimeToStruct(now - ServerUtcOffset(now) * 3600, u);
+   return(now - (u.hour * 3600 + u.min * 60 + u.sec) + 20 * 3600);
+  }
+
+// Нэг захиалгыг сайтын дүрмээр яг тэр чигээр нь авна: шүүлтүүр, хамгаалалт, өдрийн хязгааргүй; зөвхөн лот, эрсдэлийн
+// хэмжээ. Stop, target нь үнээр. Үнэ орох түвшнээс gOSlipR R-ээс илүү явсан, stop-ийг давсан бол орохгүй.
+// Буцаах: "" орсон, эс бөгөөс шалтгаан.
+string TakeOrder(const long id, const int dir, const double entry, const double sl, const double tp, const int age, const long exitUtc)
+  {
+   if(OrderTaken(id)) return(L("энэ дохиогоор орсон", "this signal was taken"));
+   if(age > gOMaxAge) return(L("дохио ", "signal older than ") + (string)(gOMaxAge / 60) + L(" минутаас хуучин", " minutes"));
+   double risk = MathAbs(entry - sl);
+   if(risk <= 0 || dir == 0) return(L("захиалгын түвшин буруу", "bad order levels"));
+   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   if(ask <= 0 || bid <= 0) return(L("үнэ алга", "no price"));
+   if(dir > 0 ? bid <= sl : ask >= sl) return(L("үнэ stop-ийг давсан", "price is past the stop"));
+   double ran = dir * ((dir > 0 ? ask : bid) - entry) / risk;
+   if(ran > gOSlipR) return(L("үнэ орох түвшнээс ", "price already ran ") + Num(ran, 2) + L("R явчихсан", "R past the entry"));
+   double slD = (dir > 0) ? ask - sl : sl - bid, tpD = (dir > 0) ? tp - ask : bid - tp;
+   if(slD <= StopsMin() || tpD <= StopsMin()) return(L("stop эсвэл target хэт ойр", "stop or target too close"));
+   datetime exitAt = OrderExitAt(exitUtc);
+   if(TimeCurrent() >= exitAt) return(L("хаах цаг өнгөрсөн", "past the closing time"));
+   double lots = RuleLots(), s1 = slD, t1 = tpD;
+   if(!SizeTrade(s1, t1, lots, false) || lots <= 0) return(L("хэмжээ: ", "size: ") + GateText(gBlock));
+   if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return(L("өмнөх захиалгын хариуг хүлээж байна", "waiting for the last order's reply"));
+   gOrderTryAt = TimeCurrent();
+   // Хаах цаг ба захиалгын id comment-д: дахин ачаалсан ч хаах цагаа мэдэж, нэг захиалгаар хоёр удаа орохгүй
+   if(!SendMarketAt(dir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt) + ":" + IntegerToString(id)))
+      return(L("захиалга амжилтгүй: ", "order failed: ") + trade.ResultRetcodeDescription());
+   MarkTaken(id);
+   Print(L("XauBot: setup-ийн захиалга — ", "XauBot: setup order — "), (dir > 0 ? "BUY" : "SELL"), L(" лот ", " lots "), Num(lots, 2), " SL ", Num(sl, 2), " TP ", Num(tp, 2), " id ", IntegerToString(id));
+   return("");
+  }
+
+// Шинэ оролт хийх боломжгүй шалтгаан (бүх захиалгад нэг), "" = боломжтой
+string EntryBlockedWhy()
+  {
+   if(gState != "RUNNING") return(L("зогссон", "stopped"));
+   if(CountPositions() >= 3) return(L("3 арилжаа нээлттэй байна", "three trades already open"));   // сешн бүрт нэг: Ази, NY нээлт, NY хоёр дахь цаг
+   if(RealBlocked()) return(L("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"));
+   if(TimeLocal() - gLastSyncOk > 30) return(L("вэбтэй холбоо тасарсан", "the web connection was lost"));
+   if(!TradingAllowed()) return(L("Algo Trading унтраалттай эсвэл брокер арилжаа хаасан", "Algo Trading is off or the broker has closed trading"));
+   if(RuleLots() <= 0 && gRiskMode == 0) return(L("лот брокерын доод хэмжээнээс бага", "lots are below the broker's minimum"));
+   if(SpreadPoints() > MaxSpreadPoints) return(L("spread хэт өргөн", "spread too wide"));
+   return("");
+  }
+
 void LiveAsianStep()
   {
-   // Сайтын Setup хуудас, Telegram дохиотой яг ижил дүрэм: вэб breakout-ыг шийдэж (тренд, мэдээ, хүрээ),
-   // dId/dDir/dRisk/dRR-ээр илгээнэ. Робот зөвхөн захиалгыг тавьж, 20:00 UTC-д хаана.
-   AsianTimeExit();
+   // Сайтын Setup хуудас, Telegram дохиотой яг ижил дүрэм: вэб breakout-ыг шийдэж (тренд, мэдээ, хүрээ), сешн бүрийн
+   // идэвхтэй setup-ийг үнийн түвшинтэй нь илгээнэ. Робот зөвхөн захиалгыг тавьж, setup-ийн хаах цагт хаана.
    if(gDLast < 0) gDLast = GlobalVariableCheck("xau_asian_last") ? (long)GlobalVariableGet("xau_asian_last") : 0;
    if(WeekendQuiet()) { gSignal = "NONE"; gReason = L("Амралтын өдөр, зах хаалттай", "Weekend, market closed"); return; }
+   if(!gHasOrders) { LegacyAsianStep(); return; }
+   if(gOrders == "")
+     {
+      gSignal = "NONE";
+      gReason = L("Сайтын setup дохиог хүлээж байна (Ази, Нью-Йорк · Setup хуудас)", "Waiting for the site's setup signal (Asia, New York · Setup page)");
+      return;
+     }
+   string list[];
+   int n = StringSplit(gOrders, ';', list);
+   gSignal = "NONE";
+   gReason = "";
+   string blocked = EntryBlockedWhy();
+   for(int i = 0; i < n; i++)
+     {
+      string f[];
+      if(StringSplit(list[i], ',', f) < 7) continue;
+      long id = StringToInteger(f[0]);
+      int dir = (int)StringToInteger(f[1]);
+      double entry = StringToDouble(f[2]), sl = StringToDouble(f[3]), tp = StringToDouble(f[4]);
+      int age = (int)StringToInteger(f[5]);
+      long exitUtc = StringToInteger(f[6]);
+      if(id <= 0 || dir == 0) continue;
+      string side = (dir > 0) ? "BUY" : "SELL";
+      if(gSignal == "NONE") gSignal = side;
+      string why = (blocked != "") ? blocked : TakeOrder(id, dir, entry, sl, tp, age, exitUtc);
+      if(blocked == "" && why == "") blocked = EntryBlockedWhy();             // орсны дараа нээлттэй арилжааны тоо өөрчлөгдөнө
+      gReason += (gReason == "" ? "" : " | ") + L("Setup: ", "Setup: ") + side + " " + Num(entry, 2) + " SL " + Num(sl, 2) + " TP " + Num(tp, 2) + " · " + (why == "" ? L("орлоо", "entered") : why);
+     }
+   if(gReason == "") gReason = L("Сайтын setup дохиог хүлээж байна", "Waiting for the site's setup signal");
+  }
+
+// Хуучин сервер (orders талбаргүй): нэг захиалга, stop/target зайгаар. Шүүлтүүргүй, зөвхөн лот, эрсдэлийн хэмжээ.
+void LegacyAsianStep()
+  {
    if(gDId <= 0 || gDDir == 0)
      {
       gSignal = "NONE";
@@ -2076,26 +2235,20 @@ void LiveAsianStep()
    gReason = L("Setup: ", "Setup: ") + gSignal + ", stop $" + Num(gDRisk, 2) + ", RR " + Num(gDRR, 1);
    if(gDId == gDLast) { gReason += L(" · энэ дохиогоор орсон", " · this signal was taken"); return; }
    if(gDAge > 900) { gReason += L(" · дохио 15 минутаас хуучин, орохгүй", " · signal older than 15 minutes, no entry"); return; }
-   if(gState != "RUNNING") return;
-   if(CountPositions() >= 3) { gReason += L(" · 3 арилжаа нээлттэй байна", " · three trades already open"); return; }   // сешн бүрт нэг: Ази, NY нээлт, NY хоёр дахь цаг
-   if(RealBlocked()) { gReason = L("Жинхэнэ данс зөвшөөрөгдөөгүй", "Real account not allowed"); return; }
-   if(TimeLocal() - gLastSyncOk > 30) { gReason = L("Вэбтэй холбоо тасарсан тул орсонгүй", "No entry: the web connection was lost"); return; }
-   if(!TradingAllowed()) { gReason = L("Algo Trading унтраалттай эсвэл брокер арилжаа хаасан тул орсонгүй", "No entry: Algo Trading is off or the broker has closed trading"); return; }
-   if(RuleLots() <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
+   string blocked = EntryBlockedWhy();
+   if(blocked != "") { gReason += " · " + blocked; return; }
    if(gDRisk <= StopsMin()) { gReason += L(" · stop хэт ойр тул орсонгүй", " · no entry: the stop would be too close"); return; }
-   if(!GateCheck(gDDir)) { gReason += L(" · шүүлтүүр хаасан: ", " · blocked by the filter: ") + GateText(gBlock); return; }
-   datetime now = TimeCurrent();
-   MqlDateTime u;
-   TimeToStruct(now - ServerUtcOffset(now) * 3600, u);
-   datetime exitAt = now - (u.hour * 3600 + u.min * 60 + u.sec) + 20 * 3600;   // өнөөдрийн 20:00 UTC, серверийн цагаар
-   if(gDExit > 0) exitAt = (datetime)(gDExit + ServerUtcOffset(now) * 3600);   // вэбийн setup-ийн өөрийн хаах цаг
-   if(now >= exitAt) { gReason += L(" · хаах цаг өнгөрсөн", " · past the closing time"); return; }
-   if(RuleOpen(gDDir, gDRisk, gDRisk * gDRR, exitAt))
+   datetime exitAt = OrderExitAt(gDExit);
+   if(TimeCurrent() >= exitAt) { gReason += L(" · хаах цаг өнгөрсөн", " · past the closing time"); return; }
+   double lots = RuleLots(), sl = gDRisk, tp = gDRisk * gDRR;
+   if(!SizeTrade(sl, tp, lots, false) || lots <= 0) { gReason += L(" · хэмжээ: ", " · size: ") + GateText(gBlock); return; }
+   if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return;
+   gOrderTryAt = TimeCurrent();
+   if(SendMarket(gDDir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt) + ":" + IntegerToString(gDId)))
      {
       gDLast = gDId;
       GlobalVariableSet("xau_asian_last", (double)gDId);
       gReason += L(" · орлоо", " · entered");
-      Print(L("XauBot: Азийн breakout — ", "XauBot: Asian breakout — "), gSignal, L(" лот ", " lots "), Num(RuleLots(), 2), ", stop $", Num(gDRisk, 2), ", RR ", Num(gDRR, 1));
      }
    else
       gReason += L(" · захиалга амжилтгүй: ", " · order failed: ") + trade.ResultRetcodeDescription();
@@ -2404,6 +2557,10 @@ void Sync()
    gDRR   = (JNum(body, "dRR") > 0) ? JNum(body, "dRR") : 2.0;
    gDAge  = (JRaw(body, "dAge") != "") ? (int)JNum(body, "dAge") : 99999;
    gDExit = (JRaw(body, "dExit") != "") ? (long)JNum(body, "dExit") : 0;
+   gHasOrders = (JRaw(body, "orders") != "");                    // вэб v3.70+: сешн бүрийн захиалга, SL/TP үнээр
+   gOrders    = JStr(body, "orders");
+   if(JRaw(body, "oMaxAge") != "") gOMaxAge = (int)MathMax(60.0, JNum(body, "oMaxAge"));
+   if(JRaw(body, "oSlipR") != "")  gOSlipR  = MathMax(0.0, JNum(body, "oSlipR"));
    if(newMode != gMode) { gRuleLastBar = 0; gReadLastBar = 0; }
    gMode       = newMode;
 

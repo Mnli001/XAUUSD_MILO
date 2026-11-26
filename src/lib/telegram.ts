@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt, ne } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, ne, or } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { User } from "./db/schema";
 import { translator, type T } from "./i18n";
@@ -12,6 +12,7 @@ import { getTodaySnapshot } from "./snapshot";
 import { SYMBOL } from "./ingest/prices";
 import { biasLabelText } from "./analysis/bias";
 import { eventTitle } from "./data/calendarProvider";
+import { LIMITS, hit } from "./rateLimit";
 
 const token = () => process.env.TELEGRAM_BOT_TOKEN ?? "";
 export const telegramConfigured = () => token().length > 0;
@@ -164,8 +165,8 @@ export async function botUsername(): Promise<string | null> {
 }
 
 const COMMANDS = {
-  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["help", "Тусламж"]],
-  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["help", "Help"]],
+  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["reset", "Сайтын нууц үг сэргээх"], ["help", "Тусламж"]],
+  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["reset", "Reset your site password"], ["help", "Help"]],
 } as const;
 
 /** Points Telegram at this site and lists the bot's commands. Safe to call every time someone starts linking. */
@@ -186,7 +187,7 @@ export async function newLinkCode(userId: string, now = new Date()): Promise<str
 }
 
 export async function unlinkTelegram(userId: string): Promise<void> {
-  await db.update(schema.users).set({ telegramChatId: null, telegramLinkCode: null, telegramLinkExpiresAt: null, telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null }).where(eq(schema.users.id, userId));
+  await db.update(schema.users).set({ telegramChatId: null, telegramLinkCode: null, telegramLinkExpiresAt: null, telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null }).where(eq(schema.users.id, userId));
 }
 
 const HOW_TO_LINK = {
@@ -210,6 +211,7 @@ function helpText(u: User, t: T): string {
     t("/status — одоогийн чиглэл, дараагийн чухал мэдээ", "/status — current bias and the next important release"),
     t("/stop — дохиог түр зогсоох", "/stop — pause signals"),
     t("/resume — дохиог дахин асаах", "/resume — turn signals back on"),
+    t("/reset — сайтын нууц үгээ мартсан бол шинэчлэх холбоос", "/reset — a link to set a new site password if you forgot it"),
     "",
     u.signalsPaused ? t("Дохио одоо түр зогссон байна.", "Signals are paused right now.") : t("Setup идэвхжих бүрд дохио энд ирнэ.", "A signal arrives here each time a setup becomes active."),
   ].join("\n");
@@ -280,11 +282,15 @@ async function linkChat(chat: string, code: string, now: Date): Promise<void> {
 export const PENDING_TTL_MS = 30 * 60 * 1000;
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
-/** How the chat calls itself, so the account's owner can tell whether the request is theirs. */
-function senderName(from: Sender | undefined): string {
-  const name = [from?.first_name, from?.last_name].filter(Boolean).join(" ").trim();
-  const handle = from?.username ? `@${from.username}` : "";
-  return ([name, handle].filter(Boolean).join(" · ") || "Telegram").slice(0, 80);
+/** The display name the chat chose (free text: anyone can call themselves anything, so it is never shown alone). */
+function senderName(from: Sender | undefined): string | null {
+  const name = [from?.first_name, from?.last_name].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  return name ? name.slice(0, 64) : null;
+}
+
+/** The chat's @username as Telegram reports it; Telegram enforces the format and uniqueness. */
+function senderUsername(from: Sender | undefined): string | null {
+  return from?.username && /^[A-Za-z0-9_]{4,32}$/.test(from.username) ? from.username : null;
 }
 
 /**
@@ -292,11 +298,25 @@ function senderName(from: Sender | undefined): string {
  * the chat is linked only when its owner says yes there. The chat is told the same thing either way,
  * so the bot cannot be used to find out which addresses are registered, and knowing somebody's
  * address is not enough to receive their signals.
+ *
+ * A request still open for the account is never replaced by another chat's (first come, first shown, until it
+ * lapses or the owner answers), so an attacker cannot swap their chat in after the owner's; and each chat may
+ * ask only a few times an hour.
  */
 async function requestLinkByEmail(chat: string, email: string, from: Sender | undefined, now: Date): Promise<void> {
-  await db.update(schema.users)
-    .set({ telegramPendingChatId: chat, telegramPendingName: senderName(from), telegramPendingExpiresAt: new Date(now.getTime() + PENDING_TTL_MS) })
-    .where(eq(schema.users.email, email.trim().toLowerCase()));
+  if (!(await hit("tg-link", chat, LIMITS.telegramLink, now))) {
+    console.warn("[telegram] email link requests rate limited for a chat");
+    await sendMessage(chat, esc("Хэт олон хүсэлт илгээлээ. Нэг цагийн дараа дахин оролдоно уу.\n\nToo many requests. Try again in an hour.")); // i18n-ok: sent in both languages, the chat's owner is not known yet
+    return;
+  }
+  const u = schema.users;
+  await db.update(u)
+    .set({ telegramPendingChatId: chat, telegramPendingName: senderName(from), telegramPendingUsername: senderUsername(from), telegramPendingExpiresAt: new Date(now.getTime() + PENDING_TTL_MS) })
+    .where(and(
+      eq(u.email, email.trim().toLowerCase()),
+      isNull(u.telegramChatId), // an account already linked is not offered another chat
+      or(isNull(u.telegramPendingChatId), isNull(u.telegramPendingExpiresAt), lte(u.telegramPendingExpiresAt, now), eq(u.telegramPendingChatId, chat)),
+    ));
   const base = siteUrl();
   const link = (label: string) => (base ? `\n<a href="${esc(`${base}/settings`)}">${esc(label)}</a>` : "");
   await sendMessage(chat, [
@@ -305,13 +325,24 @@ async function requestLinkByEmail(chat: string, email: string, from: Sender | un
   ].join("\n\n"));
 }
 
+export type PendingTelegram = {
+  /** What to show beside the yes/no: the Telegram-verified @username and numeric chat id first, then the free-text name in quotes. */
+  name: string;
+  displayName: string | null;
+  username: string | null;
+  chatId: string;
+};
+
 /** The link request waiting for this user's yes or no, or null when there is none (or it has lapsed). */
-export function pendingTelegram(u: Pick<User, "telegramPendingChatId" | "telegramPendingName" | "telegramPendingExpiresAt">, now: Date): { name: string } | null {
+export function pendingTelegram(u: Pick<User, "telegramPendingChatId" | "telegramPendingName" | "telegramPendingExpiresAt"> & Partial<Pick<User, "telegramPendingUsername">>, now: Date): PendingTelegram | null {
   if (!u.telegramPendingChatId || !u.telegramPendingExpiresAt || u.telegramPendingExpiresAt.getTime() <= now.getTime()) return null;
-  return { name: u.telegramPendingName || "Telegram" };
+  const username = u.telegramPendingUsername ?? null;
+  const displayName = u.telegramPendingName || null;
+  const verified = [username ? `@${username}` : null, `ID ${u.telegramPendingChatId}`].filter(Boolean).join(" · "); // i18n-ok: handle and number, the same in both languages
+  return { name: displayName ? `${verified} — “${displayName}”` : verified, displayName, username, chatId: u.telegramPendingChatId };
 }
 
-const clearPending = { telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null };
+const clearPending = { telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null };
 
 /** The account's owner said yes on the site: the waiting chat becomes theirs. False when nothing was waiting. */
 export async function confirmPendingTelegram(userId: string, now = new Date()): Promise<boolean> {
@@ -352,6 +383,31 @@ export async function rejectPendingTelegram(userId: string): Promise<void> {
 }
 
 /**
+ * /reset from the chat linked to an account: a one-time link (30 minutes) to set a new site password.
+ * Only the linked chat can ask, a few times an hour.
+ */
+async function sendResetLink(chat: string, u: User, now: Date, t: T): Promise<void> {
+  if (!(await hit("tg-reset", chat, LIMITS.telegramReset, now))) {
+    await sendMessage(chat, esc(t("Хэт олон хүсэлт илгээлээ. Нэг цагийн дараа дахин оролдоно уу.", "Too many requests. Try again in an hour.")));
+    return;
+  }
+  const base = siteUrl();
+  if (!base) {
+    await sendMessage(chat, esc(t("Сайтын хаяг тохируулагдаагүй тул холбоос илгээх боломжгүй. Админтай холбогдоно уу.", "The site address is not set, so no link can be sent. Contact the admin.")));
+    return;
+  }
+  const { createResetToken } = await import("./passwordReset");
+  const token = await createResetToken(u.id, now);
+  console.warn(`[telegram] password reset link sent for user ${u.id}`);
+  await sendMessage(chat, [
+    esc(t("Сайтын нууц үгээ шинэчлэх холбоос (30 минут хүчинтэй, нэг удаа ажиллана):", "A link to set a new site password (valid for 30 minutes, works once):")),
+    `<a href="${esc(`${base}/reset/${token}`)}">${esc(t("Нууц үг шинэчлэх", "Set a new password"))}</a>`,
+    "",
+    esc(t("Та өөрөө хүсээгүй бол энэ мессежийг үл тоомсорлоно уу, хэнд ч бүү дамжуул.", "If you did not ask for this, ignore it, and do not forward it to anyone.")),
+  ].join("\n"));
+}
+
+/**
  * One update from Telegram. "/start <code>" links the chat to the user holding that code; an email
  * address from an unlinked chat asks that account's owner to confirm on the site; a linked chat can also ask for /status, /stop, /resume and /help. Group chats are ignored.
  */
@@ -371,6 +427,10 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
   if (code) return linkChat(chat, code, now);
 
   const [u] = await db.select().from(schema.users).where(eq(schema.users.telegramChatId, chat)).limit(1);
+  if (!u && COMMAND.exec(text)?.[1]?.toLowerCase() === "reset") {
+    await sendMessage(chat, esc("Нууц үг сэргээх холбоосыг зөвхөн бүртгэлтэйгээ холбогдсон чат авна. Холбоогүй бол админтай холбогдоно уу.\n\nA password reset link is only sent to a chat already linked to the account. If yours is not linked, contact the admin.")); // i18n-ok: sent in both languages, the chat's owner is not known yet
+    return;
+  }
   if (!u) {
     if (EMAIL.test(text) && text.length <= 200) return requestLinkByEmail(chat, text, update.message?.from, now);
     // Nobody is known for this chat yet, so the hint goes out in both languages.
@@ -398,6 +458,8 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
   } else if (command === "stop" || command === "pause") {
     await db.update(schema.users).set({ signalsPaused: true }).where(eq(schema.users.id, u.id));
     await sendMessage(chat, esc(t("Дохиог түр зогсоолоо. Telegram холбоотой хэвээр. Дахин асаах бол /resume.", "Signals paused. Telegram stays linked. Send /resume to turn them back on.")));
+  } else if (command === "reset") {
+    await sendResetLink(chat, u, now, t);
   } else if (command === "resume") {
     await db.update(schema.users).set({ signalsPaused: false }).where(eq(schema.users.id, u.id));
     await sendMessage(chat, esc(t("Дохиог дахин асаалаа.", "Signals are back on.")));

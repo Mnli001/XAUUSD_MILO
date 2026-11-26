@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { hasAccess } from "./access";
 import { wantsSignal } from "./account";
@@ -25,6 +25,16 @@ export function marketOpen(now: Date): boolean {
   return true;
 }
 
+/**
+ * The first hour after the weekly reopen, when no new candle yet is normal: the market reopens Sunday 22:00 UTC in
+ * the northern summer and 23:00 UTC in winter, and the first bars can take a while to arrive. Counted from 22:00, so
+ * the quiet window runs to Monday 00:00 UTC, which covers the winter open plus an hour.
+ */
+export function justReopened(now: Date): boolean {
+  const d = now.getUTCDay(), h = now.getUTCHours();
+  return d === 0 && h >= 22;
+}
+
 async function getState(key: string): Promise<string | null> {
   const [row] = await db.select().from(schema.appState).where(eq(schema.appState.key, key)).limit(1);
   return row?.value ?? null;
@@ -42,7 +52,7 @@ const admins = () => db.select().from(schema.users).where(and(eq(schema.users.ro
 export async function watchFeed(now: Date, send: (chat: string, html: string) => Promise<boolean> = deliver): Promise<"late" | "back" | null> {
   const [last] = await loadCandles(SYMBOL, "15min", 1);
   const lateBy = last ? now.getTime() - (last.time.getTime() + M15) : Infinity;
-  const late = marketOpen(now) && lateBy > FEED_LATE_MS;
+  const late = marketOpen(now) && !justReopened(now) && lateBy > FEED_LATE_MS;
   const raised = await getState("feed_alert");
   if (late && !raised) {
     if (!(await claim("feed_alert", now.toISOString(), now))) return null;
@@ -96,7 +106,8 @@ export async function sendWeeklyReport(now: Date, send: (chat: string, html: str
   const key = `weekly:${isoWeek(now)}`;
   if (await getState(key)) return 0;
   if (!(await claim(key, now.toISOString(), now))) return 0;
-  const all = await db.select().from(schema.signals).orderBy(asc(schema.signals.createdAt));
+  // Only signals that went out: one recorded but never sent (NOT_SENT) is no part of anyone's results.
+  const all = await db.select().from(schema.signals).where(gte(schema.signals.sentTo, 0)).orderBy(asc(schema.signals.createdAt));
   if (all.length === 0) return 0;
   const bars = await loadCandles(SYMBOL, "15min", Math.min(40_000, Math.ceil((now.getTime() - all[0].createdAt.getTime()) / M15) + 8));
   const outcomes = all.map((s) => ({ s, o: signalOutcome(s, bars, now) }));

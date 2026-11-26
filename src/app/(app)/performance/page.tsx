@@ -15,7 +15,7 @@ import type { T } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Гүйцэтгэл — XAU Analytics", "Performance — XAU Analytics") };
+  return { title: t("Гүйцэтгэл", "Performance") };
 }
 
 type Row = { key: string; label: string; count: number; pnl: number; color?: string };
@@ -112,9 +112,9 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
       <Figures label={t("Гол үзүүлэлт", "Key figures")} items={[
         { label: t("Нийт P&L", "Total P&L"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl)}</>, tone: tone(p.totalPnl), hint: <TermHint id="pnl" />,
           note: t("Роботын хаасан бүх арилжааны нийт ашиг, алдагдал", "Every trade the robot closed, profit and loss added up") },
-        { label: "Win rate", value: `${p.winRate!.toFixed(1)}%`, hint: <TermHint id="win-rate" />,
+        { label: t("Ашигтай хаагдсан хувь (Win rate)", "Win rate"), value: `${p.winRate!.toFixed(1)}%`, hint: <TermHint id="win-rate" />,
           note: t("Ашигтай хаагдсан арилжааны хувь", "Share of trades closed in profit") },
-        { label: "Profit factor", value: p.profitFactor === null ? "—" : p.profitFactor.toFixed(2), hint: <TermHint id="profit-factor" />,
+        { label: t("Ашиг ÷ алдагдал (Profit factor)", "Profit factor"), value: p.profitFactor === null ? "—" : p.profitFactor.toFixed(2), hint: <TermHint id="profit-factor" />,
           note: profitFactorNote(p.profitFactor, t) },
         { label: t("Арилжаа тутмын дундаж", "Average per trade"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl / p.count)}</>, tone: tone(p.totalPnl),
           note: t("Нийт P&L-ийг арилжааны тоонд хуваасан", "Total P&L divided by the number of trades") },

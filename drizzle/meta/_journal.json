@@ -127,6 +127,13 @@
       "when": 1795703027872,
       "tag": "0017_referrals",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795710537330,
+      "tag": "0018_security_hardening",
+      "breakpoints": true
     }
   ]
 }

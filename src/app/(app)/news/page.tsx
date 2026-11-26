@@ -6,7 +6,7 @@ import { getT, getViewer } from "@/lib/prefs.server";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Мэдээ — XAU Analytics", "News — XAU Analytics") };
+  return { title: t("Мэдээ", "News") };
 }
 
 export default async function NewsPage() {

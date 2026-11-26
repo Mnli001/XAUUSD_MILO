@@ -1,11 +1,21 @@
 import { cache } from "react";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { redirect, notFound } from "next/navigation";
 import { hasAccess } from "./access";
-import { findUserById, verifyCredentials } from "./users";
+import { userForSession } from "./users";
+import { authorizeCredentials } from "./credentials";
 import type { User } from "./db/schema";
 import { unstable_rethrow } from "next/navigation";
+
+declare module "next-auth" {
+  interface Session { sv?: number }
+}
+
+/** Thrown from authorize when an IP or an email has had too many attempts; loginAction tells the visitor to wait. */
+export class TooManyAttempts extends CredentialsSignin {
+  code = "rate_limited";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -14,20 +24,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
-      async authorize(c) {
-        if (typeof c?.email !== "string" || typeof c?.password !== "string") return null;
-        const u = await verifyCredentials(c.email, c.password);
-        return u ? { id: u.id, email: u.email, name: u.name } : null;
+      async authorize(c, request) {
+        const r = await authorizeCredentials(c, request?.headers ?? null);
+        if (r === "limited") throw new TooManyAttempts();
+        return r;
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user?.id) token.sub = user.id;
+      if (user?.id) {
+        token.sub = user.id;
+        // the account's session_version at sign-in; a password change or reset bumps it and this token stops working
+        token.sv = (user as { sv?: number }).sv ?? 0;
+      }
       return token;
     },
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;
+      session.sv = typeof token.sv === "number" ? token.sv : 0;
       return session;
     },
   },
@@ -38,7 +53,8 @@ export const getSessionUser = cache(async (): Promise<User | null> => {
   try {
     const session = await auth();
     const id = session?.user?.id;
-    return id ? await findUserById(id) : null;
+    // a token minted before the last password change or reset is refused
+    return id ? await userForSession(id, session?.sv) : null;
   } catch (e) {
     unstable_rethrow(e); // Next.js signals (dynamic rendering, redirects) are not failures and must pass through
     // Shown to the visitor as signed out, but a database or session failure must still be visible in the logs.

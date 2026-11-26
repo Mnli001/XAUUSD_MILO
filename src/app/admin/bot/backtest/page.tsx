@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { runBacktestFromDb, paramsFromQuery } from "@/lib/bot/run";
 import { EquityCurve } from "@/components/EquityCurve";
 import { Figures, Pnl, SidePill, Station, BackLink, signedUsd, toneOf, Dir } from "@/components/Timetable";
@@ -27,6 +28,7 @@ const fieldsOf = (t: T): [string, string, string][] => ([
 ]);
 
 export default async function BotPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const v = await getViewer();
   const { t } = v;
   const VERDICT = verdictOf(t), REASON = reasonOf(t), FIELDS = fieldsOf(t);

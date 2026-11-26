@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
-import { findUserById } from "./users";
+import { findUserById, setPassword } from "./users";
 import { ubLocalToUtc } from "./time";
 import { EVENT_TYPES } from "./data/calendarProvider";
 import { mnT, type T } from "./i18n";
@@ -67,12 +68,34 @@ export async function deleteEvent(adminId: string, id: string): Promise<void> {
   await db.delete(schema.economicEvents).where(eq(schema.economicEvents.id, id));
 }
 
+/** The signed-in user's own password change. Every other session of the account is signed out (session_version bump). */
 export async function changePassword(userId: string, current: string, next: string, t: T = mnT): Promise<{ error?: string }> {
   const u = await findUserById(userId);
   if (!u || !(await bcrypt.compare(current, u.passwordHash))) return { error: t("Одоогийн нууц үг буруу байна", "Current password is wrong") };
   if (next.length < 8 || next.length > 200) return { error: t("Шинэ нууц үг 8-аас дээш тэмдэгттэй байх ёстой", "New password must be 8 characters or more") };
-  await db.update(schema.users).set({ passwordHash: await bcrypt.hash(next, 10) }).where(eq(schema.users.id, userId));
+  await setPassword(userId, next);
   return {};
+}
+
+/** A temporary password an admin can read out to a user: 14 characters, no look-alikes (0/O, 1/l/I). */
+export function temporaryPassword(): string {
+  const alphabet = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({ length: 14 }, () => alphabet[randomInt(alphabet.length)]).join("");
+}
+
+/**
+ * Admin-assisted password reset (there is no email): sets a fresh temporary password on an ordinary account,
+ * signs out all its sessions, and returns the password once for the admin to pass on. Admin accounts are refused.
+ */
+export async function adminResetPassword(adminId: string, userId: string, t: T = mnT): Promise<{ error?: string; password?: string; email?: string }> {
+  await assertAdmin(adminId);
+  const u = await findUserById(userId);
+  if (!u) return { error: t("Хэрэглэгч олдсонгүй", "User not found") };
+  if (u.role === "ADMIN") return { error: t("Админы нууц үгийг энд солих боломжгүй", "An admin's password cannot be reset here") };
+  const password = temporaryPassword();
+  await setPassword(u.id, password);
+  console.warn(`[admin] ${adminId} reset the password of user ${u.id}`);
+  return { password, email: u.email };
 }
 
 export async function changeName(userId: string, name: string, t: T = mnT): Promise<{ error?: string }> {

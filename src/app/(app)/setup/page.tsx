@@ -26,9 +26,17 @@ import { weekdayName, zoneWeekday } from "@/lib/time";
 import { signalHistory } from "@/lib/signalHistory";
 import { outcomeTotals } from "@/lib/signalOutcome";
 import { BROKER_RECORD } from "@/lib/setup/build";
+import { ruleOf } from "@/lib/setup/sessionRules";
+import { SIGNAL_WINDOW, rangeLabel, recordSentence, recordTitle, signalWindowLabel, stamp, type BrokerRecord } from "@/lib/siteCopy";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Setup — XAU Analytics" };
+export async function generateMetadata() {
+  const t = (await getViewer()).t;
+  return { title: t("Setup дохио", "Setup") };
+}
+
+/** The legend for a setup's shaded range on its chart: that setup's own hours, not always Asia's. */
+const bandText = (s: Setup, v: Viewer) => { const rule = ruleOf(s.id); return rule ? rangeLabel(rule, v) : v.t("Хүрээ", "Range"); };
 
 /** The one line on top: what the system is doing now, what it waits for, and when the next step comes. */
 function NowCard({ w, t }: { w: NowWindow; t: T }) {
@@ -180,7 +188,7 @@ function SetupLocked({ s, candles, v }: { s: Setup; candles: { time: string; ope
         </div>
         <div className="min-w-0">
           <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-4">
-            <SetupChart candles={candles} side={null} entry={null} stop={null} target={null} band={null} v={v} />
+            <SetupChart candles={candles} side={null} entry={null} stop={null} target={null} band={null} bandLabel={bandText(s, v)} v={v} />
           </div>
         </div>
       </div>
@@ -207,7 +215,7 @@ export default async function SetupPage() {
   const now = new Date();
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [view, next, reasoning, live] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null), paid ? signalHistory(now, 40) : Promise.resolve([])]);
+  const [view, next, reasoning, live] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null), paid ? signalHistory(now, SIGNAL_WINDOW) : Promise.resolve([])]);
   const liveTotals = outcomeTotals(live.map((r) => r.outcome));
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
 
@@ -299,7 +307,7 @@ export default async function SetupPage() {
 
               <div className="min-w-0 lg:col-span-2">
                 <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-3 sm:p-4">
-                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} status={s.status} at={s.at ? s.at.toISOString() : null} v={v} />
+                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} bandLabel={bandText(s, v)} status={s.status} at={s.at ? s.at.toISOString() : null} v={v} />
                 </div>
               </div>
 
@@ -348,8 +356,8 @@ export default async function SetupPage() {
                 <Record t={t} title={view.historyFrom ? t(`${v.date(view.historyFrom).slice(0, 7)} → өнөөдөр`, `${v.date(view.historyFrom).slice(0, 7)} → today`) : t("Хадгалсан бүх дата", "All stored data")} h={s.history} />
               </div>
               {s.id === "asian-breakout" && <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
-                <Record t={t} title={t(`Брокерын 7 жил (${BROKER_RECORD.from} →)`, `Broker data, 7 years (${BROKER_RECORD.from} →)`)} h={BROKER_RECORD} />
-                <p className="mt-2 text-xs text-zinc-500">{t(`MT5 Strategy Tester, ${BROKER_RECORD.source}, ${BROKER_RECORD.checkedOn}-нд шалгасан.`, `MT5 Strategy Tester, ${BROKER_RECORD.source}, checked ${BROKER_RECORD.checkedOn}.`)}</p>
+                <Record t={t} title={recordTitle(BROKER_RECORD as BrokerRecord, t)} h={BROKER_RECORD} />
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">{recordSentence(BROKER_RECORD as BrokerRecord, t)}</p>
               </div>}
             </div>
 
@@ -371,7 +379,7 @@ export default async function SetupPage() {
 
       <section className="card" aria-labelledby="live-h">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="live-h" className="card-title">{t("Бодит дохионы үр дүн", "Live signal results")}</h2>
+          <h2 id="live-h" className="card-title">{t("Бодит дохионы үр дүн", "Live signal results")}{paid && <span className="ml-2 text-sm font-normal text-zinc-500">({signalWindowLabel(t).toLowerCase()})</span>}</h2>
           <Link href="/bot/history" className="text-sm font-medium text-amber-300 hover:text-amber-200">{t("Бүх түүх →", "Full history →")}</Link>
         </div>
         {!paid ? <p className="mt-2 text-sm text-zinc-400">{t("Бодит дохионууд, тэдгээрийн үр дүн багцтай хэрэглэгчдэд.", "Live signals and how they ended come with a plan.")}</p>
@@ -389,7 +397,7 @@ export default async function SetupPage() {
                 const word = o.kind === "WIN" ? "TP" : o.kind === "LOSS" ? "SL" : o.kind === "TIME" ? t("Цагаар", "On time") : t("Нээлттэй", "Open");
                 return (
                   <li key={r.id} className="flex items-center gap-3 py-2 tabular-nums">
-                    <span className="w-24 shrink-0 text-zinc-400">{v.dateTime(r.createdAt).slice(5)}</span>
+                    <span className="w-24 shrink-0 text-zinc-400">{stamp(v, r.createdAt, now)}</span>
                     <span className={`w-12 shrink-0 font-semibold ${r.side === "BUY" ? "text-emerald-400" : "text-red-400"}`}>{r.side}</span>
                     <span className="hidden text-zinc-300 sm:inline">{px(r.entry)}</span>
                     <span className={`ml-auto font-bold ${tone}`}>{word}{o.r !== null ? ` ${o.r > 0 ? "+" : ""}${o.r.toFixed(2)}R` : ""}</span>
@@ -401,7 +409,7 @@ export default async function SetupPage() {
         )}
       </section>
 
-      <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
+      <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} paid={paid} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
 
       {(() => {
         // Prefilled from the setup that is live now (paid users only: its levels are what a plan pays for).

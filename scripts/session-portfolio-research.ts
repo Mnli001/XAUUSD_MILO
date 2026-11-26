@@ -7,7 +7,7 @@
  */
 import { load } from "./broker-data";
 import { alignClosed } from "../src/lib/bot/backtest";
-import { atrSeries, type Candle } from "../src/lib/analysis/indicators";
+import { atrSeries } from "../src/lib/analysis/indicators";
 import { scoreSeries } from "../src/lib/bot/strategy";
 
 const M15 = 15 * 6e4, H = 36e5, SPREAD = 0.3, CUT = Date.UTC(2023, 0, 1);

@@ -45,6 +45,20 @@ test("the totals count wins, losses, open signals and the sum in R", () => {
   expect(screen.getByText(/1 нээлттэй/)).toBeInTheDocument();
 });
 
+test("the side column has a name for screen readers, and dates show the year only when it is not this year", () => {
+  const now = new Date("2026-11-27T00:00:00Z");
+  const old = { ...rows[0], id: "9", key: "9", entry: 2999.5, createdAt: new Date("2025-12-30T02:00:00Z") };
+  render(<SignalHistoryTable rows={[rows[0], old]} v={MN_VIEWER} now={now} />);
+  expect(screen.getByRole("columnheader", { name: "Чиглэл" })).toBeInTheDocument();
+  expect(within(rowOf("3,510.26")).getByText("11-25 19:47")).toBeInTheDocument();
+  expect(within(rowOf("2,999.50")).getByText("2025-12-30 10:00")).toBeInTheDocument();
+});
+
+test("the totals can name the window they cover", () => {
+  render(<SignalTotals rows={rows} t={MN_VIEWER.t} caption="Сүүлийн 60 дохио" />);
+  expect(screen.getByText("Сүүлийн 60 дохио")).toBeInTheDocument();
+});
+
 test("with no signals it says where they will come from", () => {
   render(<SignalHistoryTable rows={[]} v={MN_VIEWER} />);
   expect(screen.getByText(/дохио гараагүй/)).toBeInTheDocument();

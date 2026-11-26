@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte, lt } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lte, lt } from "drizzle-orm";
 import { db, schema } from "./db";
 import { hasAccess } from "./access";
-import { getSetups, type Setup, type SetupsView } from "./setup/build";
+import { ENTRY_FRESH_MS, getSetups, type Setup, type SetupsView } from "./setup/build";
 import { deliver, deliverPhoto, esc, setupLink, siteUrl, telegramConfigured, telegramTiming } from "./telegram";
 import { loadCandles, SYMBOL } from "./ingest/prices";
 import { signalOutcome, type Outcome } from "./signalOutcome";
@@ -17,7 +17,17 @@ import { MN_VIEWER, viewer, type Viewer } from "./viewer";
 
 const px = (v: number) => v.toFixed(2);
 const usd = (v: number) => `$${v.toFixed(2)}`;
-const STALE_MS = 60 * 6e4; // a setup that went active over an hour ago (the job was down) is recorded, not sent
+/**
+ * A signal older than this when first seen (the job was down, or a run was missed) is recorded but not sent. The same
+ * limit the robot gets (ENTRY_FRESH_MS in lib/setup/build): Telegram and the robot never disagree on what is fresh.
+ */
+const STALE_MS = ENTRY_FRESH_MS;
+/**
+ * sentTo of a signal that was recorded but never went out (too late, or only seen after it had already ended). Such
+ * a signal is kept so the record is complete, but it is left out of the history, the totals, the weekly report and
+ * the result messages: nobody could have acted on it.
+ */
+export const NOT_SENT = -1;
 const SEND_GAP_MS = 40; // about 25 messages a second, under Telegram's 30 a second
 export const NEWS_LEAD_MS = 30 * 6e4; // the heads-up goes out up to 30 minutes before a HIGH-impact release
 export const LOT_OZ = 1; // 0.01 lot of XAUUSD is 1 oz, so $1 of price is $1 of profit or loss
@@ -84,16 +94,22 @@ export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?
     return readings.get(key)!;
   };
   let created = 0;
+  const today = now.toISOString().slice(0, 10);
   for (const s of view.setups) {
-    if (s.status !== "ACTIVE" || !s.side || s.entry === null || s.stop === null || s.target === null) continue;
+    if (!s.side || s.entry === null || s.stop === null || s.target === null) continue;
+    // A live setup is a signal. So is a reading of today that already went active and ended (a missed run can take
+    // it from WATCH straight to closed): it is recorded, marked not sent, so it never just vanishes.
+    const live = s.status === "ACTIVE";
+    if (!live && !(s.at && s.at.toISOString().slice(0, 10) === today)) continue;
     const at = s.at ?? view.lastCandleAt ?? now; // when the bar that made it active closed (for the message)
     const bar = s.at ?? now; // keyed by the bar, so two runners reading the same bar agree
-    const key = `${s.id}:${bar.toISOString().slice(0, 10)}`; // the Asian breakout: once per UTC day
-    const [row] = await db.insert(schema.signals).values({ key, setupId: s.id, name: s.name, side: s.side, entry: s.entry, stop: s.stop, target: s.target, createdAt: now }).onConflictDoNothing({ target: schema.signals.key }).returning({ id: schema.signals.id });
+    const key = `${s.id}:${bar.toISOString().slice(0, 10)}`; // each rule: once per UTC day
+    const late = !live || now.getTime() - at.getTime() > STALE_MS;
+    const [row] = await db.insert(schema.signals).values({ key, setupId: s.id, name: s.name, side: s.side, entry: s.entry, stop: s.stop, target: s.target, createdAt: late ? at : now, sentTo: late ? NOT_SENT : 0 }).onConflictDoNothing({ target: schema.signals.key }).returning({ id: schema.signals.id });
     if (!row) continue;
     created++;
-    if (now.getTime() - at.getTime() > STALE_MS) {
-      console.warn(`[signals] ${s.id} went active at ${at.toISOString()}, too long ago to send`);
+    if (late) {
+      console.warn(`[signals] ${s.id} went active at ${at.toISOString()}${live ? ", too long ago to send" : " and had already ended"}: recorded, not sent`);
       continue;
     }
     const chats = new Set<string>();
@@ -199,7 +215,8 @@ export function resultText(s: Pick<Signal, "side" | "name" | "entry" | "stop" | 
  * to the same people who got the signal. A result Telegram could not deliver to anyone is tried again next run.
  */
 export async function emitResults(now: Date, opts: { send?: (chat: string, png: Buffer | null, caption: string) => Promise<boolean>; bars?: Candle[] } = {}): Promise<number> {
-  const pending = await db.select().from(schema.signals).where(and(isNull(schema.signals.resultSentAt), gt(schema.signals.createdAt, new Date(now.getTime() - RESULT_LOOKBACK_MS)))).orderBy(asc(schema.signals.createdAt));
+  // Not for a signal that was never sent (NOT_SENT): a result for a signal nobody received tells them nothing.
+  const pending = await db.select().from(schema.signals).where(and(isNull(schema.signals.resultSentAt), gte(schema.signals.sentTo, 0), gt(schema.signals.createdAt, new Date(now.getTime() - RESULT_LOOKBACK_MS)))).orderBy(asc(schema.signals.createdAt));
   if (pending.length === 0) return 0;
   const bars = opts.bars ?? (await loadCandles(SYMBOL, "15min", Math.ceil(RESULT_LOOKBACK_MS / (15 * 6e4)) + 200));
   const send = opts.send ?? deliverPhoto;
@@ -276,7 +293,9 @@ export async function runTelegramJobs(now: Date, pricesOk: boolean): Promise<{ s
   return out;
 }
 
-/** The latest signals, newest first; with `before`, only those recorded before it. */
-export async function listSignals(limit: number, before?: Date) {
-  return db.select().from(schema.signals).where(before ? lt(schema.signals.createdAt, before) : undefined).orderBy(desc(schema.signals.createdAt)).limit(limit);
+/** The latest signals, newest first; with `before`, only those recorded before it. Signals never sent are left out unless asked for. */
+export async function listSignals(limit: number, before?: Date, o: { includeUnsent?: boolean } = {}) {
+  return db.select().from(schema.signals)
+    .where(and(before ? lt(schema.signals.createdAt, before) : undefined, o.includeUnsent ? undefined : gte(schema.signals.sentTo, 0)))
+    .orderBy(desc(schema.signals.createdAt)).limit(limit);
 }

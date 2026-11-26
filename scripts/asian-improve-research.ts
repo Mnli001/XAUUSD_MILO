@@ -6,7 +6,7 @@
 import { load } from "./broker-data";
 import { asianRangeOrders, ASIAN_MIN_STOP_ATR } from "../src/lib/bot/ideas";
 import { alignClosed, type Order } from "../src/lib/bot/backtest";
-import { atrSeries, type Candle } from "../src/lib/analysis/indicators";
+import { atrSeries } from "../src/lib/analysis/indicators";
 import { DEFAULT_PARAMS, scoreSeries } from "../src/lib/bot/strategy";
 
 const M15 = 15 * 6e4, SPREAD = 0.3;

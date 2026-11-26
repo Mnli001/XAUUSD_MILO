@@ -27,3 +27,19 @@ describe("bot page copy matches the tools that exist", () => {
     expect(protect.some((s) => /Day trader/.test(s) && /Дүгнэлт/.test(s))).toBe(true);
   });
 });
+
+describe("one track record and one robot version", () => {
+  const panel = readFileSync(PANEL, "utf8");
+  it("carries no hardcoded tester results of its own (the record comes from BROKER_RECORD)", () => {
+    expect(panel).not.toMatch(/1\.59|1\.43|146 арилжаа|2024 онд Profit Factor/);
+  });
+  it("takes robot versions from the server instead of its own constant", () => {
+    expect(panel).not.toMatch(/GATE_ROBOT\s*=/);
+    expect(panel).not.toMatch(/v2\.80|v3\.10\b/);
+    expect(readFileSync(PAGE, "utf8")).toMatch(/minRobotVersion/);
+  });
+  it("describes the Setup signals tool from the session rules: three setups, up to three a day", () => {
+    expect(readFileSync(PAGE, "utf8")).toMatch(/SESSION_RULES\.map\(\(r\) => ruleLine\(r, describe\(r, v\)\.name, v\)\)/);
+    expect(texts(PANEL).some((s) => /өдөрт 3 хүртэл/.test(s))).toBe(true);
+  });
+});

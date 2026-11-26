@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { getT } from "@/lib/prefs.server";
 import { Station } from "@/components/Timetable";
@@ -5,6 +6,7 @@ import { Station } from "@/components/Timetable";
 export const dynamic = "force-dynamic";
 
 export default async function BotResearchPage() {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const t = await getT();
   const stops: [string, string, string][] = [
     ["/admin/bot/backtest", "Backtest", t("Дүрмийг өнгөрсөн дата дээр шалгах.", "Test a rule on past data.")],

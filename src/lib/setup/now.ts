@@ -1,23 +1,25 @@
 import type { SetupNow } from "./setups";
 import type { Viewer } from "../viewer";
 import { relativeText } from "../relativeTime";
-import { hourUtc } from "./sessionRules";
+import { SESSION_RULES, hourUtc } from "./sessionRules";
 
 /**
  * The one line a trader needs: what the system is doing right now (waiting, enter, in a trade, done, nothing
- * today), what exactly it waits for, and when the next step comes. Built from the Asian rule's reading.
+ * today), what exactly it waits for, and when the next step comes. Built from one rule's reading, on that rule's hours.
  */
 export type NowState = "WAIT" | "ENTER" | "DONE" | "NONE" | "CLOSED";
 export type NowWindow = { state: NowState; title: string; waitingFor: string | null; next: { label: string; at: Date; in: string } | null; liveR: number | null };
 
 const H = 36e5;
 const utcAt = (now: Date, h: number, dayShift = 0) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dayShift, h));
-/** The next weekday 00:00 UTC (the Asian range starts), skipping the weekend. */
-function nextRangeStart(now: Date): Date {
-  let d = utcAt(now, 0, 1);
-  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d = new Date(d.getTime() + 24 * H);
+/** The rule's next range start (UTC hour, 12.5 = 12:30) after `now`, on a weekday. */
+function nextRangeStart(now: Date, rangeFrom: number): Date {
+  let d = new Date(utcAt(now, 0).getTime() + rangeFrom * H);
+  while (d.getTime() <= now.getTime() || d.getUTCDay() === 0 || d.getUTCDay() === 6) d = new Date(d.getTime() + 24 * H);
   return d;
 }
+/** The Asian rule's hours, for a reading that carries none. Its entry window ends at 12:00 UTC (lib/setup/sessionRules). */
+const ASIAN = SESSION_RULES[0];
 
 export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: Viewer): NowWindow {
   const { t, ub, zone } = v;
@@ -25,8 +27,15 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
   const mk = (label: string, at: Date) => ({ label, at, in: relativeText(at.getTime() - now.getTime(), t) });
   const firstMissing = s.checks.find((c) => !c.ok)?.label ?? null;
   // The rule's own hours (the Asian rule's when none are given).
-  const win = s.window ?? { rangeFrom: 0, rangeTo: 7, entryTo: 16, exitAt: utcAt(now, 20) };
+  const win = s.window ?? { rangeFrom: ASIAN.rangeFrom, rangeTo: ASIAN.rangeTo, entryTo: ASIAN.entryTo, exitAt: utcAt(now, 20) };
   const at = (hh: number) => ub(hourUtc((hh + 8) % 24));
+  // The next range of THIS rule: the Asian range at 00:00 UTC, a New York opening range at its own time.
+  const nextStart = nextRangeStart(now, win.rangeFrom);
+  const asian = win.rangeFrom === 0;
+  const tomorrow = nextStart.getTime() >= utcAt(now, 0, 1).getTime() && nextStart.getTime() < utcAt(now, 0, 2).getTime();
+  const nextRange = (prefix: "next" | "tomorrow") => asian
+    ? (prefix === "tomorrow" && tomorrow ? t(`Маргаашийн Азийн хүрээ (${at(win.rangeFrom)} ${zone})`, `Tomorrow's Asian range (${at(win.rangeFrom)} ${zone})`) : t(`Дараагийн Азийн хүрээ (${at(win.rangeFrom)} ${zone})`, `Next Asian range (${at(win.rangeFrom)} ${zone})`))
+    : t(`Дараагийн нээлтийн хүрээ (${at(win.rangeFrom)} ${zone})`, `Next opening range (${at(win.rangeFrom)} ${zone})`);
   const hAt = (hh: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + hh * H);
   const hr = h + now.getUTCMinutes() / 60;
   if (s.stale) return { state: "NONE", title: t("Үнийн дата хоцорч байна", "Price data is behind"), waitingFor: t("Шинэ үнэ ирэхийг", "Fresh prices"), next: null, liveR: null };
@@ -35,7 +44,7 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
     const liveR = lastPrice !== null && risk > 0 ? Math.round(((dir * (lastPrice - s.entry)) / risk) * 100) / 100 : null;
     return { state: "ENTER", title: t(`${s.side} арилжаа идэвхтэй`, `${s.side} trade is on`), waitingFor: t("Stop эсвэл target-д хүрэхийг", "The stop or the target"), next: mk(t(`Хаах цаг (${v.dateTime(win.exitAt).slice(5)} ${zone})`, `Closing time (${v.dateTime(win.exitAt).slice(5)} ${zone})`), win.exitAt), liveR };
   }
-  if (s.result !== undefined) return { state: "DONE", title: t(`Өнөөдрийн арилжаа дууссан (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`, `Today's trade is done (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`), waitingFor: null, next: mk(t(`Маргаашийн Азийн хүрээ (${ub("08:00")} ${zone})`, `Tomorrow's Asian range (${ub("08:00")} ${zone})`), nextRangeStart(now)), liveR: null };
+  if (s.result !== undefined) return { state: "DONE", title: t(`Өнөөдрийн арилжаа дууссан (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`, `Today's trade is done (${s.result > 0 ? "+" : ""}${s.result.toFixed(2)}R)`), waitingFor: null, next: mk(nextRange("tomorrow"), nextStart), liveR: null };
   if (s.status === "FORMING") return { state: "WAIT", title: s.headline, waitingFor: t(`Хүрээ ${at(win.rangeTo)} (${zone}) цагт хаагдахыг`, `The range to close at ${at(win.rangeTo)} (${zone})`), next: mk(t(`Орох цонх нээгдэнэ (${at(win.rangeTo)} ${zone})`, `Entry window opens (${at(win.rangeTo)} ${zone})`), hAt(win.rangeTo)), liveR: null };
   if (s.status === "WATCH" && !s.trends) return { state: "WAIT", title: s.headline, waitingFor: firstMissing ?? s.headline, next: mk(t(`Орох цонх хаагдана (${at(win.entryTo)} ${zone})`, `Entry window closes (${at(win.entryTo)} ${zone})`), hAt(win.entryTo)), liveR: null };
   const closed = now.getUTCDay() === 0 || now.getUTCDay() === 6;
@@ -55,7 +64,7 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
     state: closed ? "CLOSED" : "NONE",
     title: s.headline,
     waitingFor: hr < win.entryTo && firstMissing ? firstMissing : null,
-    next: mk(t(`Дараагийн Азийн хүрээ (${ub("08:00")} ${zone})`, `Next Asian range (${ub("08:00")} ${zone})`), nextRangeStart(now)),
+    next: mk(nextRange("next"), nextStart),
     liveR: null,
   };
 }

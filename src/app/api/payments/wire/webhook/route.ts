@@ -1,5 +1,5 @@
 import { wireConfig, verifyWebhook, SIGNATURE_HEADER } from "@/lib/wire";
-import { refreshByRef } from "@/lib/payments";
+import { isRefundEvent, markRefunded, refreshByRef } from "@/lib/payments";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +15,24 @@ export async function POST(req: Request): Promise<Response> {
   const raw = await req.text();
   const event = verifyWebhook(raw, req.headers.get(SIGNATURE_HEADER), cfg.webhookSecret, Math.floor(Date.now() / 1000));
   if (!event) return new Response("bad signature", { status: 400 });
+
+  // Money returned (refund, chargeback, dispute): the event names the intent directly or through the refund object.
+  if (isRefundEvent(event.type)) {
+    const d = event.data ?? {};
+    const intent = typeof d.payment_intent === "string" && d.payment_intent ? d.payment_intent : d.object === "payment_intent" && typeof d.id === "string" ? d.id : null;
+    if (!intent) {
+      console.warn(`[wire] ${event.type} without a payment intent id; check it in the Wire dashboard`);
+      return Response.json({ received: true });
+    }
+    try {
+      const p = await markRefunded(intent, new Date(), { type: event.type, amount: typeof d.amount === "number" ? d.amount : undefined });
+      if (!p) console.warn(`[wire] ${event.type} for an intent that is not ours`);
+    } catch (e) {
+      console.error("[wire] refund handling failed", e);
+      return new Response("refund failed", { status: 500 });
+    }
+    return Response.json({ received: true });
+  }
 
   const ref = event.data?.id;
   if (event.type.startsWith("payment_intent.") && typeof ref === "string" && ref) {

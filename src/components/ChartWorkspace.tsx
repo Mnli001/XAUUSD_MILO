@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { usePoll } from "./usePoll";
 import type { Levels } from "@/lib/snapshot";
 import type { BotChartData } from "@/lib/botChart";
 import { CandleChart } from "./CandleChart";
@@ -9,8 +10,8 @@ import { useViewer } from "./PrefsProvider";
 type Payload = BotChartData & { fetchedAt: number; account: string | null; accounts: { login: string; label: string; mode: string | null }[] };
 const REFRESH_MS = 15_000;
 
-/** The chart and the robot's history under it: one account's trades, refreshed while the page is open. */
-export function ChartWorkspace({ levels }: { levels: Levels | null }) {
+/** The chart and the robot's history under it: one account's trades, refreshed while the page is in view and a robot is connected. */
+export function ChartWorkspace({ levels, poll = true }: { levels: Levels | null; poll?: boolean }) {
   const { t } = useViewer();
   const [data, setData] = useState<Payload | null>(null);
   const [account, setAccount] = useState<string | null>(null);
@@ -23,11 +24,11 @@ export function ChartWorkspace({ levels }: { levels: Levels | null }) {
     } catch { /* offline: the next round tries again */ }
   }, [account]);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the first load, then every 15 s while visible
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the first load (and again when the account changes)
     void load();
-    const id = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, REFRESH_MS);
-    return () => clearInterval(id);
   }, [load]);
+  // Refreshing only matters with a plan and a connected robot; without one there is nothing new to fetch.
+  usePoll(load, REFRESH_MS, poll && !!data?.account, false);
 
   const bot = data && data.account ? { trades: data.trades, open: data.open } : null;
   return (

@@ -8,12 +8,29 @@ import { getT, getViewer } from "@/lib/prefs.server";
 import { paywallFor } from "@/lib/paywall.server";
 import { PlansCard } from "@/components/Paywall";
 import { choosePlanAction } from "@/lib/actions/payments";
+import { minRobotVersion, type BotMode } from "@/lib/bot/live";
+import { BROKER_RECORD, describe } from "@/lib/setup/build";
+import { SESSION_RULES } from "@/lib/setup/sessionRules";
+import { ruleLine, type BrokerRecord } from "@/lib/siteCopy";
+import type { Viewer } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Бот — XAU Analytics", "Bot — XAU Analytics") };
+  return { title: t("Бот", "Bot") };
 }
+
+const MODES: BotMode[] = ["DAY", "READING", "BASKET", "ASIAN"];
+/** The robot file each tool needs, from the server's own constants, so the panel and the server agree. */
+const robotNeeds = () => {
+  const need = Object.fromEntries(MODES.map((m) => [m, minRobotVersion(m)]));
+  return { need, latest: Math.max(...Object.values(need)) };
+};
+/** The Setup signals tool's text: the same rules and names as the Setup page, and the one dated research record. */
+const setupToolText = (v: Viewer) => ({
+  lines: SESSION_RULES.map((r) => ruleLine(r, describe(r, v).name, v)),
+  record: BROKER_RECORD as BrokerRecord,
+});
 
 export default async function BotPage({ searchParams }: { searchParams: Promise<{ account?: string }> }) {
   const v = await getViewer();
@@ -38,7 +55,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
             </svg>
             <h1 className="page-title">{t("Бот", "Bot")}</h1>
-            <Link href="/bot/history" className="btn ml-auto">{t("Ботын түүх", "Bot history")}</Link>
+            <Link href="/bot/history" className="btn ml-auto">{t("Дохионы түүх", "Signal history")}</Link>
           </div>
           <p className="page-lede mt-4">{t("Өөрийн MT5 дээрх роботыг эндээс асааж, зогсоож, тохируулж, хянана. Энэ хуудас зөвхөн таных: таны токен, тохиргоо, арилжааны түүх бусад хэрэглэгчид харагдахгүй.", "Start, stop, configure and watch the robot on your own MT5 from here. This page is yours alone: other users cannot see your token, settings or trade history.")}</p>
           
@@ -81,8 +98,8 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
         </div>
       </div>
       {/* Status and controls first; the setup manual follows and opens on its own only until the robot is connected. */}
-      <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} />
-      <BotGuide origin={origin} hasToken={view.hasToken} online={view.online} v={v} />
+      <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} syncUrl={`${origin}/api/bot/sync`} robot={robotNeeds()} setup={setupToolText(v)} />
+      <BotGuide origin={origin} hasToken={view.hasToken} online={view.online} v={v} record={BROKER_RECORD} />
       <BacktestGuide v={v} />
         </>
       ) : (

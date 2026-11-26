@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { getEvents } from "@/lib/events";
 import { EVENT_TYPES } from "@/lib/data/calendarProvider";
 import { deleteEventAction } from "@/lib/actions/admin";
@@ -8,6 +9,7 @@ import { getT } from "@/lib/prefs.server";
 export const dynamic = "force-dynamic";
 
 export default async function AdminEventsPage() {
+  await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
   const t = await getT();
   const now = new Date();
   const events = await getEvents(new Date(now.getTime() - 2 * 864e5), new Date(now.getTime() + 60 * 864e5));

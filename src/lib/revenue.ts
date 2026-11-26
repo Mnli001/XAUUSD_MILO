@@ -3,6 +3,9 @@ import { db, schema } from "./db";
 import type { Role } from "./db/schema";
 import { PLAN_IDS } from "./plans";
 
+/** Stands in for the payer of a payment whose account was deleted. */
+export const DELETED_PAYER = "(deleted)";
+
 /**
  * The admin's revenue view, worked out from paid payments and users. Months are counted on the Ulaanbaatar clock
  * (UTC+8, no daylight saving), so a payment at 23:30 on the 30th lands in that month.
@@ -89,12 +92,17 @@ export function revenueReport(paid: readonly PaidRow[], users: readonly UserRow[
 }
 export type RevenueReport = ReturnType<typeof revenueReport>;
 
-/** Loads every paid payment and every user, and builds the report. Small tables: a few thousand rows at most. */
+/**
+ * Loads every paid payment and every user, and builds the report (admins only). Small tables: a few thousand rows at most.
+ * A payment whose account was since deleted still counts as money in, under one "deleted account" payer.
+ */
 export async function getRevenue(now: Date): Promise<RevenueReport> {
+  await (await import("./auth")).requireAdmin(); // loaded on call: this module is also used where next-auth is not
   const [paid, users] = await Promise.all([
     db.select({ userId: schema.payments.userId, plan: schema.payments.plan, amount: schema.payments.amount, paidAt: schema.payments.paidAt, accessUntil: schema.payments.accessUntil })
       .from(schema.payments).where(eq(schema.payments.status, "PAID")),
     db.select({ id: schema.users.id, email: schema.users.email, role: schema.users.role, accessUntil: schema.users.accessUntil }).from(schema.users),
   ]);
-  return revenueReport(paid.filter((p): p is PaidRow => p.paidAt !== null), users, now);
+  const rows = paid.flatMap((p) => (p.paidAt ? [{ ...p, userId: p.userId ?? DELETED_PAYER, paidAt: p.paidAt }] : []));
+  return revenueReport(rows, users, now);
 }

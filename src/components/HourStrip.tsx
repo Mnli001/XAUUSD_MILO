@@ -57,9 +57,9 @@ export function HourStrip({ cells, locked = false }: { cells: HourCell[]; locked
               >
                 <span data-testid="hour" className={`text-[11px] tabular-nums ${i === 0 ? "font-semibold text-amber-300" : "text-zinc-400"}`}>{short(x.label)}</span>
                 {locked ? (
-                  <span aria-hidden className="mt-1.5 text-xs text-zinc-600">•••</span>
+                  <span aria-hidden className="mt-1.5 text-xs text-zinc-500">•••</span>
                 ) : p === null ? (
-                  <span aria-hidden className="mt-1.5 text-xs text-zinc-600">—</span>
+                  <span aria-hidden className="mt-1.5 text-xs text-zinc-500">—</span>
                 ) : (
                   <span aria-hidden className={`mt-1 flex flex-col items-center text-[13px] leading-tight font-semibold tabular-nums ${tone}`}>{p}<Dir d={up ? 1 : -1} className="text-[9px]" /></span>
                 )}

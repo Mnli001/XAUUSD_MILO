@@ -14,7 +14,10 @@ export async function loginAction(_prev: FormState, form: FormData): Promise<For
   try {
     await signIn("credentials", { email: form.get("email"), password: form.get("password"), redirectTo: "/today" });
   } catch (e) {
-    if (e instanceof AuthError) return { error: t("Имэйл эсвэл нууц үг буруу байна", "Wrong email or password") };
+    if (e instanceof AuthError) {
+      if ((e as { code?: string }).code === "rate_limited") return { error: t("Хэт олон оролдлого хийлээ. 15 минутын дараа дахин оролдоно уу.", "Too many attempts. Try again in 15 minutes.") };
+      return { error: t("Имэйл эсвэл нууц үг буруу байна", "Wrong email or password") };
+    }
     // Signed in: this browser now remembers the account's own settings for the pages seen while signed out.
     const email = form.get("email");
     const user = typeof email === "string" ? await findUserByEmail(email) : null;

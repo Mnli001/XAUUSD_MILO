@@ -22,7 +22,8 @@ function nearWeekend(t: Date): boolean {
 
 /**
  * Replays orders over 15-minute bars. orders[i] is decided at the close of bar i and filled at the
- * open of bar i + 1. Inside a bar the stop is checked before the target (pessimistic). The kill-switch
+ * open of bar i + 1. Inside a bar the stop is checked before the target (pessimistic); a stop gapped through
+ * fills at the bar's open, a target at the target (no gap gain). The kill-switch
  * time is recorded, but the replay continues so the whole period can be judged.
  */
 export function simulateOrders(m15: Candle[], orders: (Order | null)[], p: BotParams, startBalance: number): SimResult {
@@ -73,7 +74,8 @@ export function simulateOrders(m15: Candle[], orders: (Order | null)[], p: BotPa
       const long = pos.side === "BUY";
       if (weekend) close(bar.open, bar.time, "WEEKEND");
       else if (pos.maxBars !== undefined && pos.bars >= pos.maxBars) close(bar.open, bar.time, "TIME");
-      else if (long ? bar.low <= pos.stop : bar.high >= pos.stop) close(pos.stop, endOfBar, pos.stop === pos.entry ? "BE" : "SL");
+      // A bar that opens past the stop (a gap) fills at its open, the worse price, not at the stop.
+      else if (long ? bar.low <= pos.stop : bar.high >= pos.stop) close(long ? Math.min(pos.stop, bar.open) : Math.max(pos.stop, bar.open), endOfBar, pos.stop === pos.entry ? "BE" : "SL");
       else if (long ? bar.high >= pos.target : bar.low <= pos.target) close(pos.target, endOfBar, "TP");
       else if (p.breakeven && pos.stop !== pos.entry && (long ? bar.high >= pos.entry + pos.dist : bar.low <= pos.entry - pos.dist)) pos.stop = pos.entry;
       if (pos) pos.bars++;

@@ -8,7 +8,7 @@ export const PLANS: Record<PlanId, { name: string; days: number; amount: number 
 };
 export const PLAN_IDS = Object.keys(PLANS) as PlanId[];
 
-export const isPlanId = (v: unknown): v is PlanId => typeof v === "string" && v in PLANS;
+export const isPlanId = (v: unknown): v is PlanId => typeof v === "string" && Object.hasOwn(PLANS, v);
 
 /** The new end of access: `days` added to whichever is later, now or the current end, so renewing early loses nothing. */
 export function extendAccess(current: Date | null, now: Date, days: number): Date {

@@ -8,7 +8,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  */
 export type WireConfig = { baseUrl: string; apiKey: string; webhookSecret: string | null };
 export type WireIntent = { id: string; status: string; amount: number; currency: string };
-export type WireEvent = { id: string; type: string; data?: { id?: string; object?: string; status?: string; amount?: number } };
+export type WireEvent = { id: string; type: string; data?: { id?: string; object?: string; status?: string; amount?: number; payment_intent?: string } };
 
 export const SIGNATURE_HEADER = "WirePayment-Signature";
 const PRODUCTION = "https://api.wire.mn";

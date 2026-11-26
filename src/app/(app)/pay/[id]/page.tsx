@@ -7,12 +7,13 @@ import { wireConfig } from "@/lib/wire";
 import { PLANS, isPlanId, tugrik } from "@/lib/plans";
 import { choosePlanAction } from "@/lib/actions/payments";
 import { PayStatus } from "@/components/PayStatus";
-import { Countdown } from "@/components/Countdown";
+import { InvoiceCountdown } from "@/components/Countdown";
+import { telegramConfigured } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Төлбөр — XAU Analytics", "Payment — XAU Analytics") };
+  return { title: t("Төлбөр", "Payment") };
 }
 
 /**
@@ -43,7 +44,14 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
         <section className="card border-emerald-400/40 text-center" aria-live="polite">
           <p className="font-display text-3xl text-emerald-300">{t("Төлбөр баталгаажлаа", "Payment confirmed")}</p>
           <p className="mt-2 text-zinc-300">{p.accessUntil ? t(`Таны эрх ${v.date(p.accessUntil)} хүртэл нээгдлээ. Бүх тоо одоо харагдана.`, `Your access is open until ${v.date(p.accessUntil)}. Every number now shows.`) : null}</p>
-          <Link href="/today" className="btn mt-5">{t("Өнөөдөр хуудас руу", "Go to Today")}</Link>
+          {telegramConfigured() && !user.telegramChatId ? (
+            <div className="mx-auto mt-5 max-w-md rounded-2xl border p-4 text-left" style={{ borderColor: "var(--hairline)" }}>
+              <p className="text-sm font-semibold text-zinc-100">{t("Дараагийн алхам: Telegram холбох", "Next step: link Telegram")}</p>
+              <p className="mt-1 text-sm leading-relaxed text-zinc-400">{t("Setup идэвхжих мөчид орох, stop, target-тай дохио утсанд чинь шууд ирнэ. Холбосон Telegram-аар нууц үгээ мартсан үед сэргээж ч болно.", "The moment a setup turns active, its entry, stop and target reach your phone. A linked Telegram also lets you reset a forgotten password.")}</p>
+              <Link href="/settings#telegram" className="btn mt-3">{t("Telegram холбох", "Link Telegram")}</Link>
+            </div>
+          ) : null}
+          <Link href="/today" className={telegramConfigured() && !user.telegramChatId ? "btn-ghost mt-4" : "btn mt-5"}>{t("Өнөөдөр хуудас руу", "Go to Today")}</Link>
         </section>
       ) : expired ? (
         <section className="card text-center">
@@ -55,7 +63,7 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
         <section className="card space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <PayStatus id={p.id} />
-            <span className="text-sm text-zinc-500">{t("Үлдсэн хугацаа", "Time left")} <Countdown to={p.expiresAt.toISOString()} /></span>
+            <span className="text-sm text-zinc-500">{t("Үлдсэн хугацаа", "Time left")} <InvoiceCountdown to={p.expiresAt.toISOString()} /></span>
           </div>
           {p.checkoutUrl && (
             <div>

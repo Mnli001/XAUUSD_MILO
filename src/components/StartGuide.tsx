@@ -6,7 +6,8 @@ export function StartGuide({ t, dismiss }: { t: T; dismiss: () => Promise<void> 
   const steps = [
     [t("Өнөөдөр", "Today"), t("өнөөдөр аль тал давамгай, аль цагт алт ихэвчлэн өсдөг эсвэл буурдаг, ямар чухал мэдээ гарахыг хар.", "see which side leads today, at which hours gold usually rises or falls, and which important news is coming.")],
     ["Setup", t("дүрэм бүрийн нөхцөл биелсэн эсэхийг шалга. Зөвхөн “Идэвхтэй” үед орох үнэ, stop, target бэлэн болно; “Ажиглах”, “Бүрдэж байна” бол хүлээ.", "check whether each rule's conditions are met. Only when it says “Active” are the entry, stop and target ready; on “Watch” or “Forming”, wait.")],
-    [t("Гүйцэтгэл", "Performance"), t("MT5 роботоо холбовол хаасан арилжаа бүр нь автоматаар тооцогдож, юу ажиллаж, юу ажиллахгүй байгааг харуулна.", "connect your MT5 robot and every trade it closes is counted automatically, showing what works and what does not.")]
+    [t("Гүйцэтгэл", "Performance"), t("MT5 роботоо холбовол хаасан арилжаа бүр нь автоматаар тооцогдож, юу ажиллаж, юу ажиллахгүй байгааг харуулна.", "connect your MT5 robot and every trade it closes is counted automatically, showing what works and what does not.")],
+    ["Telegram", <>{t("Setup идэвхжих мөчид дохио утсанд чинь ирэхийн тулд Telegram-аа холбо. Холбосон бол нууц үгээ мартсан үедээ ботоос сэргээж болно. ", "link your Telegram so each signal reaches your phone the moment a setup turns active. Once linked, it also lets you reset a forgotten password. ")}<Link href="/settings#telegram" className="font-semibold text-amber-300 underline decoration-amber-400/50 underline-offset-4 hover:text-amber-200">{t("Telegram холбох", "Link Telegram")}</Link></>],
   ] as const;
   return (
     <section className="card border-amber-400/25" aria-labelledby="start-h">

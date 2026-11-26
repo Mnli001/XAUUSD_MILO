@@ -1,14 +1,14 @@
-import { and, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, ne, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
 import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
-import { type Command, type LiveConfig, type Report, BLACKOUT_HORIZON_MS, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
+import { type Command, type DayOrderFields, type LiveConfig, type Report, type SessionOrderFields, BLACKOUT_HORIZON_MS, MAX_REPORT_CHARS, stoppedCommand, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
 import { DAY_MIN_LEAN, dayOrderFrom, getDayState } from "./daySignal";
-import { getAsianOrder } from "../setup/build";
+import { getAsianOrders } from "../setup/build";
 import { applyPreset, isPreset, type ConsensusCounts } from "./live";
 import { sessionOfUbHour, ubHour } from "../time";
 import { deliver, esc, telegramConfigured } from "../telegram";
@@ -63,12 +63,14 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
 }
 
 /** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
-/** The day trader's order for this bot right now, if a setup just triggered and the reading backs it. */
-async function dayOrderFor(config: LiveConfig, now: Date) {
-  // The Asian tool trades the Setup page's own breakout, so the robot and the Telegram signal never disagree.
-  if (config.mode === "ASIAN") { try { return await getAsianOrder(now); } catch (e) { console.error("[bot] asian signal failed", e); return null; } }
-  if (config.mode !== "DAY") return null;
-  try { return dayOrderFrom(await getDayState(now), config.gate?.dayLean ?? DAY_MIN_LEAN, now); } catch (e) { console.error("[bot] day signal failed", e); return null; }
+/**
+ * The order(s) for this bot right now. The Asian tool trades the Setup page's own breakouts (every session's live
+ * setup, so the robot and the Telegram signal never disagree); the day trader its own setup when the reading backs it.
+ */
+async function ordersFor(config: LiveConfig, now: Date): Promise<{ day: DayOrderFields | null; session: SessionOrderFields[] }> {
+  if (config.mode === "ASIAN") { try { return { day: null, session: await getAsianOrders(now) }; } catch (e) { console.error("[bot] asian signal failed", e); return { day: null, session: [] }; } }
+  if (config.mode !== "DAY") return { day: null, session: [] };
+  try { return { day: dayOrderFrom(await getDayState(now), config.gate?.dayLean ?? DAY_MIN_LEAN, now), session: [] }; } catch (e) { console.error("[bot] day signal failed", e); return { day: null, session: [] }; }
 }
 
 /** The many-method reading as counts, when this bot waits for it. Null when it cannot be computed: the robot then holds back. */
@@ -138,11 +140,19 @@ export async function listAccounts(userId: string, now: Date) {
 }
 export type AccountItem = Awaited<ReturnType<typeof listAccounts>>[number];
 
-/** The bot for the account a report comes from. A bot set up before any account connected is taken over by the first one. */
+/** A user may link this many MT5 accounts; a report from one more is answered with a bare stop (TOO_MANY_ACCOUNTS). */
+export const MAX_ROBOT_ACCOUNTS = 3;
+
+/**
+ * The bot for the account a report comes from. A bot set up before any account connected is taken over by the first
+ * one. Null when the account is new and the user already has MAX_ROBOT_ACCOUNTS accounts.
+ */
 async function botForAccount(userId: string, login: string) {
   const mine = eq(schema.botLive.userId, userId);
   const [existing] = await db.select().from(schema.botLive).where(and(mine, eq(schema.botLive.login, login)));
   if (existing) return shape(existing);
+  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.botLive).where(and(mine, ne(schema.botLive.login, "")));
+  if (n >= MAX_ROBOT_ACCOUNTS) return null;
   const [adopted] = await db.update(schema.botLive).set({ login }).where(and(mine, eq(schema.botLive.login, ""))).returning();
   if (adopted) {
     await db.update(schema.botDeals).set({ login }).where(and(eq(schema.botDeals.userId, userId), eq(schema.botDeals.login, "")));
@@ -154,9 +164,34 @@ async function botForAccount(userId: string, login: string) {
   return shape(row);
 }
 
+/**
+ * Which robot may set the site's live price: one account only. With FEED_BOT_LOGIN set, the robot signed in to that
+ * MT5 account, and only when its owner is an admin. Without it, the first robot of the first admin: the oldest
+ * admin user's connected account with the lowest login. Every other terminal (other admins' accounts included)
+ * moves nobody's chart. Looked up at most once a minute.
+ */
+let feedMemo: { at: number; userId: string | null; login: string | null } | null = null;
+const FEED_MEMO_MS = process.env.NODE_ENV === "test" ? 0 : 60_000;
+export const forgetFeedSource = () => { feedMemo = null; };
+async function isFeedRobot(owner: { id: string; role: string }, login: string): Promise<boolean> {
+  if (owner.role !== "ADMIN") return false;
+  const dedicated = process.env.FEED_BOT_LOGIN?.trim();
+  if (dedicated) return login === dedicated;
+  if (!feedMemo || Date.now() - feedMemo.at >= FEED_MEMO_MS) {
+    const [admin] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.role, "ADMIN")).orderBy(asc(schema.users.createdAt), asc(schema.users.id)).limit(1);
+    const [first] = admin ? await db.select({ login: schema.botLive.login }).from(schema.botLive).where(and(eq(schema.botLive.userId, admin.id), ne(schema.botLive.login, ""))).orderBy(asc(schema.botLive.login)).limit(1) : [];
+    feedMemo = { at: Date.now(), userId: admin?.id ?? null, login: first?.login ?? null };
+  }
+  return feedMemo.userId === owner.id && feedMemo.login === login;
+}
+
+const tooLarge = (body: unknown) => {
+  try { return JSON.stringify(body ?? null).length > MAX_REPORT_CHARS; } catch { return true; }
+};
+
 /** One round trip with the terminal: store what it reports, answer with what it should do. null = rejected. */
 export async function handleSync(token: string, body: unknown, now: Date): Promise<Command | null> {
-  if (!token) return null;
+  if (!token || tooLarge(body)) return null;
   // The token picks the user: it is looked up by its hash, which is unique. The report's account picks the bot.
   const [link] = await db.select().from(schema.botTokens).where(eq(schema.botTokens.tokenHash, hashToken(token)));
   if (!link) return null;
@@ -165,9 +200,17 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   const parsed = reportSchema.safeParse(body);
   if (!parsed.success) return null;
   const r: Report = parsed.data;
+  const lang = parseLocale(owner.locale);
+  // No access: a bare stop, decided before any reading, order or release time is worked out for this robot.
+  if (!hasAccess(owner, now)) {
+    await db.update(schema.botLive).set({ state: "STOPPED", stopReason: "NO_ACCESS", stoppedAt: now, lastSeenAt: now })
+      .where(and(eq(schema.botLive.userId, owner.id), eq(schema.botLive.login, r.account.login), eq(schema.botLive.state, "RUNNING")));
+    return stoppedCommand("NO_ACCESS", lang);
+  }
   const live = await botForAccount(owner.id, r.account.login);
-  // The owner's terminal is the site's price feed: everyone's chart moves with what it reports.
-  if (owner.role === "ADMIN") await recordTick({ symbol: r.symbol, bid: r.bid, ask: r.ask, server: r.account.server }, now).catch((e) => console.error("[feed] tick not kept", e));
+  if (!live) return stoppedCommand("TOO_MANY_ACCOUNTS", lang);
+  // One terminal is the site's price feed: everyone's chart moves with what it reports.
+  if (await isFeedRobot(owner, live.login).catch(() => false)) await recordTick({ symbol: r.symbol, bid: r.bid, ask: r.ask, server: r.account.server }, now).catch((e) => console.error("[feed] tick not kept", e));
 
   if (r.deals.length) {
     const fresh = await db.insert(schema.botDeals).values(r.deals.map((d) => ({ ...d, userId: owner.id, login: live.login, runId: live.runId }))).onConflictDoNothing().returning();
@@ -180,8 +223,8 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   let stoppedAt = live.stoppedAt;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
-  let cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, parseLocale(owner.locale), await blackoutsFor(live.config, now), await consensusFor(live.config, now), await dayOrderFor(live.config, now));
-  if (cmd.state === "RUNNING" && !hasAccess(owner, now)) cmd = { ...cmd, state: "STOPPED", reason: "NO_ACCESS" };
+  const orders = await ordersFor(live.config, now);
+  const cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, lang, await blackoutsFor(live.config, now), await consensusFor(live.config, now), orders.day, orders.session);
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
   const { deals: _deals, account, ...rest } = r;
@@ -262,7 +305,15 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
 type Owner = NonNullable<Awaited<ReturnType<typeof findUserById>>>;
 /** Position tickets already written, so a robot reporting every second costs no query once its trades are known. */
 const knownEntries = new Set<string>();
+/** Enough for every open position of every robot many times over; past it the oldest are forgotten (a forgotten one costs one insert that does nothing). */
+export const MAX_KNOWN_ENTRIES = 20_000;
 export const forgetKnownEntries = () => knownEntries.clear();
+function rememberEntry(key: string): void {
+  knownEntries.delete(key);
+  knownEntries.add(key);
+  while (knownEntries.size > MAX_KNOWN_ENTRIES) knownEntries.delete(knownEntries.values().next().value as string);
+}
+export const knownEntryCount = () => knownEntries.size;
 
 async function recordEntries(owner: Owner, login: string, positions: Report["positions"], now: Date): Promise<void> {
   const unseen = positions.filter((p) => !knownEntries.has(`${owner.id}:${login}:${p.ticket}`));
@@ -275,7 +326,7 @@ async function recordEntries(owner: Owner, login: string, positions: Report["pos
     atrH1: r && Number.isFinite(r.atrH1) ? r.atrH1 : null, session: sessionOfUbHour(ubHour(now)),
   }));
   const fresh = await db.insert(schema.botEntries).values(rows).onConflictDoNothing().returning();
-  for (const p of unseen) knownEntries.add(`${owner.id}:${login}:${p.ticket}`);
+  for (const p of unseen) rememberEntry(`${owner.id}:${login}:${p.ticket}`);
   for (const e of fresh) notify(owner, tradeOpenedText(owner, e));
 }
 

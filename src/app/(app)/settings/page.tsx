@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getT, getViewer } from "@/lib/prefs.server";
 import { prefsOf } from "@/lib/prefsDb";
 import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
+import { hasAccess } from "@/lib/access";
 import { listTrades } from "@/lib/trades";
 import { logoutAction } from "@/lib/actions/session";
 import { AppearanceForm, DeleteAccountForm, PasswordForm, ProfileForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
@@ -12,7 +13,7 @@ import { SoundToggle } from "@/components/SoundToggle";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Тохиргоо — XAU Analytics", "Settings — XAU Analytics") };
+  return { title: t("Тохиргоо", "Settings") };
 }
 
 export default async function SettingsPage() {
@@ -45,7 +46,7 @@ export default async function SettingsPage() {
         <div className="md:col-span-2"><SoundToggle /></div>
 
         <div className="space-y-4 sm:space-y-5 md:col-span-2">
-          <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
+          <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} paid={hasAccess(user, new Date())} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
           {linked && (
             <section className="card">
               <h2 className="card-title">{t("Telegram мэдэгдэл", "Telegram notifications")}</h2>
@@ -57,7 +58,7 @@ export default async function SettingsPage() {
         {trades.length > 0 && (
           <section className="card space-y-3">
             <h2 className="card-title">{t("Хуучин журналаа татах", "Download your old journal")}</h2>
-            <p className="text-sm leading-relaxed text-zinc-400">{t(`Журнал хуудас хасагдсан ч таны өмнө бичсэн ${trades.length} арилжаа хадгалагдсан хэвээр. Excel-д нээгдэх CSV файл болгон татаж авна. Цаг нь ${v.zone}-аар.`, `The journal page is gone, but the ${trades.length} trades you wrote down are still kept. Download them as a CSV file that opens in Excel. Times are in ${v.zone}.`)}</p>
+            <p className="text-sm leading-relaxed text-zinc-400">{t(`Таны өмнө гараар бичсэн ${trades.length} арилжаа хадгалагдсан хэвээр. Excel-д нээгдэх CSV файл болгон татаж авна. Цаг нь ${v.zone}-аар.`, `The ${trades.length} trades you wrote down by hand earlier are still kept. Download them as a CSV file that opens in Excel. Times are in ${v.zone}.`)}</p>
             <a className="btn-ghost" href="/api/trades/export" download>{t("CSV файл татах", "Download CSV")}</a>
           </section>
         )}

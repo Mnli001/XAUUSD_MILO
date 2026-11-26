@@ -208,8 +208,9 @@ test("an email from a chat does not link it: the account is shown a request and 
   await handleUpdate(say("  A@X.mn "), now);
   let row = (await findUserById(u.id))!;
   expect(row.telegramChatId).toBeNull(); // knowing the address is not enough
-  expect(row).toMatchObject({ telegramPendingChatId: "555", telegramPendingName: "Бат · @bat_trader" });
-  expect(pendingTelegram(row, now)).toEqual({ name: "Бат · @bat_trader" });
+  expect(row).toMatchObject({ telegramPendingChatId: "555", telegramPendingName: "Бат", telegramPendingUsername: "bat_trader" });
+  // the Telegram-verified handle and numeric id come first; the free-text name is only quoted beside them
+  expect(pendingTelegram(row, now)).toEqual({ name: "@bat_trader · ID 555 — “Бат”", displayName: "Бат", username: "bat_trader", chatId: "555" });
   expect(lastText()).toContain("https://xau.example/settings");
 
   expect(await confirmPendingTelegram(u.id, new Date(now.getTime() + 60_000))).toBe(true);
@@ -252,6 +253,56 @@ test("confirming moves the chat from any other account and spends its other requ
   expect((await findUserById(a.id))!.telegramChatId).toBe("555");
   expect((await findUserById(b.id))!.telegramChatId).toBeNull(); // one chat, one account
   expect((await findUserById(c.id))!.telegramPendingChatId).toBeNull();
+});
+test("an open request is not replaced by another chat's until it lapses; the same chat may renew it", async () => {
+  const u = await makeUser("a@x.mn");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("a@x.mn", 555), now);
+  // an impostor naming itself like the owner cannot swap its chat in
+  await handleUpdate({ message: { chat: { id: 666, type: "private" }, text: "a@x.mn", from: { first_name: "Бат", username: "bat_trader_" } } }, new Date(now.getTime() + 60_000));
+  expect((await findUserById(u.id))!).toMatchObject({ telegramPendingChatId: "555", telegramPendingUsername: "bat_trader" });
+  await handleUpdate(say("a@x.mn", 555), new Date(now.getTime() + 120_000));
+  expect((await findUserById(u.id))!.telegramPendingExpiresAt!.getTime()).toBe(now.getTime() + 120_000 + PENDING_TTL_MS);
+  const late = new Date(now.getTime() + 120_000 + PENDING_TTL_MS + 1);
+  await handleUpdate({ message: { chat: { id: 666, type: "private" }, text: "a@x.mn", from: { first_name: "X" } } }, late);
+  const row = (await findUserById(u.id))!;
+  expect(row).toMatchObject({ telegramPendingChatId: "666", telegramPendingUsername: null });
+  expect(pendingTelegram(row, late)!.name).toBe("ID 666 — “X”");
+});
+test("an account that is already linked is not offered another chat", async () => {
+  const u = await makeUser("a@x.mn");
+  await linkUser(u.id, "999");
+  await handleUpdate(say("a@x.mn", 555));
+  expect((await findUserById(u.id))!.telegramPendingChatId).toBeNull();
+});
+test("one chat may send only a few email requests an hour", async () => {
+  const now = new Date("2026-11-24T10:00:00Z");
+  for (let i = 0; i < 5; i++) await handleUpdate(say(`n${i}@x.mn`), now);
+  expect(lastText()).toContain("If this email is registered");
+  const u = await makeUser("a@x.mn");
+  await handleUpdate(say("a@x.mn"), now);
+  expect(lastText()).toContain("Too many requests");
+  expect((await findUserById(u.id))!.telegramPendingChatId).toBeNull();
+  await handleUpdate(say("a@x.mn"), new Date(now.getTime() + 61 * 60_000)); // a new hour
+  expect((await findUserById(u.id))!.telegramPendingChatId).toBe("555");
+});
+test("/reset sends a one-time link to the linked chat only, a few times an hour", async () => {
+  const { resetTokenValid } = await import("@/lib/passwordReset");
+  const u = await makeUser("a@x.mn");
+  await handleUpdate(start("/reset", 555));
+  expect(lastText()).toContain("only sent to a chat already linked");
+  await linkUser(u.id, "555");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(start("/reset", 555), now);
+  const token = /\/reset\/([a-f0-9]{64})/.exec(lastText())?.[1];
+  expect(token).toBeTruthy();
+  expect(lastText()).toContain("https://xau.example/reset/");
+  expect(await resetTokenValid(token!, now)).toBe(true);
+  await handleUpdate(start("/reset", 555), now);
+  await handleUpdate(start("/reset", 555), now);
+  expect(await resetTokenValid(token!, now)).toBe(false); // a newer link replaced it
+  await handleUpdate(start("/reset", 555), now);
+  expect(lastText()).toContain("Хэт олон хүсэлт");
 });
 test("a linked chat that sends an email is not asked to link again", async () => {
   const u = await makeUser("a@x.mn");
