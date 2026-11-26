@@ -12,7 +12,7 @@ type Score = number | null;
  * Between 07:00 and 16:00 UTC the first 15-minute close outside the range is followed, with the
  * stop at the middle of the range, and the trade is flat by 20:00 UTC. One trade per day.
  */
-export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[]; confirm?: Score[]; minStop?: { atr: number[]; k: number } }): (Order | null)[] {
+export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; params: BotParams; trend?: Score[]; confirm?: Score[]; minStop?: { atr: number[]; k: number }; windowEnd?: number; holdOvernight?: boolean }): (Order | null)[] {
   const out: (Order | null)[] = new Array(m15.length).fill(null);
   let day = "";
   let high = -Infinity, low = Infinity, count = 0, done = false;
@@ -21,7 +21,7 @@ export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; p
     if (key !== day) { day = key; high = -Infinity; low = Infinity; count = 0; done = false; }
     const hour = bar.time.getUTCHours();
     if (hour < 7) { high = Math.max(high, bar.high); low = Math.min(low, bar.low); count++; return; }
-    if (done || count < 20 || hour >= 16) return;
+    if (done || count < 20 || hour >= (o.windowEnd ?? 16)) return;
     const side = bar.close > high ? "BUY" : bar.close < low ? "SELL" : null;
     if (!side) return;
     const at = decisionTime(bar);
@@ -35,7 +35,8 @@ export function asianRangeOrders(m15: Candle[], o: { rr: number; news: Date[]; p
       if (t === null || t === undefined || (side === "BUY" ? t <= 0 : t >= 0)) return;
     }
     const stopDist = Math.abs(bar.close - (high + low) / 2);
-    const closeAt = Date.UTC(bar.time.getUTCFullYear(), bar.time.getUTCMonth(), bar.time.getUTCDate(), 20);
+    // Flat at 20:00 UTC, or (holdOvernight) at 07:00 UTC the next day, when the next Asian range has formed.
+    const closeAt = Date.UTC(bar.time.getUTCFullYear(), bar.time.getUTCMonth(), bar.time.getUTCDate(), o.holdOvernight ? 31 : 20);
     const maxBars = Math.floor((closeAt - at.getTime()) / M15);
     if (stopDist <= 0 || maxBars < 1) return;
     // A breakout from a range too narrow for the day's usual move is noise: the day is passed.
@@ -112,6 +113,8 @@ export const IDEAS: Idea[] = [
 ];
 /** The Asian rule the Setup page, the Telegram signals and the robot's Asian tool all follow. */
 export const ASIAN_IDEA = IDEAS[7];
+/** Candidate (2026-11-26, scripts/asian-improve-research.ts): breakouts before 12:00 UTC only, held to 07:00 UTC next day. */
+export const ASIAN_IDEA_V4: Idea = { name: "Азийн breakout v4: 12:00 UTC хүртэл, шөнө барих", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, minStop: { atr: c.atrD, k: ASIAN_MIN_STOP_ATR }, windowEnd: 12, holdOvernight: true }) }; // i18n-ok: server log, machine reply or research-script name
 
 type IdeaInput = Omit<BacktestInput, "params" | "h1"> & { h1?: Candle[] };
 

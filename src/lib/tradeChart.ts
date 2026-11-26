@@ -23,10 +23,12 @@ export type TradeChart = {
 const W = 1200, H = 675;
 const PAD_L = 16, PAD_R = 112, TOP = 92, BOTTOM = 52;
 const M15 = 15 * 6e4;
+/** Black and gold, like the site: gold candles rising, dark candles with a bronze edge falling. */
 const C = {
-  bg: "#f3f2ee", grid: "#e2e0d9", text: "#1c1a16", muted: "#6b6558", up: "#ffffff", down: "#1c1a16", wick: "#1c1a16",
-  stopFill: "rgba(214, 69, 65, 0.18)", stopLine: "#d64541", targetFill: "rgba(66, 103, 214, 0.22)", targetLine: "#3a5fcd",
-  win: "#1f8a5b", loss: "#d64541", time: "#9a6b00",
+  bg: "#0e0d0b", panel: "#15130f", grid: "#24211b", text: "#f1ead8", muted: "#9c927c", gold: "#d9b566", goldDeep: "#a8822f",
+  up: "#d9b566", upEdge: "#e8c97f", down: "#1d1a14", downEdge: "#8a7448",
+  stopFill: "rgba(196, 72, 58, 0.20)", stopLine: "#c4483a", targetFill: "rgba(217, 181, 102, 0.16)", targetLine: "#d9b566",
+  win: "#d9b566", loss: "#c4483a", time: "#8a8272",
 };
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fx = (v: number) => v.toFixed(2);
@@ -54,7 +56,9 @@ export function tradeChartSvg(c: TradeChart): string {
   const zx0 = PAD_L + step * i0, zx1 = Math.max(zx0 + step * 2, PAD_L + step * (i1 + 1));
   const out: string[] = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="DejaVu Sans">`);
-  out.push(`<rect width="${W}" height="${H}" fill="${C.bg}"/>`);
+  out.push(`<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.panel}"/><stop offset="1" stop-color="${C.bg}"/></linearGradient></defs>`);
+  out.push(`<rect width="${W}" height="${H}" fill="url(#bg)"/>`);
+  out.push(`<rect width="${W}" height="4" fill="${C.gold}"/>`);
   // price grid: about six round levels
   const raw = (hi - lo) / 6, mag = 10 ** Math.floor(Math.log10(raw)), gridStep = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => s >= raw) ?? raw;
   for (let p = Math.ceil(lo / gridStep) * gridStep; p <= hi; p += gridStep) {
@@ -68,18 +72,21 @@ export function tradeChartSvg(c: TradeChart): string {
   const yE = y(c.entry), yS = y(c.stop), yT = y(c.target);
   out.push(`<rect x="${zx0}" y="${Math.min(yE, yS)}" width="${zx1 - zx0}" height="${Math.abs(yS - yE)}" fill="${C.stopFill}"/>`);
   out.push(`<rect x="${zx0}" y="${Math.min(yE, yT)}" width="${zx1 - zx0}" height="${Math.abs(yT - yE)}" fill="${C.targetFill}"/>`);
-  out.push(`<line x1="${zx0}" x2="${zx1}" y1="${yE}" y2="${yE}" stroke="${C.text}" stroke-width="1.5" stroke-dasharray="6 4"/>`);
+  out.push(`<line x1="${zx0}" x2="${zx1}" y1="${yE}" y2="${yE}" stroke="${C.gold}" stroke-width="1.6" stroke-dasharray="6 4"/>`);
+  out.push(`<line x1="${zx0}" x2="${zx1}" y1="${yS}" y2="${yS}" stroke="${C.stopLine}" stroke-width="1.2"/>`);
+  out.push(`<line x1="${zx0}" x2="${zx1}" y1="${yT}" y2="${yT}" stroke="${C.targetLine}" stroke-width="1.2"/>`);
   // candles
   const bw = Math.max(1.5, step * 0.62);
   bars.forEach((b, i) => {
     const up = b.close >= b.open, top = y(Math.max(b.open, b.close)), bot = y(Math.min(b.open, b.close));
-    out.push(`<line x1="${x(i)}" x2="${x(i)}" y1="${y(b.high)}" y2="${y(b.low)}" stroke="${C.wick}" stroke-width="1.2"/>`);
-    out.push(`<rect x="${x(i) - bw / 2}" y="${top}" width="${bw}" height="${Math.max(1, bot - top)}" fill="${up ? C.up : C.down}" stroke="${C.wick}" stroke-width="1"/>`);
+    const edge = up ? C.upEdge : C.downEdge;
+    out.push(`<line x1="${x(i)}" x2="${x(i)}" y1="${y(b.high)}" y2="${y(b.low)}" stroke="${edge}" stroke-width="1.2"/>`);
+    out.push(`<rect x="${x(i) - bw / 2}" y="${top}" width="${bw}" height="${Math.max(1, bot - top)}" fill="${up ? C.up : C.down}" stroke="${edge}" stroke-width="1"/>`);
   });
   // exit marker
   if (c.exit) {
     const col = c.exit.kind === "WIN" ? C.win : c.exit.kind === "LOSS" ? C.loss : C.time;
-    out.push(`<circle cx="${zx1}" cy="${y(c.exit.price)}" r="8" fill="${col}" stroke="#ffffff" stroke-width="2.5"/>`);
+    out.push(`<circle cx="${zx1}" cy="${y(c.exit.price)}" r="8" fill="${col}" stroke="${C.bg}" stroke-width="3"/>`);
   }
   // price tags on the axis
   const tag = (p: number, fill: string, ink: string) => {
@@ -87,9 +94,9 @@ export function tradeChartSvg(c: TradeChart): string {
     out.push(`<rect x="${W - PAD_R + 4}" y="${ty - 11}" width="${PAD_R - 8}" height="22" rx="3" fill="${fill}"/>`);
     out.push(`<text x="${W - PAD_R + 10}" y="${ty + 5}" font-size="14" font-weight="bold" fill="${ink}">${fx(p)}</text>`);
   };
-  tag(c.stop, C.stopLine, "#ffffff");
-  tag(c.target, C.targetLine, "#ffffff");
-  tag(c.entry, "#ffffff", C.text);
+  tag(c.stop, C.stopLine, "#fff4ee");
+  tag(c.target, C.gold, C.bg);
+  tag(c.entry, "#2a2519", C.gold);
   // header
   out.push(`<text x="${PAD_L + 4}" y="40" font-size="26" font-weight="bold" fill="${C.text}">${esc(c.title)}</text>`);
   out.push(`<text x="${PAD_L + 4}" y="70" font-size="16" fill="${C.muted}">${esc(c.subtitle)}</text>`);
@@ -97,9 +104,10 @@ export function tradeChartSvg(c: TradeChart): string {
     const col = c.badge.kind === "WIN" ? C.win : c.badge.kind === "LOSS" ? C.loss : C.time;
     const bw2 = 20 + c.badge.text.length * 13;
     out.push(`<rect x="${W - 16 - bw2}" y="18" width="${bw2}" height="36" rx="18" fill="${col}"/>`);
-    out.push(`<text x="${W - 16 - bw2 / 2}" y="43" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">${esc(c.badge.text)}</text>`);
+    out.push(`<text x="${W - 16 - bw2 / 2}" y="43" font-size="20" font-weight="bold" fill="${c.badge.kind === "LOSS" ? "#fff4ee" : C.bg}" text-anchor="middle">${esc(c.badge.text)}</text>`);
     out.push(`<text x="${W - 16}" y="76" font-size="14" fill="${C.muted}" text-anchor="end">XAUUSD · 15m</text>`);
   } else out.push(`<text x="${W - 16}" y="40" font-size="14" fill="${C.muted}" text-anchor="end">XAUUSD · 15m</text>`);
+  out.push(`<text x="${W - PAD_R - 8}" y="${H - BOTTOM - 10}" font-size="13" font-weight="bold" fill="${C.goldDeep}" text-anchor="end" opacity="0.8">XAU Analytics</text>`);
   out.push(`</svg>`);
   return out.join("");
 }
