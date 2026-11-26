@@ -55,12 +55,13 @@ export async function setupReply(now: Date, v: Viewer): Promise<{ text: string; 
 }
 
 /**
- * /sample (admins): what a signal looks like, picture and message, built from the setup on screen now when it has
+ * /sample (anyone with a plan): what a signal looks like, picture and message, built from the setup on screen now when it has
  * levels, otherwise from the latest price with a made-up 2R trade. Marked as an example so it is never mistaken for one.
  */
 export async function sampleReply(now: Date, v: Viewer): Promise<{ png: Buffer | null; caption: string; text: string }> {
   const { t } = v;
   const view = await getSetups(now, v);
+  if (view.candles.length < 40) return { png: null, caption: "", text: esc(t("Жишээ гаргах үнийн дата одоогоор алга. Хэсэг хугацааны дараа дахин оролдоно уу.", "There are no prices to build a sample from yet. Please try again a little later.")) };
   const live = orderSetups(view.setups).find((s) => s.side && s.entry !== null && s.stop !== null && s.target !== null);
   let s = live;
   if (!s) {

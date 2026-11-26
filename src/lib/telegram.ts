@@ -164,8 +164,8 @@ export async function botUsername(): Promise<string | null> {
 }
 
 const COMMANDS = {
-  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["help", "Тусламж"]],
-  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["help", "Help"]],
+  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["help", "Тусламж"]],
+  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["help", "Help"]],
 } as const;
 
 /** Points Telegram at this site and lists the bot's commands. Safe to call every time someone starts linking. */
@@ -205,6 +205,7 @@ function helpText(u: User, t: T): string {
     t("<b>Командууд</b>", "<b>Commands</b>"),
     t("/setup — одоогийн setup, нөхцөл, орох/stop/target, чарт", "/setup — the setup now: checks, entry/stop/target, chart"),
     t("/history — сүүлийн 10 дохио, TP/SL үр дүн", "/history — the last 10 signals and how they ended"),
+    t("/sample — жишээ дохио (зураг ба мессеж ямар харагдахыг)", "/sample — a sample signal (what the picture and message look like)"),
     t("/news — дараагийн 3 хоногийн чухал мэдээ", "/news — important releases in the next 3 days"),
     t("/status — одоогийн чиглэл, дараагийн чухал мэдээ", "/status — current bias and the next important release"),
     t("/stop — дохиог түр зогсоох", "/stop — pause signals"),
@@ -388,10 +389,11 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
       const { text: reply, png } = await cmds.setupReply(now, v);
       await deliverPhoto(chat, png, reply);
     } else await sendMessage(chat, command === "history" ? await cmds.historyReply(now, v) : await cmds.newsReply(now, v));
-  } else if (command === "sample" && u.role === "ADMIN") {
+  } else if (command === "sample") {
+    if (!hasAccess(u, now)) { await sendMessage(chat, await statusText(u, now, v)); return; } // says how to get a plan
     const cmds = await import("./telegramCommands");
     const { png, caption, text: body } = await cmds.sampleReply(now, v);
-    await deliverPhoto(chat, png, caption);
+    if (png) await deliverPhoto(chat, png, caption);
     await sendMessage(chat, body);
   } else if (command === "stop" || command === "pause") {
     await db.update(schema.users).set({ signalsPaused: true }).where(eq(schema.users.id, u.id));

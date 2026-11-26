@@ -260,3 +260,12 @@ test("a linked chat that sends an email is not asked to link again", async () =>
   expect((await findUserById(u.id))!.telegramPendingChatId).toBeNull();
   expect(lastText()).toContain("/status"); // the help text
 });
+test("/sample answers anyone with a plan, and tells someone without one how to get it", async () => {
+  const u = await makeUser("a@x.mn");
+  await linkUser(u.id, "555");
+  await handleUpdate(start("/sample"));
+  expect(lastText()).toContain("Жишээ гаргах үнийн дата одоогоор алга"); // no candles stored in this test
+  await db.execute(sql`UPDATE users SET access_until = '2020-01-01' WHERE id = ${u.id}`);
+  await handleUpdate(start("/sample"));
+  expect(lastText()).toContain("хугацаа дууссан");
+});
