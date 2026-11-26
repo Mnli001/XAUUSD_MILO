@@ -17,6 +17,8 @@ export type TradeChart = {
   title: string; // the headline over the chart
   subtitle: string; // the rule and the result, smaller
   badge?: { text: string; kind: "WIN" | "LOSS" | "TIME" } | null; // the result, as a coloured pill top right
+  /** A trade not yet ended: empty space on the right for the hours ahead, and an arrow to the target labelled with this. */
+  forecast?: { label: string; ahead: string } | null;
   clock: (d: Date) => string; // "15:45" on the reader's clock
 };
 
@@ -44,8 +46,9 @@ export function tradeChartSvg(c: TradeChart): string {
   const pad = (hi - lo) * 0.08 || 1;
   lo -= pad; hi += pad;
   const plotW = W - PAD_L - PAD_R, plotH = H - TOP - BOTTOM;
+  const FUT = c.forecast && !c.exit ? Math.round(plotW * 0.24) : 0;
   const n = Math.max(bars.length, 1);
-  const step = plotW / n;
+  const step = (plotW - FUT) / n;
   const x = (i: number) => PAD_L + step * (i + 0.5);
   const y = (p: number) => TOP + ((hi - p) / (hi - lo)) * plotH;
   const idxAt = (t: number) => {
@@ -53,7 +56,7 @@ export function tradeChartSvg(c: TradeChart): string {
     return i < 0 ? bars.length - 1 : i;
   };
   const i0 = idxAt(openT), i1 = c.exit ? idxAt(Math.floor(c.exit.at.getTime() / M15) * M15 - M15) : bars.length - 1;
-  const zx0 = PAD_L + step * i0, zx1 = Math.max(zx0 + step * 2, PAD_L + step * (i1 + 1));
+  const zx0 = PAD_L + step * i0, zx1 = FUT ? PAD_L + plotW - 6 : Math.max(zx0 + step * 2, PAD_L + step * (i1 + 1));
   const out: string[] = [];
   out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="DejaVu Sans">`);
   out.push(`<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${C.panel}"/><stop offset="1" stop-color="${C.bg}"/></linearGradient></defs>`);
@@ -83,6 +86,18 @@ export function tradeChartSvg(c: TradeChart): string {
     out.push(`<line x1="${x(i)}" x2="${x(i)}" y1="${y(b.high)}" y2="${y(b.low)}" stroke="${edge}" stroke-width="1.2"/>`);
     out.push(`<rect x="${x(i) - bw / 2}" y="${top}" width="${bw}" height="${Math.max(1, bot - top)}" fill="${up ? C.up : C.down}" stroke="${edge}" stroke-width="1"/>`);
   });
+  // the expected move: from the price now to the target, across the empty hours ahead
+  if (FUT && c.forecast && bars.length) {
+    const fx0 = x(bars.length - 1), fy0 = y(bars[bars.length - 1].close), fx1 = zx1 - 22, fy1 = y(c.target);
+    const col = c.side === "BUY" ? "#3fbf7f" : C.stopLine;
+    out.push(`<rect x="${PAD_L + plotW - FUT}" y="${TOP}" width="${FUT}" height="${plotH}" fill="#ffffff" opacity="0.025"/>`);
+    out.push(`<text x="${PAD_L + plotW - FUT / 2}" y="${H - BOTTOM - 10}" font-size="13" fill="${C.muted}" text-anchor="middle">${esc(c.forecast.ahead)}</text>`);
+    out.push(`<path d="M${fx0.toFixed(1)},${fy0.toFixed(1)} L${fx1.toFixed(1)},${fy1.toFixed(1)}" stroke="${col}" stroke-width="4" stroke-dasharray="12 8" stroke-linecap="round" fill="none"/>`);
+    const ang = (Math.atan2(fy1 - fy0, fx1 - fx0) * 180) / Math.PI;
+    out.push(`<polygon points="0,0 -22,-11 -22,11" fill="${col}" transform="translate(${fx1.toFixed(1)} ${fy1.toFixed(1)}) rotate(${ang.toFixed(1)})"/>`);
+    const lx = (fx0 + fx1) / 2 - 10, ly = (fy0 + fy1) / 2;
+    out.push(`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="18" font-weight="bold" fill="${col}" text-anchor="end" stroke="${C.bg}" stroke-width="5" paint-order="stroke">${esc(c.forecast.label)}</text>`);
+  }
   // exit marker
   if (c.exit) {
     const col = c.exit.kind === "WIN" ? C.win : c.exit.kind === "LOSS" ? C.loss : C.time;
@@ -107,7 +122,10 @@ export function tradeChartSvg(c: TradeChart): string {
     out.push(`<text x="${W - 16 - bw2 / 2}" y="43" font-size="20" font-weight="bold" fill="${c.badge.kind === "LOSS" ? "#fff4ee" : C.bg}" text-anchor="middle">${esc(c.badge.text)}</text>`);
     out.push(`<text x="${W - 16}" y="76" font-size="14" fill="${C.muted}" text-anchor="end">XAUUSD · 15m</text>`);
   } else out.push(`<text x="${W - 16}" y="40" font-size="14" fill="${C.muted}" text-anchor="end">XAUUSD · 15m</text>`);
-  out.push(`<text x="${W - PAD_R - 8}" y="${H - BOTTOM - 10}" font-size="13" font-weight="bold" fill="${C.goldDeep}" text-anchor="end" opacity="0.8">XAU Analytics</text>`);
+  // the brand mark sits bottom right, or bottom left when the hours-ahead space takes the right side
+  out.push(FUT
+    ? `<text x="${PAD_L + 8}" y="${TOP + 18}" font-size="13" font-weight="bold" fill="${C.goldDeep}" opacity="0.8">XAU Analytics</text>`
+    : `<text x="${W - PAD_R - 8}" y="${H - BOTTOM - 10}" font-size="13" font-weight="bold" fill="${C.goldDeep}" text-anchor="end" opacity="0.8">XAU Analytics</text>`);
   out.push(`</svg>`);
   return out.join("");
 }

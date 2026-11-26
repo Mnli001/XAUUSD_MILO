@@ -18,3 +18,12 @@ test("without levels it still shows the recent price, and without candles it say
   rerender(<SetupChart candles={[]} side={null} entry={null} stop={null} target={null} band={null} />);
   expect(screen.getByText(/Лааны дата алга/)).toBeInTheDocument();
 });
+test("a setup being watched or in play gets an arrow to its target; one that is off does not", () => {
+  const { container, rerender } = render(<SetupChart candles={candles} side="BUY" entry={4042} stop={4030} target={4066} band={null} status="WATCH" />);
+  expect(container.querySelector("[data-arrow]")).not.toBeNull();
+  expect(screen.getAllByText("Таамаг: өсөх").length).toBeGreaterThan(0);
+  rerender(<SetupChart candles={candles} side="SELL" entry={4030} stop={4040} target={4010} band={null} status="ACTIVE" at={candles[30].time} />);
+  expect(screen.getAllByText("Таамаг: унах").length).toBeGreaterThan(0);
+  rerender(<SetupChart candles={candles} side="BUY" entry={4042} stop={4030} target={4066} band={null} status="OFF" />);
+  expect(container.querySelector("[data-arrow]")).toBeNull();
+});

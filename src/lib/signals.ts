@@ -105,6 +105,8 @@ export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?
       const v = viewer(prefsOf(u));
       const theirs = (await reading(v)).setups.find((x) => x.id === s.id && x.status === "ACTIVE") ?? s;
       try {
+        // With no test sender: the picture first (the setup and the expected move), then the full message.
+        if (!opts.send) await deliverPhoto(chat, await signalPicture(theirs, (await reading(v)).candles, at, v), signalCaption(theirs, v)).catch(() => false);
         if (await send(chat, signalText(theirs, at, now, v))) sentTo++;
       } catch (e) {
         failed++;
@@ -240,6 +242,26 @@ export async function emitResults(now: Date, opts: { send?: (chat: string, png: 
     done++;
   }
   return done;
+}
+
+/** The short line under a signal's picture; the full message follows it. */
+export function signalCaption(s: Pick<Setup, "side" | "name">, v: Viewer = MN_VIEWER): string {
+  const { t } = v;
+  return `${s.side === "BUY" ? "🟢" : "🔴"} <b>${s.side} XAUUSD</b> · ${esc(s.name)} · ${esc(t("шинэ дохио", "new signal"))}`;
+}
+
+/** A new signal drawn: recent candles, entry, stop and target zones, and an arrow to the target across the hours ahead. */
+export function signalPicture(s: Pick<Setup, "side" | "name" | "entry" | "stop" | "target">, candles: Candle[], at: Date, v: Viewer = MN_VIEWER): Promise<Buffer | null> {
+  const { t } = v;
+  if (!s.side || s.entry === null || s.stop === null || s.target === null || candles.length === 0) return Promise.resolve(null);
+  const rr = Math.abs(s.target - s.entry) / Math.abs(s.entry - s.stop);
+  return tradeChartPng({
+    bars: candles, side: s.side, entry: s.entry, stop: s.stop, target: s.target, openedAt: at, exit: null,
+    title: `${s.side} XAUUSD · ${t("шинэ дохио", "new signal")}`,
+    subtitle: `${s.name} · ${t("орох", "entry")} ${px(s.entry)} · stop ${px(s.stop)} · target ${px(s.target)} · R:R 1:${rr.toFixed(1)}`,
+    badge: null, clock: v.time,
+    forecast: { label: t(`Таамаг: ${px(s.target)}`, `Expected: ${px(s.target)}`), ahead: t("дараагийн цагууд", "hours ahead") },
+  });
 }
 
 /** What runs after each 5-minute price update. One part failing does not stop the other. */

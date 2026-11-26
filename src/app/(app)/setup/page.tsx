@@ -266,9 +266,9 @@ export default async function SetupPage() {
 
         return (
           <section key={s.id} className="card">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-6">
+            <div className="grid gap-5 lg:grid-cols-2 lg:gap-6">
                 {/* Phones read top to bottom: what it is, the chart, then the levels and checks. Wide screens put the chart on the right. */}
-                <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+                <div className="min-w-0 lg:col-span-2">
                   {/* In the normal flow, above the title, so it can never cover it on a narrow screen. */}
                   {isBest && best && (
                     <p className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2.5 py-1 text-xs font-semibold text-amber-300">
@@ -297,13 +297,13 @@ export default async function SetupPage() {
                   )}
                 </div>
 
-              <div className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+              <div className="min-w-0 lg:col-span-2">
                 <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-3 sm:p-4">
-                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} v={v} />
+                  <SetupChart candles={candles} side={s.side} entry={s.entry} stop={s.stop} target={s.target} band={s.band} status={s.status} at={s.at ? s.at.toISOString() : null} v={v} />
                 </div>
               </div>
 
-              <div className="min-w-0 space-y-5 lg:col-start-1 lg:row-start-2">
+              <div className="min-w-0 grid gap-5 lg:col-span-2 lg:grid-cols-2 [&>*]:min-w-0">
                 {s.entry !== null && (
                   <div className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
                     <Ladder s={s} t={t} />

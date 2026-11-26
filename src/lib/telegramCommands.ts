@@ -9,6 +9,7 @@ import { weekdayName, zoneWeekday } from "./time";
 import type { Viewer } from "./viewer";
 import { nowWindow } from "./setup/now";
 import { orderSetups } from "./setup/order";
+import { signalCaption, signalPicture, signalText } from "./signals";
 
 /**
  * Replies to /setup, /history and /news. Kept apart from telegram.ts so the webhook loads the
@@ -51,6 +52,29 @@ export async function setupReply(now: Date, v: Viewer): Promise<{ text: string; 
     });
   }
   return { text: lines.join("\n"), png };
+}
+
+/**
+ * /sample (admins): what a signal looks like, picture and message, built from the setup on screen now when it has
+ * levels, otherwise from the latest price with a made-up 2R trade. Marked as an example so it is never mistaken for one.
+ */
+export async function sampleReply(now: Date, v: Viewer): Promise<{ png: Buffer | null; caption: string; text: string }> {
+  const { t } = v;
+  const view = await getSetups(now, v);
+  const live = orderSetups(view.setups).find((s) => s.side && s.entry !== null && s.stop !== null && s.target !== null);
+  let s = live;
+  if (!s) {
+    const base = view.setups[0], last = view.candles.at(-1)!;
+    const span = Math.max(...view.candles.slice(-96).map((c) => c.high)) - Math.min(...view.candles.slice(-96).map((c) => c.low));
+    const risk = Math.max(4, Math.round(span * 0.15 * 100) / 100), side = view.candles.at(-1)!.close >= view.candles.at(-40)!.close ? "BUY" : "SELL", dir = side === "BUY" ? 1 : -1;
+    s = { ...base, status: "ACTIVE", side, entry: last.close, stop: last.close - dir * risk, target: last.close + dir * 2 * risk, checks: [{ label: t("Жишээ: одоогийн үнээр зохиосон 1:2 арилжаа", "Example: a made-up 1:2 trade at the current price"), ok: true }] };
+  }
+  const at = s.at ?? new Date(view.candles.at(-1)!.time.getTime() + 15 * 6e4);
+  const tagLine = `🧪 <b>${esc(t("ЖИШЭЭ ДОХИО", "SAMPLE SIGNAL"))}</b>`;
+  return { png: await signalPicture(s, view.candles, at, v), caption: `${tagLine}
+${signalCaption(s, v)}`, text: `${tagLine}
+
+${signalText(s, at, now, v)}` };
 }
 
 /** The last ten signals with how each ended, and the totals. */

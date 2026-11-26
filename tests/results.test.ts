@@ -57,3 +57,7 @@ test("the text names the outcome in English too, and the picture shows entry, st
   const svg = tradeChartSvg({ bars: day(), side: "BUY", entry: 4006, stop: 4000, target: 4024, openedAt: at(8, 30), exit: { at: at(10, 15), price: 4024, kind: "WIN" }, title: "TP", subtitle: "x", badge: { text: "+3.00R", kind: "WIN" }, clock: (d) => d.toISOString().slice(11, 16) });
   for (const part of ["4006.00", "4000.00", "4024.00", "+3.00R", "<circle"]) expect(svg).toContain(part);
 });
+test("a new signal's picture has room for the hours ahead and an arrow to the target", () => {
+  const svg = tradeChartSvg({ bars: day(), side: "BUY", entry: 4006, stop: 4000, target: 4018, openedAt: at(8, 30), exit: null, title: "BUY", subtitle: "x", clock: (d) => d.toISOString().slice(11, 16), forecast: { label: "Таамаг: 4018.00", ahead: "дараагийн цагууд" } });
+  for (const part of ["Таамаг: 4018.00", "дараагийн цагууд", "<polygon", "4018.00"]) expect(svg).toContain(part);
+});

@@ -388,6 +388,11 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
       const { text: reply, png } = await cmds.setupReply(now, v);
       await deliverPhoto(chat, png, reply);
     } else await sendMessage(chat, command === "history" ? await cmds.historyReply(now, v) : await cmds.newsReply(now, v));
+  } else if (command === "sample" && u.role === "ADMIN") {
+    const cmds = await import("./telegramCommands");
+    const { png, caption, text: body } = await cmds.sampleReply(now, v);
+    await deliverPhoto(chat, png, caption);
+    await sendMessage(chat, body);
   } else if (command === "stop" || command === "pause") {
     await db.update(schema.users).set({ signalsPaused: true }).where(eq(schema.users.id, u.id));
     await sendMessage(chat, esc(t("Дохиог түр зогсоолоо. Telegram холбоотой хэвээр. Дахин асаах бол /resume.", "Signals paused. Telegram stays linked. Send /resume to turn them back on.")));
