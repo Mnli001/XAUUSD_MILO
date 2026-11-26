@@ -18,6 +18,11 @@ import { lockedHourRows } from "@/lib/paywall";
 import { PlansCard } from "@/components/Paywall";
 import { choosePlanAction } from "@/lib/actions/payments";
 import { getReasoning } from "@/lib/reasoningLive";
+import { MyDashboard, type DashSetup } from "@/components/MyDashboard";
+import { botSummary, journalSummary, latestPaidPlan, planSummary } from "@/lib/dashboard";
+import { listTrades } from "@/lib/trades";
+import { getSetups } from "@/lib/setup/build";
+import { orderSetups } from "@/lib/setup/order";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -30,8 +35,9 @@ export default async function TodayPage() {
   const { t } = v;
   const now = new Date();
   // Without a plan the paid figures are never loaded into the page, so they cannot be read from it.
-  const { paid, payOn, contact } = paywallFor(await requireUser(), now);
-  const [snap, upcoming, next, reactions, day, reasoning, guideDone] = await Promise.all([
+  const user = await requireUser();
+  const { paid, payOn, contact } = paywallFor(user, now);
+  const [snap, upcoming, next, reactions, day, reasoning, guideDone, paidPlan, trades, bot, setupView] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
@@ -39,11 +45,19 @@ export default async function TodayPage() {
     loadCandles(SYMBOL, "15min", 96),
     paid ? getReasoning(now, v.locale) : Promise.resolve(null),
     startGuideDone(),
+    latestPaidPlan(user.id),
+    listTrades(user.id),
+    paid ? botSummary(user.id, now) : Promise.resolve(null),
+    paid ? getSetups(now, v).catch((e) => { console.error("[today] setups failed", e); return null; }) : Promise.resolve(null),
   ]);
+  const dashSetups: DashSetup[] | null = setupView
+    ? orderSetups(setupView.setups).map((s) => ({ id: s.id, name: s.name, status: s.status, side: s.side, headline: s.headline, entry: s.entry, stop: s.stop, target: s.target }))
+    : null;
   const highSoon = upcoming.filter((e) => e.impact === "HIGH").map((e) => ({ time: e.time, title: e.title, type: e.type }));
   return (
     <div className="reveal space-y-5 sm:space-y-7">
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
+      <MyDashboard v={v} name={user.name || null} plan={planSummary(user, paidPlan, now)} journal={journalSummary(trades, now)} bot={bot} setups={paid ? dashSetups ?? [] : null} />
       {!guideDone && <StartGuide t={t} dismiss={dismissStartGuide} />}
       <section className="card group relative overflow-hidden sm:p-8 transition-all duration-500 hover:shadow-2xl" aria-labelledby="today-h">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />
