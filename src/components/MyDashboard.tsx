@@ -82,7 +82,7 @@ function TradesChip({ j, t }: { j: TradeSummary; t: T }) {
 export function AccountChips({ v, plan, trades, bot }: { v: Viewer; plan: PlanSummary; trades: TradeSummary; bot: BotSummary | null }) {
   const { t } = v;
   return (
-    <nav aria-label={t("Миний самбар", "My dashboard")} className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 lg:justify-end lg:overflow-visible lg:pb-0">
+    <nav aria-label={t("Миний самбар", "My dashboard")} className="relative -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 lg:justify-end lg:overflow-visible lg:pb-0">
       <PlanChip plan={plan} v={v} />
       <BotChip bot={bot} t={t} />
       <TradesChip j={trades} t={t} />

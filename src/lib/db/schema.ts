@@ -38,6 +38,14 @@ export const users = pgTable("users", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
+/** A user's profile picture, kept apart from the user row so loading a user never drags the image along. */
+export const userAvatars = pgTable("user_avatars", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  image: bytea("image").notNull(), // a small square (256 px), resized in the browser before upload
+  mime: text("mime").notNull(), // image/webp | image/jpeg | image/png
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
 export const candles = pgTable("candles", {
   symbol: text("symbol").notNull(),
   timeframe: text("timeframe").notNull(),

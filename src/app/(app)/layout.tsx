@@ -9,6 +9,7 @@ import { hasAccess } from "@/lib/access";
 import { needsConsent } from "@/lib/legal";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import { acceptTermsAction } from "@/lib/actions/consent";
+import { avatarUrl } from "@/lib/avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await requireUser();
   const v = await getViewer();
   const pending = user.telegramChatId ? null : pendingTelegram(user, new Date());
+  const avatar = await avatarUrl(user.id);
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      <AppNav name={user.name} isAdmin={user.role === "ADMIN"} />
+      <AppNav name={user.name} isAdmin={user.role === "ADMIN"} avatar={avatar} />
       {hasAccess(user, new Date()) && <LiveAlerts />}
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">

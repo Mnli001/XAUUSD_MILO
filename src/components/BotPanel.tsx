@@ -1,10 +1,10 @@
 "use client";
 import { TermHint } from "./TermHint";
-import { useActionState, useCallback, useState } from "react";
+import { useActionState, useCallback, useState, type ReactNode } from "react";
 import type { LiveView } from "@/lib/bot/liveDb";
 import type { T } from "@/lib/i18n";
 import { useViewer } from "./PrefsProvider";
-import { Figures, Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
+import { Pnl, SidePill, Station, signedUsd, Dir } from "./Timetable";
 import { saveBotConfigAction, saveGateAction, startBotAction, stopBotAction, closeAllAction, rotateTokenAction, type BotFormState } from "@/lib/actions/bot";
 import { sessionLabel } from "@/lib/time";
 import { recordSentence, robotFileLabel, stamp, type BrokerRecord } from "@/lib/siteCopy";
@@ -14,6 +14,7 @@ import { usePoll } from "./usePoll";
 export type RobotNeeds = { need: Record<string, number>; latest: number };
 /** The Setup signals tool's text, built on the server from SESSION_RULES and the Setup page's describe(). */
 export type SetupToolText = { lines: string[]; record: BrokerRecord | null };
+import { Icon } from "./TodayIcons";
 
 type View = Omit<LiveView, "startedAt" | "stoppedAt" | "lastSeenAt" | "deals"> & {
   startedAt: string | null; stoppedAt: string | null; lastSeenAt: string | null;
@@ -57,21 +58,21 @@ const toolList = (t: T) => [
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-200" : v > 0 ? "text-emerald-400" : "text-red-400");
 
-/** The user's MT5 accounts; each has its own settings, Start/Stop and history. */
+/** The user's MT5 accounts as a row of pills; each has its own settings, Start/Stop and history. */
 function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; current: string }) {
   const { t } = useViewer();
   if (accounts.length === 0) return null;
   return (
-    <section className="card" aria-labelledby="accounts-title">
-      <h2 id="accounts-title" className="card-title">{t("MT5 данс", "MT5 accounts")}</h2>
-      <ul className="flex flex-wrap gap-2">
+    <nav aria-label={t("MT5 данс", "MT5 accounts")} className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <ul className="relative flex max-w-full gap-1 overflow-x-auto rounded-[16px] border p-1" style={{ borderColor: "var(--hairline)", background: "var(--glass-inset)" }}>
         {accounts.map((a) => {
           const here = a.login === current;
           return (
-            <li key={a.login}>
+            <li key={a.login} className="shrink-0">
               <a href={`/bot?account=${encodeURIComponent(a.login)}`} aria-current={here ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-2.5 rounded-lg border px-3 text-sm transition-colors ${here ? "border-amber-400 bg-zinc-800 font-semibold text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
-                <Station tone={a.online ? "on" : "off"} />
+                className={`flex min-h-10 items-center gap-2 rounded-[12px] border px-3 text-sm whitespace-nowrap transition-colors ${here ? "font-semibold text-zinc-50" : "border-transparent text-zinc-400 hover:text-zinc-200"}`}
+                style={here ? { borderColor: "var(--hairline-gold)", background: "rgb(217 181 102 / 0.1)" } : undefined}>
+                <span aria-hidden className={`h-2 w-2 rounded-full ${a.online ? "bg-emerald-400" : "bg-zinc-600"}`} />
                 <span className="tabular-nums">{a.label}</span>
                 {a.mode === "REAL" && <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-xs font-semibold text-red-400">{t("Жинхэнэ", "Real")}</span>}
                 {a.state === "RUNNING" && <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-xs font-semibold text-emerald-400">{t("ажиллаж байна", "running")}</span>}
@@ -81,8 +82,74 @@ function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; cu
           );
         })}
       </ul>
-      <p className="mt-3 max-w-prose text-xs leading-relaxed text-zinc-500">{t("Өөр данс нэмэхдээ MT5 дээр тэр дансаар нэвтэрнэ (File → Login to Trade Account). Робот вэбтэй холбогдмогц данс энд гарч ирнэ, анх зогссон төлөвтэй байна. Нэг MT5 нэг удаад нэг дансанд л нэвтэрдэг тул хоёр дансыг зэрэг ажиллуулахад хоёр тусдаа MT5 хэрэгтэй.", "To add another account, sign in to it in MT5 (File → Login to Trade Account). It appears here as soon as the robot reaches the web, and starts out stopped. One MT5 is signed in to one account at a time, so running two accounts at once needs two separate MT5 installations.")}</p>
-    </section>
+      <details className="text-xs text-zinc-500">
+        <summary className="cursor-pointer hover:text-zinc-300">{t("Өөр данс нэмэх", "Add another account")}</summary>
+        <p className="mt-2 max-w-prose leading-relaxed">{t("Өөр данс нэмэхдээ MT5 дээр тэр дансаар нэвтэрнэ (File → Login to Trade Account). Робот вэбтэй холбогдмогц данс энд гарч ирнэ, анх зогссон төлөвтэй байна. Нэг MT5 нэг удаад нэг дансанд л нэвтэрдэг тул хоёр дансыг зэрэг ажиллуулахад хоёр тусдаа MT5 хэрэгтэй.", "To add another account, sign in to it in MT5 (File → Login to Trade Account). It appears here as soon as the robot reaches the web, and starts out stopped. One MT5 is signed in to one account at a time, so running two accounts at once needs two separate MT5 installations.")}</p>
+      </details>
+    </nav>
+  );
+}
+
+/** The run state as a glowing orb: green and turning while running, amber when MT5 has gone quiet, grey when stopped. */
+function StatusOrb({ tone }: { tone: "run" | "warn" | "stop" }) {
+  const c = tone === "run" ? "var(--color-emerald-400)" : tone === "warn" ? "var(--color-amber-400)" : "var(--color-zinc-500)";
+  return (
+    <span aria-hidden className="relative flex h-24 w-24 shrink-0 items-center justify-center sm:h-28 sm:w-28">
+      <span className="absolute inset-0 rounded-full border-2" style={{ borderColor: c, opacity: 0.2 }} />
+      <span className={`absolute inset-3 rounded-full border-2 border-dashed ${tone === "run" ? "animate-[spin_24s_linear_infinite]" : ""}`} style={{ borderColor: c, opacity: 0.4 }} />
+      <span className={`absolute inset-6 rounded-full ${tone === "run" ? "animate-pulse" : ""}`} style={{ background: c, opacity: 0.18 }} />
+      <span className="relative h-8 w-8 rounded-full sm:h-9 sm:w-9" style={{ background: `radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.75), ${c} 58%)`, boxShadow: `0 0 32px ${c}` }} />
+    </span>
+  );
+}
+
+/** The closed trades' running total as a line, oldest first: the robot's equity change over its recent history. */
+function EquityCurve({ deals, t }: { deals: View["deals"]; t: T }) {
+  if (deals.length < 2) return null;
+  const sorted = [...deals].sort((a, b) => a.closeTime.localeCompare(b.closeTime));
+  const pts = sorted.reduce<number[]>((acc, d) => [...acc, acc[acc.length - 1] + d.profit], [0]);
+  const run = pts[pts.length - 1];
+  const lo = Math.min(...pts), hi = Math.max(...pts), span = hi - lo || 1;
+  const W = 300, H = 80;
+  const d = "M" + pts.map((p, i) => `${((i / (pts.length - 1)) * W).toFixed(1)} ${(H - 4 - ((p - lo) / span) * (H - 10)).toFixed(1)}`).join(" L");
+  const up = run >= 0;
+  const c = up ? "var(--color-emerald-400)" : "var(--color-red-400)";
+  return (
+    <div className="glass-tile min-w-0 p-3.5 lg:w-80">
+      <p className="flex items-baseline justify-between gap-2 text-xs text-zinc-500">
+        <span>{t(`Сүүлийн ${sorted.length} арилжаа`, `Last ${sorted.length} trades`)}</span>
+        <Pnl value={Math.round(run * 100) / 100} className="text-sm" />
+      </p>
+      <svg aria-hidden viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="mt-2 h-20 w-full overflow-visible">
+        <defs><linearGradient id="eq-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={c} stopOpacity="0.32" /><stop offset="1" stopColor={c} stopOpacity="0" /></linearGradient></defs>
+        <path d={`${d} L${W} ${H} L0 ${H} Z`} fill="url(#eq-fill)" />
+        <path d={d} fill="none" stroke={c} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
+/** Where an open position stands between its stop and its target, with the entry marked. */
+function PositionBar({ p, price }: { p: View["positions"][number]; price: number | null }) {
+  const { t } = useViewer();
+  if (!p.sl || !p.tp || p.sl === p.tp) return <p className="mt-2 text-xs text-zinc-500 tabular-nums">{t("Орсон", "Entry")} {p.openPrice} · SL {p.sl || "—"} · TP {p.tp || "—"}</p>;
+  const f = (x: number) => Math.min(1, Math.max(0, (x - p.sl) / (p.tp - p.sl))) * 100;
+  const e = f(p.openPrice), n = price === null ? null : f(price);
+  return (
+    <div className="mt-3">
+      <div aria-hidden className="relative h-1.5 rounded-full">
+        <span className="absolute inset-y-0 left-0 rounded-l-full bg-red-400/40" style={{ width: `${e}%` }} />
+        <span className="absolute inset-y-0 right-0 rounded-r-full bg-emerald-400/20" style={{ left: `${e}%` }} />
+        {n !== null && <span className={`absolute inset-y-0 ${n >= e ? "bg-emerald-400" : "bg-red-400"}`} style={{ left: `${Math.min(e, n)}%`, width: `${Math.abs(n - e)}%` }} />}
+        <span className="absolute -top-1 h-3.5 w-0.5 bg-zinc-100" style={{ left: `${e}%` }} />
+        {n !== null && <span className="absolute -top-[3px] h-3 w-3 -translate-x-1/2 rounded-full bg-amber-300 shadow-[0_0_10px_var(--color-amber-300)]" style={{ left: `${n}%` }} />}
+      </div>
+      <p className="relative mt-2 flex justify-between text-xs tabular-nums">
+        <span className="text-red-400">SL {p.sl}</span>
+        <span className="text-zinc-400">{t("Орсон", "Entry")} {p.openPrice}</span>
+        <span className="text-emerald-400">TP {p.tp}</span>
+      </p>
+    </div>
   );
 }
 
@@ -135,46 +202,79 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
         </div>
       )}
 
-      <section className="card" aria-label={t("Ботын төлөв", "Bot status")}>
-        {/* The run state as a status line: a filled station while running, a hollow one when stopped. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <span className={`inline-flex items-center gap-2.5 text-lg font-bold ${running ? "text-emerald-400" : "text-zinc-200"}`}>
-            <Station tone={running ? "on" : "off"} />
-            {running ? t("Бот ажиллаж байна", "Bot is running") : t("Бот зогссон", "Bot is stopped")}
-          </span>
-          <span className="rounded-md border border-zinc-700 px-2 py-0.5 text-xs font-medium text-zinc-300">{savedTool}</span>
-          {!running && v.stopReason && <span className="text-sm text-zinc-400">({STOP_REASON[v.stopReason] ?? v.stopReason})</span>}
+      <section className="card relative overflow-hidden p-5 sm:p-7" aria-label={t("Ботын төлөв", "Bot status")}
+        style={{ background: `${running ? "radial-gradient(70% 120% at 0% 0%, rgb(111 207 163 / 0.11), transparent 62%), " : ""}radial-gradient(60% 120% at 100% 100%, rgb(217 181 102 / 0.12), transparent 60%), var(--panel-bg)` }}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
+            <StatusOrb tone={running ? (v.online ? "run" : "warn") : "stop"} />
+            <div className="min-w-0">
+              <h2 className={`font-display text-[28px] leading-tight sm:text-[40px] ${running ? (v.online ? "text-emerald-400" : "text-amber-300") : "text-zinc-100"}`}>
+                {running ? t("Бот ажиллаж байна", "Bot is running") : t("Бот зогссон", "Bot is stopped")}
+              </h2>
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full bg-amber-400/15 px-2.5 py-0.5 font-semibold text-amber-300">{savedTool}</span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-semibold ${v.online ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-400/15 text-amber-300"}`}>
+                  <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${v.online ? "bg-emerald-400" : "bg-amber-400"}`} />
+                  MT5: {v.online ? t("холбогдсон", "connected") : v.lastSeenAt ? t("холболт тасарсан", "connection lost") : t("холбогдоогүй", "not connected")}
+                </span>
+                {stale && <span className="text-amber-300">{t("самбар шинэчлэгдэхгүй байна", "the panel is not updating")}</span>}
+              </p>
+              <p className={`mt-2 text-sm tabular-nums ${real ? "text-red-300" : "text-zinc-400"}`}>
+                {v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : t("Данс холбогдоогүй", "No account yet")}
+                {!running && v.stopReason && <span className="text-zinc-500"> · {STOP_REASON[v.stopReason] ?? v.stopReason}</span>}
+              </p>
+            </div>
+          </div>
+          <EquityCurve deals={v.deals} t={t} />
         </div>
-        <p className={`mt-2 flex items-center gap-2 text-xs ${v.online ? "text-zinc-400" : "text-amber-300"}`}>
-          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${v.online ? "bg-emerald-400" : "border-2 border-amber-400"}`} />
-          <span>MT5: <span className={v.online ? "font-medium text-emerald-400" : "font-medium"}>{v.online ? t("холбогдсон", "connected") : v.lastSeenAt ? t("холболт тасарсан", "connection lost") : t("холбогдоогүй", "not connected")}</span>{stale ? t(" · самбар шинэчлэгдэхгүй байна", " · the panel is not updating") : ""}</span>
-        </p>
-        <div className="mt-4">
-          <Figures inset className="grid-cols-2 sm:grid-cols-4" items={[
-            { label: t("Данс", "Account"), value: v.accountMode ? `${v.accountMode === "REAL" ? t("Жинхэнэ", "Real") : "Demo"} ${v.accountLogin ?? ""}${v.accountServer ? ` · ${v.accountServer}` : ""}` : "—", tone: `text-sm sm:text-base ${real ? "text-red-300" : "text-zinc-100"}` },
-            { label: t("Үлдэгдэл (Balance)", "Balance"), value: money(v.balance) },
-            { label: t("Хөрөнгө (Equity)", "Equity"), value: money(v.equity) },
-            { label: t("Сүүлийн 24ц", "Last 24h"), value: signedMoney(v.pnl24h), tone: tone(v.pnl24h) },
-          ]} />
+
+        <dl className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+          {([
+            [t("Үлдэгдэл (Balance)", "Balance"), money(v.balance), "text-zinc-50", null],
+            [t("Хөрөнгө (Equity)", "Equity"), money(v.equity), "text-zinc-50", v.positions.length > 0 ? t(`${v.positions.length} нээлттэй`, `${v.positions.length} open`) : null],
+            [t("Сүүлийн 24 цаг", "Last 24 hours"), signedMoney(v.pnl24h), tone(v.pnl24h), null],
+            [t("Энэ удаагийн үр дүн", "This run"), running ? signedMoney(v.runPnl) : "—", running ? tone(v.runPnl) : "text-zinc-500", null],
+            [t("Өнөөдрийн оролт", "Entries today"), v.tradesToday === null ? "—" : `${v.tradesToday}${g.on && g.maxTradesDay > 0 ? ` / ${g.maxTradesDay}` : ""}`, "text-zinc-50", g.on && g.dailyLossPct > 0 ? t(`алдагдлын хязгаар ${g.dailyLossPct}%`, `loss stop ${g.dailyLossPct}%`) : null],
+          ] as [string, ReactNode, string, string | null][]).map(([label, val, cls, note]) => (
+            <div key={label} className="glass-tile min-w-0 px-3.5 py-3 last:max-sm:col-span-2">
+              <dt className="text-xs text-zinc-500">{label}</dt>
+              <dd className={`mt-0.5 text-[clamp(1rem,4.5vw,1.5rem)] leading-tight font-semibold tabular-nums ${cls}`}>{val}</dd>
+              {note && <dd className="mt-0.5 text-xs text-zinc-500">{note}</dd>}
+            </div>
+          ))}
+        </dl>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          {running
+            ? <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-7 text-base">■ {t("Ботыг зогсоох", "Stop the bot")}</button></form>
+            : <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-8 text-base" disabled={!v.hasToken}>▶ {t("Ботыг эхлүүлэх", "Start bot")}</button></form>}
+          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" style={{ borderColor: "rgb(234 131 112 / 0.4)" }} disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
+          {v.closeAllPending && <span className="text-xs font-medium text-amber-300">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
+          <p className="text-xs leading-relaxed text-zinc-500 lg:ml-auto lg:max-w-md lg:text-right">
+            {t("Бот таны MT5 дансанд жинхэнэ арилжаа хийнэ. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй: эхлээд demo дансанд турш. Санхүүгийн зөвлөгөө биш.", "The bot places real trades in your MT5 account. Past results do not guarantee future profit: try it on a demo account first. Not financial advice.")}
+          </p>
         </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <form action={startBotAction} className="max-sm:flex-1">{accountField}<button className="btn w-full px-6" disabled={running || !v.hasToken}>{t("Ботыг эхлүүлэх", "Start bot")}</button></form>
-          <form action={stopBotAction} className="max-sm:flex-1">{accountField}<button className="btn-ghost w-full px-6" disabled={!running}>{t("Зогсоох", "Stop")}</button></form>
-          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
-          {v.closeAllPending && <span className="self-center text-xs font-medium text-amber-300">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
-        </div>
-        {!v.online && <p className="mt-3 rounded-lg bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-300">{t("MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.", "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.")}</p>}
+        {!v.online && <p className="mt-4 rounded-xl bg-amber-400/10 px-3.5 py-2.5 text-xs leading-relaxed text-amber-300">{t("MT5 робот холбогдоогүй үед Start дарсан ч арилжаа хийгдэхгүй. Робот холбогдмогц тушаалыг авна.", "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.")}</p>}
       </section>
 
-      <div className="grid items-start gap-4 sm:gap-5 md:grid-cols-2">
+      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
         <section className="card" aria-labelledby="now-h">
-          <h2 id="now-h" className="card-title">{t("Одоо", "Now")}</h2>
-          <div className={`flex items-baseline gap-2 text-3xl font-bold tracking-[-0.02em] ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-200"}`}>
-            {v.signal === "BUY" || v.signal === "SELL" ? <Dir d={v.signal === "BUY" ? 1 : -1} /> : null}
-            {v.signal === "BUY" ? "BUY" : v.signal === "SELL" ? "SELL" : v.signal === "NONE" ? t("Хүлээж байна", "Waiting") : "—"}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Icon name="bolt" className="h-[18px] w-[18px] text-amber-400" />
+            <h2 id="now-h" className="text-base font-semibold text-zinc-100">{t("Одоо", "Now")}</h2>
+            <span className="ml-auto text-xs text-zinc-500 tabular-nums">{v.symbol ?? "—"} · bid {v.bid ?? "—"} · ask {v.ask ?? "—"}</span>
           </div>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-300">{v.reason || t("Роботоос мэдээлэл ирээгүй", "No data from the robot yet")}</p>
-          <p className="mt-2 text-xs text-zinc-500 tabular-nums">{v.symbol ?? "—"}, bid {v.bid ?? "—"}, ask {v.ask ?? "—"}</p>
+          <div className="mt-4 flex items-center gap-4">
+            <span aria-hidden className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl ${v.signal === "BUY" ? "bg-emerald-500/15 text-emerald-400" : v.signal === "SELL" ? "bg-red-500/15 text-red-400" : "text-zinc-500"}`} style={v.signal === "BUY" || v.signal === "SELL" ? undefined : { background: "var(--glass-inset)" }}>
+              {v.signal === "BUY" || v.signal === "SELL" ? <Dir d={v.signal === "BUY" ? 1 : -1} /> : "·"}
+            </span>
+            <div className="min-w-0">
+              <p className={`font-display text-[28px] leading-none ${v.signal === "BUY" ? "text-emerald-400" : v.signal === "SELL" ? "text-red-400" : "text-zinc-200"}`}>
+                {v.signal === "BUY" ? "BUY" : v.signal === "SELL" ? "SELL" : v.signal === "NONE" ? t("Хүлээж байна", "Waiting") : "—"}
+              </p>
+              <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">{v.reason || t("Роботоос мэдээлэл ирээгүй", "No data from the robot yet")}</p>
+            </div>
+          </div>
           {v.gateOn !== null && (
             <div className="mt-3 space-y-1.5 border-t border-zinc-800 pt-3 text-sm">
               {/* The entry filter's verdict, as the robot reports it on every sync. */}
@@ -218,25 +318,50 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
           )}
         </section>
 
+        <section className="card" aria-labelledby="open-h">
+          <div className="flex items-center gap-2">
+            <Icon name="layers" className="h-[18px] w-[18px] text-amber-400" />
+            <h2 id="open-h" className="text-base font-semibold text-zinc-100">{t("Нээлттэй позиц", "Open positions")} · {v.positions.length}</h2>
+            {v.positions.length > 0 && <Pnl value={Math.round(v.positions.reduce((a, p) => a + p.profit, 0) * 100) / 100} className="ml-auto text-lg" />}
+          </div>
+          {v.positions.length === 0 ? <p className="mt-4 text-sm text-zinc-500">{t("Нээлттэй позиц алга. Бот орох үед энд SL, орох үнэ, TP-гийн хооронд хаана явааг харуулна.", "No open positions. When the bot enters, this shows where the price stands between the stop, the entry and the target.")}</p> : (
+            <ul className="mt-4 space-y-3">
+              {v.positions.map((p) => (
+                <li key={p.ticket} className="glass-tile p-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <SidePill side={p.side} label={`${p.side} ${p.lots}`} />
+                    <span className="text-xs text-zinc-500 tabular-nums">#{p.ticket}</span>
+                    <Pnl value={p.profit} className="ml-auto" />
+                  </div>
+                  <PositionBar p={p} price={p.side === "BUY" ? v.bid : v.ask} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
         <form action={cfgAction} className="card space-y-4" aria-labelledby="cfg-h">{accountField}
-          <h2 id="cfg-h" className="card-title mb-0">{t("Хэрэгсэл ба тохиргоо", "Tool and settings")}</h2>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <Icon name="sliders" className="h-[18px] w-[18px] text-amber-400" />
+            <h2 id="cfg-h" className="text-base font-semibold text-zinc-100">{t("Хэрэгсэл ба тохиргоо", "Tool and settings")}</h2>
+            <span className="ml-auto text-xs text-zinc-500">{t("Хадгалсан", "Saved")}: {savedTool}</span>
+          </div>
           <input type="hidden" name="mode" value={tool} />
-          {/* The three tools as stops on one line; the chosen one is filled. */}
-          <div role="radiogroup" aria-label={t("Ботын хэрэгсэл", "Bot tool")} className="relative">
-            <span aria-hidden className="pointer-events-none absolute top-5 bottom-5 left-[17px] z-[1] w-[3px] rounded-full bg-zinc-700" />
+          <div role="radiogroup" aria-label={t("Ботын хэрэгсэл", "Bot tool")} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {TOOLS.map(([id, name, about]) => {
               const on = tool === id;
+              const icon = id === "ASIAN" ? "crosshair" : id === "DAY" ? "bolt" : id === "READING" ? "chart" : "layers";
               return (
                 <button key={id} type="button" role="radio" aria-checked={on} disabled={running} onClick={() => setTool(id)}
-                  className={`relative flex w-full gap-3 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${on ? "bg-zinc-800" : "hover:bg-zinc-800/60"}`}>
-                  <Station tone={on ? "now" : "off"} className="relative z-10 mt-1" />
-                  <span className="min-w-0">
-                    <span className={`flex flex-wrap items-center gap-2 font-semibold ${on ? "text-zinc-50" : "text-zinc-200"}`}>
-                      {name}
-                      {id !== "ASIAN" && id !== "READING" && id !== "DAY" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("туршилтын", "experimental")}</span>}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-relaxed text-zinc-400">{about}</span>
+                  className={`glass-tile flex flex-col gap-2 p-4 text-left disabled:cursor-not-allowed disabled:opacity-60 ${on ? "glass-tile-on" : ""}`}>
+                  <span className="flex items-center gap-2">
+                    <Icon name={icon} className={`h-[18px] w-[18px] ${on ? "text-amber-300" : "text-zinc-500"}`} />
+                    <span className={`text-sm font-semibold ${on ? "text-amber-300" : "text-zinc-100"}`}>{name}</span>
+                    {id !== "ASIAN" && id !== "READING" && id !== "DAY" && <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-300">{t("туршилтын", "experimental")}</span>}
+                    <span aria-hidden className={`ml-auto h-3.5 w-3.5 rounded-full border-2 ${on ? "border-amber-400 bg-amber-400" : "border-zinc-600"}`} />
                   </span>
+                  <span className="text-xs leading-relaxed text-zinc-400">{about}</span>
                 </button>
               );
             })}
@@ -266,7 +391,7 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
             ))}
           </div>
           <label className="flex items-start gap-3 text-sm text-zinc-200">
-            <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} disabled={running} className="switch mt-0.5" />
             <span>{t("Жинхэнэ данс дээр арилжаа хийхийг зөвшөөрөх", "Allow trading on a real account")} <span className="block text-xs text-zinc-500">{t("Унтраалттай үед бот зөвхөн demo данс дээр ажиллана. MT5 роботын тохиргоонд ч мөн адил сонголтыг асаах ёстой.", "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.")}</span></span>
           </label>
           {day ? (
@@ -303,13 +428,12 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
           )}
           {cfgState.error && <p role="alert" className="text-sm text-red-400">{cfgState.error}</p>}
           {cfgState.ok && <p role="status" className="text-sm text-emerald-400">{cfgState.ok}</p>}
-          <button className="btn" disabled={running || cfgPending}>{running ? t("Ажиллаж байх үед өөрчлөхгүй", "Cannot be changed while running") : t("Хадгалах", "Save")}</button>
+          <button className="btn" disabled={running || cfgPending}>{running ? t("Ажиллаж байх үед өөрчлөхгүй", "Cannot be changed while running") : t("Тохиргоо хадгалах", "Save settings")}</button>
         </form>
-      </div>
 
       <form action={gateAction} className="card space-y-4" aria-labelledby="gate-h">{accountField}
         <div>
-          <h2 id="gate-h" className="card-title mb-1">{t("Орох шүүлтүүр", "Entry filter")}</h2>
+          <h2 id="gate-h" className="mb-1.5 flex items-center gap-2 text-base font-semibold text-zinc-100"><Icon name="shield" className="h-[18px] w-[18px] text-amber-400" />{t("Орох шүүлтүүр", "Entry filter")}</h2>
           <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Day trader, Дүгнэлт, Багц хэрэгслүүд арилжаа нээхээс өмнө эдгээр нөхцөлийг давна: бот цөөн, илүү нөхцөл бүрдсэн үед л орно. Setup дохио нь Setup хуудасны дүрмийг яг дагадаг тул энэ шүүлтүүр түүнд үйлчлэхгүй. Тоог 0 болговол тэр шалгалт унтарна. Хадгалсны дараагийн оролтоос үйлчилнэ.", "The Day trader, Reading and Basket tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Setup signals follows the Setup page's rules exactly, so this filter does not apply to it. Set a number to 0 to switch that check off. Changes apply from the next entry.")}</p>
         </div>
         <div className="rounded-2xl border p-4" style={{ borderColor: "var(--hairline)" }}>
@@ -330,11 +454,11 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex items-start gap-3 text-sm text-zinc-200">
-            <input type="checkbox" name="gOn" defaultChecked={g.on} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <input type="checkbox" name="gOn" defaultChecked={g.on} className="switch mt-0.5" />
             <span>{t("Шүүлтүүр асаалттай", "Filter on")} <span className="block text-xs text-zinc-500">{t("Унтраавал доорх бүх шалгалт, өдрийн хязгаар ч унтарна.", "Off switches every check below off, the daily limits too.")}</span></span>
           </label>
           <label className="flex items-start gap-3 text-sm text-zinc-200">
-            <input type="checkbox" name="gTrend" defaultChecked={g.trend} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <input type="checkbox" name="gTrend" defaultChecked={g.trend} className="switch mt-0.5" />
             <span>{t("Дээд хугацааны тренд таарах", "Higher-timeframe trend must agree")} <span className="block text-xs text-zinc-500">{t("BUY: H1 ба M15 дээр EMA20 нь EMA50-аас дээш. SELL: эсрэгээр.", "BUY: EMA20 above EMA50 on both H1 and M15. SELL: the reverse.")}</span></span>
           </label>
         </div>
@@ -356,7 +480,7 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
             </div>
           </div>
           <label className="mt-3 flex items-start gap-3 text-sm text-zinc-200">
-            <input type="checkbox" name="gProtect" defaultChecked={g.protect ?? false} className="mt-0.5 h-5 w-5 shrink-0 accent-amber-500" />
+            <input type="checkbox" name="gProtect" defaultChecked={g.protect ?? false} className="switch mt-0.5" />
             <span>{t("Ашигтай арилжааг хамгаалах", "Protect a winning trade")} <span className="block text-xs text-zinc-500">{t("Ашиг эрсдэлийн хэмжээнд (+1R) хүрэхэд stop-ийг орсон үнэ рүү зөөж алдагдалгүй болгоно; +1.5R-ээс хойш үнийг 1R зайтай дагуулна. Day trader болон Дүгнэлт хэрэгсэлд ажиллана; Setup дохио болон Багц өөрийн дүрмээр хаагдана.", "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Setup signals and Basket close by their own rules.")}</span></span>
           </label>
         </fieldset>
@@ -394,7 +518,7 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
 
       {c.mode === "DAY" || tool === "DAY" ? (
         <section className="card" aria-labelledby="day-h">
-          <h2 id="day-h" className="card-title mb-1">{t("Day trader-ийн сүүлийн setup-ууд ба шалтгаан", "The day trader's latest setups, and why")}</h2>
+          <h2 id="day-h" className="mb-1.5 text-base font-semibold text-zinc-100">{t("Day trader-ийн сүүлийн setup-ууд ба шалтгаан", "The day trader's latest setups, and why")}</h2>
           <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Хэв маяг бүрдэх бүрд энд гарна. «Орсон» гэдэг нь дүгнэлт таарч роботод дохио очсон, «алгассан» нь аргууд хангалттай дэмжээгүй гэсэн үг.", "Each time the pattern completes it appears here. \"Sent\" means the reading agreed and the robot was told; \"skipped\" means the methods did not back it enough.")}</p>
           {v.day.recent.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-500">{t("Сүүлийн 4 хоногт бүрдсэн setup алга.", "No setup has completed in the last four days.")}</p>
@@ -427,7 +551,7 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
       ) : null}
 
       <section className="card" aria-labelledby="entry-h">
-        <h2 id="entry-h" className="card-title mb-1">{t("Ямар нөхцөлд орсон арилжаа хэрхэн дууссан бэ", "How trades ended, by the conditions at entry")}</h2>
+        <h2 id="entry-h" className="mb-1.5 text-base font-semibold text-zinc-100">{t("Ямар нөхцөлд орсон арилжаа хэрхэн дууссан бэ", "How trades ended, by the conditions at entry")}</h2>
         <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Робот арилжаа нээх бүрд сайтын 16 аргын хэд нь тэр чиглэлийг дэмжиж байсныг хадгална. Хаагдсан арилжаануудыг тэр тоогоор бүлэглэв. Цөөн арилжаанаас дүгнэлт хийж болохгүй: 30-аас дээш болтол чиг хандлага гэж бүү үз.", "Each time the robot opens a trade, the site keeps how many of its 16 methods backed that side. Closed trades are grouped by that number. Few trades prove nothing: do not read a pattern into fewer than 30.")}</p>
         {v.entryStats.trades === 0 ? (
           <p className="mt-3 text-sm text-zinc-500">{t("Одоогоор бүртгэгдсэн хаагдсан арилжаа алга. Робот арилжаа хийж эхэлмэгц энд гарна.", "No closed trades recorded yet. They appear here once the robot has traded.")}</p>
@@ -453,24 +577,8 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
         )}
       </section>
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-2">
-        <section className="table-card" aria-labelledby="open-h">
-          <h2 id="open-h" className={`px-4 pt-4 pb-2 sm:px-5 sm:pt-5 ${section}`}>{t("Нээлттэй арилжаа (", "Open trades (")}{v.positions.length})</h2>
-          {v.positions.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Алга", "None")}</p> : (
-            <table className="w-full border-collapse">
-              <thead><tr className="border-b border-zinc-800">{["", t("Лот", "Lots"), t("Орсон", "Entry"), "SL", "TP", "P&L"].map((h) => <th key={h} className={`th ${h === "SL" || h === "TP" ? "hidden sm:table-cell" : ""} ${h === "" ? "" : "text-right"}`}>{h}</th>)}</tr></thead>
-              <tbody>{v.positions.map((p) => (
-                <tr key={p.ticket} className="border-t border-zinc-800/70 first:border-t-0">
-                  <td className="td"><SidePill side={p.side} /></td>
-                  <td className="td text-right tabular-nums">{p.lots}</td><td className="td text-right tabular-nums">{p.openPrice}</td>
-                  <td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{p.sl || "—"}</td><td className="td hidden text-right text-zinc-400 tabular-nums sm:table-cell">{p.tp || "—"}</td>
-                  <td className="td text-right"><Pnl value={p.profit} /></td>
-                </tr>))}</tbody>
-            </table>
-          )}
-        </section>
         <section className="table-card" aria-labelledby="hist-h">
-          <h2 id="hist-h" className={`px-4 pt-4 pb-2 sm:px-5 sm:pt-5 ${section}`}>{t("Арилжааны түүх", "Trade history")} <span className="text-sm font-normal text-zinc-500">{t("(сүүлийн 50, нийт", "(last 50, total")} {v.dealCount})</span></h2>
+          <h2 id="hist-h" className={`flex flex-wrap items-center gap-2 px-4 pt-4 pb-2 sm:px-5 sm:pt-5 ${section}`}><Icon name="history" className="h-[18px] w-[18px] text-amber-400" />{t("Арилжааны түүх", "Trade history")} <span className="text-sm font-normal text-zinc-500">{t("(сүүлийн 50, нийт", "(last 50, total")} {v.dealCount})</span></h2>
           {v.deals.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Хаагдсан арилжаа алга", "No closed trades")}</p> : (
             <table className="w-full border-collapse">
               <thead><tr className="border-b border-zinc-800">{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], ["", ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "hidden sm:table-cell text-right"], [t("Гарсан", "Exit"), "hidden sm:table-cell text-right"], ["P&L", "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
@@ -484,10 +592,14 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
             </table>
           )}
         </section>
-      </div>
 
-      <form action={tokAction} className="card space-y-3" aria-labelledby="tok-h">
-        <h2 id="tok-h" className={section}>{t("MT5 роботыг холбох", "Connect the MT5 robot")}</h2>
+      <details className="card group" open={!v.hasToken || !v.online}>
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-base font-semibold text-zinc-100 [&::-webkit-details-marker]:hidden">
+          <Icon name="link" className="h-[18px] w-[18px] text-amber-400" />{t("MT5 роботыг холбох · токен", "Connect the MT5 robot · token")}
+          <span className={`ml-auto text-xs font-medium ${v.online ? "text-emerald-400" : "text-amber-300"}`}>{v.online ? t("холбогдсон", "connected") : t("холбогдоогүй", "not connected")}</span>
+          <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 text-zinc-500 transition-transform group-open:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </summary>
+      <form action={tokAction} className="mt-4 space-y-3" aria-label={t("MT5 роботыг холбох", "Connect the MT5 robot")}>
         <p className="text-sm text-zinc-300">{t("Роботын тохиргоонд энэ хаягийг оруулна:", "Enter this address in the robot's settings:")}</p>
         <code className="block rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm break-all text-zinc-200">{syncUrl}</code>
         {tokState.token ? (
@@ -511,6 +623,7 @@ export function BotPanel({ initial, syncUrl, robot, setup }: { initial: View; sy
         )}
         <button className="btn-ghost" disabled={tokPending || running}>{v.hasToken ? t("Шинэ токен үүсгэх", "Create a new token") : t("Токен үүсгэх", "Create token")}</button>
       </form>
+      </details>
     </div>
   );
 }

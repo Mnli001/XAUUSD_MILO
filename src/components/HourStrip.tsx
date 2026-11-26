@@ -37,7 +37,7 @@ export function HourStrip({ cells, locked = false }: { cells: HourCell[]; locked
         </ul>
       </div>
 
-      <ol className="-mx-1 mt-4 flex gap-1 overflow-x-auto px-1 pb-1 lg:grid lg:grid-cols-[repeat(24,minmax(0,1fr))] lg:overflow-visible">
+      <ol className="relative -mx-1 mt-4 flex gap-1 overflow-x-auto px-1 pb-1 lg:grid lg:grid-cols-[repeat(24,minmax(0,1fr))] lg:overflow-visible">
         {cells.map((x, i) => {
           const up = x.up !== null && x.up >= 50;
           const p = x.up === null ? null : up ? x.up : 100 - x.up;

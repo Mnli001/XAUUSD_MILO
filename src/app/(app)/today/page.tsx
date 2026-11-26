@@ -4,9 +4,7 @@ import { ubHour, weekdayName, zoneWeekday } from "@/lib/time";
 import { PriceCard, DirectionCard, DirectionCardLocked, NextReleaseCard, KeyLevels, KeyLevelsLocked, hourCells } from "@/components/TodayCards";
 import { HourStrip } from "@/components/HourStrip";
 import { getEvents, getNextHighEvent, getReactions } from "@/lib/events";
-import { getT, getViewer, startGuideDone } from "@/lib/prefs.server";
-import { StartGuide } from "@/components/StartGuide";
-import { dismissStartGuide } from "@/lib/actions/startGuide";
+import { getT, getViewer } from "@/lib/prefs.server";
 import { ReasoningPanel, ReasoningLocked } from "@/components/ReasoningPanel";
 import { requireUser } from "@/lib/auth";
 import { paywallFor } from "@/lib/paywall.server";
@@ -37,14 +35,13 @@ export default async function TodayPage() {
   const now = new Date();
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [snap, upcoming, next, reactions, day, reasoning, guideDone, paidPlan, bot, setupView] = await Promise.all([
+  const [snap, upcoming, next, reactions, day, reasoning, paidPlan, bot, setupView] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
     getReactions(),
     loadCandles(SYMBOL, "15min", 96),
     paid ? getReasoning(now, v.locale) : Promise.resolve(null),
-    startGuideDone(),
     latestPaidPlan(user.id),
     botSummary(user.id, now),
     paid ? getSetups(now, v).catch((e) => { console.error("[today] setups failed", e); return null; }) : Promise.resolve(null),
@@ -69,8 +66,6 @@ export default async function TodayPage() {
         </div>
         <AccountChips v={v} plan={planSummary(user, paidPlan, now)} trades={tradeSummary(closed, bot.positions, now)} bot={paid ? bot : null} />
       </header>
-
-      {!guideDone && <StartGuide t={t} dismiss={dismissStartGuide} />}
 
       {/* Phones: price across, then direction and the next release as a pair. Wide screens: the three side by side. */}
       <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_18.5rem]">

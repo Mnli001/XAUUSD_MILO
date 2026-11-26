@@ -18,7 +18,7 @@ export function ProfileForm({ name, email, access }: { name: string; email: stri
   const [state, action, pending] = useActionState<AdminState, FormData>(changeNameAction, {});
   return (
     <form action={action} className="card space-y-3">
-      <h2 className="card-title">{t("Профайл", "Profile")}</h2>
+      <h2 className="card-title">{t("Хувийн мэдээлэл", "Personal details")}</h2>
       <div><span className="label">{t("Имэйл", "Email")}</span><p className="text-sm break-all text-zinc-100">{email}</p></div>
       <div><label className="label" htmlFor="name">{t("Нэр", "Name")}</label><input className="input" id="name" name="name" defaultValue={name} required maxLength={80} /></div>
       <div><span className="label">{t("Эрхийн хугацаа", "Access")}</span><p className="text-sm text-zinc-300">{access}</p></div>
