@@ -12,7 +12,7 @@ function parseTime(s: string): Date {
 export class TwelveData implements PriceProvider {
   constructor(private apiKey: string) {}
 
-  async fetchCandles(symbol: string, tf: Timeframe, opts: { outputsize: number; endDate?: Date }): Promise<Candle[]> {
+  async fetchCandles(symbol: string, tf: Timeframe | "1min" | "5min", opts: { outputsize: number; endDate?: Date }): Promise<Candle[]> {
     const q = new URLSearchParams({
       symbol: SYMBOLS[symbol] ?? symbol,
       interval: tf,
