@@ -1027,7 +1027,6 @@
  "673ca7b7": "${0} ganados por cada $1 perdido: pérdida neta en total",
  "5ee1d2c7": "${0} ganados por cada $1 perdido",
  "19b00b6d": "🎁 <b>Un amigo que invitaste compró un plan.</b> Recibiste +{0} días{1}.",
- "67d07dca": "Tu",
  "c37c712e": "⏳ <b>El plan {0} termina en {1} días</b> ({3}).",
  "0584cb08": "Renovar ahora se suma al tiempo que te queda, así que no pierdes ningún día.",
  "f2aceb96": "Estadísticas, no asesoramiento financiero.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Informe semanal · XAUUSD</b>",
  "b7186ad1": "Sin señales la semana pasada (el sistema no entra los días en que no se cumplen sus condiciones).",
  "17d2f0ae": "Semana pasada: {0} señales · ganadas {1} · perdidas {2}{3} · total <b>{4}</b>",
- "37a376b8": "Desde el inicio: {0} operaciones · {1}% con ganancia · total <b>{2}</b>"
+ "37a376b8": "Desde el inicio: {0} operaciones · {1}% con ganancia · total <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Tu plan termina en {0} días</b> ({2})."
 }

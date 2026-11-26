@@ -5555,13 +5555,13 @@
   "file": "src/lib/relativeTime.ts"
  },
  {
-  "h": "67d07dca",
-  "en": "Your",
+  "h": "c37c712e",
+  "en": "⏳ <b>{0} plan ends in {1} day{2}</b> ({3}).",
   "file": "src/lib/renewal.ts"
  },
  {
-  "h": "c37c712e",
-  "en": "⏳ <b>{0} plan ends in {1} day{2}</b> ({3}).",
+  "h": "7685b1e4",
+  "en": "⏳ <b>Your plan ends in {0} day{1}</b> ({2}).",
   "file": "src/lib/renewal.ts"
  },
  {

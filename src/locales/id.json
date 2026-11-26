@@ -1027,7 +1027,6 @@
  "673ca7b7": "${0} didapat untuk setiap $1 yang hilang: rugi bersih secara keseluruhan",
  "5ee1d2c7": "${0} didapat untuk setiap $1 yang hilang",
  "19b00b6d": "🎁 <b>Teman yang Anda undang membeli paket.</b> Anda mendapat +{0} hari{1}.",
- "67d07dca": "Anda",
  "c37c712e": "⏳ <b>Paket {0} berakhir dalam {1} hari</b> ({3}).",
  "0584cb08": "Memperpanjang sekarang menambah sisa waktu Anda, jadi tidak ada hari yang hilang.",
  "f2aceb96": "Statistik, bukan saran keuangan.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Laporan mingguan · XAUUSD</b>",
  "b7186ad1": "Tidak ada sinyal minggu lalu (pada hari-hari ketika syarat tidak terpenuhi, sistem tidak masuk).",
  "17d2f0ae": "Minggu lalu: {0} sinyal · menang {1} · kalah {2}{3} · total <b>{4}</b>",
- "37a376b8": "Sejak awal: {0} transaksi · {1}% untung · total <b>{2}</b>"
+ "37a376b8": "Sejak awal: {0} transaksi · {1}% untung · total <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Paket Anda berakhir dalam {0} hari</b> ({2})."
 }

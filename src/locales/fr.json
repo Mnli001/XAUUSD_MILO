@@ -1027,7 +1027,6 @@
  "673ca7b7": "${0} gagné pour chaque $1 perdu : perte nette au total",
  "5ee1d2c7": "${0} gagné pour chaque $1 perdu",
  "19b00b6d": "🎁 <b>Un ami que vous avez invité a acheté un forfait.</b> Vous recevez +{0} jours{1}.",
- "67d07dca": "Votre",
  "c37c712e": "⏳ <b>Le forfait {0} se termine dans {1} jours</b> ({3}).",
  "0584cb08": "Prolonger maintenant s'ajoute au temps restant : aucun jour n'est perdu.",
  "f2aceb96": "Statistiques, pas un conseil financier.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Rapport hebdomadaire · XAUUSD</b>",
  "b7186ad1": "Aucun signal la semaine dernière (les jours où les conditions ne sont pas réunies, le système reste à l'écart).",
  "17d2f0ae": "Semaine dernière : {0} signaux · gagnés {1} · perdus {2}{3} · total <b>{4}</b>",
- "37a376b8": "Depuis le début : {0} trades · {1} % gagnants · total <b>{2}</b>"
+ "37a376b8": "Depuis le début : {0} trades · {1} % gagnants · total <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Votre forfait se termine dans {0} jours</b> ({2})."
 }

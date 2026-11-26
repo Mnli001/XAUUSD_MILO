@@ -1027,7 +1027,6 @@
  "673ca7b7": "${0} verdient für jeden verlorenen $1: insgesamt ein Nettoverlust",
  "5ee1d2c7": "${0} verdient für jeden verlorenen $1",
  "19b00b6d": "🎁 <b>Ein Freund, den du eingeladen hast, hat einen Plan gekauft.</b> Du hast +{0} Tage bekommen{1}.",
- "67d07dca": "Dein",
  "c37c712e": "⏳ <b>Plan {0} endet in {1} Tagen</b> ({3}).",
  "0584cb08": "Eine Verlängerung jetzt kommt zur verbleibenden Zeit hinzu, es geht also kein Tag verloren.",
  "f2aceb96": "Statistik, keine Finanzberatung.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Wochenbericht · XAUUSD</b>",
  "b7186ad1": "Letzte Woche keine Signale (an Tagen, an denen die Bedingungen nicht erfüllt sind, bleibt das System draußen).",
  "17d2f0ae": "Letzte Woche: {0} Signale · gewonnen {1} · verloren {2}{3} · gesamt <b>{4}</b>",
- "37a376b8": "Seit Beginn: {0} Trades · {1} % profitabel · gesamt <b>{2}</b>"
+ "37a376b8": "Seit Beginn: {0} Trades · {1} % profitabel · gesamt <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Dein Plan endet in {0} Tagen</b> ({2})."
 }

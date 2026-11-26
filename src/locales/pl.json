@@ -1027,7 +1027,6 @@
  "673ca7b7": "${0} zarobione na każdy stracony $1: łącznie strata netto",
  "5ee1d2c7": "${0} zarobione na każdy stracony $1",
  "19b00b6d": "🎁 <b>Zaproszony przez ciebie znajomy kupił plan.</b> Otrzymujesz +{0} dni{1}.",
- "67d07dca": "Twój",
  "c37c712e": "⏳ <b>Plan {0} kończy się za {1} dni</b> ({3}).",
  "0584cb08": "Przedłużenie teraz dolicza się do pozostałego czasu, więc nie tracisz ani dnia.",
  "f2aceb96": "Statystyka, nie porada finansowa.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Raport tygodniowy · XAUUSD</b>",
  "b7186ad1": "W zeszłym tygodniu brak sygnałów (w dni, gdy warunki nie są spełnione, system pozostaje z boku).",
  "17d2f0ae": "Zeszły tydzień: {0} sygnałów · wygrane {1} · przegrane {2}{3} · razem <b>{4}</b>",
- "37a376b8": "Od początku: {0} transakcji · {1}% zyskownych · razem <b>{2}</b>"
+ "37a376b8": "Od początku: {0} transakcji · {1}% zyskownych · razem <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Twój plan kończy się za {0} dni</b> ({2})."
 }

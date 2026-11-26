@@ -1027,7 +1027,6 @@
  "673ca7b7": "Kiếm ${0} cho mỗi $1 bị mất: tổng thể lỗ ròng",
  "5ee1d2c7": "Kiếm ${0} cho mỗi $1 bị mất",
  "19b00b6d": "🎁 <b>Một người bạn bạn mời đã mua gói.</b> Bạn nhận thêm +{0} ngày{1}.",
- "67d07dca": "Của bạn",
  "c37c712e": "⏳ <b>Gói {0} sẽ kết thúc sau {1} ngày</b> ({3}).",
  "0584cb08": "Gia hạn ngay sẽ cộng vào thời gian còn lại, nên không mất ngày nào.",
  "f2aceb96": "Thống kê, không phải lời khuyên tài chính.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Báo cáo tuần · XAUUSD</b>",
  "b7186ad1": "Tuần trước không có tín hiệu (những ngày không đủ điều kiện, hệ thống đứng ngoài).",
  "17d2f0ae": "Tuần trước: {0} tín hiệu · thắng {1} · thua {2}{3} · tổng <b>{4}</b>",
- "37a376b8": "Từ đầu đến nay: {0} lệnh · {1}% có lời · tổng <b>{2}</b>"
+ "37a376b8": "Từ đầu đến nay: {0} lệnh · {1}% có lời · tổng <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Gói của bạn sẽ kết thúc sau {0} ngày</b> ({2})."
 }

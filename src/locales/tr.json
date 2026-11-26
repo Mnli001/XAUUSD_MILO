@@ -1027,7 +1027,6 @@
  "673ca7b7": "Kaybedilen her $1 için ${0} kazanıldı: toplamda net zarar",
  "5ee1d2c7": "Kaybedilen her $1 için ${0} kazanıldı",
  "19b00b6d": "🎁 <b>Davet ettiğiniz bir arkadaş plan satın aldı.</b> +{0} gün kazandınız{1}.",
- "67d07dca": "Sizin",
  "c37c712e": "⏳ <b>{0} planı {1} gün içinde bitiyor</b> ({3}).",
  "0584cb08": "Şimdi uzatmak kalan sürenize eklenir, yani hiçbir gün kaybolmaz.",
  "f2aceb96": "İstatistik, finansal tavsiye değildir.",
@@ -1107,5 +1106,6 @@
  "648e2a2f": "📊 <b>Haftalık rapor · XAUUSD</b>",
  "b7186ad1": "Geçen hafta sinyal yok (koşulların oluşmadığı günlerde sistem dışarıda kalır).",
  "17d2f0ae": "Geçen hafta: {0} sinyal · kazanılan {1} · kaybedilen {2}{3} · toplam <b>{4}</b>",
- "37a376b8": "Başlangıçtan beri: {0} işlem · %{1} kârlı · toplam <b>{2}</b>"
+ "37a376b8": "Başlangıçtan beri: {0} işlem · %{1} kârlı · toplam <b>{2}</b>",
+ "7685b1e4": "⏳ <b>Planınız {0} gün içinde bitiyor</b> ({2})."
 }
