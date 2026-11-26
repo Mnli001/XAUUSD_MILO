@@ -22,3 +22,18 @@ test("types without a release id are skipped and errors surface as ProviderError
   stubFetch(400, { error_code: 400, error_message: "Bad Request" });
   await expect(new FredCalendar("k", [{ ...cpi, fredReleaseId: 1 }]).fetchEvents(new Date("2026-01-01"), new Date("2026-02-01"))).rejects.toBeInstanceOf(ProviderError);
 });
+test("a dropped connection is tried again before giving up", async () => {
+  const { setFredPause, FRED_ATTEMPTS } = await import("@/lib/data/fredCalendar");
+  setFredPause(() => 0);
+  let calls = 0;
+  vi.stubGlobal("fetch", async () => {
+    calls++;
+    if (calls < 3) throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ECONNRESET" } });
+    return new Response(JSON.stringify({ release_dates: [{ date: "2026-01-14" }] }), { status: 200 });
+  });
+  const r = await new FredCalendar("k", [{ ...cpi, fredReleaseId: 1 }]).fetchEvents(new Date("2026-01-01"), new Date("2026-02-01"));
+  expect(r).toHaveLength(1);
+  calls = -100; // always failing now
+  await expect(new FredCalendar("k", [{ ...cpi, fredReleaseId: 1 }]).fetchEvents(new Date("2026-01-01"), new Date("2026-02-01"))).rejects.toThrow(/ECONNRESET/);
+  expect(FRED_ATTEMPTS).toBeGreaterThan(1);
+});
