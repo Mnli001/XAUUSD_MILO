@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "../auth";
+import { requirePaid } from "../auth";
 import { saveLiveConfig, saveGateConfig, startBot, stopBot, requestCloseAll, rotateToken } from "../bot/liveDb";
 import { getT } from "../prefs.server";
 
@@ -13,7 +13,7 @@ const accountIn = (form: FormData): string | undefined => {
 };
 
 export async function saveBotConfigAction(_prev: BotFormState, form: FormData): Promise<BotFormState> {
-  const user = await requireUser();
+  const user = await requirePaid();
   const t = await getT();
   const r = await saveLiveConfig(user.id, Object.fromEntries(form), t, accountIn(form));
   if (r.error) return r;
@@ -22,7 +22,7 @@ export async function saveBotConfigAction(_prev: BotFormState, form: FormData): 
 }
 
 export async function saveGateAction(_prev: BotFormState, form: FormData): Promise<BotFormState> {
-  const user = await requireUser();
+  const user = await requirePaid();
   const t = await getT();
   const r = await saveGateConfig(user.id, Object.fromEntries(form), t, accountIn(form));
   if (r.error) return r;
@@ -31,26 +31,26 @@ export async function saveGateAction(_prev: BotFormState, form: FormData): Promi
 }
 
 export async function startBotAction(form: FormData) {
-  const user = await requireUser();
+  const user = await requirePaid();
   await startBot(user.id, new Date(), accountIn(form));
   revalidatePath("/bot");
 }
 
 export async function stopBotAction(form: FormData) {
-  const user = await requireUser();
+  const user = await requirePaid();
   await stopBot(user.id, "MANUAL", new Date(), accountIn(form));
   revalidatePath("/bot");
 }
 
 export async function closeAllAction(form: FormData) {
-  const user = await requireUser();
+  const user = await requirePaid();
   await requestCloseAll(user.id, accountIn(form));
   revalidatePath("/bot");
 }
 
 export async function rotateTokenAction(_prev: BotFormState, _form: FormData): Promise<BotFormState> {
   void _form;
-  const user = await requireUser();
+  const user = await requirePaid();
   const token = await rotateToken(user.id);
   revalidatePath("/bot");
   return { token };
