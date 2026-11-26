@@ -1,10 +1,11 @@
-import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte, lt } from "drizzle-orm";
 import { db, schema } from "./db";
 import { hasAccess } from "./access";
 import { getSetups, type Setup, type SetupsView } from "./setup/build";
 import { deliver, deliverPhoto, esc, setupLink, siteUrl, telegramConfigured, telegramTiming } from "./telegram";
 import { loadCandles, SYMBOL } from "./ingest/prices";
 import { signalOutcome, type Outcome } from "./signalOutcome";
+import { emitRenewalReminders } from "./renewal";
 import { tradeChartPng } from "./tradeChart";
 import type { Signal } from "./db/schema";
 import type { Candle } from "./analysis/indicators";
@@ -242,16 +243,18 @@ export async function emitResults(now: Date, opts: { send?: (chat: string, png: 
 }
 
 /** What runs after each 5-minute price update. One part failing does not stop the other. */
-export async function runTelegramJobs(now: Date, pricesOk: boolean): Promise<{ signals: number; news: number; results?: number }> {
-  const out: { signals: number; news: number; results?: number } = { signals: 0, news: 0 };
+export async function runTelegramJobs(now: Date, pricesOk: boolean): Promise<{ signals: number; news: number; results?: number; renewals?: number }> {
+  const out: { signals: number; news: number; results?: number; renewals?: number } = { signals: 0, news: 0 };
   if (pricesOk) {
     try { out.signals = await emitSignals(now); } catch (err) { console.error("[signals] failed", err); }
     try { out.results = await emitResults(now); } catch (err) { console.error("[results] failed", err); }
   }
   try { out.news = await emitNewsAlerts(now); } catch (err) { console.error("[news] alerts failed", err); }
+  try { out.renewals = await emitRenewalReminders(now); } catch (err) { console.error("[renewal] reminders failed", err); }
   return out;
 }
 
-export async function listSignals(limit: number) {
-  return db.select().from(schema.signals).orderBy(desc(schema.signals.createdAt)).limit(limit);
+/** The latest signals, newest first; with `before`, only those recorded before it. */
+export async function listSignals(limit: number, before?: Date) {
+  return db.select().from(schema.signals).where(before ? lt(schema.signals.createdAt, before) : undefined).orderBy(desc(schema.signals.createdAt)).limit(limit);
 }

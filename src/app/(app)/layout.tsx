@@ -6,6 +6,9 @@ import { LiveAlerts } from "@/components/LiveAlerts";
 import { TelegramConfirm } from "@/components/TelegramConfirm";
 import { pendingTelegram } from "@/lib/telegram";
 import { hasAccess } from "@/lib/access";
+import { needsConsent } from "@/lib/legal";
+import { ConsentBanner } from "@/components/ConsentBanner";
+import { acceptTermsAction } from "@/lib/actions/consent";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {hasAccess(user, new Date()) && <LiveAlerts />}
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+          {needsConsent(user) && <ConsentBanner t={v.t} accept={acceptTermsAction} />}
           {pending && <TelegramConfirm name={pending.name} banner />}
           {children}
         </main>

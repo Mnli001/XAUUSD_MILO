@@ -27,6 +27,9 @@ export const users = pgTable("users", {
   locale: text("locale").notNull().default("mn"),
   theme: text("theme").notNull().default("dark"),
   timeZone: text("time_zone").notNull().default("Asia/Ulaanbaatar"),
+  renewRemindedFor: ts("renew_reminded_for"), // the access end a renewal reminder was already sent for
+  consentAt: ts("consent_at"), // when the privacy policy and terms were accepted
+  consentVersion: text("consent_version"), // which version (LEGAL_VERSION) was accepted
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
 import { Disclaimer } from "@/components/Disclaimer";
+import { signalHistory, PUBLIC_DELAY_MS, type SignalRow } from "@/lib/signalHistory";
+import { SignalHistoryTable, SignalTotals } from "@/components/SignalHistory";
 import { getViewer } from "@/lib/prefs.server";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { SessionLine, sessionColor } from "@/components/SessionLine";
@@ -40,15 +42,18 @@ export default async function LandingPage() {
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let snap: Awaited<ReturnType<typeof getTodaySnapshot>> = { price: null, bias: null, hourly: null, levels: null };
   let day: Awaited<ReturnType<typeof loadCandles>> = [];
+  let record: SignalRow[] = [];
   try {
     const res = await Promise.all([
       getEvents(now, new Date(now.getTime() + 24 * 36e5)),
       getTodaySnapshot(SYMBOL, now),
-      loadCandles(SYMBOL, "15min", 96)
+      loadCandles(SYMBOL, "15min", 96),
+      signalHistory(now, 60, { delayMs: PUBLIC_DELAY_MS }),
     ]);
     events = res[0];
     snap = res[1];
     day = res[2];
+    record = res[3];
   } catch (err) {
     console.warn("[landing] DB not reachable:", (err as Error).message);
   }
@@ -365,6 +370,18 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {record.some((r) => r.outcome.kind !== "OPEN") && (
+          <section className="mx-auto w-full max-w-5xl px-5 pt-20 sm:px-8 sm:pt-32" aria-labelledby="record-h">
+            <h2 id="record-h" className="font-display text-center text-[40px] leading-[1.05] text-zinc-50 sm:text-[56px]">{t("Дохионы бодит үр дүн", "How the signals actually did")}</h2>
+            <p className="mx-auto mt-4 max-w-[60ch] text-center text-lg leading-relaxed text-zinc-400">{t("Гарсан дохио бүр, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "Every signal given, the winners and the losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.")}</p>
+            <div className="mt-10 space-y-5">
+              <SignalTotals rows={record} t={t} />
+              <div className="table-card"><SignalHistoryTable rows={record.slice(0, 8)} v={v} /></div>
+              <p className="text-center text-sm text-zinc-500">{t("Spread, шимтгэл ороогүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. Past results do not guarantee future profit.")}</p>
+            </div>
+          </section>
+        )}
+
         <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-32">
           <div 
             className="sheen group relative overflow-hidden rounded-[40px] px-8 py-12 sm:px-16 sm:py-16 lg:px-20 lg:py-20 transition-all duration-500 hover:scale-[1.01]" 
@@ -391,7 +408,7 @@ export default async function LandingPage() {
                 </h2>
                 
                 <p className="max-w-[58ch] text-lg leading-relaxed font-medium opacity-90">
-                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Backtest-ийн үр дүн, роботын эрсдэлийг нуухгүй. Бүртгүүлсний дараа админ эрхийг тань нээнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Backtest results and the robot's risks are not hidden. After you register, the admin opens your access.")}
+                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Backtest-ийн үр дүн, роботын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Backtest results and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
                 </p>
                 
                 <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
