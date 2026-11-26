@@ -200,3 +200,10 @@ export const payments = pgTable("payments", {
 }, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_provider_ref").on(t.providerRef), index("payments_user_created").on(t.userId, t.createdAt)]);
 export type Payment = typeof payments.$inferSelect;
 export type Signal = typeof signals.$inferSelect;
+
+/** Small facts the background jobs must remember across restarts: a weekly report sent, a price-feed alert raised. */
+export const appState = pgTable("app_state", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: ts("updated_at").notNull(),
+});

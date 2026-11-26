@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.50"
+#property version   "3.51"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -52,6 +52,7 @@ input bool   TesterManage         = false;    // SMC Active: BE + trailing (BuyS
 input int    TesterRestartSeconds = 60;       // Дахин эхлэх хүртэлх зай (сек) · Restart after (s)
 input int    ServerUtcOffsetWinter = 2;       // Серверийн цаг UTC-ээс түрүүлэх цаг (өвөл) · Server hours ahead of UTC (winter)
 input bool   ServerDstEurope      = true;     // Сервер Европын зуны цаг мөрддөг · Server follows EU summer time
+input bool   ServerUtcAuto        = true;     // Live: серверийн цагийн бүсийг өөрөө тодорхойлох · Live: detect the server clock itself
 // Орох шүүлтүүр: бодит цагт вэбийн тохиргоог дагана, tester дотор эндээс авна. Мэдээний шүүлтүүр tester дотор ажиллахгүй (мэдээний цаг вэбээс ирдэг).
 input group "Орох шүүлтүүр, tester · Entry filter, tester"
 input bool   TesterGate           = true;     // Шүүлтүүр асаах (false: v2.70-ийн дүрмээр) · Filter on (false = as in v2.70)
@@ -1055,6 +1056,13 @@ datetime LastSundayOf(const int year, const int mon)
 
 int ServerUtcOffset(const datetime serverTime)
   {
+   // Live: the broker's clock is read directly (server time minus UTC), so any broker and any summer-time rule works.
+   // The tester simulates both clocks, so there the inputs below are used.
+   if(!gTester && ServerUtcAuto)
+     {
+      long diff = (long)TimeTradeServer() - (long)TimeGMT();
+      return((int)MathRound(diff / 3600.0));
+     }
    if(!ServerDstEurope) return(ServerUtcOffsetWinter);
    MqlDateTime s;
    TimeToStruct(serverTime, s);

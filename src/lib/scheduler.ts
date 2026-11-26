@@ -6,6 +6,7 @@ import { runBackfill, needsBackfill } from "./ingest/backfill";
 import { recomputeSnapshot, SYMBOL } from "./ingest/prices";
 import { ensureAdmin } from "./users";
 import { runTelegramJobs } from "./signals";
+import { sendWeeklyReport, watchFeed } from "./watch";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
 
@@ -39,6 +40,8 @@ async function run(job: Job, now: Date): Promise<void> {
   if (job === "fast") {
     const { signals, news } = await runTelegramJobs(now, result.ok);
     if (signals || news) console.log(`[scheduler] signals: ${signals} new, news alerts: ${news}`);
+    try { const f = await watchFeed(now); if (f) console.log(`[scheduler] price feed ${f}`); } catch (e) { console.error("[scheduler] feed watch failed", e); }
+    try { const n = await sendWeeklyReport(now); if (n) console.log(`[scheduler] weekly report sent to ${n}`); } catch (e) { console.error("[scheduler] weekly report failed", e); }
   }
 }
 

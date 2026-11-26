@@ -99,6 +99,13 @@
       "when": 1795698477965,
       "tag": "0013_signal_result",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795700063361,
+      "tag": "0014_app_state",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ import { tradeChartPng } from "./tradeChart";
 import { relativeText } from "./relativeTime";
 import { weekdayName, zoneWeekday } from "./time";
 import type { Viewer } from "./viewer";
+import { nowWindow } from "./setup/now";
 
 /**
  * Replies to /setup, /history and /news. Kept apart from telegram.ts so the webhook loads the
@@ -22,7 +23,12 @@ export async function setupReply(now: Date, v: Viewer): Promise<{ text: string; 
   const s = view.setups[0];
   if (!s) return { text: esc(t("Setup одоогоор алга.", "No setup right now.")), png: null };
   const word = s.result !== undefined ? t("Дууссан", "Finished") : { ACTIVE: t("Идэвхтэй", "Active"), WATCH: t("Ажиглаж байна", "Watching"), FORMING: t("Бүрдэж байна", "Forming"), OFF: t("Одоо алга", "Not now") }[s.status];
+  const w = nowWindow(s, now, view.candles.at(-1)?.close ?? null, v);
   const lines = [
+    `🕒 <b>${esc(t("ОДОО", "NOW"))}: ${esc(w.title)}</b>${w.liveR !== null ? ` (${w.liveR > 0 ? "+" : ""}${w.liveR.toFixed(2)}R)` : ""}`,
+    ...(w.waitingFor ? [t(`Хүлээж байгаа нь: ${esc(w.waitingFor)}`, `Waiting for: ${esc(w.waitingFor)}`)] : []),
+    ...(w.next ? [`${esc(w.next.label)}: <b>${esc(w.next.in)}</b>`] : []),
+    "",
     `<b>${esc(s.name)}</b> · ${esc(word)}`,
     `<b>${esc(s.headline)}</b>`,
     esc(s.detail),

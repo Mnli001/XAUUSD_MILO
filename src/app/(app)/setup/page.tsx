@@ -18,9 +18,25 @@ import type { Viewer } from "@/lib/viewer";
 import { getReasoning } from "@/lib/reasoningLive";
 import { orderSetups, bestRecent } from "@/lib/setup/order";
 import { TermHint } from "@/components/TermHint";
+import { nowWindow, type NowWindow } from "@/lib/setup/now";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Setup — XAU Analytics" };
+
+/** The one line on top: what the system is doing now, what it waits for, and when the next step comes. */
+function NowCard({ w, t }: { w: NowWindow; t: T }) {
+  const tone = { WAIT: ["border-amber-400/40", "bg-amber-400", t("ХҮЛЭЭЖ БАЙНА", "WAITING")], ENTER: ["border-emerald-400/50", "bg-emerald-400", t("АРИЛЖАА ИДЭВХТЭЙ", "TRADE ON")], DONE: ["border-zinc-700", "bg-zinc-400", t("ДУУССАН", "DONE")], NONE: ["border-zinc-700", "bg-zinc-500", t("ӨНӨӨДӨР АРИЛЖАА АЛГА", "NO TRADE TODAY")], CLOSED: ["border-zinc-700", "bg-zinc-500", t("ЗАХ ХААЛТТАЙ", "MARKET CLOSED")] }[w.state];
+  return (
+    <section className={`card border ${tone[0]} sm:p-6`} aria-labelledby="now-h">
+      <p className="flex items-center gap-2 text-xs font-bold tracking-wider text-zinc-300"><span aria-hidden className={`h-2 w-2 rounded-full ${tone[1]} ${w.state === "ENTER" || w.state === "WAIT" ? "animate-pulse" : ""}`} />{t("ОДОО", "NOW")} · {tone[2]}</p>
+      <h2 id="now-h" className="mt-2 text-xl font-bold text-zinc-50 sm:text-2xl">{w.title}{w.liveR !== null && <span className={`ml-3 text-lg tabular-nums ${w.liveR >= 0 ? "text-emerald-400" : "text-red-400"}`}>{w.liveR > 0 ? "+" : ""}{w.liveR.toFixed(2)}R</span>}</h2>
+      <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+        {w.waitingFor && <div><dt className="text-xs text-zinc-500">{t("Яг одоо хүлээж байгаа нь", "Waiting for")}</dt><dd className="mt-0.5 font-medium text-amber-300">{w.waitingFor}</dd></div>}
+        {w.next && <div><dt className="text-xs text-zinc-500">{w.next.label}</dt><dd className="mt-0.5 font-medium text-zinc-100 tabular-nums">{w.next.in}</dd></div>}
+      </dl>
+    </section>
+  );
+}
 
 /** Setup states as status pills: [word, pill, dot]. The word always carries the meaning. */
 const statusOf = (t: T): Record<Setup["status"], [string, string, string]> => ({
@@ -227,6 +243,8 @@ export default async function SetupPage() {
       </div>
 
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
+
+      {paid && sortedSetups[0] && <NowCard w={nowWindow(sortedSetups[0], now, view.candles.at(-1)?.close ?? null, v)} t={t} />}
 
       {paid ? <ReasoningPanel initial={reasoning} /> : <ReasoningLocked />}
 
