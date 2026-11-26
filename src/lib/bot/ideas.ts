@@ -14,7 +14,7 @@ type Score = number | null;
  * `rr` times the stop as target, flat at the rule's time exit. The first qualifying breakout decides the day:
  * one from a range narrower than `minStopAtr` of the daily ATR is passed.
  */
-export function sessionOrders(m15: Candle[], rule: SessionRule, o: { news: Date[]; params: BotParams; trend: Score[]; confirm: Score[]; atr: number[] }): (Order | null)[] {
+export function sessionOrders(m15: Candle[], rule: SessionRule, o: { news: Date[]; params: BotParams; trend: Score[]; confirm: Score[]; atr: number[]; onNews?: "wait" | "skip" | "ignore" }): (Order | null)[] {
   const out: (Order | null)[] = new Array(m15.length).fill(null);
   let day = "", high = -Infinity, low = Infinity, count = 0, done = false;
   m15.forEach((bar, i) => {
@@ -26,12 +26,15 @@ export function sessionOrders(m15: Candle[], rule: SessionRule, o: { news: Date[
     const side = bar.close > high ? "BUY" : bar.close < low ? "SELL" : null;
     if (!side) return;
     const at = decisionTime(bar);
-    if (inNewsWindow(at, o.news, o.params)) return;
+    const mode = o.onNews ?? "wait";
+    const inNews = mode !== "ignore" && inNewsWindow(at, o.news, o.params);
+    if (inNews && mode === "wait") return; // passed over: the next close outside the range may still be taken
     for (const series of [o.trend, o.confirm]) {
       const t = series[i];
       if (t === null || t === undefined || (side === "BUY" ? t <= 0 : t >= 0)) return;
     }
     done = true;
+    if (inNews) return; // "skip": a breakout made inside a news window ends the day for this range
     const stopDist = Math.abs(bar.close - (high + low) / 2);
     const maxBars = Math.floor((ruleExitAt(rule, key).getTime() - at.getTime()) / M15);
     if (!(stopDist > 0) || maxBars < 1 || !(stopDist >= rule.minStopAtr * o.atr[i])) return;
@@ -147,7 +150,7 @@ export const IDEAS: Idea[] = [
 /** The Asian rule the Setup page, the Telegram signals and the robot's Asian tool all follow. */
 export const ASIAN_IDEA = IDEAS[7];
 /** The four session rules as replayable ideas, in SESSION_RULES order (the records on the Setup page). */
-export const SESSION_IDEAS: Idea[] = SESSION_RULES.map((rule) => ({ name: rule.id, params: asianDay, build: (c) => sessionOrders(c.m15, rule, { news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, atr: c.atrD }) }));
+export const SESSION_IDEAS: Idea[] = SESSION_RULES.map((rule) => ({ name: rule.id, params: asianDay, build: (c) => sessionOrders(c.m15, rule, { news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, atr: c.atrD, onNews: "skip" }) }));
 /** Candidate (2026-11-26, scripts/asian-improve-research.ts): breakouts before 12:00 UTC only, held to 07:00 UTC next day. */
 export const ASIAN_IDEA_V4: Idea = { name: "Азийн breakout v4: 12:00 UTC хүртэл, шөнө барих", params: asianDay, build: (c) => asianRangeOrders(c.m15, { rr: 3, news: c.news, params: oneADay, trend: c.daily, confirm: c.h4, minStop: { atr: c.atrD, k: ASIAN_MIN_STOP_ATR }, windowEnd: 12, holdOvernight: true }) }; // i18n-ok: server log, machine reply or research-script name
 

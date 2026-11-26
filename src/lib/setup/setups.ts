@@ -107,8 +107,14 @@ export function rangeSetup(rule: SessionRule, m15: Candle[], scores: AsianScores
     const h = hourOf(b);
     if (h < rule.rangeTo || h >= rule.entryTo) return false;
     const tr = reading(m15.indexOf(b)).trend;
-    return tr !== null && (tr === "BUY" ? b.close > band.high : b.close < band.low) && !inNewsWindow(new Date(b.time.getTime() + M15), news, PARAMS);
+    return tr !== null && (tr === "BUY" ? b.close > band.high : b.close < band.low);
   });
+  // A breakout made inside a news window ends the day for this range: waiting for the next close after the
+  // release gave late, poor entries (scripts/news-mode-check.ts).
+  if (breakout && inNewsWindow(new Date(breakout.time.getTime() + M15), news, PARAMS)) {
+    const inNews = { label: t("Breakout мэдээний цонхноос гадуур гарсан", "The breakout came outside a news window"), ok: false };
+    return w(off(t("Мэдээний үеэр breakout гарсан, өнөөдөр орохгүй", "The breakout came during a news release, no trade today"), t("Чухал мэдээний өмнөх 30, дараах 60 минутад гарсан breakout-оор орохгүй, мэдээний дараах хожимдсон оролтыг ч хийхгүй. Дараагийн хүрээг хүлээнэ.", "A breakout within 30 minutes before or 60 minutes after an important release is not taken, and neither is a late entry after it. Waiting for the next range."), { band, checks: [...checksAt(reading(m15.indexOf(breakout))), inNews] }));
+  }
   if (breakout) {
     const then = reading(m15.indexOf(breakout));
     const trend = then.trend!;

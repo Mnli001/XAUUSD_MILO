@@ -45,11 +45,14 @@ describe("Asian range breakout", () => {
     const later = day({ ...hold(41, 96, 4006), 30: { low: 3993, close: 3994 }, 40: { high: 4007, close: 4006 } }, 44);
     expect(asianSetup(later, UP, [], at(11))).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4006 });
   });
-  test("a breakout inside a news window is passed over, and the next close outside the range after it is taken", () => {
+  test("a breakout inside a news window ends the day for that range: no late entry after the release", () => {
     const bars = day({ 30: { high: 4007, close: 4006 } }, 34);
-    expect(asianSetup(bars, UP, [at(7, 45)], at(8, 30))).toMatchObject({ status: "WATCH", side: "BUY" });
-    const later = day({ ...hold(37, 96, 4008), 30: { high: 4007, close: 4006 }, 36: { high: 4009, close: 4008 } }, 40); // 09:00 bar closes 09:15, past the 60 minutes
-    expect(asianSetup(later, UP, [at(7, 45)], at(10))).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4008, stop: 4000, target: 4032 });
+    const s = asianSetup(bars, UP, [at(7, 45)], at(8, 30));
+    expect(s).toMatchObject({ status: "OFF", side: null, entry: null });
+    expect(s.headline).toContain("Мэдээний үеэр");
+    const later = day({ ...hold(37, 96, 4008), 30: { high: 4007, close: 4006 }, 36: { high: 4009, close: 4008 } }, 40); // a second close outside, past the 60 minutes
+    expect(asianSetup(later, UP, [at(7, 45)], at(10)).status).toBe("OFF");
+    expect(asianSetup(later, UP, [], at(10)).status).not.toBe("WATCH"); // without the release the first breakout is the trade
   });
   test("the window closes at 16:00 UTC and a trade is flat by 20:00 UTC", () => {
     expect(asianSetup(day({}, 70), UP, [], at(17)).status).toBe("OFF");

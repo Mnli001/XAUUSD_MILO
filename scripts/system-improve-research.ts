@@ -57,17 +57,21 @@ const sgn = (x: number | null) => (x === null ? 0 : Math.sign(x));
 type Filter = (i: number, side: number) => boolean;
 type Exit = { trail: null | { start: number; dist: number } }; // trail: once +start R, stop follows `dist` R behind the best price
 type Trade = { r: number; at: number };
+let oppBroken = false; // set per breakout: the range's other side was closed beyond earlier that day
 
 function trades(rule: SessionRule, ok: Filter, exit: Exit): Trade[] {
   const out: Trade[] = [];
-  let day = "", hi = -Infinity, lo = Infinity, n = 0, done = false;
+  let day = "", hi = -Infinity, lo = Infinity, n = 0, done = false, up = false, dn = false;
   for (let i = 0; i < m15.length - 1; i++) {
     const b = m15[i], k = b.time.toISOString().slice(0, 10), h = b.time.getUTCHours() + b.time.getUTCMinutes() / 60;
-    if (k !== day) { day = k; hi = -Infinity; lo = Infinity; n = 0; done = false; }
+    if (k !== day) { day = k; hi = -Infinity; lo = Infinity; n = 0; done = false; up = false; dn = false; }
     if (h >= rule.rangeFrom && h < rule.rangeTo) { hi = Math.max(hi, b.high); lo = Math.min(lo, b.low); n++; continue; }
     if (done || h < rule.rangeTo || h >= rule.entryTo || n < rule.minBars) continue;
     const side = b.close > hi ? 1 : b.close < lo ? -1 : 0;
-    if (!side || sgn(daily[i]) !== side || sgn(four[i]) !== side) continue;
+    if (!side) continue;
+    oppBroken = side > 0 ? dn : up;
+    if (side > 0) up = true; else dn = true;
+    if (sgn(daily[i]) !== side || sgn(four[i]) !== side) continue;
     done = true;
     const mid = (hi + lo) / 2;
     if (!(Math.abs(b.close - mid) >= rule.minStopAtr * atrD[i])) continue;
@@ -121,6 +125,8 @@ for (const k of [40, 60]) run(`|daily score| ≥ ${k}`, (i) => Math.abs(daily[i]
 run("weekly trend agrees", (i, s) => sgn(weekly[i]) === s);
 run("price beyond daily EMA50 by ≥ 1 ATR", (i, s) => s * (m15[i].close - e50d[i]) >= atrD[i]);
 run("price beyond daily EMA50 by ≥ 0.5 ATR", (i, s) => s * (m15[i].close - e50d[i]) >= 0.5 * atrD[i]);
+console.log("\nWHIPSAW DAYS");
+run("skip when the other side broke first", () => !oppBroken);
 console.log("\nLET WINNERS RUN (trailing stop)");
 run("trail 1R behind, from +1R", undefined, { trail: { start: 1, dist: 1 } });
 run("trail 1R behind, from +1.5R", undefined, { trail: { start: 1.5, dist: 1 } });

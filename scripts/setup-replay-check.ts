@@ -5,7 +5,7 @@
  *   npx tsx --env-file=.env scripts/setup-replay-check.ts
  */
 import { closeDb } from "../src/lib/db";
-import { ASIAN_IDEA, RECORD_BALANCE, ideaContext, ideaTrades } from "../src/lib/bot/ideas";
+import { SESSION_IDEAS, RECORD_BALANCE, ideaContext, ideaTrades } from "../src/lib/bot/ideas";
 import { loadBacktestData } from "../src/lib/bot/run";
 import { asianSetup } from "../src/lib/setup/setups";
 
@@ -13,7 +13,7 @@ async function main() {
   const data = await loadBacktestData();
   const prepared = ideaContext(data);
   const { ctx, ready } = prepared;
-  const trades = ideaTrades(prepared, ASIAN_IDEA, RECORD_BALANCE);
+  const trades = ideaTrades(prepared, SESSION_IDEAS[0], RECORD_BALANCE);
   const byDay = new Map(trades.map((t) => [t.openedAt.toISOString().slice(0, 10), t]));
   const m15 = data.m15;
   // the last bar of each UTC day before 20:00 is where the page's final word for that day is read
