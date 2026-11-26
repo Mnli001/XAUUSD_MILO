@@ -9,6 +9,8 @@ import { Dir } from "./Timetable";
 import { LiveBadge } from "./LiveQuote";
 
 const REFRESH_MS = 8000;
+/** How many methods are listed before "show all". */
+export const FIRST_METHODS = 5;
 const px = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const tone = (v: Verdict) => (v === "BUY" ? "text-emerald-400" : v === "SELL" ? "text-red-400" : "text-zinc-400");
 const pill = (v: Verdict) => (v === "BUY" ? "bg-emerald-500/15 text-emerald-400" : v === "SELL" ? "bg-red-500/15 text-red-400" : "bg-zinc-500/15 text-zinc-400");
@@ -39,21 +41,27 @@ function VerdictWord({ v }: { v: Verdict }) {
   return <>{v === "BUY" ? t("ӨСӨХ тал", "Leans UP") : v === "SELL" ? t("УНАХ тал", "Leans DOWN") : t("Саналууд зөрсөн", "Methods disagree")}</>;
 }
 
+/** One method on one line; its reasoning and levels open on a tap. */
 function Row({ r }: { r: Reading }) {
   const { t } = useViewer();
   return (
-    <li className="border-t py-3 first:border-t-0 first:pt-0 last:pb-0" style={{ borderColor: "var(--hairline)" }}>
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-        <h4 className="min-w-0 flex-1 basis-40 text-sm font-semibold text-zinc-100">{r.name}</h4>
-        <span className="rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-zinc-400 tabular-nums" style={{ borderColor: "var(--hairline)" }}>{r.timeframe}</span>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${pill(r.verdict)}`}><Dir d={dir(r.verdict)} />{r.verdict === "NEUTRAL" ? t("Төвийг сахисан", "Neutral") : r.verdict}</span>
-      </div>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-400">{r.reason}</p>
-      {r.levels.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1.5">
-          {r.levels.map((l) => <li key={l.label} className="rounded-md px-2 py-1 text-[11px] text-zinc-400 tabular-nums" style={{ background: "var(--glass-inset)" }}>{l.label} <span className="font-medium text-zinc-200">{px(l.price)}</span></li>)}
-        </ul>
-      )}
+    <li className="border-t first:border-t-0" style={{ borderColor: "var(--hairline)" }}>
+      <details className="group/row">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-x-2.5 py-2 [&::-webkit-details-marker]:hidden">
+          <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform group-open/row:rotate-90"><path d="M4.5 2 8 6l-3.5 4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <h4 className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-100">{r.name}</h4>
+          <span className="rounded-md border px-1.5 py-0.5 text-[11px] font-medium text-zinc-400 tabular-nums" style={{ borderColor: "var(--hairline)" }}>{r.timeframe}</span>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap ${pill(r.verdict)}`}><Dir d={dir(r.verdict)} />{r.verdict === "NEUTRAL" ? t("Төвийг сахисан", "Neutral") : r.verdict}</span>
+        </summary>
+        <div className="pb-3 pl-5">
+          <p className="text-[13px] leading-relaxed text-zinc-400">{r.reason}</p>
+          {r.levels.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {r.levels.map((l) => <li key={l.label} className="rounded-md px-2 py-1 text-[11px] text-zinc-400 tabular-nums" style={{ background: "var(--glass-inset)" }}>{l.label} <span className="font-medium text-zinc-200">{px(l.price)}</span></li>)}
+            </ul>
+          )}
+        </div>
+      </details>
     </li>
   );
 }
@@ -66,6 +74,7 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
   const { t, time, zone } = useViewer();
   const view = useReasoning(initial);
   const [open, setOpen] = useState<Family | "all">("all");
+  const [all, setAll] = useState(false);
   if (!view) {
     return (
       <section className="card" id="reasoning">
@@ -76,7 +85,10 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
   }
   const { reasoning: r, quote } = view;
   const n = r.readings.length;
-  const shown = open === "all" ? r.readings : r.readings.filter((x) => x.family === open);
+  const picked = open === "all" ? r.readings : r.readings.filter((x) => x.family === open);
+  // The methods that take a side come first; the full list is one tap away.
+  const ranked = [...picked].sort((a, b) => Number(a.verdict === "NEUTRAL") - Number(b.verdict === "NEUTRAL"));
+  const shown = all || open !== "all" ? ranked : ranked.slice(0, FIRST_METHODS);
   return (
     <section className="hallmark p-5 sm:p-7" id="reasoning" aria-labelledby="reasoning-h">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -137,10 +149,21 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
             <h3 className="text-[13px] font-semibold text-zinc-200">{open === "all" ? t("Арга тус бүр юу харж байна", "What each method sees") : r.families.find((f) => f.family === open)?.name}</h3>
             {open !== "all" && <button type="button" className="text-xs font-medium text-amber-300 hover:text-amber-200" onClick={() => setOpen("all")}>{t("Бүгдийг харах", "Show all")}</button>}
           </div>
-          <ul className="mt-3">
+          <ul className="mt-2">
             {shown.map((x) => <Row key={x.id} r={x} />)}
           </ul>
-          <p className="mt-4 max-w-prose text-xs leading-relaxed text-zinc-500">{t("Эдгээр нь түгээмэл аргуудын чартыг уншсан байдал: арга бүр өөр зүйл хардаг тул зөрөх нь хэвийн. Аль нь ч энэ систем дээр ашигтай гэж шалгагдаагүй. Олонх нь нэг тал руу заах нь илүү олон шалтгаан давхцсаныг хэлнэ, ашгийг батлахгүй. Санхүүгийн зөвлөгөө биш.", "These are well-known methods reading the chart: each looks at something different, so disagreement is normal. None has been tested as profitable on this system. Many pointing one way means more reasons line up, not that a profit is likely. Not financial advice.")}</p>
+          {open === "all" && ranked.length > FIRST_METHODS && (
+            <button type="button" onClick={() => setAll((a) => !a)} aria-expanded={all}
+              className="mt-2 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-amber-300 hover:bg-zinc-800/50 hover:text-amber-200">
+              <svg aria-hidden viewBox="0 0 12 12" className={`h-3 w-3 transition-transform ${all ? "rotate-180" : ""}`}><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              {all ? t("Хураах", "Show less") : t(`Бүгдийг харах (${ranked.length})`, `Show all (${ranked.length})`)}
+            </button>
+          )}
+          <details className="mt-4 max-w-prose text-xs leading-relaxed text-zinc-500">
+            <summary className="cursor-pointer font-medium text-zinc-400 hover:text-zinc-200">{t("Энэ самбар системийн шийдвэрт юу хийдэг вэ?", "What does this panel do in the system's decisions?")}</summary>
+            <p className="mt-2">{t("Азийн breakout дохио (Setup хуудас, Telegram, MT5 роботын «Азийн breakout») эдгээр аргуудын санал хураалтыг ашигладаггүй. Тэр өөрийн шалгагдсан дүрмээр шийднэ: өдөр, 4 цагийн тренд оноо (EMA50/200, EMA20-ийн налуу, RSI, MACD, swing бүтэц), Азийн хүрээ, мэдээний цонх, хүрээний өргөн.", "The Asian breakout signal (Setup page, Telegram, the MT5 robot's “Asian breakout”) does not use this vote. It decides by its own tested rule: the daily and 4-hour trend scores (EMA50/200, EMA20 slope, RSI, MACD, swing structure), the Asian range, news windows and the range width.")}</p>
+            <p className="mt-2">{t("Энэ самбарыг ашигладаг нь роботын «Дүгнэлт» горим (BUY, SELL гэсэн аргын тоогоор орно), «Day trader» горим (setup-ийн чиглэлийг олонх нь дэмжих ёстой) болон Бот хуудасны «Санал нийлэх арга» шүүлтүүр л. Бусад үед энэ нь зах зээлийг өөр өөр өнцгөөс харах лавлагаа юм.", "Only the robot's “Reading” mode (it enters on the count of methods saying BUY or SELL), its “Day trader” mode (most methods must back the setup's side) and the Bot page's “Methods that must agree” filter use this panel. Otherwise it is a reference: the market seen from many angles.")}</p>
+          </details>
         </>
       )}
     </section>
