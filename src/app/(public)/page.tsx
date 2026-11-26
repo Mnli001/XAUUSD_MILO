@@ -73,7 +73,7 @@ export default async function LandingPage() {
 
           <header className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-3 px-5 sm:px-8">
             <BrandName />
-            <span className="flex items-center gap-2"><LanguageSwitch locale={v.locale} /><Link href="/login" className="btn-ghost backdrop-blur-md">{t("Нэвтрэх", "Sign in")}</Link></span>
+            <span className="flex items-center gap-2"><LanguageSwitch locale={v.locale} /><Link href="/login" className="btn-ghost whitespace-nowrap backdrop-blur-md">{t("Нэвтрэх", "Sign in")}</Link></span>
           </header>
 
           <div className="reveal mx-auto grid w-full max-w-7xl items-center gap-16 px-5 pt-16 pb-24 sm:px-8 sm:pt-24 sm:pb-36 lg:grid-cols-[minmax(0,1fr)_28rem] lg:gap-20 lg:pt-32 lg:pb-44">
