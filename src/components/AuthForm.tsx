@@ -40,6 +40,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           autoComplete={mode === "login" ? "current-password" : "new-password"} />
         {mode === "register" && <p className="mt-1 text-xs text-zinc-500">{t("8-аас дээш тэмдэгт", "8 characters or more")}</p>}
       </div>
+      {mode === "register" && (
+        <label className="flex items-start gap-2.5 text-sm leading-relaxed text-zinc-300">
+          <input type="checkbox" name="consent" required className="mt-1 h-4 w-4 shrink-0 accent-amber-400" />
+          <span>{t("Би ", "I have read and accept the ")}<Link href="/privacy" target="_blank" className="font-semibold text-zinc-50 underline decoration-amber-400/60 underline-offset-2">{t("Нууцлалын бодлого", "privacy policy")}</Link>{t(" болон ", " and the ")}<Link href="/terms" target="_blank" className="font-semibold text-zinc-50 underline decoration-amber-400/60 underline-offset-2">{t("Үйлчилгээний нөхцөл", "terms of service")}</Link>{t("-ийг уншиж, хувийн мэдээллээ боловсруулахыг зөвшөөрч байна.", ", and agree to my personal data being processed.")}</span>
+        </label>
+      )}
       {state.error && <p role="alert" className="text-sm text-red-400">{state.error}</p>}
       <button className="btn w-full" disabled={pending}>{pending ? t("Түр хүлээнэ үү…", "Please wait…") : mode === "login" ? t("Нэвтрэх", "Sign in") : t("Бүртгүүлэх", "Register")}</button>
       <p className="text-center text-sm text-zinc-400">

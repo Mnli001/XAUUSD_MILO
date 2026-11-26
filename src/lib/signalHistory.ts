@@ -8,9 +8,12 @@ const MAX_BARS = 20_000; // about seven months of 15-minute candles
 
 export type SignalRow = Signal & { outcome: Outcome };
 
+/** Without a plan, the track record is shown a day late: the live signals are what a plan pays for. */
+export const PUBLIC_DELAY_MS = 24 * 36e5;
+
 /** The latest recorded signals, newest first, each judged on the stored 15-minute candles. */
-export async function signalHistory(now: Date, limit = 60): Promise<SignalRow[]> {
-  const signals = await listSignals(limit);
+export async function signalHistory(now: Date, limit = 60, o: { delayMs?: number } = {}): Promise<SignalRow[]> {
+  const signals = await listSignals(limit, o.delayMs ? new Date(now.getTime() - o.delayMs) : undefined);
   if (signals.length === 0) return [];
   const oldest = Math.min(...signals.map((s) => s.createdAt.getTime()));
   const bars = await loadCandles(SYMBOL, "15min", Math.min(MAX_BARS, Math.ceil((now.getTime() - oldest) / M15) + 8));

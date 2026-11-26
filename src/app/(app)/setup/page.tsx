@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LotCalculator } from "@/components/LotCalculator";
 import { getSetups, type Setup } from "@/lib/setup/build";
 import type { SetupHistory } from "@/lib/setup/setups";
 import { getNextHighEvent } from "@/lib/events";
@@ -357,6 +358,12 @@ export default async function SetupPage() {
       })}
 
       <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
+
+      {(() => {
+        // Prefilled from the setup that is live now (paid users only: its levels are what a plan pays for).
+        const live = paid ? sortedSetups.find((s) => s.status !== "OFF" && s.entry !== null && s.stop !== null) : undefined;
+        return <LotCalculator stop={live ? Math.abs(live.entry! - live.stop!) : null} target={live && live.target !== null ? Math.abs(live.target - live.entry!) : null} source={live?.name} />;
+      })()}
 
       <section className="card flex flex-wrap items-center justify-between gap-3">
         <div>
