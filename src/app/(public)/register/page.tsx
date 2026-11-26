@@ -4,6 +4,7 @@ export async function generateMetadata() {
   const t = await getT();
   return { title: t("Бүртгүүлэх — XAU Analytics", "Register — XAU Analytics") };
 }
-export default function RegisterPage() {
-  return <AuthForm mode="register" />;
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ ref?: string }> }) {
+  const { ref } = await searchParams;
+  return <AuthForm mode="register" refCode={typeof ref === "string" && /^[A-Za-z0-9]{4,16}$/.test(ref) ? ref : undefined} />;
 }

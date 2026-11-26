@@ -6,7 +6,7 @@ import { usePrefs, useT } from "./PrefsProvider";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { BrandName } from "./BrandMark";
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({ mode, refCode }: { mode: "login" | "register"; refCode?: string }) {
   const t = useT();
   const { locale } = usePrefs();
   const [state, action, pending] = useActionState<FormState, FormData>(mode === "login" ? loginAction : registerAction, {});
@@ -24,6 +24,12 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         <span className="absolute left-[62%] h-[11px] w-[11px] -translate-x-1/2 rounded-full border-[3px] border-zinc-900 bg-zinc-50" />
       </div>
       <h1 className="page-title">{mode === "login" ? t("Нэвтрэх", "Sign in") : t("Бүртгүүлэх", "Register")}</h1>
+      {mode === "register" && refCode && (
+        <>
+          <input type="hidden" name="ref" value={refCode} />
+          <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm text-amber-200">{t("Найзынхаа урилгаар бүртгүүлж байна.", "You are registering through a friend's invite.")}</p>
+        </>
+      )}
       {mode === "register" && (
         <div>
           <label className="label" htmlFor="name">{t("Нэр", "Name")}</label>

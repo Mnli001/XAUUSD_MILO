@@ -98,7 +98,7 @@ export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date })
   return (
     <form action={action} className="card space-y-3">
       <h2 className="card-title">{t("Цагийн бүс", "Time zone")}</h2>
-      <p className="text-sm leading-relaxed text-zinc-400">{t("Мэдээний цаг, цагийн магадлал, журнал, дохионы цагийг энэ бүсээр харуулна. Дүрмийн цагууд ч мөн энэ бүс рүү хөрвөнө.", "News times, hourly odds, the journal and signal times are shown in this zone. The hours in the rules are converted to it as well.")}</p>
+      <p className="text-sm leading-relaxed text-zinc-400">{t("Мэдээний цаг, цагийн магадлал, ботын арилжаа, дохионы цагийг энэ бүсээр харуулна. Дүрмийн цагууд ч мөн энэ бүс рүү хөрвөнө.", "News times, hourly odds, bot trades and signal times are shown in this zone. The hours in the rules are converted to it as well.")}</p>
       <div>
         <label className="label" htmlFor="timeZone">{t("Цагийн бүс", "Time zone")}</label>
         <select ref={select} className="input" id="timeZone" name="timeZone" defaultValue={timeZone} onChange={(e) => e.currentTarget.form?.requestSubmit()}>

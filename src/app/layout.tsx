@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return {
     title: t("XAU Analytics — алтны зах зээлийн шинжилгээ", "XAU Analytics — gold market analysis"),
-    description: t("Алтны (XAUUSD) чиглэл, цагийн магадлал, мэдээний календарь, арилжааны журнал.", "Gold (XAUUSD) direction, hourly odds, the news calendar and a trade journal."),
+    description: t("Алтны (XAUUSD) чиглэл, цагийн магадлал, setup дохио, мэдээний календарь, MT5 робот.", "Gold (XAUUSD) direction, hourly odds, setup signals, the news calendar and an MT5 robot."),
   };
 }
 

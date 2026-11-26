@@ -1,11 +1,11 @@
 import { and, desc, eq, gte, sum } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Role } from "./db/schema";
-import { tradePnl, type TradeInput } from "./analysis/journal";
+import type { ClosedTrade } from "./analysis/journal";
 import { isPlanId, type PlanId } from "./plans";
 import { ONLINE_WITHIN_MS } from "./bot/liveDb";
 
-/** The personal strip at the top of Today: the plan, the journal, the bot. Read-only: loading it writes nothing. */
+/** The personal strip at the top of Today: the plan, the robot's results, the bot. Read-only: loading it writes nothing. */
 const DAY = 864e5;
 const MONTH_DAYS = 30;
 
@@ -31,25 +31,23 @@ export async function latestPaidPlan(userId: string): Promise<PlanId | null> {
   return p && isPlanId(p.plan) ? p.plan : null;
 }
 
-export type JournalSummary = {
+export type TradeSummary = {
   month: { closed: number; wins: number; losses: number; pnl: number; winRate: number | null };
   allTime: { closed: number; pnl: number };
   open: number;
 };
 
-/** Closed trades of the last 30 days (by close time), everything closed, and what is still open. */
-export function journalSummary(trades: TradeInput[], now: Date): JournalSummary {
+/** The robot's closed trades over the last 30 days (by close time) and all time; `open`: its open positions now. */
+export function tradeSummary(trades: readonly ClosedTrade[], open: number, now: Date): TradeSummary {
   const since = now.getTime() - MONTH_DAYS * DAY;
-  const out: JournalSummary = { month: { closed: 0, wins: 0, losses: 0, pnl: 0, winRate: null }, allTime: { closed: 0, pnl: 0 }, open: 0 };
+  const out: TradeSummary = { month: { closed: 0, wins: 0, losses: 0, pnl: 0, winRate: null }, allTime: { closed: 0, pnl: 0 }, open };
   for (const t of trades) {
-    const pnl = tradePnl(t);
-    if (pnl === null) { out.open++; continue; }
     out.allTime.closed++;
-    out.allTime.pnl += pnl;
-    if (t.closedAt!.getTime() >= since) {
+    out.allTime.pnl += t.pnl;
+    if (t.closedAt.getTime() >= since) {
       out.month.closed++;
-      out.month.pnl += pnl;
-      if (pnl > 0) out.month.wins++; else out.month.losses++;
+      out.month.pnl += t.pnl;
+      if (t.pnl > 0) out.month.wins++; else out.month.losses++;
     }
   }
   if (out.month.closed > 0) out.month.winRate = Math.round((out.month.wins / out.month.closed) * 100);

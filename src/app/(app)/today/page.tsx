@@ -19,8 +19,8 @@ import { PlansCard } from "@/components/Paywall";
 import { choosePlanAction } from "@/lib/actions/payments";
 import { getReasoning } from "@/lib/reasoningLive";
 import { MyDashboard, type DashSetup } from "@/components/MyDashboard";
-import { botSummary, journalSummary, latestPaidPlan, planSummary } from "@/lib/dashboard";
-import { listTrades } from "@/lib/trades";
+import { botSummary, tradeSummary, latestPaidPlan, planSummary } from "@/lib/dashboard";
+import { botTrades } from "@/lib/botPerformance";
 import { getSetups } from "@/lib/setup/build";
 import { orderSetups } from "@/lib/setup/order";
 
@@ -37,7 +37,7 @@ export default async function TodayPage() {
   // Without a plan the paid figures are never loaded into the page, so they cannot be read from it.
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [snap, upcoming, next, reactions, day, reasoning, guideDone, paidPlan, trades, bot, setupView] = await Promise.all([
+  const [snap, upcoming, next, reactions, day, reasoning, guideDone, paidPlan, bot, setupView] = await Promise.all([
     getTodaySnapshot(SYMBOL, now),
     getEvents(now, new Date(now.getTime() + 24 * 36e5)),
     getNextHighEvent(now),
@@ -46,10 +46,11 @@ export default async function TodayPage() {
     paid ? getReasoning(now, v.locale) : Promise.resolve(null),
     startGuideDone(),
     latestPaidPlan(user.id),
-    listTrades(user.id),
-    paid ? botSummary(user.id, now) : Promise.resolve(null),
+    botSummary(user.id, now),
     paid ? getSetups(now, v).catch((e) => { console.error("[today] setups failed", e); return null; }) : Promise.resolve(null),
   ]);
+  // The robot's own results are the user's data, shown with or without a plan; its live controls are not.
+  const closed = bot.account ? await botTrades(user.id, bot.account) : [];
   const dashSetups: DashSetup[] | null = setupView
     ? orderSetups(setupView.setups).map((s) => ({ id: s.id, name: s.name, status: s.status, side: s.side, headline: s.headline, entry: s.entry, stop: s.stop, target: s.target }))
     : null;
@@ -57,7 +58,7 @@ export default async function TodayPage() {
   return (
     <div className="reveal space-y-5 sm:space-y-7">
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
-      <MyDashboard v={v} name={user.name || null} plan={planSummary(user, paidPlan, now)} journal={journalSummary(trades, now)} bot={bot} setups={paid ? dashSetups ?? [] : null} />
+      <MyDashboard v={v} name={user.name || null} plan={planSummary(user, paidPlan, now)} trades={tradeSummary(closed, bot.positions, now)} bot={paid ? bot : null} setups={paid ? dashSetups ?? [] : null} />
       {!guideDone && <StartGuide t={t} dismiss={dismissStartGuide} />}
       <section className="card group relative overflow-hidden sm:p-8 transition-all duration-500 hover:shadow-2xl" aria-labelledby="today-h">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/5 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/10" aria-hidden />

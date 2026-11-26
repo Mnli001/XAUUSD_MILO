@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { T } from "@/lib/i18n";
 import type { Viewer } from "@/lib/viewer";
-import type { BotSummary, JournalSummary, PlanSummary } from "@/lib/dashboard";
+import type { BotSummary, TradeSummary, PlanSummary } from "@/lib/dashboard";
 import type { SetupStatus } from "@/lib/setup/setups";
 import { PLANS } from "@/lib/plans";
 import { Masked, UnlockLink } from "./Paywall";
@@ -60,13 +60,13 @@ function PlanTile({ plan, v }: { plan: PlanSummary; v: Viewer }) {
   );
 }
 
-function JournalTile({ j, t }: { j: JournalSummary; t: T }) {
+function TradesTile({ j, t }: { j: TradeSummary; t: T }) {
   return (
-    <Tile title={t("Миний арилжаа · 30 хоног", "My trades · 30 days")}>
+    <Tile title={t("Ботын арилжаа · 30 хоног", "Bot trades · 30 days")}>
       {j.allTime.closed === 0 && j.open === 0 ? (
         <>
-          <p className="text-sm text-zinc-300">{t("Журналд арилжаа алга. Хийсэн арилжаагаа бичвэл үр дүн тань энд гарна.", "No trades in your journal yet. Write yours down and your results show here.")}</p>
-          <Link href="/journal/new" className={`${linkCls} mt-1`}>{t("Арилжаа нэмэх", "Add a trade")}</Link>
+          <p className="text-sm text-zinc-300">{t("Робот одоогоор арилжаа хаагаагүй. Хаах бүрд үр дүн энд автоматаар гарна.", "The robot has not closed a trade yet. Each one it closes shows up here by itself.")}</p>
+          <Link href="/bot" className={`${linkCls} mt-1`}>{t("Бот руу", "Open the bot")}</Link>
         </>
       ) : (
         <>
@@ -76,7 +76,7 @@ function JournalTile({ j, t }: { j: JournalSummary; t: T }) {
             {j.month.winRate !== null && <> · {t(`${j.month.winRate}% ашигтай`, `${j.month.winRate}% in profit`)}</>}
             {j.open > 0 && <> · {t(`${j.open} нээлттэй`, `${j.open} open`)}</>}
           </p>
-          <Link href="/journal" className={`${linkCls} mt-1`}>{t("Журнал руу", "Open the journal")}</Link>
+          <Link href="/performance" className={`${linkCls} mt-1`}>{t("Гүйцэтгэл рүү", "Open performance")}</Link>
         </>
       )}
     </Tile>
@@ -159,14 +159,14 @@ function SetupsTile({ setups, t }: { setups: DashSetup[] | null; t: T }) {
  * The personal strip at the top of Today. `bot` and `setups` are null for a user without a plan:
  * their figures are then never loaded, so they cannot be read from the page.
  */
-export function MyDashboard({ v, name, plan, journal, bot, setups }: { v: Viewer; name: string | null; plan: PlanSummary; journal: JournalSummary; bot: BotSummary | null; setups: DashSetup[] | null }) {
+export function MyDashboard({ v, name, plan, trades, bot, setups }: { v: Viewer; name: string | null; plan: PlanSummary; trades: TradeSummary; bot: BotSummary | null; setups: DashSetup[] | null }) {
   const { t } = v;
   return (
     <section className="card" aria-labelledby="mine-h">
       <h2 id="mine-h" className="text-lg font-semibold text-zinc-100">{name ? t(`Сайн уу, ${name}`, `Hello, ${name}`) : t("Миний самбар", "My dashboard")}</h2>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <PlanTile plan={plan} v={v} />
-        <JournalTile j={journal} t={t} />
+        <TradesTile j={trades} t={t} />
         <BotTile bot={bot} t={t} />
         <div className="md:col-span-3"><SetupsTile setups={setups} t={t} /></div>
       </div>

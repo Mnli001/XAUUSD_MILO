@@ -54,13 +54,13 @@ export default async function SettingsPage() {
           )}
         </div>
 
-        <section className="card space-y-3">
-          <h2 className="card-title">{t("Журнал татах", "Export the journal")}</h2>
-          <p className="text-sm leading-relaxed text-zinc-400">{t(`Журналд байгаа ${trades.length} арилжааг Excel-д нээгдэх CSV файл болгон татна. Цаг нь ${v.zone}-аар, ашиг болон R тооцоотой.`, `Downloads the ${trades.length} trades in your journal as a CSV file that opens in Excel. Times are in ${v.zone}, with profit and R worked out.`)}</p>
-          {trades.length > 0
-            ? <a className="btn-ghost" href="/api/trades/export" download>{t("CSV файл татах", "Download CSV")}</a>
-            : <p className="text-sm text-zinc-500">{t("Журнал хоосон байна.", "The journal is empty.")}</p>}
-        </section>
+        {trades.length > 0 && (
+          <section className="card space-y-3">
+            <h2 className="card-title">{t("Хуучин журналаа татах", "Download your old journal")}</h2>
+            <p className="text-sm leading-relaxed text-zinc-400">{t(`Журнал хуудас хасагдсан ч таны өмнө бичсэн ${trades.length} арилжаа хадгалагдсан хэвээр. Excel-д нээгдэх CSV файл болгон татаж авна. Цаг нь ${v.zone}-аар.`, `The journal page is gone, but the ${trades.length} trades you wrote down are still kept. Download them as a CSV file that opens in Excel. Times are in ${v.zone}.`)}</p>
+            <a className="btn-ghost" href="/api/trades/export" download>{t("CSV файл татах", "Download CSV")}</a>
+          </section>
+        )}
         <section className="card space-y-3">
           <h2 className="card-title">{t("Энэ төхөөрөмж", "This device")}</h2>
           <p className="text-sm leading-relaxed text-zinc-400">{t("Гарсны дараа дахин нэвтрэхэд таны хэл, өнгөний горим, цагийн бүс хэвээр байна.", "After signing out, your language, theme and time zone are kept for the next sign-in.")}</p>

@@ -3,6 +3,8 @@ import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Payment } from "./db/schema";
 import { PLANS, extendAccess, type PlanId } from "./plans";
+import { rewardReferrer } from "./referral";
+import { notifyReferrer } from "./referralNotify";
 import { cancelIntent, createCheckout, createIntent, retrieveIntent, type WireConfig } from "./wire";
 
 /** How long one payment can be paid (Wire cancels the intent at the same moment). */
@@ -51,6 +53,7 @@ export async function startPayment(userId: string, plan: PlanId, now: Date, cfg:
 
 /** Marks a paid payment PAID and extends the payer's access, exactly once however many checks race here. */
 async function activate(id: string, now: Date): Promise<void> {
+  let rewarded: string | null = null;
   await db.transaction(async (tx) => {
     const [won] = await tx.update(schema.payments).set({ status: "PAID", paidAt: now })
       .where(and(eq(schema.payments.id, id), ne(schema.payments.status, "PAID"))).returning();
@@ -60,7 +63,9 @@ async function activate(id: string, now: Date): Promise<void> {
     const until = extendAccess(current, now, won.days);
     await tx.update(schema.users).set({ accessUntil: until }).where(eq(schema.users.id, won.userId));
     await tx.update(schema.payments).set({ accessUntil: until }).where(eq(schema.payments.id, id));
+    rewarded = await rewardReferrer(tx, won.userId, now);
   });
+  if (rewarded) await notifyReferrer(rewarded).catch((e) => console.warn("[referral] could not tell the inviter", e));
 }
 
 /**
