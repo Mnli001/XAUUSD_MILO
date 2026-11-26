@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => path }));
 vi.mock("@/lib/actions/session", () => ({ logoutAction: async () => {} }));
 import { AppNav, currentHref } from "@/components/AppNav";
 
-const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Гүйцэтгэл", "Бот", "Ботын түүх", "Багц", "Нэр томьёо", "Тохиргоо"];
+const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Гүйцэтгэл", "Бот", "Ботын түүх", "Багц", "Профайл", "Нэр томьёо", "Тохиргоо"];
 
 test("the section you are in is marked as current, in both the rail and the phone tab bar", () => {
   path = "/performance";
@@ -41,7 +41,9 @@ test("on a phone, the Menu button drops down every page (there is no journal any
   fireEvent.click(button);
   expect(button).toHaveAttribute("aria-expanded", "true");
   const all = screen.getByRole("navigation", { name: "Бүх хуудас" });
-  expect(within(all).getAllByRole("link").map((a) => a.textContent)).toEqual(ALL);
+  const links = within(all).getAllByRole("link");
+  expect(links.slice(0, -1).map((a) => a.textContent)).toEqual(ALL);
+  expect(links.at(-1)).toHaveAttribute("href", "/profile"); // the account row: picture and name lead to the profile
   expect(within(all).queryByRole("link", { name: "Журнал" })).toBeNull();
   expect(within(all).getByRole("link", { name: "Өнөөдөр" })).toHaveAttribute("aria-current", "page");
   expect(within(all).getByRole("link", { name: "Ботын түүх" })).toHaveAttribute("href", "/bot/history");
@@ -66,4 +68,12 @@ test("the wide-screen rail lists every page, Bot history right after Bot", () =>
   path = "/today";
   render(<AppNav name="Ану" isAdmin={false} />);
   expect(within(screen.getByRole("navigation", { name: "Үндсэн цэс" })).getAllByRole("link").map((a) => a.textContent)).toEqual(ALL);
+});
+
+test("the account row shows the profile picture when there is one and leads to the profile", () => {
+  path = "/today";
+  const { container } = render(<AppNav name="Ану" isAdmin={false} avatar="/api/avatar?v=1" />);
+  expect(container.querySelector('img[src="/api/avatar?v=1"]')).not.toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /Ану/ }));
+  expect(screen.getByRole("menuitem", { name: "Профайл" })).toHaveAttribute("href", "/profile");
 });

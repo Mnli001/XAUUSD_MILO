@@ -5,7 +5,7 @@ import { prefsOf } from "@/lib/prefsDb";
 import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
 import { listTrades } from "@/lib/trades";
 import { logoutAction } from "@/lib/actions/session";
-import { AppearanceForm, DeleteAccountForm, PasswordForm, ProfileForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
+import { AppearanceForm, DeleteAccountForm, PasswordForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
 import { TelegramCard } from "@/components/TelegramCard";
 import { SoundToggle } from "@/components/SoundToggle";
 
@@ -32,7 +32,12 @@ export default async function SettingsPage() {
       <div className="grid max-w-4xl items-start gap-4 sm:gap-5 md:grid-cols-2">
         <AppearanceForm prefs={prefsOf(user)} />
         <TimeZoneForm timeZone={v.timeZone} now={new Date()} />
-        <ProfileForm name={user.name} email={user.email} access={access} />
+        <section className="card" aria-labelledby="profile-h">
+          <h2 id="profile-h" className="card-title">{t("Профайл", "Profile")}</h2>
+          <p className="mt-2 text-sm text-zinc-300">{t("Нэр, профайл зураг, багц, төлбөр, холболтууд Профайл хуудсанд.", "Your name, picture, plan, payments and connections are on the Profile page.")}</p>
+          <p className="mt-1 text-xs text-zinc-500">{t("Эрхийн хугацаа", "Access")}: {access}</p>
+          <Link href="/profile" className="btn-ghost mt-4">{t("Профайл нээх", "Open profile")}</Link>
+        </section>
         {plan && (
           <section className="card" aria-labelledby="plan-h">
             <h2 id="plan-h" className="card-title">{t("Багц", "Plan")}</h2>

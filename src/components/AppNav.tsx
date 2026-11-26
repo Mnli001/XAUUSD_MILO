@@ -6,6 +6,7 @@ import { logoutAction } from "@/lib/actions/session";
 import type { T } from "@/lib/i18n";
 import { useT } from "./PrefsProvider";
 import { BrandName } from "./BrandMark";
+import { Avatar } from "./Avatar";
 
 const mainLinks = (t: T) => [
   ["/today", t("Өнөөдөр", "Today"), "M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8L17 7M7 17l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"],
@@ -18,6 +19,7 @@ const mainLinks = (t: T) => [
 const moreLinks = (t: T) => [
   ["/bot/history", t("Ботын түүх", "Bot history"), "M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2"],
   ["/plans", t("Багц", "Plans"), "M4 7h16v12H4zM4 7l2-3h12l2 3M9 11h6"],
+  ["/profile", t("Профайл", "Profile"), "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"],
   ["/glossary", t("Нэр томьёо", "Glossary"), "M5 5.5A2.5 2.5 0 0 1 7.5 3H19v14H7.5A2.5 2.5 0 0 0 5 19.5m0-14v14m0 0A2.5 2.5 0 0 0 7.5 22H19v-5M9 7h6"],
   ["/settings", t("Тохиргоо", "Settings"), "M4 7h9m4 0h3M4 17h3m4 0h9M15 4.5v5M9 14.5v5"],
 ] as const;
@@ -39,7 +41,7 @@ function Brand() {
  * the current one filled. Phones and tablets get a slim top bar with a Menu button that drops down every page,
  * and a thumb-reach tab bar with the six used most.
  */
-export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
+export function AppNav({ name, isAdmin, avatar = null }: { name: string; isAdmin: boolean; avatar?: string | null }) {
   const path = usePathname();
   const t = useT();
   const MAIN = mainLinks(t), MORE = moreLinks(t);
@@ -71,18 +73,18 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
   }, [sheet]);
 
   const item = "flex min-h-11 items-center rounded-xl px-3 text-sm text-zinc-200 hover:bg-zinc-500/15";
-  const initial = name.trim().charAt(0).toUpperCase() || "?";
   // One account menu: pinned into the top bar on phones, to the foot of the rail on wide screens.
   const userMenu = (
     <div ref={menuRef} className="fixed bottom-7 left-7 z-40 hidden w-52 lg:block">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}
         className="flex min-h-11 w-full max-w-[13rem] items-center gap-2.5 rounded-full px-2 text-sm text-zinc-300 transition-colors hover:bg-zinc-500/15">
-        <span aria-hidden className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-xs font-semibold text-zinc-100">{initial}</span>
+        <Avatar name={name} src={avatar} size={28} />
         <span className="truncate">{name}</span>
         <svg aria-hidden viewBox="0 0 12 12" className={`ml-auto h-3 w-3 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       {open && (
         <div role="menu" className="glass-menu absolute bottom-full left-0 z-40 mb-1 w-56 rounded-[18px] p-1.5">
+          <Link role="menuitem" href="/profile" className={item}>{t("Профайл", "Profile")}</Link>
           {isAdmin && <Link role="menuitem" href="/admin/users" className={`${item} text-amber-300`}>{t("Админ", "Admin")}</Link>}
           <form action={logoutAction}><button role="menuitem" className={`${item} w-full text-left text-zinc-400`}>{t("Гарах", "Sign out")}</button></form>
         </div>
@@ -148,8 +150,10 @@ export function AppNav({ name, isAdmin }: { name: string; isAdmin: boolean }) {
               })}
             </ul>
             <div className="mt-2 flex items-center gap-2 border-t px-1 pt-2" style={{ borderColor: "var(--hairline)" }}>
-              <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-xs font-semibold text-zinc-100">{initial}</span>
-              <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">{name}</span>
+              <Link href="/profile" className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl pr-2 text-sm text-zinc-300 hover:bg-zinc-500/15">
+                <Avatar name={name} src={avatar} size={32} />
+                <span className="truncate">{name}</span>
+              </Link>
               {isAdmin && <Link href="/admin/users" className="flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-amber-300 hover:bg-zinc-500/15">{t("Админ", "Admin")}</Link>}
               <form action={logoutAction}><button className="flex min-h-11 items-center rounded-xl px-3 text-sm text-zinc-400 hover:bg-zinc-500/15">{t("Гарах", "Sign out")}</button></form>
             </div>
