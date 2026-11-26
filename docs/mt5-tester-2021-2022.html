@@ -1,0 +1,66 @@
+<title>MT5 tester · 2021–2022</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one report column; summary tiles, balance line, month ledger, then the comparison. */
+:root { --bg:#f6f3ec; --surface:#fff; --fg:#1d1a14; --muted:#6c6556; --line:#e5dfd2; --gold:#a5791d; --gold-soft:#f2e6c6; --up:#1f8a5b; --down:#c0392b;
+  --display:"Manrope",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0f0e0c; --surface:#18160f; --fg:#efe8d6; --muted:#a2998a; --line:#2c2820; --gold:#d9b566; --gold-soft:#2a2314; --up:#4cc38a; --down:#ef6b5b; color-scheme:dark; }
+body { background:var(--bg); color:var(--fg); font:15px/1.6 var(--display); }
+.wrap { max-width:860px; margin:0 auto; padding-block:36px 64px; padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); display:grid; gap:30px; }
+h1,h2 { margin:0; text-wrap:balance; line-height:1.2; } h1 { font-size:clamp(26px,5vw,38px); font-weight:800; letter-spacing:-.02em; } h2 { font-size:19px; font-weight:800; }
+p { margin:0; } .eyebrow { font:600 11px var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--gold); } .muted { color:var(--muted); }
+section { display:grid; gap:12px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:grid; gap:2px; }
+.tile b { font:700 22px var(--mono); font-variant-numeric:tabular-nums; } .tile span { font-size:13px; color:var(--muted); }
+.up { color:var(--up); } .down { color:var(--down); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:14px; } th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); white-space:nowrap; } tr:last-child td { border-bottom:0; }
+th { font:600 11px var(--mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+td.num { font-family:var(--mono); font-variant-numeric:tabular-nums; text-align:right; }
+td.bar { width:28%; min-width:90px; } td.bar span { display:block; height:10px; border-radius:5px; } td.bar span.up { background:var(--up); } td.bar span.down { background:var(--down); }
+.note { border-left:3px solid var(--gold); padding:4px 0 4px 14px; color:var(--muted); }
+svg text { fill:var(--muted); font:11px var(--mono); }
+</style>
+<div class="wrap">
+  <header style="display:grid;gap:10px">
+    <p class="eyebrow">MetaTrader 5 Strategy Tester · XauBot v3.60 · санамсаргүй жил · 2021-09-26 → 2022-09-26</p>
+    <h1>MT5 tester: санамсаргүй жил 2021–2022</h1>
+    <p class="muted">JustMarkets XAUUSD.m, 15 минут, 1 минутын OHLC, брокерын бодит spread. Хөшүүрэг 1:1000, арилжаа бүрт балансын 5% эрсдэл, нэг дор 3 хүртэл арилжаа. Setup: Азийн хүрээ (32 арилжаа), Нью-Йоркийн нээлт (34), Нью-Йоркийн хоёр дахь цаг (33).</p>
+  </header>
+  <section><div class="tiles">
+    <div class="tile"><b>1,500.00$ → 1,944.81$</b><span>Эхлэл → төгсгөл</span></div>
+    <div class="tile"><b class="up">+29.7%</b><span>Жилийн өгөөж (+444.81$)</span></div>
+    <div class="tile"><b>99</b><span>Арилжаа (7 хоногт 1.9)</span></div>
+    <div class="tile"><b>45.45%</b><span>Ашигтай (45)</span></div>
+    <div class="tile"><b>1.12</b><span>Profit factor</span></div>
+    <div class="tile"><b>1 : 1.34</b><span>Бодит RR (95.06$ / 70.98$)</span></div>
+    <div class="tile"><b class="down">24.50%</b><span>Балансын хамгийн их уналт (590.08$)</span></div>
+    <div class="tile"><b>7 / 13</b><span>Ашигтай сар</span></div>
+  </div></section>
+  <section><h2>Дансны үлдэгдэл</h2><div class="card"><svg viewBox="0 0 760 220" width="100%" role="img" aria-label="Үлдэгдэл 1,500.00$-аас 1,944.81$">
+    <line x1="28" x2="732" y1="151.0" y2="151.0" stroke="currentColor" stroke-opacity=".25" stroke-dasharray="4 4"/><text x="28" y="145.0">эхлэл 1,500.00$</text>
+    <path d="M28.0,151.0 L35.1,160.8 L42.2,154.8 L49.3,146.8 L56.4,158.6 L63.6,167.8 L70.7,176.3 L77.8,184.4 L84.9,192.0 L92.0,184.4 L99.1,159.6 L106.2,154.6 L113.3,152.7 L120.4,156.8 L127.6,147.8 L134.7,157.9 L141.8,140.8 L148.9,129.6 L156.0,141.0 L163.1,151.1 L170.2,147.8 L177.3,142.3 L184.4,129.4 L191.6,112.2 L198.7,124.1 L205.8,123.5 L212.9,134.8 L220.0,122.5 L227.1,133.1 L234.2,143.8 L241.3,154.0 L248.4,163.9 L255.6,173.0 L262.7,177.8 L269.8,178.6 L276.9,180.2 L284.0,187.6 L291.1,171.5 L298.2,155.2 L305.3,136.1 L312.4,120.7 L319.6,132.3 L326.7,117.6 L333.8,128.4 L340.9,114.1 L348.0,112.9 L355.1,122.6 L362.2,133.8 L369.3,115.5 L376.4,92.7 L383.6,104.2 L390.7,100.5 L397.8,79.9 L404.9,85.3 L412.0,97.6 L419.1,105.3 L426.2,117.6 L433.3,119.2 L440.4,85.0 L447.6,97.3 L454.7,109.1 L461.8,120.1 L468.9,119.1 L476.0,106.5 L483.1,95.9 L490.2,88.5 L497.3,94.9 L504.4,77.0 L511.6,90.3 L518.7,66.6 L525.8,70.9 L532.9,84.2 L540.0,58.0 L547.1,31.9 L554.2,47.3 L561.3,61.5 L568.4,47.0 L575.6,50.1 L582.7,33.9 L589.8,28.0 L596.9,43.8 L604.0,58.5 L611.1,73.2 L618.2,72.9 L625.3,61.4 L632.4,61.9 L639.6,53.4 L646.7,67.4 L653.8,81.4 L660.9,81.6 L668.0,94.9 L675.1,107.9 L682.2,85.0 L689.3,82.0 L696.4,94.9 L703.6,69.3 L710.7,63.3 L717.8,77.0 L724.9,90.5 L732.0,90.8" fill="none" stroke="var(--gold)" stroke-width="2.2"/><text x="732" y="82.8" text-anchor="end">1,944.81$</text>
+  </svg></div></section>
+  <section><h2>Сар сараар</h2><div class="card"><table>
+    <thead><tr><th>Сар</th><th>Арилжаа</th><th>Ашигтай</th><th>Ашиг/алдагдал</th><th>Өөрчлөлт</th><th></th><th>Үлдэгдэл</th></tr></thead><tbody><tr><td>2021 9-р сар</td><td class="num">4</td><td class="num">2/4</td><td class="num down">−56.39$</td><td class="num down">-3.8%</td><td class="bar"><span class="down" style="width:17%"></span></td><td class="num">1,443.61$</td></tr><tr><td>2021 10-р сар</td><td class="num">7</td><td class="num">3/7</td><td class="num up">+30.06$</td><td class="num up">+2.1%</td><td class="bar"><span class="up" style="width:9%"></span></td><td class="num">1,473.67$</td></tr><tr><td>2021 11-р сар</td><td class="num">6</td><td class="num">4/6</td><td class="num up">+184.56$</td><td class="num up">+12.5%</td><td class="bar"><span class="up" style="width:56%"></span></td><td class="num">1,658.23$</td></tr><tr><td>2021 12-р сар</td><td class="num">7</td><td class="num">4/7</td><td class="num up">+40.27$</td><td class="num up">+2.4%</td><td class="bar"><span class="up" style="width:12%"></span></td><td class="num">1,698.50$</td></tr><tr><td>2022 1-р сар</td><td class="num">6</td><td class="num">2/6</td><td class="num down">−220.46$</td><td class="num down">-13.0%</td><td class="bar"><span class="down" style="width:67%"></span></td><td class="num">1,478.04$</td></tr><tr><td>2022 2-р сар</td><td class="num">16</td><td class="num">7/16</td><td class="num up">+231.62$</td><td class="num up">+15.7%</td><td class="bar"><span class="up" style="width:70%"></span></td><td class="num">1,709.66$</td></tr><tr><td>2022 3-р сар</td><td class="num">7</td><td class="num">4/7</td><td class="num up">+275.23$</td><td class="num up">+16.1%</td><td class="bar"><span class="up" style="width:83%"></span></td><td class="num">1,984.89$</td></tr><tr><td>2022 4-р сар</td><td class="num">4</td><td class="num">0/4</td><td class="num down">−250.04$</td><td class="num down">-12.6%</td><td class="bar"><span class="down" style="width:76%"></span></td><td class="num">1,734.85$</td></tr><tr><td>2022 5-р сар</td><td class="num">4</td><td class="num">1/4</td><td class="num down">−7.02$</td><td class="num down">-0.4%</td><td class="bar"><span class="down" style="width:2%"></span></td><td class="num">1,727.83$</td></tr><tr><td>2022 6-р сар</td><td class="num">5</td><td class="num">4/5</td><td class="num up">+186.62$</td><td class="num up">+10.8%</td><td class="bar"><span class="up" style="width:56%"></span></td><td class="num">1,914.45$</td></tr><tr><td>2022 7-р сар</td><td class="num">11</td><td class="num">5/11</td><td class="num up">+330.54$</td><td class="num up">+17.3%</td><td class="bar"><span class="up" style="width:100%"></span></td><td class="num">2,244.99$</td></tr><tr><td>2022 8-р сар</td><td class="num">12</td><td class="num">5/12</td><td class="num down">−232.80$</td><td class="num down">-10.4%</td><td class="bar"><span class="down" style="width:70%"></span></td><td class="num">2,012.19$</td></tr><tr><td>2022 9-р сар</td><td class="num">10</td><td class="num">4/10</td><td class="num down">−67.38$</td><td class="num down">-3.3%</td><td class="bar"><span class="down" style="width:20%"></span></td><td class="num">1,944.81$</td></tr></tbody></table></div>
+    <p class="muted">Хамгийн сайн сар 2022.07 (+330.54$), хамгийн муу сар 2022.04 (−250.04$). 2022 оны 2–3-р сард Украины дайнаар алт огцом өссөн үед ашигтай байсан бол 4-р сар болон 8-р сард ХНС-ийн хүү өсгөлтөөр алт эргэж унасан үед алдагдал гарсан.</p></section>
+  <section><h2>Эрсдэл</h2><div class="card"><table><tbody>
+    <tr><td>Балансын хамгийн их уналт</td><td class="num down">590.08 (24.50%)</td></tr>
+    <tr><td>Equity-ийн хамгийн их уналт (нээлттэй арилжаатай)</td><td class="num down">740.15 (29.20%)</td></tr>
+    <tr><td>Хамгийн том ашигтай арилжаа</td><td class="num up">+252.80$</td></tr>
+    <tr><td>Хамгийн том алдагдалтай арилжаа</td><td class="num down">−116.47$</td></tr>
+  </tbody></table></div></section>
+  <section><h2>Шалгасан гурван жил</h2><div class="card"><table>
+    <thead><tr><th></th><th>2021-09 → 2022-09</th><th>2020-06 → 2021-06</th><th>2025-11 → 2026-11</th></tr></thead><tbody>
+    <tr><td>Төгсгөл</td><td class="num">1,944.81$</td><td class="num">1,925.10$</td><td class="num">3,210.71$</td></tr>
+    <tr><td>Өгөөж</td><td class="num up">+29.7%</td><td class="num up">+28.3%</td><td class="num up">+114.0%</td></tr>
+    <tr><td>Арилжаа</td><td class="num">99</td><td class="num">103</td><td class="num">78</td></tr>
+    <tr><td>Profit factor</td><td class="num">1.12</td><td class="num">1.12</td><td class="num">1.65</td></tr>
+    <tr><td>Балансын хамгийн их уналт</td><td class="num down">24.50%</td><td class="num down">39.77%</td><td class="num down">23.96%</td></tr>
+  </tbody></table></div>
+  <p class="muted">Гурван жил гурвуулаа ашигтай гарсан. Тренд тод жилд (2025–2026) систем хүчтэй ажилласан, хэлбэлзэлтэй жилүүдэд (2020–21, 2021–22) +28–30% ашиг, 25–40% уналттай байна. 5% эрсдэл дээр 40% уналт гарч болох тул бодит дансанд 2–3% эрсдэл илүү тайван.</p></section>
+  <p class="note">Strategy Tester-ийн дахин тоглуулалт. Бодит арилжаанд slippage, мэдээний үеийн spread, сервер холболт нөлөөлнө. Өнгөрсөн үр дүн ирээдүйг батлахгүй.</p>
+</div>
