@@ -10,7 +10,7 @@
 
 #include <Trade\Trade.mqh>
 
-input string ServerUrl            = "http://localhost:3000/api/bot/sync"; // Вэб самбар дээрх хаяг (Жишээ: https://your-site.com/api/bot/sync) · Web address
+input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
 input string BotToken             = "";       // Вэб дээр үүсгэсэн токен · Token from the web
 input bool   AllowRealAccount     = false;    // Жинхэнэ данс зөвшөөрөх · Allow a real account
 input long   MagicNumber          = 20261121; // Роботын арилжааг ялгах дугаар · Magic number

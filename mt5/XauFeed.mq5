@@ -12,7 +12,7 @@
 
 //--- Inputs
 input group "=== Вэб холболтын тохиргоо · Server Configuration ==="
-input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэбийн хаяг (/api/bot/sync эсвэл /api/feed/tick)
+input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/feed/tick"; // Вэбийн хаяг: /api/feed/tick (XauBot-той мөргөлдөхгүй) · Web address
 input string AdminToken           = "";                                                             // Админ / Ботын токен · Admin/Bot Token
 
 input group "=== Давтамж ба Оновчлол · Timing & Optimization ==="
