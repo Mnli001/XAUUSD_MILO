@@ -5,6 +5,7 @@ import { getViewer } from "@/lib/prefs.server";
 import { LiveAlerts } from "@/components/LiveAlerts";
 import { TelegramConfirm } from "@/components/TelegramConfirm";
 import { pendingTelegram } from "@/lib/telegram";
+import { hasAccess } from "@/lib/access";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <AppNav name={user.name} isAdmin={user.role === "ADMIN"} />
-      <LiveAlerts />
+      {hasAccess(user, new Date()) && <LiveAlerts />}
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
           {pending && <TelegramConfirm name={pending.name} banner />}

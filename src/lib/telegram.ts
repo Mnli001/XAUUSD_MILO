@@ -173,7 +173,11 @@ function helpText(u: User, t: T): string {
 /** The /status reply: today's bias, the last price and the next HIGH-impact release, on the user's clock. */
 export async function statusText(u: User, now: Date, v: Viewer = viewer(prefsOf(u))): Promise<string> {
   const { t } = v;
-  if (!hasAccess(u, now)) return esc(t("Таны эрхийн хугацаа дууссан байна. Админтай холбогдоно уу.", "Your access has expired. Please contact the admin."));
+  if (!hasAccess(u, now)) {
+    return esc(u.accessUntil
+      ? t("Таны багцын хугацаа дууссан байна. Сайтын “Багц” хуудаснаас сунгаарай.", "Your plan has ended. Renew it on the site\u2019s “Plans” page.")
+      : t("Танд идэвхтэй багц алга. Сайтын “Багц” хуудаснаас сонгоорой.", "You have no active plan. Choose one on the site\u2019s “Plans” page."));
+  }
   const [snap, next] = await Promise.all([getTodaySnapshot(SYMBOL, now), getNextHighEvent(now)]);
   const lines = [t("<b>XAUUSD · одоогийн байдал</b>", "<b>XAUUSD · right now</b>")];
   if (snap.bias) {

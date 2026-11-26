@@ -118,11 +118,19 @@ test("/status gives the bias, the next important release on the user's clock, an
   for (const part of ["BULLISH bias", "+34", "Jobs report (NFP)", "London", "Signals: on", 'href="https://xau.example/setup"', "not financial advice"]) expect(text).toContain(part);
   expect(text).not.toMatch(/[Ѐ-ӿ]/);
 });
-test("/status tells an expired user their access ended", async () => {
+test("/status tells an expired user their plan ended and where to renew it", async () => {
   const u = await makeUser("a@x.mn");
   await db.execute(sql`UPDATE users SET telegram_chat_id = '555', access_until = '2020-01-01' WHERE id = ${u.id}`);
   await handleUpdate(start("/status"));
-  expect(lastText()).toContain("эрхийн хугацаа дууссан");
+  expect(lastText()).toContain("багцын хугацаа дууссан");
+  expect(lastText()).toContain("“Багц”");
+});
+test("/status tells someone who never had a plan how to get one, not that it ended", async () => {
+  const u = await makeUser("a@x.mn");
+  await db.execute(sql`UPDATE users SET telegram_chat_id = '555' WHERE id = ${u.id}`);
+  await handleUpdate(start("/status"));
+  expect(lastText()).toContain("идэвхтэй багц алга");
+  expect(lastText()).not.toContain("дууссан");
 });
 test("a 429 waits as long as Telegram asks, then sends", async () => {
   replies = [{ status: 429, body: { ok: false, error_code: 429, description: "Too Many Requests: retry after 3", parameters: { retry_after: 3 } } }];

@@ -338,7 +338,7 @@ const previousDay: Read = ({ d1, price, now }, t) => {
 };
 
 const METHODS: Read[] = [emaStack, goldenCross, ichimoku, macd, rsiMomentum, rsiExtreme, bollinger, stochastic, donchian, asianRange, structure, fairValueGap, liquiditySweep, pivotPoints, fibonacci, previousDay];
-const FAMILIES: Family[] = ["trend", "momentum", "reversion", "breakout", "structure", "levels"];
+export const FAMILIES: Family[] = ["trend", "momentum", "reversion", "breakout", "structure", "levels"];
 
 const lean = (buy: number, sell: number, n: number): Verdict => {
   if (n === 0) return "NEUTRAL";

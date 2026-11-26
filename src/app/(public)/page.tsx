@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth";
-import { hasAccess } from "@/lib/access";
 import { Disclaimer } from "@/components/Disclaimer";
 import { getViewer } from "@/lib/prefs.server";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
@@ -36,7 +35,7 @@ export default async function LandingPage() {
   const v = await getViewer();
   const { t } = v;
   const user = await getSessionUser();
-  if (user && hasAccess(user, new Date())) redirect("/today");
+  if (user) redirect("/today");
   const now = new Date();
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let snap: Awaited<ReturnType<typeof getTodaySnapshot>> = { price: null, bias: null, hourly: null, levels: null };

@@ -10,7 +10,11 @@ import { getViewer } from "@/lib/prefs.server";
 import { eventTitle } from "@/lib/data/calendarProvider";
 import type { T } from "@/lib/i18n";
 import { Dir } from "@/components/Timetable";
-import { ReasoningPanel } from "@/components/ReasoningPanel";
+import { ReasoningPanel, ReasoningLocked } from "@/components/ReasoningPanel";
+import { paywallFor } from "@/lib/paywall.server";
+import { Masked, PlansCard, UnlockLink } from "@/components/Paywall";
+import { choosePlanAction } from "@/lib/actions/payments";
+import type { Viewer } from "@/lib/viewer";
 import { getReasoning } from "@/lib/reasoningLive";
 import { orderSetups, bestRecent } from "@/lib/setup/order";
 import { TermHint } from "@/components/TermHint";
@@ -125,13 +129,62 @@ function Ladder({ s, t }: { s: Setup; t: T }) {
   );
 }
 
+/**
+ * A rule's card for someone without a plan: its name, its chart of candles and the full rule stay; whether it is
+ * live, the side, entry, stop, target, the checks and its record are masked (and never sent to the page).
+ */
+function SetupLocked({ s, candles, v }: { s: Setup; candles: { time: string; open: number; high: number; low: number; close: number }[]; v: Viewer }) {
+  const { t } = v;
+  const rows: [string, string][] = [[t("Орох", "Entry"), "entry"], ["Stop", "stop"], ["Target", "target"], ["R:R", "rr"]];
+  return (
+    <section className="card">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        <div className="min-w-0 space-y-5">
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-zinc-100">{s.name}</h2>
+              <span className="rounded-xl border border-zinc-800 px-3 py-1.5 text-xs"><Masked t={t} /></span>
+            </div>
+            <p className="mt-4 text-2xl font-bold"><Masked t={t} /></p>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Одоо орох боломж бүрдсэн эсэх, чиглэл, орох үнэ, stop, target багцтай хэрэглэгчдэд харагдана.", "Whether an entry is on now, its side, entry, stop and target show with a plan.")}</p>
+          </div>
+          <dl className="max-w-sm rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 text-sm">
+            {rows.map(([k, id]) => (
+              <div key={id} className="flex items-baseline justify-between gap-3 py-1.5"><dt className="text-zinc-400">{k}</dt><dd><Masked t={t} /></dd></div>
+            ))}
+          </dl>
+          <UnlockLink t={t} />
+        </div>
+        <div className="min-w-0">
+          <div className="overflow-hidden rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-4">
+            <SetupChart candles={candles} side={null} entry={null} stop={null} target={null} band={null} v={v} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 grid gap-5 border-t border-zinc-800/50 pt-6 sm:grid-cols-2">
+        {[t("Түүхэн үр дүн, бүх хугацаа", "Historical record, all time"), t("Сүүлийн 12 сар", "Last 12 months")].map((title) => (
+          <div key={title} className="rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5">
+            <h3 className="font-semibold text-zinc-200">{title}</h3>
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-zinc-400"><span><Masked t={t} /> {t("ашигтай", "profitable")}</span><span><Masked t={t} /> {t("дундаж", "avg")}</span></p>
+          </div>
+        ))}
+      </div>
+      <details className="mt-4">
+        <summary className="inline-flex min-h-10 cursor-pointer items-center rounded-xl px-4 py-2 text-sm font-medium text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200">{t("Дүрмийг бүтнээр нь унших", "Read the full rule")}</summary>
+        <p className="mt-3 max-w-prose rounded-2xl border border-zinc-800/50 bg-zinc-900/30 p-5 leading-relaxed text-zinc-300">{s.rule}</p>
+      </details>
+    </section>
+  );
+}
+
 export default async function SetupPage() {
   const v = await getViewer();
   const { t } = v;
   const STATUS = statusOf(t);
   const now = new Date();
   const user = await requireUser();
-  const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), listSignals(15), getReasoning(now, v.locale)]);
+  const { paid, payOn, contact } = paywallFor(user, now);
+  const [view, next, signals, reasoning] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? listSignals(15) : Promise.resolve([]), paid ? getReasoning(now, v.locale) : Promise.resolve(null)]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
 
   // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.
@@ -173,9 +226,12 @@ export default async function SetupPage() {
         </div>
       </div>
 
-      <ReasoningPanel initial={reasoning} />
+      {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
+
+      {paid ? <ReasoningPanel initial={reasoning} /> : <ReasoningLocked />}
 
       {sortedSetups.map((s) => {
+        if (!paid) return <SetupLocked key={s.id} s={s} candles={candles} v={v} />;
         const done = s.result !== undefined;
         const [label, tone, dot] = done
           ? [t("Дууссан", "Finished"), s.result! > 0 ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400", s.result! > 0 ? "bg-emerald-400" : "bg-red-400"]
@@ -284,6 +340,7 @@ export default async function SetupPage() {
 
       <TelegramCard configured={telegramConfigured()} linked={!!user.telegramChatId} isAdmin={user.role === "ADMIN"} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
 
+      {paid ? (
       <section className="table-card" aria-labelledby="signals-h">
         <h2 id="signals-h" className="px-4 pt-4 pb-2 text-[15px] font-semibold text-zinc-100 sm:px-5 sm:pt-5">{t("Сүүлийн дохионууд", "Recent signals")}</h2>
         {signals.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Одоогоор дохио гараагүй. Setup идэвхжих бүрд энд бүртгэгдэнэ.", "No signals yet. Each time a setup becomes active it is recorded here.")}</p> : (
@@ -304,6 +361,13 @@ export default async function SetupPage() {
           </table>
         )}
       </section>
+      ) : (
+        <section className="card" aria-labelledby="signals-h">
+          <h2 id="signals-h" className="card-title">{t("Сүүлийн дохионууд", "Recent signals")}</h2>
+          <p className="mt-2 text-sm text-zinc-400">{t("Setup-ийн дохионууд (орох үнэ, stop, target) болон Telegram мэдэгдэл багцтай хэрэглэгчдэд.", "Setup signals (entry, stop, target) and Telegram alerts come with a plan.")}</p>
+          <div className="mt-3"><UnlockLink t={t} /></div>
+        </section>
+      )}
 
       <p className="max-w-prose text-xs leading-relaxed text-zinc-500">
         {t(`Түүхэн үр дүн нь хадгалагдсан лаанууд дээр (${view.historyFrom ? `${v.date(view.historyFrom)}-оос` : "дата ирмэгц"}) дүрмийг дахин тоглуулж гаргасан тоо: spread $0.30, лаан доторх stop-ыг target-аас түрүүлж тооцсон. R нь эрсдэлийн нэгж (stop хүртэлх зай). Ирээдүйн үр дүнг батлахгүй, санхүүгийн зөвлөгөө биш.`,

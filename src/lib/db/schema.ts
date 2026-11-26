@@ -178,3 +178,23 @@ export const botEntries = pgTable("bot_entries", {
   atrH1: doublePrecision("atr_h1"),
   session: text("session").notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] })]);
+
+/** One Wire payment for a plan. PAID once Wire's own record says the intent succeeded for the full amount; that payment extends access once. */
+export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "PAID", "EXPIRED"]);
+export const payments = pgTable("payments", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  plan: text("plan").notNull(), // PLUS | PRO | MAX
+  amount: integer("amount").notNull(), // tögrög
+  days: integer("days").notNull(),
+  status: paymentStatusEnum("status").notNull().default("PENDING"),
+  senderInvoiceNo: text("sender_invoice_no").notNull(), // our order number, shown to the payer and the admin
+  providerRef: text("provider_ref"), // Wire PaymentIntent id (pi_…)
+  checkoutUrl: text("checkout_url"), // Wire hosted checkout (https://pay.wire.mn/c/…)
+  createdAt: ts("created_at").notNull().defaultNow(),
+  expiresAt: ts("expires_at").notNull(),
+  checkedAt: ts("checked_at"),
+  paidAt: ts("paid_at"),
+  accessUntil: ts("access_until"), // the end of access this payment produced
+}, (t) => [uniqueIndex("payments_sender_no").on(t.senderInvoiceNo), uniqueIndex("payments_provider_ref").on(t.providerRef), index("payments_user_created").on(t.userId, t.createdAt)]);
+export type Payment = typeof payments.$inferSelect;

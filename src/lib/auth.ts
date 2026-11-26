@@ -47,11 +47,17 @@ export const getSessionUser = cache(async (): Promise<User | null> => {
   }
 });
 
-/** Signed in AND has access; otherwise redirects to /login or /locked. */
+/** Signed in; otherwise redirects to /login. Without a plan the pages still open, with the paid numbers hidden. */
 export async function requireUser(): Promise<User> {
   const u = await getSessionUser();
   if (!u) redirect("/login");
-  if (!hasAccess(u, new Date())) redirect("/locked");
+  return u;
+}
+
+/** Signed in AND on a plan (admins always); otherwise to /login or the plans page. For actions only members may take. */
+export async function requirePaid(): Promise<User> {
+  const u = await requireUser();
+  if (!hasAccess(u, new Date())) redirect("/plans");
   return u;
 }
 

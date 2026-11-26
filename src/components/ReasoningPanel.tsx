@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { Family, Reading, Verdict } from "@/lib/analysis/reasoning";
+import { FAMILIES, familyName, type Family, type Reading, type Verdict } from "@/lib/analysis/reasoning";
+import { Masked } from "./Paywall";
 import type { ReasoningView } from "@/lib/reasoningLive";
 import { useViewer } from "./PrefsProvider";
 import { Dir } from "./Timetable";
@@ -142,6 +143,26 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
           <p className="mt-4 max-w-prose text-xs leading-relaxed text-zinc-500">{t("Эдгээр нь түгээмэл аргуудын чартыг уншсан байдал: арга бүр өөр зүйл хардаг тул зөрөх нь хэвийн. Аль нь ч энэ систем дээр ашигтай гэж шалгагдаагүй. Олонх нь нэг тал руу заах нь илүү олон шалтгаан давхцсаныг хэлнэ, ашгийг батлахгүй. Санхүүгийн зөвлөгөө биш.", "These are well-known methods reading the chart: each looks at something different, so disagreement is normal. None has been tested as profitable on this system. Many pointing one way means more reasons line up, not that a profit is likely. Not financial advice.")}</p>
         </>
       )}
+    </section>
+  );
+}
+
+/** The multi-strategy read for someone without a plan: the method groups by name, every verdict masked, no polling. */
+export function ReasoningLocked() {
+  const { t } = useViewer();
+  return (
+    <section className="hallmark p-5 sm:p-7" id="reasoning" aria-labelledby="reasoning-h">
+      <h2 id="reasoning-h" className="text-[15px] font-semibold text-zinc-100">{t("Олон стратегийн дүгнэлт", "Multi-strategy read")}</h2>
+      <p className="mt-4"><Masked t={t} className="text-[30px] leading-none sm:text-[38px]" /></p>
+      <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {FAMILIES.map((f) => (
+          <li key={f} className="glass-tile">
+            <span className="block text-[11px] leading-tight text-zinc-400">{familyName(f, t)}</span>
+            <span className="mt-1 block text-sm"><Masked t={t} /></span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4"><Link href="/plans" className="btn-ghost">{t("Багц сонгож нээх", "Choose a plan to open")}</Link></p>
     </section>
   );
 }
