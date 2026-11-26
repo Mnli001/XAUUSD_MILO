@@ -70,7 +70,7 @@ function Row({ r }: { r: Reading }) {
  * How the methods traders use most read the market right now, side by side. `compact` shows only
  * the count and the families, for the Today page.
  */
-export function ReasoningPanel({ initial, compact = false }: { initial: ReasoningView | null; compact?: boolean }) {
+export function ReasoningPanel({ initial, compact = false, narrow = false }: { initial: ReasoningView | null; compact?: boolean; narrow?: boolean }) {
   const { t, time, zone } = useViewer();
   const view = useReasoning(initial);
   const [open, setOpen] = useState<Family | "all">("all");
@@ -118,7 +118,7 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
         </p>
       </div>
 
-      <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <ul className={`mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 ${narrow ? "lg:grid-cols-2" : "lg:grid-cols-6"}`}>
         {r.families.map((f) => (
           <li key={f.family}>
             <button type="button" disabled={compact} onClick={() => setOpen(open === f.family ? "all" : f.family)} aria-pressed={!compact && open === f.family}
@@ -171,13 +171,13 @@ export function ReasoningPanel({ initial, compact = false }: { initial: Reasonin
 }
 
 /** The multi-strategy read for someone without a plan: the method groups by name, every verdict masked, no polling. */
-export function ReasoningLocked() {
+export function ReasoningLocked({ narrow = false }: { narrow?: boolean }) {
   const { t } = useViewer();
   return (
     <section className="hallmark p-5 sm:p-7" id="reasoning" aria-labelledby="reasoning-h">
       <h2 id="reasoning-h" className="text-[15px] font-semibold text-zinc-100">{t("Олон стратегийн дүгнэлт", "Multi-strategy read")}</h2>
       <p className="mt-4"><Masked t={t} className="text-[30px] leading-none sm:text-[38px]" /></p>
-      <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <ul className={`mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 ${narrow ? "lg:grid-cols-2" : "lg:grid-cols-6"}`}>
         {FAMILIES.map((f) => (
           <li key={f} className="glass-tile">
             <span className="block text-[11px] leading-tight text-zinc-400">{familyName(f, t)}</span>

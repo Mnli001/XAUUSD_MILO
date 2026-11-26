@@ -2,9 +2,9 @@
 import { render, screen, within } from "@testing-library/react";
 import { vi } from "vitest";
 import { Masked, PlansCard } from "@/components/Paywall";
-import { BiasBarLocked, LevelsCardLocked } from "@/components/TodayCards";
+import { DirectionCardLocked, KeyLevelsLocked, hourCells } from "@/components/TodayCards";
 import { ReasoningLocked } from "@/components/ReasoningPanel";
-import { HourlyTable } from "@/components/HourlyTable";
+import { HourStrip } from "@/components/HourStrip";
 import { lockedHourRows } from "@/lib/paywall";
 import { mnT } from "@/lib/i18n";
 
@@ -32,11 +32,12 @@ test("with payments not set up yet, the plans still show but cannot be bought, a
   expect(screen.getByText("Telegram: @admin")).toBeInTheDocument();
 });
 
-test("the locked hourly table keeps every hour and its session but hides the odds and the move", () => {
-  render(<HourlyTable rows={lockedHourRows()} nowHour={20} events={[]} locked />);
+test("the locked hour strip keeps every hour and its session but hides the odds and the move", () => {
+  render(<HourStrip cells={hourCells(lockedHourRows(), 20, [])} locked />);
   expect(screen.getAllByTestId("hour")).toHaveLength(24);
-  expect(screen.getAllByText("*****").length).toBe(48);
+  expect(screen.getAllByText("*****")).toHaveLength(1);
   expect(document.body.textContent).not.toMatch(/%|±\$|n=/);
+  expect(screen.getByRole("link", { name: /Багц/ })).toHaveAttribute("href", "/plans");
 });
 
 test("locked rows carry no statistics at all", () => {
@@ -44,7 +45,7 @@ test("locked rows carry no statistics at all", () => {
 });
 
 test("the locked side card and levels card show only masks", () => {
-  render(<><BiasBarLocked /><LevelsCardLocked /></>);
+  render(<><DirectionCardLocked /><KeyLevelsLocked /></>);
   expect(screen.getAllByText("*****").length).toBeGreaterThanOrEqual(8);
   const text = document.body.textContent ?? "";
   expect(text).not.toMatch(/\d[\d,]*\.\d{2}/); // no price
