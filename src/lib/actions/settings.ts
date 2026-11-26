@@ -1,4 +1,5 @@
 "use server";
+import "../i18n.server";
 import { revalidatePath } from "next/cache";
 import { requireUser, signOut } from "../auth";
 import { deleteAccount, saveSignalPrefs } from "../account";

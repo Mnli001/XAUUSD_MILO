@@ -1,3 +1,4 @@
+import "../i18n.server";
 import { and, asc, desc, eq, gte, lte, ne, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
@@ -5,7 +6,7 @@ import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
-import { type Command, type DayOrderFields, type LiveConfig, type Report, type SessionOrderFields, BLACKOUT_HORIZON_MS, MAX_REPORT_CHARS, stoppedCommand, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
+import { type Command, type DayOrderFields, type LiveConfig, type Report, type SessionOrderFields, robotLang, BLACKOUT_HORIZON_MS, MAX_REPORT_CHARS, stoppedCommand, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
 import { DAY_MIN_LEAN, dayOrderFrom, getDayState } from "./daySignal";
 import { getAsianOrders } from "../setup/build";
@@ -200,7 +201,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   const parsed = reportSchema.safeParse(body);
   if (!parsed.success) return null;
   const r: Report = parsed.data;
-  const lang = parseLocale(owner.locale);
+  const lang = robotLang(parseLocale(owner.locale));
   // No access: a bare stop, decided before any reading, order or release time is worked out for this robot.
   if (!hasAccess(owner, now)) {
     await db.update(schema.botLive).set({ state: "STOPPED", stopReason: "NO_ACCESS", stoppedAt: now, lastSeenAt: now })

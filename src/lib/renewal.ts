@@ -1,3 +1,4 @@
+import "./i18n.server";
 import { and, eq, gt, isNotNull, lte, ne, or, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { deliver, esc, siteUrl, telegramConfigured, telegramTiming } from "./telegram";

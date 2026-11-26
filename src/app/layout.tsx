@@ -7,6 +7,14 @@ import "./globals.css";
 import { PrefsProvider } from "@/components/PrefsProvider";
 import { getPrefs, getT } from "@/lib/prefs.server";
 import { siteOrigin } from "@/lib/siteCopy";
+import { catalogFor } from "@/lib/i18n.server";
+import { dirOf, type Locale } from "@/lib/i18n";
+
+/** Open Graph wants a region with the language. */
+const OG: Record<Locale, string> = {
+  mn: "mn_MN", en: "en_US", ru: "ru_RU", zh: "zh_CN", ja: "ja_JP", ko: "ko_KR", es: "es_ES", de: "de_DE", fr: "fr_FR", tr: "tr_TR",
+  pt: "pt_BR", it: "it_IT", id: "id_ID", vi: "vi_VN", th: "th_TH", hi: "hi_IN", pl: "pl_PL", uk: "uk_UA", nl: "nl_NL", ar: "ar_AR",
+};
 
 const DARK = "#0b0a09";
 const LIGHT = "#f5f1e8";
@@ -23,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     applicationName: "XAU Analytics",
     ...(origin ? { metadataBase: new URL(origin) } : {}),
-    openGraph: { type: "website", siteName: "XAU Analytics", title, description, locale: locale === "en" ? "en_US" : "mn_MN", ...(origin ? { url: "/" } : {}) },
+    openGraph: { type: "website", siteName: "XAU Analytics", title, description, locale: OG[locale], ...(origin ? { url: "/" } : {}) },
     twitter: { card: "summary", title, description },
   };
 }
@@ -40,9 +48,9 @@ export async function generateViewport(): Promise<Viewport> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const prefs = await getPrefs();
   return (
-    <html lang={prefs.locale} data-theme={prefs.theme}>
+    <html lang={prefs.locale} dir={dirOf(prefs.locale)} data-theme={prefs.theme}>
       <body className="min-h-dvh bg-zinc-950 text-zinc-100 antialiased">
-        <PrefsProvider prefs={prefs}>{children}</PrefsProvider>
+        <PrefsProvider prefs={prefs} catalog={catalogFor(prefs.locale)}>{children}</PrefsProvider>
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+import "./i18n.server";
 import { reason, type Reasoning } from "./analysis/reasoning";
 import { getQuote, loadLiveCandles } from "./feed";
 import type { Quote } from "./liveBar";

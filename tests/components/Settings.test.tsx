@@ -9,11 +9,12 @@ import { PrefsProvider } from "@/components/PrefsProvider";
 
 const en = { locale: "en" as const, theme: "light" as const, timeZone: "Europe/London" };
 
-test("appearance offers two languages and three themes, with the saved ones chosen", () => {
+test("appearance offers twenty languages and three themes, with the saved ones chosen", () => {
   render(<AppearanceForm prefs={{ locale: "mn", theme: "dark", timeZone: "Asia/Ulaanbaatar" }} />);
-  const language = screen.getByRole("radiogroup", { name: "Хэл" });
-  expect(within(language).getByRole("radio", { name: "Монгол" })).toBeChecked();
-  expect(within(language).getByRole("radio", { name: "English" })).not.toBeChecked();
+  const language = screen.getByRole("combobox", { name: "Хэл" }) as HTMLSelectElement;
+  expect(language.value).toBe("mn");
+  expect(within(language).getAllByRole("option")).toHaveLength(20);
+  expect(within(language).getByRole("option", { name: "العربية" })).toBeInTheDocument();
   const theme = screen.getByRole("radiogroup", { name: "Өнгөний горим" });
   expect(within(theme).getAllByRole("radio").map((r) => (r as HTMLInputElement).value)).toEqual(["dark", "light", "system"]);
   expect(within(theme).getByRole("radio", { name: "Бараан" })).toBeChecked();
@@ -21,7 +22,7 @@ test("appearance offers two languages and three themes, with the saved ones chos
 
 test("in English the same form reads in English", () => {
   render(<PrefsProvider prefs={en}><AppearanceForm prefs={en} /></PrefsProvider>);
-  expect(within(screen.getByRole("radiogroup", { name: "Language" })).getByRole("radio", { name: "English" })).toBeChecked();
+  expect((screen.getByRole("combobox", { name: "Language" }) as HTMLSelectElement).value).toBe("en");
   expect(within(screen.getByRole("radiogroup", { name: "Theme" })).getByRole("radio", { name: "Light" })).toBeChecked();
   expect(screen.getByRole("radio", { name: "Follow device" })).toBeInTheDocument();
 });

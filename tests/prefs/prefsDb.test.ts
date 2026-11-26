@@ -31,7 +31,7 @@ describe("saved preferences", () => {
 
   it("refuses a value it does not know and changes nothing", async () => {
     const u = await user();
-    const r = await savePrefs(u.id, { locale: "de", theme: "light" });
+    const r = await savePrefs(u.id, { locale: "xx", theme: "light" });
     expect(r.error).toBeTruthy();
     expect(prefsOf((await findUserByEmail("bat@example.com"))!)).toEqual({ locale: "mn", theme: "dark", timeZone: "Asia/Ulaanbaatar" });
   });

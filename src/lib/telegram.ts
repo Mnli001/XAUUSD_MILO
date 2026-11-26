@@ -1,3 +1,4 @@
+import "./i18n.server";
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNull, lte, ne, or } from "drizzle-orm";
 import { db, schema } from "./db";

@@ -1,4 +1,4 @@
-import type { Locale } from "./i18n";
+import { LOCALES, type Locale } from "./i18n";
 
 export type Theme = "dark" | "light" | "system";
 export const THEMES: Theme[] = ["dark", "light", "system"];
@@ -21,8 +21,8 @@ export const TIME_ZONES = [
 
 export const COOKIE = { locale: "xau_locale", theme: "xau_theme", timeZone: "xau_tz" } as const;
 
-export const parseLocale = (v: unknown): Locale => (v === "en" ? "en" : "mn");
-export const isLocale = (v: unknown): v is Locale => v === "mn" || v === "en";
+export const isLocale = (v: unknown): v is Locale => typeof v === "string" && (LOCALES as readonly string[]).includes(v);
+export const parseLocale = (v: unknown): Locale => (isLocale(v) ? v : "mn");
 export const isTheme = (v: unknown): v is Theme => v === "dark" || v === "light" || v === "system";
 export const parseTheme = (v: unknown): Theme => (isTheme(v) ? v : "dark");
 

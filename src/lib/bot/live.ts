@@ -176,12 +176,16 @@ export function blackoutWindows(releases: Date[], beforeMin: number, afterMin: n
   return merged.slice(0, MAX_BLACKOUTS).map(([a, b]) => `${a}-${b}`).join(";");
 }
 
+/** The robot's chart text is written in Mongolian and English only; every other reader gets English there. */
+export type RobotLang = "mn" | "en";
+export const robotLang = (locale: Locale): RobotLang => (locale === "mn" ? "mn" : "en");
+
 export type AccountMode = "DEMO" | "REAL" | "CONTEST";
 export type LiveState = { state: "RUNNING" | "STOPPED"; runId: string | null; closeAll: boolean; config: LiveConfig };
 /** Flat on purpose: the terminal reads it with simple key lookups. 0 means "no limit". */
 export type Command = {
   state: "RUNNING" | "STOPPED"; runId: string; closeAll: boolean; reason: string; mode: BotMode;
-  lang: Locale; // the language the robot shows its chart text in (robot v2.40 and newer)
+  lang: RobotLang; // the language the robot shows its chart text in (robot v2.40 and newer)
   lots: number; maxPositions: number; slAtr: number; tpAtr: number; profitTarget: number; maxLoss: number;
   // The entry filter (robot v2.80 and newer); 0 = that check is off.
   gateOn: boolean; gTrend: boolean; gSessionStart: number; gSessionEnd: number; gAtrMin: number; gAtrMax: number;
@@ -267,7 +271,7 @@ function gateFields(g: GateConfig, blackouts: string, consensus: ConsensusCounts
   };
 }
 
-export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: Locale = "mn", blackouts = "", consensus: ConsensusCounts | null = null, day: DayOrderFields | null = null, sessionOrders: SessionOrderFields[] = []): Command {
+export function commandFor(s: LiveState, account: { mode: AccountMode }, robotVersion?: number, lang: RobotLang = "mn", blackouts = "", consensus: ConsensusCounts | null = null, day: DayOrderFields | null = null, sessionOrders: SessionOrderFields[] = []): Command {
   const c = s.config;
   const basket = c.mode === "BASKET";
   const gate = gateFields({ ...DEFAULT_GATE, ...c.gate }, blackouts, consensus, c.mode === "READING", c.mode === "ASIAN");
@@ -340,7 +344,7 @@ export const applyPreset = (current: LiveConfig, id: PresetId): LiveConfig => ({
  * A reply that tells the robot to stop and carries nothing else: no order, no reading, no news windows. Sent to a
  * robot whose owner has no access or whose account cannot be served; built before any signal work is done.
  */
-export function stoppedCommand(reason: string, lang: Locale = "mn"): Command {
+export function stoppedCommand(reason: string, lang: RobotLang = "mn"): Command {
   return {
     state: "STOPPED", runId: "", closeAll: false, reason, mode: "SCALPER", lang,
     lots: 0, maxPositions: 1, slAtr: 0, tpAtr: 0, profitTarget: 0, maxLoss: 0,

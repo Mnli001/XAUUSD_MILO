@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/i18n-extract.mjs",
     "build": "next build",
+    "i18n:extract": "node scripts/i18n-extract.mjs",
     "start": "node scripts/migrate.mjs && next start",
     "lint": "eslint",
     "test": "vitest run",
