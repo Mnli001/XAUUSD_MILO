@@ -2,7 +2,12 @@ import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, lte } from "drizzle
 import { db, schema } from "./db";
 import { hasAccess } from "./access";
 import { getSetups, type Setup, type SetupsView } from "./setup/build";
-import { deliver, esc, setupLink, siteUrl, telegramConfigured, telegramTiming } from "./telegram";
+import { deliver, deliverPhoto, esc, setupLink, siteUrl, telegramConfigured, telegramTiming } from "./telegram";
+import { loadCandles, SYMBOL } from "./ingest/prices";
+import { signalOutcome, type Outcome } from "./signalOutcome";
+import { tradeChartPng } from "./tradeChart";
+import type { Signal } from "./db/schema";
+import type { Candle } from "./analysis/indicators";
 import { wantsSignal } from "./account";
 import { prefsOf } from "./prefsDb";
 import { eventTitle } from "./data/calendarProvider";
@@ -166,11 +171,82 @@ export async function emitNewsAlerts(now: Date, opts: { send?: Send } = {}): Pro
   return claimed.length;
 }
 
+const RESULT_LOOKBACK_MS = 3 * 864e5; // results are announced for signals up to three days old
+
+/** The result message: what happened, in R and in dollars on 0.01 lot, with a link to the signal history. */
+export function resultText(s: Pick<Signal, "side" | "name" | "entry" | "stop" | "target">, o: Outcome, v: Viewer = MN_VIEWER, base: string | null = siteUrl()): string {
+  const { t } = v;
+  const r = o.r ?? 0;
+  const money = r * Math.abs(s.entry - s.stop) * LOT_OZ;
+  const head = o.kind === "WIN" ? t("✅ <b>TP хүрлээ</b>", "✅ <b>Target hit</b>") : o.kind === "LOSS" ? t("❌ <b>SL хүрлээ</b>", "❌ <b>Stop hit</b>") : t("⏱ <b>Цагаар хаагдлаа</b>", "⏱ <b>Closed on time</b>");
+  const exit = o.kind === "WIN" ? s.target : o.kind === "LOSS" ? s.stop : null;
+  const link = base ? `<a href="${esc(`${base}/bot/history`)}">${esc(t("Дохионы түүхийг харах", "See the signal history"))}</a>` : "";
+  return [
+    `${head} · ${s.side} XAUUSD`,
+    `<b>${esc(s.name)}</b>`,
+    "",
+    t(`Үр дүн: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 лот: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`, `Result: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`),
+    t(`Орсон ${px(s.entry)}${exit !== null ? ` → гарсан ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`, `Entry ${px(s.entry)}${exit !== null ? ` → exit ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`),
+    ...(link ? ["", link] : []),
+  ].join("\n");
+}
+
+/**
+ * Announces how each recent signal ended (target, stop or time exit) once, with a picture of the trade,
+ * to the same people who got the signal. A result Telegram could not deliver to anyone is tried again next run.
+ */
+export async function emitResults(now: Date, opts: { send?: (chat: string, png: Buffer | null, caption: string) => Promise<boolean>; bars?: Candle[] } = {}): Promise<number> {
+  const pending = await db.select().from(schema.signals).where(and(isNull(schema.signals.resultSentAt), gt(schema.signals.createdAt, new Date(now.getTime() - RESULT_LOOKBACK_MS)))).orderBy(asc(schema.signals.createdAt));
+  if (pending.length === 0) return 0;
+  const bars = opts.bars ?? (await loadCandles(SYMBOL, "15min", Math.ceil(RESULT_LOOKBACK_MS / (15 * 6e4)) + 200));
+  const send = opts.send ?? deliverPhoto;
+  let done = 0;
+  for (const s of pending) {
+    const o = signalOutcome(s, bars, now);
+    if (o.kind === "OPEN") continue;
+    // Claim it first, so two runners never both announce it.
+    const [claimed] = await db.update(schema.signals).set({ resultSentAt: now }).where(and(eq(schema.signals.id, s.id), isNull(schema.signals.resultSentAt))).returning({ id: schema.signals.id });
+    if (!claimed) continue;
+    const exitPrice = o.kind === "WIN" ? s.target : o.kind === "LOSS" ? s.stop : bars.filter((b) => o.at && b.time.getTime() < o.at.getTime()).at(-1)?.close ?? s.entry;
+    const pictures = new Map<string, Promise<Buffer | null>>();
+    const picture = (v: Viewer) => {
+      const key = `${v.locale}|${v.timeZone}`;
+      if (!pictures.has(key)) {
+        const { t } = v;
+        const r = o.r ?? 0;
+        pictures.set(key, tradeChartPng({
+          bars, side: s.side === "SELL" ? "SELL" : "BUY", entry: s.entry, stop: s.stop, target: s.target, openedAt: s.createdAt,
+          exit: o.at ? { at: o.at, price: exitPrice, kind: o.kind as "WIN" | "LOSS" | "TIME" } : null,
+          title: `${o.kind === "WIN" ? t("TP хүрлээ", "Target hit") : o.kind === "LOSS" ? t("SL хүрлээ", "Stop hit") : t("Цагаар хаагдлаа", "Closed on time")} · ${s.side} XAUUSD`,
+          subtitle: `${s.name} · ${t("орсон", "entry")} ${px(s.entry)} · stop ${px(s.stop)} · target ${px(s.target)}`,
+          badge: { text: `${r > 0 ? "+" : ""}${r.toFixed(2)}R`, kind: o.kind as "WIN" | "LOSS" | "TIME" },
+          clock: v.time,
+        }));
+      }
+      return pictures.get(key)!;
+    };
+    const chats = new Set<string>();
+    let sentTo = 0, failed = 0;
+    for (const u of await linkedUsers()) {
+      const chat = u.telegramChatId!;
+      if (chats.has(chat) || !hasAccess(u, now) || !wantsSignal(u, s.setupId)) continue;
+      chats.add(chat);
+      const v = viewer(prefsOf(u));
+      try { if (await send(chat, await picture(v), resultText(s, o, v))) sentTo++; } catch (e) { failed++; console.warn(`[results] could not send to one chat: ${e instanceof Error ? e.message : e}`); }
+      await telegramTiming.sleep(SEND_GAP_MS);
+    }
+    if (failed > 0 && sentTo === 0) { await db.update(schema.signals).set({ resultSentAt: null }).where(eq(schema.signals.id, s.id)); continue; }
+    done++;
+  }
+  return done;
+}
+
 /** What runs after each 5-minute price update. One part failing does not stop the other. */
-export async function runTelegramJobs(now: Date, pricesOk: boolean): Promise<{ signals: number; news: number }> {
-  const out = { signals: 0, news: 0 };
+export async function runTelegramJobs(now: Date, pricesOk: boolean): Promise<{ signals: number; news: number; results?: number }> {
+  const out: { signals: number; news: number; results?: number } = { signals: 0, news: 0 };
   if (pricesOk) {
     try { out.signals = await emitSignals(now); } catch (err) { console.error("[signals] failed", err); }
+    try { out.results = await emitResults(now); } catch (err) { console.error("[results] failed", err); }
   }
   try { out.news = await emitNewsAlerts(now); } catch (err) { console.error("[news] alerts failed", err); }
   return out;

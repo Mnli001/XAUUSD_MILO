@@ -93,6 +93,47 @@ export async function sendMessage(chatId: string, html: string): Promise<boolean
   return true;
 }
 
+/**
+ * A picture with an HTML caption (at most 1024 characters). Uploaded as a file, so it needs a multipart body
+ * rather than the JSON `call` sends. Retries network errors, 5xx and 429 like `call`.
+ */
+export async function sendPhoto(chatId: string, png: Buffer, caption: string): Promise<boolean> {
+  if (!telegramConfigured()) return false;
+  for (let attempt = 1; ; attempt++) {
+    let err: TelegramError;
+    try {
+      const form = new FormData();
+      form.append("chat_id", chatId);
+      form.append("caption", caption.slice(0, 1024));
+      form.append("parse_mode", "HTML");
+      form.append("photo", new Blob([new Uint8Array(png)], { type: "image/png" }), "trade.png");
+      const res = await fetch(`https://api.telegram.org/bot${token()}/sendPhoto`, { method: "POST", body: form, signal: AbortSignal.timeout(30_000) });
+      const json = (await res.json().catch(() => null)) as ApiReply<unknown> | null;
+      if (res.ok && json?.ok) return true;
+      err = new TelegramError("sendPhoto", json?.error_code ?? res.status, json?.description ?? res.statusText, json?.parameters?.retry_after);
+    } catch (e) {
+      err = new TelegramError("sendPhoto", 0, e instanceof Error ? e.name : "network error");
+    }
+    const retryable = err.code === 0 || err.code === 429 || err.code >= 500;
+    if (!retryable || attempt >= telegramTiming.attempts) throw err;
+    await telegramTiming.sleep(err.code === 429 ? (err.retryAfter ?? 1) * 1000 : 1000 * attempt);
+  }
+}
+
+/** sendPhoto for broadcasts, falling back to the caption as text when the picture cannot go; a blocked chat is unlinked. */
+export async function deliverPhoto(chatId: string, png: Buffer | null, caption: string): Promise<boolean> {
+  try {
+    if (png) {
+      try { return await sendPhoto(chatId, png, caption); } catch (e) { if (isChatGone(e)) throw e; console.warn("[telegram] photo failed, sending text"); }
+    }
+    return await sendMessage(chatId, caption);
+  } catch (e) {
+    if (!isChatGone(e)) throw e;
+    await forgetChat(chatId);
+    return false;
+  }
+}
+
 /** Forgets a chat that can no longer be reached, for every account that had it. */
 export async function forgetChat(chatId: string): Promise<number> {
   const rows = await db.update(schema.users).set({ telegramChatId: null }).where(eq(schema.users.telegramChatId, chatId)).returning({ id: schema.users.id });
@@ -123,8 +164,8 @@ export async function botUsername(): Promise<string | null> {
 }
 
 const COMMANDS = {
-  mn: [["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["help", "Тусламж"]],
-  en: [["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["help", "Help"]],
+  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["help", "Тусламж"]],
+  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["help", "Help"]],
 } as const;
 
 /** Points Telegram at this site and lists the bot's commands. Safe to call every time someone starts linking. */
@@ -162,6 +203,9 @@ export function setupLink(t: T, base: string | null = siteUrl()): string {
 function helpText(u: User, t: T): string {
   return [
     t("<b>Командууд</b>", "<b>Commands</b>"),
+    t("/setup — одоогийн setup, нөхцөл, орох/stop/target, чарт", "/setup — the setup now: checks, entry/stop/target, chart"),
+    t("/history — сүүлийн 10 дохио, TP/SL үр дүн", "/history — the last 10 signals and how they ended"),
+    t("/news — дараагийн 3 хоногийн чухал мэдээ", "/news — important releases in the next 3 days"),
     t("/status — одоогийн чиглэл, дараагийн чухал мэдээ", "/status — current bias and the next important release"),
     t("/stop — дохиог түр зогсоох", "/stop — pause signals"),
     t("/resume — дохиог дахин асаах", "/resume — turn signals back on"),
@@ -337,6 +381,13 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
   const command = COMMAND.exec(text)?.[1]?.toLowerCase();
   if (command === "status") {
     await sendMessage(chat, await statusText(u, now, v));
+  } else if (command === "setup" || command === "history" || command === "news") {
+    if (!hasAccess(u, now)) { await sendMessage(chat, await statusText(u, now, v)); return; } // says how to get a plan
+    const cmds = await import("./telegramCommands");
+    if (command === "setup") {
+      const { text: reply, png } = await cmds.setupReply(now, v);
+      await deliverPhoto(chat, png, reply);
+    } else await sendMessage(chat, command === "history" ? await cmds.historyReply(now, v) : await cmds.newsReply(now, v));
   } else if (command === "stop" || command === "pause") {
     await db.update(schema.users).set({ signalsPaused: true }).where(eq(schema.users.id, u.id));
     await sendMessage(chat, esc(t("Дохиог түр зогсоолоо. Telegram холбоотой хэвээр. Дахин асаах бол /resume.", "Signals paused. Telegram stays linked. Send /resume to turn them back on.")));

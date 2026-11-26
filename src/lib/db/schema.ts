@@ -144,6 +144,7 @@ export const signals = pgTable("signals", {
   target: doublePrecision("target").notNull(),
   sentTo: integer("sent_to").notNull().default(0),
   createdAt: ts("created_at").notNull(),
+  resultSentAt: ts("result_sent_at"), // when the TP / SL / time-exit message went out (null: not yet)
 }, (t) => [index("signals_created").on(t.createdAt)]);
 
 /**

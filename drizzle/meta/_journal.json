@@ -92,6 +92,13 @@
       "when": 1795691970938,
       "tag": "0012_payments_wire",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795698477965,
+      "tag": "0013_signal_result",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,328 @@
+<title>XAU ботын төлөвлөгөө</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; phases as a vertical track with gold stations, like a price ladder. */
+:root {
+  --bg: #f7f5f0; --surface: #ffffff; --fg: #1c1a16; --muted: #6b6558; --line: #e4dfd3;
+  --gold: #a87a1c; --gold-soft: #f3e7c8; --up: #1f8a5b; --down: #c0392b; --wait: #9a6b00;
+  --display: "Manrope", system-ui, sans-serif; --body: "Manrope", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121110; --surface: #1b1a17; --fg: #ece8de; --muted: #a39d8f; --line: #2e2b26;
+  --gold: #d9b566; --gold-soft: #2c2516; --up: #4cc38a; --down: #ef6b5b; --wait: #e0b24a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121110; --surface: #1b1a17; --fg: #ece8de; --muted: #a39d8f; --line: #2e2b26;
+  --gold: #d9b566; --gold-soft: #2c2516; --up: #4cc38a; --down: #ef6b5b; --wait: #e0b24a; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 15px/1.65 var(--body); }
+.wrap { max-width: 820px; margin: 0 auto; padding-block: 40px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 21px; font-weight: 800; }
+h3 { font-size: 16px; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.lede { color: var(--muted); max-width: 64ch; margin-top: 12px; }
+section { display: grid; gap: 14px; }
+ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px; }
+.fact b { font: 700 20px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.fact span { color: var(--muted); font-size: 13px; }
+.good { color: var(--up); } .bad { color: var(--down); } .wait { color: var(--wait); }
+.track { display: grid; position: relative; }
+.phase { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; padding-bottom: 26px; position: relative; }
+.phase::before { content: ""; position: absolute; left: 12px; top: 24px; bottom: 0; width: 3px; border-radius: 2px; background: var(--line); }
+.phase:last-child::before { display: none; }
+.dot { width: 27px; height: 27px; border-radius: 50%; border: 3px solid var(--gold); background: var(--gold-soft); display: grid; place-items: center; font: 700 12px var(--mono); color: var(--gold); position: relative; z-index: 1; }
+.phase-body { display: grid; gap: 8px; min-width: 0; }
+.out { font-size: 13px; color: var(--muted); }
+.out b { color: var(--fg); }
+.window { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font: 13px/1.7 var(--mono); overflow-x: auto; white-space: pre; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font: 600 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.tbl table { min-width: 640px; }
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.state { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--surface); display: grid; gap: 4px; }
+.state strong { font-family: var(--display); }
+.note { border-left: 3px solid var(--gold); padding: 4px 0 4px 14px; color: var(--muted); }
+.setups { display: grid; gap: 12px; }
+.setup { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px; }
+.setup header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.tag { font: 600 11px var(--mono); padding: 3px 8px; border-radius: 999px; background: var(--gold-soft); color: var(--gold); white-space: nowrap; }
+.tag.ok { background: color-mix(in srgb, var(--up) 15%, transparent); color: var(--up); }
+.kv { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+@media (max-width: 480px) { .kv { grid-template-columns: 1fr; } .kv dd { margin-bottom: 6px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">XAU Analytics · 2026-11-26 · хувилбар 2</p>
+    <h1 style="margin-top:10px">XAU ботын төлөвлөгөө</h1>
+    <p class="lede">Зорилго: хэрэглэгчийг татах өндөр RR, өндөр win rate-тай, бүх жилийн алтны дата дээр батлагдсан setup-уудыг нэг цонхонд шингээх. Цонх «одоо юу хүлээж байна, одоо юу хийх вэ»-г хэлж, Telegram болон MT5 робот яг тэр шийдвэрийг дагана.</p>
+  </header>
+
+  <section>
+    <p class="eyebrow">Өнөөдрийн байдал</p>
+    <h2>Юу бэлэн байна</h2>
+    <div class="facts">
+      <div class="fact"><b class="good">60% · PF 1.81</b><span>Азийн breakout, 2024-05 →, 159 арилжаа, 3R target</span></div>
+      <div class="fact"><b>PF 1.28</b><span>Ижил дүрэм, брокерын дата 2019–2026, 380 арилжаа</span></div>
+      <div class="fact"><b>1–2</b><span>7 хоногт гардаг дохио: хэрэглэгчийн хувьд цөөхөн</span></div>
+      <div class="fact"><b class="bad">≈ 0</b><span>16 аргын санал хураалт, SMC day trader дангаараа</span></div>
+    </div>
+    <ul>
+      <li>Setup хуудас, Telegram дохио, MT5 робот (v3.50) нэг дүрмийг дагадаг. «Ботын түүх» хуудас дохио бүрийн TP/SL үр дүнг харуулна.</li>
+      <li>Telegram-д 3 л команд бий (/status, /stop, /resume). TP/SL хүрэхэд мэдэгдэл очдоггүй.</li>
+      <li>Мэдээний хуудас өдрийн огноог жижиг саарал үсгээр харуулдаг тул хэзээ гарах нь ойлгомжгүй.</li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="eyebrow">Зорилтот тоо</p>
+    <h2>Өндөр RR ба өндөр win rate-ийг хамт яаж авах вэ</h2>
+    <p>Win rate ба RR хоёр бие биенээ дардаг: target холдох тусам хүрэх нь цөөрнө. Хоёуланг нь өсгөх 4 арга бий, тус бүрийг дата дээр шалгана:</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Арга</th><th>Юу өөрчлөгдөх вэ</th><th>Шалгах зүйл</th></tr></thead>
+      <tbody>
+        <tr><td><b>Хоёр шатлалтай target</b></td><td>TP1 = 1R дээр хагасыг хаагаад stop-ийг орох үнэ рүү зөөнө, үлдсэнийг TP2 = 3R хүртэл. Win rate мэдэгдэхүйц өснө, том хөдөлгөөн алдагдахгүй.</td><td>TP1 1R / 1.5R, хаах хувь 30–70%, TP2 2.5–4R</td></tr>
+        <tr><td><b>Нарийн оролт</b></td><td>Breakout-ын хаалтаар биш, FVG/OB руу буцах (retest) limit оролт. Stop ойртоно, ижил target-д RR 1.5–2 дахин өснө.</td><td>Хэдэн хувь нь retest хийдэг, хийгээгүй өдрийн алдагдал</td></tr>
+        <tr><td><b>Давхар баталгаа</b></td><td>Setup бүрд 2–3 нэмэлт нөхцөл. Win rate өсгөдөг эсэхийг нь тус тусад нь хэмжинэ.</td><td>Нөхцөл бүр хоёр хугацаанд хоёуланд нь тус болох ёстой</td></tr>
+        <tr><td><b>Муу горимыг алгасах</b></td><td>Нарийн хүрээ (бэлэн), хэлбэлзэл хэт бага/их, мэдээний цонх, баасан оройн хаалт.</td><td>Алгассан өдрүүдийн дундаж R сөрөг байх ёстой</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Үзүүлэлт</th><th>Одоо (Азийн)</th><th>Зорилт</th></tr></thead>
+      <tbody>
+        <tr><td>Win rate (ашигтай хаагдсан)</td><td class="num">60%</td><td class="num good">≥ 60%</td></tr>
+        <tr><td>Бодит RR (дундаж ашиг / дундаж алдагдал)</td><td class="num">≈ 1 : 1.2</td><td class="num good">≥ 1 : 1.8</td></tr>
+        <tr><td>Profit factor</td><td class="num">1.81</td><td class="num good">≥ 2.0</td></tr>
+        <tr><td>Max drawdown</td><td class="num">7.3R</td><td class="num good">≤ 8R</td></tr>
+        <tr><td>Дохионы тоо</td><td class="num">1–2 / 7 хоног</td><td class="num good">4–6 / 7 хоног</td></tr>
+        <tr><td>Батлагдсан хугацаа</td><td class="num">2.5 жил</td><td class="num good">10+ жил + live</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Тоонууд зөвхөн туршиж үзээгүй датан дээр (2023 →) болон live дээр хүрсэн үед л сайтад «батлагдсан» гэж харагдана. Хэрэглэгчийг хамгийн их итгүүлэх зүйл бол бодит live түүх.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Өгөгдөл</p>
+    <h2>Бүх жилийн алтны дата</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Эх сурвалж</th><th>Хугацаа</th><th>Юунд</th></tr></thead>
+      <tbody>
+        <tr><td>Dukascopy XAUUSD M1 (татах зөвшөөрөл хэрэгтэй)</td><td class="num">2003 →</td><td>Судалгаа: 20+ жил, бүх төрлийн зах (2008, 2011 оргил, 2013 уналт, 2020, 2022)</td></tr>
+        <tr><td>Брокерын лаа (JustMarkets, MT5)</td><td class="num">D1 2012 →, M15 2019 →</td><td>Роботын арилжаалах үнэтэй тулгах, tester</td></tr>
+        <tr><td>Сайтын лаа (Twelve Data)</td><td class="num">2023 →</td><td>Live дохио</td></tr>
+        <tr><td>Эдийн засгийн мэдээний түүх</td><td class="num">2007 → (нөхнө)</td><td>Мэдээний шүүлтүүр, мэдээний дараах setup</td></tr>
+        <tr><td>FRED: DXY, бодит хүү (10y TIPS)</td><td class="num">2003 →</td><td>Макро чиглэлийн баталгаа</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Хуваах дүрэм:</b> 2003–2014 дээр дүрэм тохируулна, 2015–2020 дээр баталгаажуулна, 2021 → дээр өөрчлөлтгүй эцсийн шалгалт хийнэ, дараа нь live. Нэг ч параметрийг сүүлийн хугацаанаас харж сонгохгүй.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Setup каталог</p>
+    <h2>Ямар арга барилаар, ямар баталгаа хүлээх вэ</h2>
+    <p>Setup бүр: хэзээ (УБ цаг), ямар санаа, яг юу болоход орох, ямар баталгаа хэрэгтэй, stop ба target хаана. Тэнцсэн нь л цонхонд орно.</p>
+    <div class="setups">
+      <article class="setup">
+        <header><h3>1. Азийн хүрээний breakout</h3><span class="tag ok">батлагдсан</span><span class="tag">15:00 – 00:00</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>Азийн тайван хүрээнээс трендийн чиглэлд гарах хөдөлгөөн Лондон, NY-д үргэлжилдэг.</dd>
+          <dt>Орох</dt><dd>15 минутын лаа хүрээний гадна хаагдах. Сайжруулалт: хүрээний ирмэг рүү буцахад limit оролт.</dd>
+          <dt>Баталгаа</dt><dd>Өдөр + 4 цагийн тренд нэг чиглэлд · хүрээ ≥ 0.25 өдрийн ATR · мэдээний цонхоос гадуур · (шалгах) DXY эсрэг чиглэлд</dd>
+          <dt>Stop / target</dt><dd>Хүрээний дунд · TP1 1R (хагас), TP2 3R · 04:00 УБ-д хаана</dd>
+        </dl>
+      </article>
+      <article class="setup">
+        <header><h3>2. Лондонгийн хуурамч эвдрэл (Judas sweep)</h3><span class="tag">15:00 – 18:00</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>Лондон нээгдэхдээ Азийн оргил/ёроолын stop-уудыг шүүрдээд трендийн чиглэлд эргэдэг.</dd>
+          <dt>Орох</dt><dd>Азийн ирмэгийг хатгаад буцаж хүрээнд хаагдах → M5/M15 бүтэц эргэх (MSS) → үүссэн FVG руу буцахад.</dd>
+          <dt>Баталгаа</dt><dd>Шүүрдэлт өдрийн трендийн эсрэг талд · MSS биеэрээ хаагдсан · FVG ≥ 0.1 ATR · мэдээгүй</dd>
+          <dt>Stop / target</dt><dd>Шүүрдэлтийн оройн цаана · TP1 Азийн дунд, TP2 Азийн эсрэг ирмэг (BSL/SSL)</dd>
+        </dl>
+      </article>
+      <article class="setup">
+        <header><h3>3. NY нээлтийн үргэлжлэл</h3><span class="tag">21:30 – 01:00</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>Лондонгийн тренд NY нээлтийн буцалтын дараа үргэлжилдэг.</dd>
+          <dt>Орох</dt><dd>21:30-ийн дараах буцалт Лондонгийн FVG/OB-д хүрээд M15 трендийн чиглэлд хаагдах.</dd>
+          <dt>Баталгаа</dt><dd>Лондонгийн хөдөлгөөн ≥ 0.5 ATR · 1 цагийн тренд нэг чиглэлд · 21:30-ийн мэдээ (CPI, NFP) гарснаас 15 минутын дараа</dd>
+          <dt>Stop / target</dt><dd>OB-ийн цаана · TP1 1R, TP2 өчигдрийн оргил/ёроол</dd>
+        </dl>
+      </article>
+      <article class="setup">
+        <header><h3>4. Өчигдрийн оргил/ёроол шүүрдээд эргэх</h3><span class="tag">бүх сешн</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>PDH/PDL дээр хуримтлагдсан liquidity-г авсны дараа үнэ эргэдэг.</dd>
+          <dt>Орох</dt><dd>PDH/PDL-ийг хатгаад буцаж хаагдах → M15 CHoCH.</dd>
+          <dt>Баталгаа</dt><dd>RSI дивергенц · 4 цагийн тренд эргэх чиглэлд эсвэл төвийг сахисан · хатгалт ≤ 0.3 ATR</dd>
+          <dt>Stop / target</dt><dd>Хатгалтын оройн цаана · TP1 өдрийн дунд, TP2 эсрэг PDH/PDL</dd>
+        </dl>
+      </article>
+      <article class="setup">
+        <header><h3>5. Трендийн pullback</h3><span class="tag">15:00 – 01:00</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>Хүчтэй тренд дотор буцалт нь орох хамгийн хямд цэг.</dd>
+          <dt>Орох</dt><dd>1 цагийн буцалт EMA50 эсвэл H1 FVG-ийн 50%-д хүрэх → M15 engulfing.</dd>
+          <dt>Баталгаа</dt><dd>Өдөр + 4 цаг тренд · буцалт 38–62% · RSI 1ц 40–50 (BUY) · DXY тренд эсрэг</dd>
+          <dt>Stop / target</dt><dd>Буцалтын swing-ийн цаана · TP1 1R, TP2 өмнөх swing + 2R</dd>
+        </dl>
+      </article>
+      <article class="setup">
+        <header><h3>6. Томоохон мэдээний дараах хөдөлгөөн</h3><span class="tag">NFP, CPI, FOMC</span></header>
+        <dl class="kv">
+          <dt>Санаа</dt><dd>Мэдээний эхний 15 минутын хүрээнээс трендийн чиглэлд гарах нь ихэвчлэн үргэлжилдэг.</dd>
+          <dt>Орох</dt><dd>Мэдээнээс 15 минутын дараа, тэр хүрээний гадна хаагдах эхний M15.</dd>
+          <dt>Баталгаа</dt><dd>Өдрийн тренд нэг чиглэлд · хүрээ ≥ 0.3 ATR · spread хэвийн болсон</dd>
+          <dt>Stop / target</dt><dd>Мэдээний хүрээний дунд · TP1 1R, TP2 2.5R</dd>
+        </dl>
+      </article>
+    </div>
+    <h3 style="margin-top:6px">Баталгааны сан</h3>
+    <p>Доорх нөхцөл бүрийг setup бүрд тусад нь хэмжинэ. Хоёр хугацаанд хоёуланд нь win rate эсвэл дундаж R-ийг өсгөсөн нь л үлдэнэ.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Бүлэг</th><th>Нөхцөл</th></tr></thead>
+      <tbody>
+        <tr><td>Тренд</td><td>Өдөр, 4 цаг, 1 цагийн тренд оноо нэг чиглэлд · EMA50/200 байрлал · бүтэц (HH/HL)</td></tr>
+        <tr><td>Liquidity</td><td>Азийн ирмэг, PDH/PDL, тэгш оргил/ёроол шүүрдсэн эсэх</td></tr>
+        <tr><td>Бүтэц</td><td>MSS / CHoCH биеэрээ хаагдсан · FVG, OB-ийн retest</td></tr>
+        <tr><td>Хэлбэлзэл</td><td>Өдрийн ATR горим · хүрээний өргөн ATR-тай харьцуулахад · spread</td></tr>
+        <tr><td>Моментум</td><td>RSI, MACD чиглэл, дивергенц</td></tr>
+        <tr><td>Макро</td><td>DXY өдрийн чиглэл · 10 жилийн бодит хүүгийн өөрчлөлт</td></tr>
+        <tr><td>Цаг ба мэдээ</td><td>Сешн · мэдээний цонх · 7 хоногийн өдөр · баасан оройн хаалт</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Шийдвэр</p>
+    <h2>Нэг цонх, нэг шийдвэр</h2>
+    <ul>
+      <li><b>Магадлал:</b> тэнцсэн setup бүрд «одоогийнх шиг нөхцөлд түүхэнд хэдэн удаа гарсан, хэдэн хувь нь TP1, TP2-т хүрсэн». 50-аас цөөн жишээтэй бол тоо гаргахгүй.</li>
+      <li><b>Нэг удаад нэг дохио.</b> Эсрэг setup гарвал шинэ дохио биш «хаа» дохио. Хаасны дараа хөргөх хугацаа.</li>
+      <li><b>Сонголт:</b> хэд хэдэн setup бэлэн бол хүлээгдэх R хамгийн өндөрийг нь.</li>
+      <li><b>Тохируулга:</b> «65%» гэсэн дохионууд бодитоор ~65% ашигтай болж байгааг байнга тулгана.</li>
+    </ul>
+    <div class="states">
+      <div class="state"><strong class="wait">Хүлээж байна</strong><span>ямар нөхцөл дутуу, хэзээ хүртэл</span></div>
+      <div class="state"><strong class="good">Ор</strong><span>чиглэл, орох, stop, TP1, TP2, лот</span></div>
+      <div class="state"><strong>Идэвхтэй</strong><span>одоогийн R, TP1 хүрсэн эсэх</span></div>
+      <div class="state"><strong class="bad">Хаа</strong><span>шалтгаан, үр дүн</span></div>
+      <div class="state"><strong>Арилжаа алга</strong><span>дараагийн боломж хэзээ</span></div>
+    </div>
+    <div class="window">ШИЛДЭГ SETUP ОДОО: Лондонгийн sweep → BUY        67% · +0.62R
+түүхэнд 412 удаа (2003 →) · сүүлийн 12 сард 38 удаа · live 9/13
+
+ ✓ Өдөр, 4 цагийн тренд дээш
+ ✓ Азийн ёроол 3,546-г хатгаад буцсан
+ ✓ DXY өдрийн чиглэл доош
+ ✗ M15 3,577-оос дээш хаагдах (MSS)       ← ЯГ ОДОО ҮҮНИЙГ ХҮЛЭЭЖ БАЙНА
+ ✓ 2 цагийн дотор чухал мэдээ алга
+
+Хаагдвал → BUY · stop 3,544 · TP1 3,610 (1R) · TP2 3,672 (3R) · 0.03 лот
+Дараагийн setup: NY нээлт 21:30 (УБ)</div>
+    <p class="out">Цонхонд байгаа тоо, түвшнүүд нь зөвхөн дүрслэл.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Telegram ба сайт</p>
+    <h2>Хэрэглэгчид харагдах хэсэг</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Юу</th><th>Дэлгэрэнгүй</th></tr></thead>
+      <tbody>
+        <tr><td>TP/SL мэдэгдэл зурагтай</td><td>«✅ TP2 хүрлээ +3.0R (+$18, 0.01 лот)» эсвэл «❌ SL −1R», хамт TradingView-ийн position хэрэгсэл шиг чарт: лаа, орох шугам, улаан stop бүс, цэнхэр target бүс, гарсан цэг. Сервер дээр зурна, гадны үйлчилгээгүй.</td></tr>
+        <tr><td>/setup</td><td>Одоогийн цонх: нөхцөл бүрийн ✓/✗, юу хүлээж байна, орох/stop/TP, чарт зураг</td></tr>
+        <tr><td>/history</td><td>Сүүлийн 10 дохио, үр дүн, нийт R, win rate</td></tr>
+        <tr><td>/news</td><td>Дараагийн чухал мэдээ: бүтэн огноо, цаг, хэдэн цагийн дараа</td></tr>
+        <tr><td>Найдвартай байдал</td><td>Мессеж давхардахгүй, алдаа гарвал дахин оролдоно, зураг бүтэхгүй бол текст очно. Үнийн дата хоцорвол дохио гаргахгүй, админд сануулна.</td></tr>
+        <tr><td>Мэдээний хуудас</td><td>«11-р сарын 27, Баасан · Маргааш» гарчиг, мөр бүрд «2 цаг 15 минутын дараа», дээр нь дараагийн чухал мэдээ том үсгээр, календарь хэзээ шинэчлэгдсэн</td></tr>
+        <tr><td>Нээлттэй гүйцэтгэлийн хуудас</td><td>Setup бүрийн 20 жилийн тоо, туршаагүй хугацааны тоо, live түүх тусдаа. Хэрэглэгчийг татах гол хуудас.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Үе шатууд</p>
+    <h2>Хийх дараалал</h2>
+    <div class="track">
+      <div class="phase"><div class="dot">0</div><div class="phase-body">
+        <h3>Хурдан ялалт</h3>
+        <ul>
+          <li>Telegram: TP/SL мэдэгдэл чарт зурагтай, /setup, /history, /news.</li>
+          <li>Мэдээний хуудсын огноо, тоолуур.</li>
+          <li>Азийн дүрэмд TP1 1R + breakeven туршилт (одоогийн датан дээр).</li>
+        </ul>
+        <p class="out">Гарц: <b>хэрэглэгч шууд мэдрэх сайжруулалт</b></p>
+      </div></div>
+      <div class="phase"><div class="dot">1</div><div class="phase-body">
+        <h3>20 жилийн өгөгдөл</h3>
+        <ul>
+          <li>Dukascopy 2003 → M1-ийг (зөвшөөрөлтэйгээр) татаж M15/H1/H4/D1 болгоно. Брокерын дататай давхцах хэсгийг тулгана.</li>
+          <li>Мэдээний түүх, DXY, бодит хүүг нөхнө.</li>
+          <li>15 минутын лаа бүрийн нөхцөлийн мөр (бүх арга, тренд, сешн, ATR, liquidity түвшнүүд).</li>
+        </ul>
+        <p class="out">Гарц: <b>~500 000 мөр бүхий нөхцөлийн хүснэгт</b></p>
+      </div></div>
+      <div class="phase"><div class="dot">2</div><div class="phase-body">
+        <h3>Setup-уудыг шалгах</h3>
+        <ul>
+          <li>6 setup-ыг 2003–2014 дээр тохируулж, 2015–2020 дээр баталж, 2021 → дээр эцэслэн шалгана.</li>
+          <li>Баталгаа бүрийн нэмэх үр нөлөөг хэмжиж, хэрэггүйг нь хасна.</li>
+          <li>Оролт (хаалт / retest), target (нэг / хоёр шатлал) хувилбаруудыг харьцуулна.</li>
+          <li>Тэнцэх шалгуур: хугацаа бүрд ≥ 100 арилжаа, win rate ≥ 55%, PF ≥ 1.6, spread $0.50 үед ч ашигтай.</li>
+        </ul>
+        <p class="out">Гарц: <b>тэнцсэн setup бүрийн тайлан</b> (жил бүрээр, BUY/SELL, сешнээр)</p>
+      </div></div>
+      <div class="phase"><div class="dot">3</div><div class="phase-body">
+        <h3>Магадлалын хөдөлгүүр ба шийдвэрийн дүрэм</h3>
+        <ul>
+          <li>Setup бүрийн одоогийн магадлал, хүлээгдэх R.</li>
+          <li>Нэг дохио, «хаа» дохио, хөргөх хугацааг түүхэн датан дээр тохируулна.</li>
+        </ul>
+      </div></div>
+      <div class="phase"><div class="dot">4</div><div class="phase-body">
+        <h3>«Одоо» цонх ба гүйцэтгэлийн хуудас</h3>
+        <ul>
+          <li>Setup хуудсын дээд талд цонх. 16 аргын жагсаалт доор «дэлгэрэнгүй».</li>
+          <li>Нээлттэй гүйцэтгэлийн хуудас.</li>
+        </ul>
+      </div></div>
+      <div class="phase"><div class="dot">5</div><div class="phase-body">
+        <h3>Telegram, робот цонхыг дагана</h3>
+        <ul>
+          <li>Telegram: Ор, TP1 хүрлээ, Хаа, Үр дүн.</li>
+          <li>Робот: TP1-д хагас хаах, breakeven, «хаа» тушаал (dExit), эрсдэлийн %-аар лот, цагийн бүсийг автоматаар.</li>
+        </ul>
+      </div></div>
+      <div class="phase"><div class="dot">6</div><div class="phase-body">
+        <h3>Хяналт</h3>
+        <ul>
+          <li>Live үр дүн setup тус бүрээр, тохируулгын график.</li>
+          <li>Сүүлийн 40 арилжаанд сөрөг болсон setup цонхноос түр хасагдана.</li>
+          <li>7 хоног бүрийн тайлан Telegram-аар.</li>
+        </ul>
+      </div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Шалгуур</p>
+    <h2>Дууссан гэж хэзээ хэлэх вэ</h2>
+    <ul>
+      <li>Цонх туршаагүй хугацаанд (2021 →) win rate ≥ 60%, бодит RR ≥ 1 : 1.8, PF ≥ 2.0, max drawdown ≤ 8R.</li>
+      <li>7 хоногт 4–6 дохио.</li>
+      <li>Сайт, Telegram, робот 95%-иас дээш ижил өдөр, ижил чиглэлд.</li>
+      <li>Эсрэг хоёр дохио зэрэг гарах тохиолдол 0.</li>
+    </ul>
+    <p class="note">Зорилтот тоонд хүрээгүй setup-ыг тоог нь өөрчилж харуулахгүй, цонхонд оруулахгүй. Шалгуурт хүрсэн setup-ууд л хэрэглэгчид очно.</p>
+  </section>
+</div>

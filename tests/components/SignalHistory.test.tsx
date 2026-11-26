@@ -4,7 +4,7 @@ import { SignalHistoryTable, SignalTotals } from "@/components/SignalHistory";
 import { MN_VIEWER } from "@/lib/viewer";
 import type { SignalRow } from "@/lib/signalHistory";
 
-const base = { sentTo: 0, name: "Азийн хүрээний breakout", setupId: "asian-breakout" };
+const base = { sentTo: 0, name: "Азийн хүрээний breakout", setupId: "asian-breakout", resultSentAt: null };
 const rows: SignalRow[] = [
   { ...base, id: "1", key: "1", side: "SELL", entry: 3510.26, stop: 3544.01, target: 3442.77, createdAt: new Date("2026-11-25T11:47:00Z"), outcome: { kind: "WIN", r: 2, at: new Date("2026-11-25T15:00:00Z") } },
   { ...base, id: "2", key: "2", side: "SELL", entry: 3609.77, stop: 3647.41, target: 3534.47, createdAt: new Date("2026-11-24T08:33:00Z"), outcome: { kind: "LOSS", r: -1, at: new Date("2026-11-24T10:00:00Z") } },

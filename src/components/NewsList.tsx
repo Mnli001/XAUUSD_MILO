@@ -5,6 +5,11 @@ import { eventTitle, countryName } from "@/lib/data/calendarProvider";
 import type { T } from "@/lib/i18n";
 import { MN_VIEWER, type Viewer } from "@/lib/viewer";
 import { SESSIONS } from "./SessionLine";
+import { relativeText } from "@/lib/relativeTime";
+
+const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+/** "11-р сарын 27" / "November 27" from a YYYY-MM-DD key. */
+export const dayLabel = (key: string, t: T) => { const m = Number(key.slice(5, 7)), d = Number(key.slice(8, 10)); return t(`${m}-р сарын ${d}`, `${MONTHS_EN[m - 1]} ${d}`); };
 
 /** Impact as a line badge: [badge fill, station ring, word]. */
 const impactOf = (t: T) => ({
@@ -101,17 +106,28 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER }: { events: Ec
   const IMPACT = impactOf(t);
   if (events.length === 0) return <div className="card text-sm text-zinc-500">{t("Энэ хугацаанд бүртгэгдсэн мэдээ алга. Календарь өдөрт нэг удаа шинэчлэгдэнэ.", "No releases on record for this period. The calendar updates once a day.")}</div>;
   const days = new Map<string, EconomicEvent[]>();
+  const tomorrow = v.date(new Date(now.getTime() + 864e5));
+  const nextHigh = events.find((e) => e.impact === "HIGH" && e.time >= now);
   for (const e of events) days.set(v.date(e.time), [...(days.get(v.date(e.time)) ?? []), e]);
   const today = v.date(now);
   const nextId = events.find((e) => e.time >= now)?.id;
   return (
     <div className="space-y-4 sm:space-y-5">
+      {nextHigh && (
+        <div className="card flex flex-wrap items-baseline gap-x-3 gap-y-1 border-red-500/30">
+          <span className="text-xs font-semibold tracking-wide text-red-300 uppercase">{t("Дараагийн чухал мэдээ", "Next important release")}</span>
+          <span className="text-[15px] font-semibold text-zinc-50">{eventTitle(nextHigh, t)}</span>
+          <span className="text-sm text-zinc-300 tabular-nums">{dayLabel(v.date(nextHigh.time), t)}, {weekdayName(zoneWeekday(nextHigh.time, v.timeZone), t)} · {v.time(nextHigh.time)} ({v.zone})</span>
+          <span className="text-sm font-semibold text-amber-300">{relativeText(nextHigh.time.getTime() - now.getTime(), t)}</span>
+        </div>
+      )}
       {[...days].map(([day, list]) => (
         <section key={day} className="card overflow-hidden px-0 pb-1 sm:px-0 sm:pb-1">
           <h2 className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 px-4 text-[15px] font-semibold text-zinc-100 sm:px-5">
-            {weekdayName(zoneWeekday(list[0].time, v.timeZone), t)}
-            <span className="text-[13px] font-normal text-zinc-400 tabular-nums">{day}</span>
+            {dayLabel(day, t)}, {weekdayName(zoneWeekday(list[0].time, v.timeZone), t)}
+            <span className="text-[13px] font-normal text-zinc-500 tabular-nums">{day}</span>
             {day === today && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">{t("Өнөөдөр", "Today")}</span>}
+            {day === tomorrow && <span className="rounded-full bg-zinc-500/15 px-2 py-0.5 text-xs font-semibold text-zinc-300">{t("Маргааш", "Tomorrow")}</span>}
             <span className="ml-auto text-xs font-normal text-zinc-500 tabular-nums">{list.length} {t("мэдээ", list.length === 1 ? "release" : "releases")}</span>
           </h2>
           <DayAxis list={list} now={now} isToday={day === today} v={v} />
@@ -122,10 +138,10 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER }: { events: Ec
               return (
                 <li key={e.id} className={`border-t border-zinc-800/70 ${next ? "bg-zinc-800/45" : ""}`}>
                   <details className="group">
-                    <summary className={`grid cursor-pointer grid-cols-[3.25rem_minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 px-4 py-3 transition-colors hover:bg-zinc-800/30 sm:grid-cols-[3.5rem_minmax(0,1fr)_auto_auto] sm:items-center sm:px-5 ${past ? "opacity-55" : ""}`}>
+                    <summary className={`grid cursor-pointer grid-cols-[4.75rem_minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 px-4 py-3 transition-colors hover:bg-zinc-800/30 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto_auto] sm:items-center sm:px-5 ${past ? "opacity-55" : ""}`}>
                       <span className="pt-px">
                         <span className={`block text-[15px] leading-tight font-semibold tabular-nums ${past ? "text-zinc-400" : "text-zinc-50"}`}>{v.time(e.time)}</span>
-                        {next && <span className="mt-0.5 block text-[11px] font-semibold text-amber-400">{t("дараах", "next")}</span>}
+                        {(day === today || day === tomorrow) && <span className={`mt-0.5 block text-[11px] leading-tight ${next ? "font-semibold text-amber-400" : "text-zinc-500"}`}>{relativeText(e.time.getTime() - now.getTime(), t)}</span>}
                       </span>
                       <span className="min-w-0">
                         <span className="flex items-start gap-2">
