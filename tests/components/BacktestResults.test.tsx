@@ -98,7 +98,7 @@ describe("backtest facts", () => {
     const bare = { ...withModel, model: undefined };
     expect(honestyText(mnT, bare)).toBe("Түүхэн датан дээрх backtest · live системээс ялгаатай: мэдээний шүүлтүүр, 2020 оны COVID-ийн хэсэг, swap тооцоогүй · forward шалгагдаагүй");
     render(<BacktestHonesty t={mnT} c={bare} />);
-    expect(screen.getByTestId("backtest-honesty")).toHaveClass("text-base");
+    expect(screen.getByTestId("backtest-honesty")).toHaveClass("text-sm");
   });
   it("the out-of-sample line names 2023 and that the rules were chosen on 2019–2022, from the file", () => {
     const text = outOfSampleText(mnT, CURVES as never);

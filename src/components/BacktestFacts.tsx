@@ -82,9 +82,13 @@ export function outOfSampleText(t: T, c: Curves = CURVES): string | null {
 /** The honesty line itself, sized to sit under a headline figure as its equal. */
 export function BacktestHonesty({ t, c = CURVES, size = "lg", className = "" }: { t: T; c?: Curves; size?: "lg" | "sm"; className?: string }) {
   return (
-    <span className={`flex items-start gap-2 text-zinc-300 ${size === "lg" ? "text-base sm:text-lg" : "text-sm"} ${className}`} data-testid="backtest-honesty">
-      <span aria-hidden className="mt-[0.55em] h-1.5 w-1.5 shrink-0 rounded-full border border-amber-400/70" />
-      <span className="min-w-0">{honestyText(t, c)}</span>
+    <span className={`block text-zinc-400 ${size === "lg" ? "text-sm" : "text-xs"} ${className}`} data-testid="backtest-honesty">
+      {/* One short line in view; the full list of what the test leaves out stays one tap away. */}
+      <span>{t("Түүхэн датан дээрх backtest · forward шалгагдаагүй", "Backtest on historical data · not forward-tested")}</span>
+      <details className="group mt-0.5 inline-block align-baseline sm:ml-2">
+        <summary className="cursor-pointer list-none text-amber-300/80 underline decoration-amber-400/40 underline-offset-2 hover:text-amber-200 [&::-webkit-details-marker]:hidden">{t("Дэлгэрэнгүй", "Details")}</summary>
+        <span className="mt-1 block text-xs leading-relaxed text-zinc-500">{honestyText(t, c)}</span>
+      </details>
     </span>
   );
 }
@@ -169,7 +173,7 @@ export function ProofLine({ t, c = CURVES, risk = HERO_RISK, size = "lg" }: { t:
   const r = riskCurve(risk, c);
   const big = size === "lg";
   return (
-    <p className="min-w-0">
+    <div className="min-w-0">
       <span className={`font-display block leading-none text-zinc-50 tabular-nums ${big ? "text-[clamp(2.2rem,7vw,3.4rem)]" : "text-[30px] sm:text-[36px]"}`}>
         {usd(c.start)} <span aria-hidden className="text-amber-400">→</span><span className="sr-only">{t("-аас", "to")}</span> <span className="gold-text">{usd(finalBalance(r))}</span>
       </span>
@@ -177,7 +181,7 @@ export function ProofLine({ t, c = CURVES, risk = HERO_RISK, size = "lg" }: { t:
         {t(`${spanLabel(c)} · арилжаа бүрт ${r.risk}% эрсдэлтэй · ${signedPct(r.finalPct, 0)} · хамгийн их уналт −${r.maxDD.toFixed(1)}%`, `${spanLabel(c)} · ${r.risk}% risk per trade · ${signedPct(r.finalPct, 0)} · largest fall −${r.maxDD.toFixed(1)}%`)}
       </span>
       <BacktestHonesty t={t} c={c} size={size} className="mt-1.5" />
-    </p>
+    </div>
   );
 }
 
