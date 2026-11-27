@@ -12,7 +12,7 @@ export const SIGNAL_WINDOW = 60;
 export const signalWindowLabel = (t: T) => t(`Сүүлийн ${SIGNAL_WINDOW} дохио`, `Last ${SIGNAL_WINDOW} signals`);
 
 /** The protocol number the robot reports (ROBOT_VERSION in XauBot.mq5), as the file version people see. */
-const ROBOT_FILES: Record<number, string> = { 6: "2.80", 7: "2.90", 8: "3.00", 9: "3.10", 10: "3.30", 11: "3.40", 12: "3.50", 13: "3.60", 14: "3.70" };
+const ROBOT_FILES: Record<number, string> = { 6: "2.80", 7: "2.90", 8: "3.00", 9: "3.10", 10: "3.30", 11: "3.40", 12: "3.50", 13: "3.60", 14: "3.70", 15: "3.80" };
 /** "v3.60", or null for a protocol this table does not know yet (copy then says "the newest file"). */
 export const robotFileLabel = (protocol: number): string | null => (ROBOT_FILES[protocol] ? `v${ROBOT_FILES[protocol]}` : null);
 

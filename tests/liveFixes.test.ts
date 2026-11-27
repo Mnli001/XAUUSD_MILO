@@ -53,7 +53,7 @@ describe("robot orders", () => {
   const order = (id: number, rule: SessionOrderFields["id"] = 0): SessionOrderFields => ({ id: id + rule, legacyId: id, dir: 1, risk: 6, rr: 2, ageSec: 90, exitAt: 1_800_000_000, entry: 4006, sl: 4000, tp: 4018 });
   it("the Asian tool sends every live order, the first also in the old single-order fields", () => {
     const c = commandFor({ state: "RUNNING", runId: "r", closeAll: false, config: cfg() }, { mode: "DEMO" }, ROBOT_FILE_VERSION, "mn", "", null, null, [order(1764000000), order(1764000000, ORDER_ID_RULE_STEP)]);
-    expect(c.orders).toBe("1764000000,1,4006,4000,4018,90,1800000000;11764000000,1,4006,4000,4018,90,1800000000");
+    expect(c.orders).toBe("1764000000,1,4006,4000,4018,90,1800000000,1;11764000000,1,4006,4000,4018,90,1800000000,1");
     expect(c).toMatchObject({ dId: 1764000000, dDir: 1, dRisk: 6, dRR: 2, dAge: 90, dExit: 1_800_000_000, oMaxAge: 1800, oSlipR: 0.3, state: "RUNNING" });
     expect(ordersField([])).toBe("");
   });
@@ -68,7 +68,7 @@ describe("robot orders", () => {
   it("the robot file is the new version and knows the order list", () => {
     const src = readFileSync("mt5/XauBot.mq5", "utf8");
     expect(src).toContain(`#define ROBOT_VERSION ${ROBOT_FILE_VERSION}`);
-    expect(src).toContain('#property version   "3.70"');
+    expect(src).toContain('#property version   "3.80"');
     for (const part of ['JStr(body, "orders")', "OrderTaken(id)", "SendMarketAt(", "gOSlipR"]) expect(src).toContain(part);
     // the time exit runs whatever tool is selected
     expect(src).toMatch(/void OnTimer\(\)\s*\{\s*if\(IsRuleTool\(\)\) return;\s*AsianTimeExit\(\);/);
@@ -213,7 +213,7 @@ describe("replay and readings", () => {
       const p = h >= 13.5 && h < 14.5 ? 4000 : h < 14.75 ? 4000 : 4010;
       m15.push(bar(t, p, p + (h >= 13.5 && h < 14.5 ? 3 : 1), p - (h >= 13.5 && h < 14.5 ? 3 : 1), h >= 14.5 && h < 14.75 ? 4010 : p));
     }
-    const scores = { daily: 1, h4: 1, atrD: 10 };
+    const scores = { daily: 40, h4: 1, atrD: 10 };
     const evening = rangeSetup(rule, m15.filter((b) => b.time.getTime() < day + 15 * 36e5), scores, [], new Date(day + 15 * 36e5 + 6e4), MN_VIEWER); // 23:01 in Ulaanbaatar
     expect(evening.status).toBe("ACTIVE");
     expect(evening.detail).toContain("маргааш 15:00");

@@ -1,7 +1,7 @@
 import type { Candle } from "../analysis/indicators";
 import { type BotParams, type Side, DEFAULT_PARAMS, inNewsWindow } from "../bot/strategy";
 import { MN_VIEWER, type Viewer } from "../viewer";
-import { type SessionRule, hourUtc, ruleExitAt, ruleOf } from "./sessionRules";
+import { type SessionRule, hourUtc, ruleExitAt, ruleOf, sizeFactor } from "./sessionRules";
 
 /**
  * A setup is a rule read against the market as it stands now: is it forming, worth watching,
@@ -25,6 +25,7 @@ export type SetupNow = {
   trends?: { daily: Side | null; h4: Side | null }; // the trends as they stand now (set when they keep the rule out)
   window?: { rangeFrom: number; rangeTo: number; entryTo: number; exitAt: Date }; // the rule's hours (UTC) and this day's time exit
   result?: number; // a trade that already ended today: its result in R (+2 target, −1 stop, or the time exit)
+  size?: number; // the trade size against the chosen risk, from the trends at the breakout (see sizeFactor)
 };
 
 const M15 = 15 * 6e4;
@@ -126,6 +127,12 @@ export function rangeSetup(rule: SessionRule, m15: Candle[], scores: AsianScores
     const dir = trend === "BUY" ? 1 : -1;
     const sideWord = sideWordOf(trend);
     const done = [...checksAt(then), { label: t(`Хүрээнээс ${sideWord} хаагдсан (мэдээний цонхноос гадуур)`, `Closed ${sideWord} the range (outside a news window)`), ok: true }];
+    // As the replay: a daily trend weaker than the rule asks for ends the day.
+    const dailyScore = scoreAt(scores.daily, m15.indexOf(breakout));
+    if (rule.minDailyScore > 0 && !(dailyScore !== null && Math.abs(dailyScore) >= rule.minDailyScore)) {
+      const weak = { label: t(`Өдрийн трендийн хүч ${rule.minDailyScore}-аас их`, `Daily trend strength at least ${rule.minDailyScore}`), ok: false };
+      return w(off(t("Тренд сул, өнөөдөр орохгүй", "Trend too weak, no trade today"), t(`Breakout гарсан ч өдрийн трендийн оноо ${dailyScore === null ? "—" : Math.round(Math.abs(dailyScore))} нь ${rule.minDailyScore}-аас бага. Сул трендтэй өдрийн Нью-Йоркийн breakout түүхэнд муу үр дүн өгсөн тул алгасна.`, `A breakout came, but the daily trend score of ${dailyScore === null ? "—" : Math.round(Math.abs(dailyScore))} is below ${rule.minDailyScore}. New York breakouts on weak-trend days did poorly in the past, so the day is passed.`), { band, checks: [...done, weak] }));
+    }
     // As the replay: the first breakout decides the day; one from a range too narrow for the day's usual move is passed.
     const atr = scoreAt(scores.atrD, m15.indexOf(breakout));
     const need = atr === null || !Number.isFinite(atr) ? Infinity : rule.minStopAtr * atr;
@@ -134,7 +141,8 @@ export function rangeSetup(rule: SessionRule, m15: Candle[], scores: AsianScores
       return w(off(t("Хүрээ хэт нарийн, өнөөдөр орохгүй", "Range too narrow, no trade today"), t(`Breakout гарсан ч stop ${px(Math.abs(breakout.close - mid))}$ нь өдрийн дундаж хэлбэлзлийн (ATR ${Number.isFinite(need) ? px(atr!) : "—"}$) хувьд хэт бага. Ийм нарийн хүрээний breakout түүхэнд ихэвчлэн хуурамч гарсан тул алгасна.`, `A breakout came, but its stop of $${px(Math.abs(breakout.close - mid))} is too small for the day's usual move (ATR $${Number.isFinite(need) ? px(atr!) : "—"}). Breakouts from ranges this narrow were mostly false in the past, so the day is passed.`), { band, checks: [...done, narrow] }));
     }
     const entry = breakout.close, dist = Math.abs(entry - mid), target = entry + dir * dist * rule.rr;
-    const levels = { side: trend, band, entry, stop: mid, target, at: new Date(breakout.time.getTime() + M15) };
+    const size = sizeFactor(dailyScore, scoreAt(scores.h4, m15.indexOf(breakout)));
+    const levels = { side: trend, band, entry, stop: mid, target, at: new Date(breakout.time.getTime() + M15), size };
     // Walk the bars after the entry exactly as the replay does: a bar touching both counts as the stop.
     const after = m15.filter((b) => b.time.getTime() > breakout.time.getTime() && b.time.getTime() < exitAt.getTime() && b.time.getTime() + M15 <= now.getTime());
     const exit = after.find((b) => (dir > 0 ? b.low <= mid : b.high >= mid) || (dir > 0 ? b.high >= target : b.low <= target));

@@ -48,7 +48,6 @@ export function LivePrice({ last, prevClose, updatedAt }: { last: number; prevCl
   const flash = useFlash(q?.price);
   const pct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
   const up = (pct ?? 0) >= 0;
-  const spread = q?.live && q.bid !== null && q.ask !== null ? q.ask - q.bid : null;
   return (
     <>
       <p className={`num mt-2 text-[52px] leading-none transition-colors duration-500 sm:text-[72px] ${flash > 0 ? "text-emerald-300" : flash < 0 ? "text-red-300" : "text-zinc-50"}`} aria-live="off">{money(price)}</p>
@@ -61,7 +60,6 @@ export function LivePrice({ last, prevClose, updatedAt }: { last: number; prevCl
         <LiveBadge />
         <span className="text-zinc-500">
           {q?.live ? t("Сүүлийн үнэ", "Last price") : t("Шинэчлэгдсэн", "Updated")} <span className="text-zinc-300 tabular-nums">{time(at)}</span> {zone}
-          {spread !== null && <> · {t("зөрүү", "spread")} <span className="text-zinc-300 tabular-nums">${spread.toFixed(2)}</span></>}
         </span>
       </p>
     </>

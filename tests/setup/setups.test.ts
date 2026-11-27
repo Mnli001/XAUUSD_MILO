@@ -108,8 +108,12 @@ describe("New York opening range", () => {
     expect(rangeSetup(ny, day({}, 52), UP, [], at(13)).status).toBe("FORMING");
     // bars 50–53 (12:30–13:30) form the range 3998–4002; bar 56 (14:00) closes at 4006
     const bars = day({ ...hold(57, 96, 4006), 56: { high: 4007, close: 4006 } }, 58);
-    const s = rangeSetup(ny, bars, UP, [], at(14, 30));
+    const STRONG = { ...UP, daily: 40 };
+    const s = rangeSetup(ny, bars, STRONG, [], at(14, 30));
     expect(s).toMatchObject({ status: "ACTIVE", side: "BUY", entry: 4006, stop: 4000, target: 4018 });
     expect(s.window?.entryTo).toBe(18);
+    // A daily trend below the New York rules' 35 ends the day at the breakout, with the reason given.
+    const weak = rangeSetup(ny, bars, UP, [], at(14, 30));
+    expect(weak).toMatchObject({ status: "OFF", headline: "Тренд сул, өнөөдөр орохгүй" });
   });
 });

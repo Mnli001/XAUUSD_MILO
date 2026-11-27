@@ -72,12 +72,12 @@ export const SLIP_R_MAX = 0.3;
  * seconds); `legacyId` is the bar's close alone, the id robots before v3.70 remember. `entry`, `sl`, `tp` are the
  * setup's own prices; `risk` (= |entry − sl|) and `rr` are kept for robots that only take distances.
  */
-export type AsianOrder = { id: number; legacyId: number; rule: SessionId; dir: 1 | -1; risk: number; rr: number; ageSec: number; exitAt?: number; entry: number; sl: number; tp: number };
+export type AsianOrder = { id: number; legacyId: number; rule: SessionId; dir: 1 | -1; risk: number; rr: number; ageSec: number; exitAt?: number; entry: number; sl: number; tp: number; size: number };
 let orderMemo: { at: number; orders: AsianOrder[] } | null = null;
 const ORDER_TTL_MS = 20_000; // robots sync every second; the reading changes once per 15-minute candle
 export const ORDER_ID_RULE_STEP = 1e10;
 
-export function asianOrderOf(s: Pick<Setup, "status" | "side" | "entry" | "stop" | "target" | "at"> & { window?: SetupNow["window"]; id?: SessionId }, now: Date): AsianOrder | null {
+export function asianOrderOf(s: Pick<Setup, "status" | "side" | "entry" | "stop" | "target" | "at" | "size"> & { window?: SetupNow["window"]; id?: SessionId }, now: Date): AsianOrder | null {
   if (s.status !== "ACTIVE" || !s.side || s.entry === null || s.stop === null || s.target === null || !s.at) return null;
   const risk = Math.round(Math.abs(s.entry - s.stop) * 100) / 100;
   if (!(risk > 0)) return null;
@@ -88,7 +88,7 @@ export function asianOrderOf(s: Pick<Setup, "status" | "side" | "entry" | "stop"
   return {
     id: index * ORDER_ID_RULE_STEP + barSec, legacyId: barSec, rule, dir: s.side === "BUY" ? 1 : -1, risk, rr,
     ageSec: Math.max(0, Math.round((now.getTime() - s.at.getTime()) / 1000)), exitAt: s.window ? Math.round(s.window.exitAt.getTime() / 1000) : undefined,
-    entry: Math.round(s.entry * 100) / 100, sl: Math.round(s.stop * 100) / 100, tp: Math.round(s.target * 100) / 100,
+    entry: Math.round(s.entry * 100) / 100, sl: Math.round(s.stop * 100) / 100, tp: Math.round(s.target * 100) / 100, size: s.size ?? 1,
   };
 }
 

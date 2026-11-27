@@ -59,6 +59,9 @@ export function signalText(s: Setup, candleAt: Date | null, now: Date, v: Viewer
     `Stop: <b>${px(stop)}</b>`,
     `Target: <b>${px(target)}</b>`,
     t(`0.01 лот: эрсдэл ${usd(risk)}, ашиг ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`, `0.01 lot: risk ${usd(risk)}, reward ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`),
+    ...(s.size && s.size !== 1 ? [s.size > 1
+      ? t(`Тренд хүчтэй: лотоо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Strong trend: size this trade ${s.size}× your usual (the robot does it)`)
+      : t(`Тренд сул: лотоо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Weak trend: size this trade ${s.size}× your usual (the robot does it)`)] : []),
     "",
     ...s.checks.filter((c) => c.ok).map((c) => `✓ ${esc(c.label)}`),
     "",

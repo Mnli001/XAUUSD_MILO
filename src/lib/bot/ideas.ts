@@ -35,6 +35,8 @@ export function sessionOrders(m15: Candle[], rule: SessionRule, o: { news: Date[
     }
     done = true;
     if (inNews) return; // "skip": a breakout made inside a news window ends the day for this range
+    const daily = o.trend[i];
+    if (rule.minDailyScore > 0 && !(daily !== null && daily !== undefined && Math.abs(daily) >= rule.minDailyScore)) return; // trend too weak: the day is passed
     const stopDist = Math.abs(bar.close - (high + low) / 2);
     const maxBars = Math.floor((ruleExitAt(rule, key).getTime() - at.getTime()) / M15);
     if (!(stopDist > 0) || maxBars < 1 || !(stopDist >= rule.minStopAtr * o.atr[i])) return;

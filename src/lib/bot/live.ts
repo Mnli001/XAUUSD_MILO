@@ -268,10 +268,10 @@ export const READING_ROBOT_VERSION = 10;
 export const DAY_ROBOT_VERSION = 11;
 export type DayOrderFields = { id: number; dir: number; risk: number; rr: number; ageSec: number; exitAt?: number };
 /** A session setup's order with its own prices (lib/setup/build AsianOrder). */
-export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number };
+export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number; size?: number };
 /** The robot file the site serves (mt5/XauBot.mq5): its version number and the label people see. */
-export const ROBOT_FILE_VERSION = 14;
-export const ROBOT_FILE_LABEL = "3.70";
+export const ROBOT_FILE_VERSION = 15;
+export const ROBOT_FILE_LABEL = "3.80";
 /** Order freshness and price-run limits, the same ones Telegram uses (see ENTRY_FRESH_MS in lib/setup/build). */
 export const ORDER_MAX_AGE_SEC = 30 * 60;
 export const ORDER_SLIP_R = 0.3;
@@ -281,7 +281,7 @@ export const minRobotVersion = (mode: BotMode) => Math.max(GATE_ROBOT_VERSION, m
 
 /** The order list as the robot reads it: plain numbers, no nesting (the robot parses JSON by key lookups). */
 export const ordersField = (orders: SessionOrderFields[]): string =>
-  orders.map((o) => [o.id, o.dir, o.entry, o.sl, o.tp, Math.round(o.ageSec), o.exitAt ?? 0].join(",")).join(";");
+  orders.map((o) => [o.id, o.dir, o.entry, o.sl, o.tp, Math.round(o.ageSec), o.exitAt ?? 0, o.size ?? 1].join(",")).join(";"); // 8th: size factor (robot v3.80+; older ones read 7)
 
 /**
  * The filter as flat fields. With the filter off, every check goes out switched off as well. The session tool

@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.70"
+#property version   "3.80"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -95,7 +95,7 @@ double gOSlipR = 0.3;              // үнэ орох түвшнээс эрсд�
 datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэн цаг: брокерын хариу хоцорвол давхар илгээхгүй
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 14             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр)
+#define ROBOT_VERSION 15             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр)
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -1220,6 +1220,7 @@ const double SES_ENTRY[SESSION_COUNT]   = { 12.0, 18.0, 17.0 };
 const double SES_RR[SESSION_COUNT]      = { 3.0, 2.0, 2.0 };
 const bool   SES_NEXT07[SESSION_COUNT]  = { false, false, true };
 const int    SES_MINBARS[SESSION_COUNT] = { 20, 3, 3 };
+const double SES_MINDAILY[SESSION_COUNT]= { 0.0, 35.0, 35.0 };   // өдрийн трендийн онооны доод хэмжээ (сайтын minDailyScore)
 int    gSesDay[SESSION_COUNT]  = { -1, -1, -1 };
 double gSesHi[SESSION_COUNT], gSesLo[SESSION_COUNT];
 int    gSesBars[SESSION_COUNT];
@@ -1257,6 +1258,27 @@ bool TradingAllowed()
   }
 
 // dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай. Орох шүүлтүүрийг давах ёстой.
+// Сайтын трендийн хүчний коэффициент (sizeFactor): лотыг үржүүлнэ. Доод лотоос бага болбол өмнөх лотоо үлдээнэ.
+double gNextMul = 1.0;                                        // tester: дараагийн RuleOpen-ийн коэффициент
+double ApplyMul(const double lots, const double mul)
+  {
+   if(mul <= 0 || MathAbs(mul - 1.0) < 1e-9) return(lots);
+   double m = MathMax(0.25, MathMin(2.0, mul));
+   double l2 = NormLots(lots * m);
+   return(l2 > 0 ? l2 : lots);
+  }
+
+// Трендийн хүчээр лотын коэффициент (сайтын lib/setup/sessionRules.ts sizeFactor-тэй ижил)
+double SizeFactor()
+  {
+   double d = TrendScore(PERIOD_D1), h = TrendScore(PERIOD_H4);
+   if(d == EMPTY_VALUE || h == EMPTY_VALUE) return(1.0);
+   d = MathAbs(d); h = MathAbs(h);
+   if(d < 35 || h < 35) return(0.75);
+   if(d >= 65 && h >= 65) return(1.25);
+   return(1.0);
+  }
+
 bool RuleOpen(const int dir, const double slDist, const double tpDist, const datetime exitAt)
   {
    if(SpreadPoints() > MaxSpreadPoints) return(false);
@@ -1264,6 +1286,8 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    if(!GateCheck(dir)) return(false);
    double lots = RuleLots(), sl = slDist, tp = tpDist;
    if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
+   lots = ApplyMul(lots, gNextMul);
+   gNextMul = 1.0;
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
    // Хаах цагийг арилжааны comment-д хадгална (серверийн цаг): робот дахин ачаалсан ч мэднэ
@@ -1333,12 +1357,14 @@ void RuleStep()
          int dir = (trend > 0 && c > gSesHi[k]) ? 1 : ((trend < 0 && c < gSesLo[k]) ? -1 : 0);
          if(dir == 0) continue;
          gSesDone[k] = true;                                     // эхний breakout өдрийг шийднэ (сайттай ижил)
+         if(SES_MINDAILY[k] > 0 && MathAbs(TrendScore(PERIOD_D1)) < SES_MINDAILY[k]) continue;   // тренд сул: өдрийг алгасна
          double mid = (gSesHi[k] + gSesLo[k]) / 2.0;
          double atrD = DailyAtr();
          if(atrD == EMPTY_VALUE || MathAbs(c - mid) < ASIAN_MIN_STOP_ATR * atrD) continue;   // хүрээ хэт нарийн
          double dist = MathAbs(price - mid);
          bool friday = (u.day_of_week == 5);
          datetime exitAt = dayStartServer + ((SES_NEXT07[k] && !friday) ? 31 : 20) * 3600;
+         gNextMul = SizeFactor();                                // трендийн хүчээр лот (сайттай ижил)
          if(RuleOpen(dir, dist, dist * SES_RR[k], exitAt))
             Print("XauBot tester: ", SES_NAME[k], " ", (dir > 0 ? "BUY" : "SELL"), " utc ", TimeToString(utc + 15 * 60, TIME_DATE | TIME_MINUTES), " risk ", Num(dist, 2));
         }
@@ -2145,7 +2171,7 @@ datetime OrderExitAt(const long exitUtc)
 // Нэг захиалгыг сайтын дүрмээр яг тэр чигээр нь авна: шүүлтүүр, хамгаалалт, өдрийн хязгааргүй; зөвхөн лот, эрсдэлийн
 // хэмжээ. Stop, target нь үнээр. Үнэ орох түвшнээс gOSlipR R-ээс илүү явсан, stop-ийг давсан бол орохгүй.
 // Буцаах: "" орсон, эс бөгөөс шалтгаан.
-string TakeOrder(const long id, const int dir, const double entry, const double sl, const double tp, const int age, const long exitUtc)
+string TakeOrder(const long id, const int dir, const double entry, const double sl, const double tp, const int age, const long exitUtc, const double mul = 1.0)
   {
    if(OrderTaken(id)) return(L("энэ дохиогоор орсон", "this signal was taken"));
    if(age > gOMaxAge) return(L("дохио ", "signal older than ") + (string)(gOMaxAge / 60) + L(" минутаас хуучин", " minutes"));
@@ -2162,6 +2188,7 @@ string TakeOrder(const long id, const int dir, const double entry, const double 
    if(TimeCurrent() >= exitAt) return(L("хаах цаг өнгөрсөн", "past the closing time"));
    double lots = RuleLots(), s1 = slD, t1 = tpD;
    if(!SizeTrade(s1, t1, lots, false) || lots <= 0) return(L("хэмжээ: ", "size: ") + GateText(gBlock));
+   lots = ApplyMul(lots, mul);                                   // сайтын трендийн хүчний коэффициент
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return(L("өмнөх захиалгын хариуг хүлээж байна", "waiting for the last order's reply"));
    gOrderTryAt = TimeCurrent();
    // Хаах цаг ба захиалгын id comment-д: дахин ачаалсан ч хаах цагаа мэдэж, нэг захиалгаар хоёр удаа орохгүй
@@ -2212,10 +2239,11 @@ void LiveAsianStep()
       double entry = StringToDouble(f[2]), sl = StringToDouble(f[3]), tp = StringToDouble(f[4]);
       int age = (int)StringToInteger(f[5]);
       long exitUtc = StringToInteger(f[6]);
+      double mul = (ArraySize(f) >= 8) ? StringToDouble(f[7]) : 1.0;   // v3.80: трендийн хүчээр лотын коэффициент
       if(id <= 0 || dir == 0) continue;
       string side = (dir > 0) ? "BUY" : "SELL";
       if(gSignal == "NONE") gSignal = side;
-      string why = (blocked != "") ? blocked : TakeOrder(id, dir, entry, sl, tp, age, exitUtc);
+      string why = (blocked != "") ? blocked : TakeOrder(id, dir, entry, sl, tp, age, exitUtc, mul);
       if(blocked == "" && why == "") blocked = EntryBlockedWhy();             // орсны дараа нээлттэй арилжааны тоо өөрчлөгдөнө
       gReason += (gReason == "" ? "" : " | ") + L("Setup: ", "Setup: ") + side + " " + Num(entry, 2) + " SL " + Num(sl, 2) + " TP " + Num(tp, 2) + " · " + (why == "" ? L("орлоо", "entered") : why);
      }
