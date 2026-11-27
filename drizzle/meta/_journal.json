@@ -190,6 +190,13 @@
       "when": 1795757191939,
       "tag": "0026_price_alert_symbol",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795759100192,
+      "tag": "0027_drop_markets",
+      "breakpoints": true
     }
   ]
 }

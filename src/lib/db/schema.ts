@@ -267,7 +267,6 @@ export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export const priceAlerts = pgTable("price_alerts", {
   id: id(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  symbol: text("symbol").notNull().default("XAUUSD"), // gold, or one of lib/marketList's instruments
   level: doublePrecision("level").notNull(),
   direction: text("direction").notNull(), // "above" | "below"
   createdAt: ts("created_at").notNull().defaultNow(),
