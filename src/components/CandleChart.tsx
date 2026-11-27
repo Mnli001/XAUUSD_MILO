@@ -10,6 +10,7 @@ import { withLive } from "@/lib/liveBar";
 import { CHART_TFS, CHART_TF_LABEL, CHART_TF_MS, snapToBars, type ChartTf } from "@/lib/chartTf";
 import type { BotChartData } from "@/lib/botChart";
 import { LiveBadge } from "./LiveQuote";
+import { FullscreenButton, FullscreenExit, useFullscreen } from "./useFullscreen";
 import { DrawingLayer, type Plan } from "./chart/DrawingLayer";
 import { DrawToolbar, useDrawings } from "./chart/DrawToolbar";
 import type { DrawColor, DrawKind } from "@/lib/chartDraw";
@@ -46,7 +47,7 @@ type Drawn = {
 export type ChartLine = { price: number; title: string; tone: "up" | "down" | "muted" };
 const NO_LINES: ChartLine[] = [];
 
-export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = NO_LINES, onPickPrice, onPlan }: {
+export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = NO_LINES, onPickPrice, onPlan, fs: outer }: {
   levels: Levels | null; bot: BotChartData | null; focus?: { at: number; n: number } | null;
   /** Whose trades `bot` holds: the MT5 robot's, or the member's own demo trades. */
   owner?: "bot" | "demo";
@@ -55,7 +56,11 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
   onPickPrice?: (price: number) => void;
   /** A long/short plan drawn on the chart, sent to the order ticket (Demo trade). */
   onPlan?: (plan: Plan) => void;
+  /** Full screen run by the page (Demo trade fills the screen with the whole terminal); without it the chart fills it alone. */
+  fs?: { full: boolean; toggle: () => void };
 }) {
+  const { ref: ownRef, full: ownFull, toggle: ownToggle, boxClass: ownBox } = useFullscreen<HTMLDivElement>();
+  const fs = outer ?? { full: ownFull, toggle: ownToggle };
   const { t, zone, timeZone } = useViewer();
   const themeTick = useThemeTick();
   const ref = useRef<HTMLDivElement>(null);
@@ -228,7 +233,8 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
       className={`min-h-9 rounded-full border px-3 text-xs font-semibold transition-colors disabled:opacity-40 ${show[k] ? "border-amber-400/50 bg-amber-400/10 text-amber-200" : "border-zinc-700 text-zinc-400 hover:text-zinc-200"}`}>{label}</button>
   );
   return (
-    <div className="card px-0 pb-3 sm:px-0 sm:pb-4">
+    <div ref={ownRef} className={`card px-0 pb-3 sm:px-0 sm:pb-4 ${outer ? "" : ownBox}`}>
+      {!outer && <FullscreenExit fs={fs} />}
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 sm:px-5">
         <div role="group" aria-label={t("Цагийн хүрээ", "Timeframe")} className="-mx-1 flex max-w-full overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-1">
           {CHART_TFS.map((v) => (
@@ -242,6 +248,7 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
           {toggle("ema", "EMA")}
           {toggle("levels", t("Түвшин", "Levels"), !levels)}
           {toggle("trades", owner === "demo" ? t("Миний арилжаа", "My trades") : t("Роботын арилжаа", "Robot trades"), !bot)}
+          <FullscreenButton fs={fs} />
         </div>
       </div>
       {/* The bar under the pointer (or the newest): open, high, low, close and its move. */}
@@ -259,7 +266,7 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
       <DrawToolbar tool={tool} setTool={(k) => { setTool(k); if (k) setSelected(null); }} magnetOn={magnetOn} setMagnet={setMagnet} color={color} setColor={setColor}
         selected={selected !== null} onDelete={() => { setDrawings((ds) => ds.filter((d) => d.id !== selected)); setSelected(null); }}
         onClear={() => { setDrawings(() => []); setSelected(null); }} count={drawings.length} />
-      <div className="relative h-[60dvh] max-h-[660px] min-h-[360px] min-w-0 flex-1">
+      <div className={`relative min-w-0 flex-1 ${fs.full ? "h-[calc(100dvh-200px)] min-h-[380px]" : "h-[60dvh] max-h-[660px] min-h-[360px]"}`}>
         <div ref={ref} className="absolute inset-0" />
         {status === "ok" && <DrawingLayer getHandle={getHandle} version={drawnAt} tool={tool} setTool={setTool} drawings={drawings} setDrawings={setDrawings}
           selected={selected} setSelected={setSelected} magnetOn={magnetOn} color={color} onPlan={onPlan} />}
