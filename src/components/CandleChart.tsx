@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createChart, createSeriesMarkers, CandlestickSeries, LineSeries, type IChartApi, type ISeriesApi, type IPriceLine, type ISeriesMarkersPluginApi, type SeriesMarker, type Time, type UTCTimestamp } from "lightweight-charts";
 import { ema } from "@/lib/analysis/indicators";
 import type { Levels } from "@/lib/snapshot";
@@ -10,6 +10,9 @@ import { withLive } from "@/lib/liveBar";
 import { CHART_TFS, CHART_TF_LABEL, CHART_TF_MS, snapToBars, type ChartTf } from "@/lib/chartTf";
 import type { BotChartData } from "@/lib/botChart";
 import { LiveBadge } from "./LiveQuote";
+import { DrawingLayer, type Plan } from "./chart/DrawingLayer";
+import { DrawToolbar, useDrawings } from "./chart/DrawToolbar";
+import type { DrawColor, DrawKind } from "@/lib/chartDraw";
 
 type Row = { time: number; open: number; high: number; low: number; close: number };
 const TF_KEY = "xau.chart.tf";
@@ -43,13 +46,15 @@ type Drawn = {
 export type ChartLine = { price: number; title: string; tone: "up" | "down" | "muted" };
 const NO_LINES: ChartLine[] = [];
 
-export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = NO_LINES, onPickPrice }: {
+export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = NO_LINES, onPickPrice, onPlan }: {
   levels: Levels | null; bot: BotChartData | null; focus?: { at: number; n: number } | null;
   /** Whose trades `bot` holds: the MT5 robot's, or the member's own demo trades. */
   owner?: "bot" | "demo";
   lines?: ChartLine[];
   /** Called with the price under a click on the chart (the demo order ticket takes it as the order's price). */
   onPickPrice?: (price: number) => void;
+  /** A long/short plan drawn on the chart, sent to the order ticket (Demo trade). */
+  onPlan?: (plan: Plan) => void;
 }) {
   const { t, zone, timeZone } = useViewer();
   const themeTick = useThemeTick();
@@ -63,6 +68,16 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
   const quote = useQuote();
   const drawn = useRef<Drawn | null>(null);
   const lines = useRef<IPriceLine[]>([]);
+  const [drawings, setDrawings] = useDrawings();
+  const [tool, setTool] = useState<DrawKind | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [magnetOn, setMagnet] = useState(true);
+  const [color, setColorState] = useState<DrawColor>("amber");
+  const setColor = (c: DrawColor) => { setColorState(c); if (selected) setDrawings((ds) => ds.map((d) => (d.id === selected ? { ...d, color: c } : d))); };
+  const getHandle = useCallback(() => {
+    const d = drawn.current;
+    return d ? { chart: d.chart, series: d.series, rows: d.rows, step: CHART_TF_MS[d.tf] } : null;
+  }, []);
   const pickRef = useRef(onPickPrice);
   useEffect(() => { pickRef.current = onPickPrice; }, [onPickPrice]);
 
@@ -240,8 +255,14 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
           {change !== null && <span className={change > 0 ? "text-emerald-400" : change < 0 ? "text-red-400" : ""}>{change > 0 ? "+" : ""}{change.toFixed(2)}%</span>}
         </>}
       </p>
-      <div className="relative h-[60dvh] max-h-[660px] min-h-[360px] border-y border-zinc-800">
+      <div className="flex flex-col border-y border-zinc-800 sm:flex-row">
+      <DrawToolbar tool={tool} setTool={(k) => { setTool(k); if (k) setSelected(null); }} magnetOn={magnetOn} setMagnet={setMagnet} color={color} setColor={setColor}
+        selected={selected !== null} onDelete={() => { setDrawings((ds) => ds.filter((d) => d.id !== selected)); setSelected(null); }}
+        onClear={() => { setDrawings(() => []); setSelected(null); }} count={drawings.length} />
+      <div className="relative h-[60dvh] max-h-[660px] min-h-[360px] min-w-0 flex-1">
         <div ref={ref} className="absolute inset-0" />
+        {status === "ok" && <DrawingLayer getHandle={getHandle} version={drawnAt} tool={tool} setTool={setTool} drawings={drawings} setDrawings={setDrawings}
+          selected={selected} setSelected={setSelected} magnetOn={magnetOn} color={color} onPlan={onPlan} />}
         {status !== "ok" && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 px-6 text-center text-sm text-zinc-500">
             {status !== "error" && <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500" />}
@@ -250,6 +271,7 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
               : t("Чартын дата татаж чадсангүй. Хуудсаа дахин ачаална уу.", "Could not load chart data. Reload the page.")}
           </div>
         )}
+      </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 text-xs text-zinc-500 sm:px-5">
         <span>{t(`Цаг ${zone}-аар.`, `Times in ${zone}.`)}</span>

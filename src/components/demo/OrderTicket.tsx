@@ -16,8 +16,10 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
  * The order ticket: side, market or pending, size, stop and target, with what the trade risks and needs in
  * margin worked out before it is sent. For a beginner, a trade with warnings waits for a second press.
  */
-export function OrderTicket({ view, price, now, nextHigh, picked, onDone }: {
+export function OrderTicket({ view, price, now, nextHigh, picked, plan = null, onDone }: {
   view: DemoView; price: Price; now: number; nextHigh: number | null; picked: { price: number; n: number } | null;
+  /** A long/short plan drawn on the chart: its side, entry, stop and target fill the form. */
+  plan?: { side: Side; entry: number; sl: number; tp: number; n: number } | null;
   onDone: (view: DemoView, message: string) => void;
 }) {
   const { t } = useViewer();
@@ -44,6 +46,24 @@ export function OrderTicket({ view, price, now, nextHigh, picked, onDone }: {
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new click, not every tick
   }, [picked]);
+
+  // A plan drawn on the chart: at the market if its entry is where the price is now, otherwise a limit or a stop.
+  useEffect(() => {
+    if (!plan || !price) return;
+    const now = plan.side === "BUY" ? price.ask : price.bid;
+    /* eslint-disable react-hooks/set-state-in-effect -- the plan fills the form */
+    setSide(plan.side);
+    setSl(plan.sl.toFixed(2));
+    setTp(plan.tp.toFixed(2));
+    if (Math.abs(plan.entry - now) <= 0.5) setType("MARKET");
+    else {
+      setAt(plan.entry.toFixed(2));
+      setType(plan.side === "BUY" ? (plan.entry < now ? "LIMIT" : "STOP") : (plan.entry > now ? "LIMIT" : "STOP"));
+    }
+    setConfirm(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only a new plan, not every tick
+  }, [plan]);
 
   const entry = type === "MARKET" ? (price ? (side === "BUY" ? price.ask : price.bid) : null) : num(at);
   const nLots = num(lots) ?? 0;

@@ -5380,6 +5380,86 @@
   "file": "src/components/TodayCards.tsx"
  },
  {
+  "h": "b473524a",
+  "en": "Trend line",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "9f6da601",
+  "en": "Horizontal line",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "87d1f087",
+  "en": "Zone (rectangle)",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "3e142d5e",
+  "en": "Text",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "400e7120",
+  "en": "Long position (BUY plan)",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "b9281166",
+  "en": "Short position (SELL plan)",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "eea425de",
+  "en": "Drawing tools",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "d35689e2",
+  "en": "Select / move the chart",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "4f3c59e6",
+  "en": "Magnet: snaps to the candle's high, low, open or close",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "2ecca61d",
+  "en": "Colour",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "e6221f6a",
+  "en": "Delete the selected drawing (Delete)",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "97a78547",
+  "en": "Delete selected",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "36fb2bb4",
+  "en": "Press again to remove all",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "51e55251",
+  "en": "Remove all drawings",
+  "file": "src/components/chart/DrawToolbar.tsx"
+ },
+ {
+  "h": "7feb0bcc",
+  "en": "Use as order",
+  "file": "src/components/chart/DrawingLayer.tsx"
+ },
+ {
+  "h": "1440c15d",
+  "en": "Note",
+  "file": "src/components/chart/DrawingLayer.tsx"
+ },
+ {
   "h": "17fd446d",
   "en": "Money added",
   "file": "src/components/demo/DemoAccountTab.tsx"
@@ -5763,6 +5843,11 @@
   "h": "a49dd09e",
   "en": "Held",
   "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "6c54bc7a",
+  "en": "The plan is in the order ticket. Check the lots and send it.",
+  "file": "src/components/demo/DemoTerminal.tsx"
  },
  {
   "h": "99494ae8",
@@ -7272,11 +7357,6 @@
  {
   "h": "27f4c033",
   "en": "Profit $",
-  "file": "src/lib/export.ts"
- },
- {
-  "h": "1440c15d",
-  "en": "Note",
   "file": "src/lib/export.ts"
  },
  {

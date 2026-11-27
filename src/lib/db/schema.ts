@@ -389,3 +389,10 @@ export const demoCash = pgTable("demo_cash", {
   balanceAfter: doublePrecision("balance_after").notNull(),
   at: ts("at").notNull().defaultNow(),
 }, (t) => [index("demo_cash_account").on(t.accountId, t.at)]);
+
+/** A member's chart drawings (lines, zones, Fibonacci, notes, long/short plans), one list shared by Chart and Demo trade. */
+export const chartDrawings = pgTable("chart_drawings", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  data: jsonb("data").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
