@@ -25,6 +25,7 @@ const stopReasons = (t: T, file: string | null): Record<string, string> => ({
   MANUAL: t("гараар зогсоосон", "stopped by hand"), TARGET: t("ашгийн зорилтод хүрсэн", "profit target reached"), MAX_LOSS: t("алдагдлын хязгаарт хүрсэн", "loss limit reached"),
   TIME: t("төлөвлөсөн хугацаа дууссан", "the planned time ran out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("удаан хугацаанд дохио гараагүй", "no signal for a long time"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
+  RISK_DAILY: t("эрсдэлийн менежер: өдрийн алдагдлын хязгаарт хүрсэн", "risk manager: today's loss limit reached"), RISK_MAX: t("эрсдэлийн менежер: нийт алдагдлын хязгаарт хүрсэн", "risk manager: overall loss limit reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"), TOO_MANY_ACCOUNTS: t("нэг багцад 3 хүртэл MT5 данс холбоно", "a plan links up to 3 MT5 accounts"),
   OLD_ROBOT: t(`роботын файл хуучин: шинэ XauBot.ex5${file ? ` (${file})` : ""} татаж солино уу`, `the robot file is old: download the new XauBot.ex5${file ? ` (${file})` : ""} and replace it`),
 });

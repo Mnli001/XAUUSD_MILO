@@ -289,3 +289,22 @@ export const conditionAlerts = pgTable("condition_alerts", {
   lastFiredAt: ts("last_fired_at"),
 }, (t) => [index("condition_alerts_user").on(t.userId)]);
 export type ConditionAlert = typeof conditionAlerts.$inferSelect;
+
+/**
+ * A member's own limits for one MT5 account, the way prop firms set them: a daily loss limit and an overall loss
+ * limit as % of the account size, and an optional profit target. Checked on every robot report against equity.
+ */
+export const riskRules = pgTable("risk_rules", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull(),
+  accountSize: doublePrecision("account_size").notNull(),
+  dailyLossPct: doublePrecision("daily_loss_pct").notNull(),
+  maxLossPct: doublePrecision("max_loss_pct").notNull(),
+  profitTargetPct: doublePrecision("profit_target_pct"),
+  closeOnBreach: boolean("close_on_breach").notNull().default(true),
+  dayKey: text("day_key").notNull().default(""), // the UTC day dayStartEquity belongs to
+  dayStartEquity: doublePrecision("day_start_equity").notNull().default(0),
+  warned: text("warned").notNull().default(""), // notices already sent: "<day>:daily", "max", "target"
+  breach: text("breach"), // "RISK_MAX", or "RISK_DAILY:<day>"
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.userId, t.login] })]);
