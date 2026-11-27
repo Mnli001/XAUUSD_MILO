@@ -52,7 +52,8 @@ export function useFullscreen<E extends HTMLElement>() {
     setFull(true);
   }, [full, native]);
 
-  const boxClass = full ? `${native ? "" : "fixed inset-0 z-[70] "}overflow-y-auto bg-zinc-950 p-2 sm:p-4` : "";
+  // Room at the top for the floating "exit full screen" button.
+  const boxClass = full ? `${native ? "" : "fixed inset-0 z-[70] "}overflow-y-auto bg-zinc-950 px-2 pb-2 pt-16 sm:px-4 sm:pb-4` : "";
   return { ref, full, toggle, boxClass };
 }
 export type Fullscreen = ReturnType<typeof useFullscreen<HTMLElement>>;
@@ -66,6 +67,22 @@ export function FullscreenButton({ fs }: { fs: { full: boolean; toggle: () => vo
       <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d={fs.full ? "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" : "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"} />
       </svg>
+    </button>
+  );
+}
+
+/**
+ * While full screen, a labelled button pinned to the top right (inside the full-screen box, so the browser shows
+ * it), so the way back is always in sight whatever is scrolled or wrapped below.
+ */
+export function FullscreenExit({ fs }: { fs: { full: boolean; toggle: () => void } }) {
+  const { t } = useViewer();
+  if (!fs.full) return null;
+  return (
+    <button type="button" onClick={() => void fs.toggle()} style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
+      className="fixed right-3 z-[90] inline-flex min-h-11 items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-lg hover:border-zinc-400 sm:right-5">
+      <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      {t("Бүтэн дэлгэцээс гарах", "Exit full screen")}
     </button>
   );
 }

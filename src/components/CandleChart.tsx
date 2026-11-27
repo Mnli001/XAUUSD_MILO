@@ -10,7 +10,7 @@ import { withLive } from "@/lib/liveBar";
 import { CHART_TFS, CHART_TF_LABEL, CHART_TF_MS, snapToBars, type ChartTf } from "@/lib/chartTf";
 import type { BotChartData } from "@/lib/botChart";
 import { LiveBadge } from "./LiveQuote";
-import { FullscreenButton, useFullscreen } from "./useFullscreen";
+import { FullscreenButton, FullscreenExit, useFullscreen } from "./useFullscreen";
 import { DrawingLayer, type Plan } from "./chart/DrawingLayer";
 import { DrawToolbar, useDrawings } from "./chart/DrawToolbar";
 import type { DrawColor, DrawKind } from "@/lib/chartDraw";
@@ -234,6 +234,7 @@ export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = 
   );
   return (
     <div ref={ownRef} className={`card px-0 pb-3 sm:px-0 sm:pb-4 ${outer ? "" : ownBox}`}>
+      {!outer && <FullscreenExit fs={fs} />}
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-3 px-4 sm:px-5">
         <div role="group" aria-label={t("Цагийн хүрээ", "Timeframe")} className="-mx-1 flex max-w-full overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-1">
           {CHART_TFS.map((v) => (

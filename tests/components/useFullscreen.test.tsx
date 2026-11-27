@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { useFullscreen, FullscreenButton } from "@/components/useFullscreen";
+import { useFullscreen, FullscreenButton, FullscreenExit } from "@/components/useFullscreen";
 
 function Box() {
   const fs = useFullscreen<HTMLDivElement>();
-  return <div ref={fs.ref} data-testid="box" className={`${fs.full ? "full" : ""} ${fs.boxClass}`}><FullscreenButton fs={fs} /></div>;
+  return <div ref={fs.ref} data-testid="box" className={`${fs.full ? "full" : ""} ${fs.boxClass}`}><FullscreenButton fs={fs} /><FullscreenExit fs={fs} /></div>;
 }
 
 test("without the browser's fullscreen (an iPhone), the box fills the window instead, and Escape or the button brings it back", () => {
@@ -33,4 +33,13 @@ test("with the browser's fullscreen, the box itself goes fullscreen and follows 
   expect(box).toHaveClass("full");
   await act(async () => { await document.exitFullscreen(); }); // the browser's own Escape
   expect(box).not.toHaveClass("full");
+});
+
+test("while full screen a labelled exit button is always there, and it brings the page back", async () => {
+  render(<Box />);
+  expect(screen.queryByRole("button", { name: "Бүтэн дэлгэцээс гарах" })).toBeNull();
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Бүтэн дэлгэц" })); });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Бүтэн дэлгэцээс гарах" })); });
+  expect(screen.getByTestId("box")).not.toHaveClass("full");
+  expect(screen.queryByRole("button", { name: "Бүтэн дэлгэцээс гарах" })).toBeNull();
 });

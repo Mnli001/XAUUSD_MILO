@@ -12,7 +12,7 @@ import { JournalSummary } from "../JournalView";
 import { LiveBadge } from "../LiveQuote";
 import { useViewer } from "../PrefsProvider";
 import { usePoll } from "../usePoll";
-import { useFullscreen } from "../useFullscreen";
+import { FullscreenExit, useFullscreen } from "../useFullscreen";
 import { cash, reasonText, tone, usd } from "./common";
 import { DemoAccountTab } from "./DemoAccountTab";
 import { DemoGuide, DemoMissions } from "./DemoLearn";
@@ -98,6 +98,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
 
   return (
     <div ref={fsRef} className={`space-y-4 sm:space-y-5 ${fsBox}`}>
+      <FullscreenExit fs={fs} />
       <div aria-live="polite" className="pointer-events-none fixed right-4 top-20 z-50 flex w-72 flex-col gap-2">
         {toasts.map((x) => <p key={x.id} className={`pointer-events-auto rounded-xl border bg-zinc-900 px-4 py-3 text-sm shadow-lg ${x.tone > 0 ? "border-emerald-500/50 text-emerald-200" : x.tone < 0 ? "border-red-500/50 text-red-200" : "border-zinc-700 text-zinc-100"}`}>{x.text}</p>)}
       </div>
