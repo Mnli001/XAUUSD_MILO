@@ -126,7 +126,7 @@ test("a small account gets a plain note with the smallest lot's risk and the cen
   expect(risk).toHaveTextContent("Данс жижиг байна ($200.00)");
   expect(risk).toHaveTextContent("5%–10%-ийг эрсдэлд оруулна, таны сонгосон 1%-аас их");
   expect(risk).toHaveTextContent("2.5 дахинаас их бол robot тэр арилжааг алгасна");
-  expect(risk).toHaveTextContent("JustMarkets Standard Cent");
+  expect(risk).toHaveTextContent(/cent/i);
   cleanup();
   panel(view({ hasToken: true, balance: 300 })); // still onboarding, but the robot has reported a balance
   const card = screen.getByRole("heading", { name: /MT5 холбох/ }).closest("section")!;

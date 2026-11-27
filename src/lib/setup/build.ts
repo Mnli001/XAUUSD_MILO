@@ -24,7 +24,7 @@ export type Setup = SetupNow & {
  */
 export const BROKER_RECORD = {
   n: 209, winPct: 48, avgR: 0.212, profitFactor: 1.44, // the Asian rule with its 12:00 UTC entry window (scripts/asian-improve-research.ts)
-  from: "2019-01", to: "2026-11", source: "JustMarkets XAUUSD", checkedOn: "2026-11-26",
+  from: "2019-01", to: "2026-11", source: "MT5 broker XAUUSD", checkedOn: "2026-11-26",
   kind: "research" as const, // a tester result, not trades the site made
   method: "MT5 Strategy Tester, 1-minute OHLC, broker spread",
   note: "MT5 tester, 2019–2026, without the news filter", // the short English label (siteCopy BrokerRecord.note)

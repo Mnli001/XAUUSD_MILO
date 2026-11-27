@@ -57,7 +57,7 @@ export function SmallAccountNote({ balance, riskPct }: { balance: number | null;
       <span className="font-semibold">{t("Данс жижиг байна", "This account is small")} ({money(balance)}). </span>
       {t(`Хамгийн бага 0.01 lot-той арилжааны stop ихэвчлэн ${stops} тул нэг арилжаа балансын ${range}-ийг эрсдэлд оруулна${pct ? `, таны сонгосон ${pct}-аас их` : ""}.`, `The smallest trade, 0.01 lot, usually has a ${stops} stop, so one trade risks ${range} of the balance${pct ? `, more than your ${pct}` : ""}.`)}
       {pct && <> {t(`Доод lot-ын эрсдэл сонгосноос ${SMALL_ACCOUNT_X} дахинаас их бол robot тэр арилжааг алгасна.`, `The robot skips a trade when the smallest lot would risk over ${SMALL_ACCOUNT_X}× your choice.`)}</>}
-      {" "}{t("Cent данс (жишээ нь JustMarkets Standard Cent) нээвэл lot 100 дахин жижиг болж, сонгосон эрсдэлээрээ арилжаална.", "A cent account (for example JustMarkets Standard Cent) makes lots 100 times smaller, so trades keep to the risk you chose.")}
+      {" "}{t("Cent данс нээвэл lot 100 дахин жижиг болж, сонгосон эрсдэлээрээ арилжаална.", "A cent account makes lots 100 times smaller, so trades keep to the risk you chose.")}
     </p>
   );
 }

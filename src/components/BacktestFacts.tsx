@@ -7,7 +7,7 @@ export function BacktestNote({ t, c = CURVES, className = "" }: { t: T; c?: Back
   return (
     <p className={`text-xs leading-relaxed text-zinc-500 ${className}`}>
       <span className="font-semibold text-zinc-400">{t("Түүхэн датан дээрх туршилт (backtest)", "A test on historical data (backtest)")}</span>
-      {" · "}{t(`JustMarkets XAUUSD ${spanLabel(c)}, spread $${c.spread.toFixed(2)}, хаагдсан арилжаагаар. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.`, `JustMarkets XAUUSD ${spanLabel(c)}, $${c.spread.toFixed(2)} spread, on closed trades. Past results do not guarantee future profit.`)}
+      {" · "}{t(`MT5 брокерын XAUUSD ${spanLabel(c)}, spread $${c.spread.toFixed(2)}, хаагдсан арилжаагаар. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.`, `MT5 broker XAUUSD ${spanLabel(c)}, $${c.spread.toFixed(2)} spread, on closed trades. Past results do not guarantee future profit.`)}
     </p>
   );
 }
