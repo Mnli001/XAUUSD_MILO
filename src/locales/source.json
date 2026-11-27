@@ -120,41 +120,6 @@
   "file": "src/app/(app)/journal/page.tsx"
  },
  {
-  "h": "77a70d38",
-  "en": "Other markets",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "920e5814",
-  "en": "Silver, the euro, Nasdaq and bitcoin next to gold: direction, yesterday's range and an hourly chart. Updated every hour. Setups and the robot work on gold only.",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "a9535ad6",
-  "en": "{0}: hourly chart",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "b3a46bdf",
-  "en": "{0} · hourly chart, EMA 50",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "693c4cba",
-  "en": "Gold's full chart",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "e2a52ecc",
-  "en": "{0} hourly candles",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
-  "h": "1555414a",
-  "en": "No data yet. It updates every hour.",
-  "file": "src/app/(app)/markets/page.tsx"
- },
- {
   "h": "cbf40866",
   "en": "News",
   "file": "src/app/(app)/news/page.tsx"
@@ -1925,11 +1890,6 @@
   "file": "src/components/AppNav.tsx"
  },
  {
-  "h": "fe52d4c6",
-  "en": "Markets",
-  "file": "src/components/AppNav.tsx"
- },
- {
   "h": "2edb7f18",
   "en": "Journal",
   "file": "src/components/AppNav.tsx"
@@ -3280,16 +3240,6 @@
   "file": "src/components/LotCalculator.tsx"
  },
  {
-  "h": "7a6ccb01",
-  "en": "buyers",
-  "file": "src/components/MarketsView.tsx"
- },
- {
-  "h": "93ae68c7",
-  "en": "Yesterday",
-  "file": "src/components/MarketsView.tsx"
- },
- {
   "h": "ec266ec8",
   "en": "Watch",
   "file": "src/components/MyDashboard.tsx"
@@ -3687,11 +3637,6 @@
  {
   "h": "b564e9d1",
   "en": "Tell me when gold reaches",
-  "file": "src/components/PriceAlertsCard.tsx"
- },
- {
-  "h": "c860b925",
-  "en": "Tell me when {0} reaches",
   "file": "src/components/PriceAlertsCard.tsx"
  },
  {
@@ -6265,23 +6210,8 @@
   "file": "src/lib/journalStats.ts"
  },
  {
-  "h": "6c94b6b3",
-  "en": "Gold",
-  "file": "src/lib/marketList.ts"
- },
- {
-  "h": "27a78440",
-  "en": "Silver",
-  "file": "src/lib/marketList.ts"
- },
- {
-  "h": "32a58749",
-  "en": "Euro / dollar",
-  "file": "src/lib/marketList.ts"
- },
- {
-  "h": "7e0c7f96",
-  "en": "🔔 <b>{0} reached {1}</b>",
+  "h": "8cc88cb7",
+  "en": "🔔 <b>XAUUSD reached {0}</b>",
   "file": "src/lib/priceAlerts.ts"
  },
  {
@@ -6295,8 +6225,8 @@
   "file": "src/lib/priceAlerts.ts"
  },
  {
-  "h": "feea5727",
-  "en": "🔔 {0} reached {1}",
+  "h": "c3fd6ce2",
+  "en": "🔔 XAUUSD reached {0}",
   "file": "src/lib/priceAlerts.ts"
  },
  {

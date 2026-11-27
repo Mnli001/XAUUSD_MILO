@@ -11,7 +11,6 @@ export const planFeatures = (t: T): { title: string; body: string; href: string 
   { title: t("Мэдээний календарь", "News calendar"), body: t("NFP, CPI, FOMC: хэзээ гарах, өмнө нь алт хэрхэн хөдөлсөн.", "NFP, CPI, FOMC: when they land and how gold moved after them before."), href: "/news" },
   { title: t("Журнал ба гүйцэтгэл", "Journal and performance"), body: t("MT5-ын хаасан арилжаа автоматаар орж, win rate, P&L, drawdown-ыг задлана.", "Your MT5 closed trades arrive on their own, with win rate, P&L and drawdown broken down."), href: "/journal" },
   { title: t("Дасгал (bar replay)", "Practice (bar replay)"), body: t("Өнгөрсөн өдрийг лаа лаагаар тоглуулж, мөнгө эрсдэлгүй дадлага хийнэ.", "Replay a past day bar by bar and practise with no money at risk."), href: "/practice" },
-  { title: t("Бусад зах зээл", "Other markets"), body: t("Мөнгө, евро, Nasdaq, bitcoin-ыг алттай зэрэгцүүлж харна.", "Silver, the euro, Nasdaq and bitcoin side by side with gold."), href: "/markets" },
   { title: t("Сануулга", "Alerts"), body: t("Үнэ болон нөхцөлийн сануулга утас, Telegram руу.", "Price and condition alerts to your phone and Telegram."), href: "/today" },
 ];
 

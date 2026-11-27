@@ -1,5 +1,5 @@
 {
-  "id": "7eeceec8-397a-493d-9314-2d72bddc0bdd",
+  "id": "dc89f10d-ce00-4881-a5e1-2b897f7d174b",
   "prevId": "3fafa9f1-46e0-4628-bbd2-feaf88ce7f24",
   "version": "7",
   "dialect": "postgresql",
@@ -1383,13 +1383,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "symbol": {
-          "name": "symbol",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'XAUUSD'"
-        },
         "level": {
           "name": "level",
           "type": "double precision",
@@ -2122,13 +2115,6 @@
         },
         "signals_news": {
           "name": "signals_news",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "brief_off": {
-          "name": "brief_off",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
