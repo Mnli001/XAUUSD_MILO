@@ -271,3 +271,21 @@ export const priceAlerts = pgTable("price_alerts", {
   triggeredPrice: doublePrecision("triggered_price"),
 }, (t) => [index("price_alerts_open").on(t.triggeredAt, t.direction, t.level), index("price_alerts_user").on(t.userId, t.createdAt)]);
 export type PriceAlert = typeof priceAlerts.$inferSelect;
+
+/**
+ * "Tell me when …" on a chart condition rather than a price: RSI crossing a level, EMA 50/200 crossing, yesterday's
+ * high or low broken or swept. Checked on each closed bar of its timeframe; it fires each time the condition newly
+ * happens (at most once per bar) until it is deleted.
+ */
+export const conditionAlerts = pgTable("condition_alerts", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull().default("XAUUSD"),
+  kind: text("kind").notNull(),
+  timeframe: text("timeframe").notNull(), // "15min" | "1h" | "4h"
+  value: doublePrecision("value"), // the RSI level, for the RSI kinds
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastBarAt: ts("last_bar_at"), // the bar it last fired on, so no bar fires twice
+  lastFiredAt: ts("last_fired_at"),
+}, (t) => [index("condition_alerts_user").on(t.userId)]);
+export type ConditionAlert = typeof conditionAlerts.$inferSelect;

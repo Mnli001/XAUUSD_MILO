@@ -2,7 +2,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { vi } from "vitest";
 
-vi.mock("@/lib/actions/alerts", () => ({ createPriceAlertAction: async () => ({}), deletePriceAlertAction: async () => {} }));
+vi.mock("@/lib/actions/alerts", () => ({ createPriceAlertAction: async () => ({}), deletePriceAlertAction: async () => {}, createConditionAlertAction: async () => ({}), deleteConditionAlertAction: async () => {} }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
 import { PriceAlertsCard, type AlertRow } from "@/components/PriceAlertsCard";
 
@@ -29,4 +29,15 @@ test("with no channel chosen it points to Settings; at the limit the Set button 
   render(<PriceAlertsCard alerts={full} price={3598.4} channels={{ telegram: false, push: false }} max={10} />);
   expect(screen.getByRole("link", { name: /Тохиргоонд утасны мэдэгдэл/ })).toHaveAttribute("href", "/settings#push");
   expect(screen.getByRole("button", { name: "Тавих" })).toBeDisabled();
+});
+
+test("condition alerts ask for a level only for RSI and no timeframe for yesterday's high and low", async () => {
+  const { fireEvent } = await import("@testing-library/react");
+  render(<PriceAlertsCard alerts={[]} price={3598.4} channels={{ telegram: true, push: true }} max={10} conditions={{ rows: [{ id: "x", label: "RSI (14) H1 30-аас доош орвол", lastFired: "11-27 10:00" }], max: 10 }} />);
+  expect(screen.getByLabelText("Түвшин")).toHaveValue(30);
+  expect(screen.getByLabelText("Хугацаа")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Нөхцөл"), { target: { value: "prev_high_sweep" } });
+  expect(screen.queryByLabelText("Түвшин")).toBeNull();
+  expect(screen.queryByLabelText("Хугацаа")).toBeNull();
+  expect(within(screen.getByRole("list", { name: "Нөхцөлт сэрэмжлүүлэг" })).getByText(/сүүлд 11-27 10:00/)).toBeInTheDocument();
 });

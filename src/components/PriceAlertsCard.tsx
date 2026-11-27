@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { useT } from "./PrefsProvider";
 import { createPriceAlertAction, deletePriceAlertAction, type AlertState } from "@/lib/actions/alerts";
+import { ConditionAlerts, type ConditionRow } from "./ConditionAlerts";
 
 export type AlertRow = { id: string; level: number; direction: "above" | "below"; set: string; fired: string | null; firedPrice: number | null };
 
@@ -12,7 +13,7 @@ const px = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, 
  * "Tell me when gold reaches …": a level to set, the alerts still waiting (nearest first) and the last few that fired.
  * `channels` says where a fired alert goes, so the reader knows whether to turn something on.
  */
-export function PriceAlertsCard({ alerts, price, channels, max }: { alerts: AlertRow[]; price: number | null; channels: { telegram: boolean; push: boolean }; max: number }) {
+export function PriceAlertsCard({ alerts, price, channels, max, conditions = null }: { alerts: AlertRow[]; price: number | null; channels: { telegram: boolean; push: boolean }; max: number; conditions?: { rows: ConditionRow[]; max: number } | null }) {
   const t = useT();
   const [state, action, pending] = useActionState<AlertState, FormData>(createPriceAlertAction, {});
   const form = useRef<HTMLFormElement>(null);
@@ -79,6 +80,7 @@ export function PriceAlertsCard({ alerts, price, channels, max }: { alerts: Aler
           )}
         </div>
       </div>
+      {conditions && <ConditionAlerts rows={conditions.rows} max={conditions.max} />}
     </section>
   );
 }

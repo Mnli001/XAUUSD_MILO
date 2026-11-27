@@ -148,6 +148,13 @@
       "when": 1795749979419,
       "tag": "0020_push_and_price_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795754532881,
+      "tag": "0021_condition_alerts",
+      "breakpoints": true
     }
   ]
 }

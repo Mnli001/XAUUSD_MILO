@@ -8,6 +8,7 @@ import { ensureAdmin } from "./users";
 import { runTelegramJobs } from "./signals";
 import { sendWeeklyReport, watchFeed } from "./watch";
 import { checkPriceAlerts } from "./priceAlerts";
+import { checkConditionAlerts } from "./conditionAlerts";
 import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
@@ -58,6 +59,7 @@ async function run(job: Job, now: Date): Promise<void> {
       const [bar] = await loadStored(SYMBOL, "15min", 1);
       if (bar) { const n = await checkPriceAlerts({ high: bar.high, low: bar.low, price: bar.close, at: new Date(bar.time.getTime() + 15 * 6e4), from: bar.time }); if (n) console.log(`[scheduler] ${n} price alert(s) fired`); }
     } catch (e) { console.error("[scheduler] price alerts failed", e); }
+    try { const n = await checkConditionAlerts(now); if (n) console.log(`[scheduler] ${n} condition alert(s) fired`); } catch (e) { console.error("[scheduler] condition alerts failed", e); }
     try { const f = await watchFeed(now); if (f) console.log(`[scheduler] price feed ${f}`); } catch (e) { console.error("[scheduler] feed watch failed", e); }
     try { const n = await sendWeeklyReport(now); if (n) console.log(`[scheduler] weekly report sent to ${n}`); } catch (e) { console.error("[scheduler] weekly report failed", e); }
   }
