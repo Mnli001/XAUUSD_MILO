@@ -65,6 +65,26 @@
   "file": "src/app/(app)/chart/page.tsx"
  },
  {
+  "h": "10cbbb60",
+  "en": "Demo trade",
+  "file": "src/app/(app)/demo/page.tsx"
+ },
+ {
+  "h": "f6f1dff9",
+  "en": "Trade",
+  "file": "src/app/(app)/demo/page.tsx"
+ },
+ {
+  "h": "8496bde3",
+  "en": "Replay a past day bar by bar and practise entering setups with no money at risk. Which day it is stays hidden until the end.",
+  "file": "src/app/(app)/demo/page.tsx"
+ },
+ {
+  "h": "3b91d6d2",
+  "en": "Open a demo account and trade XAUUSD at the live price the way a real trader does: market and pending orders, stops and targets, margin, partial closes. The money is play money; the price and the rules are real.",
+  "file": "src/app/(app)/demo/page.tsx"
+ },
+ {
   "h": "1347bc88",
   "en": "Gold drivers",
   "file": "src/app/(app)/drivers/page.tsx"
@@ -405,6 +425,16 @@
   "file": "src/app/(app)/plans/page.tsx"
  },
  {
+  "h": "dba999b2",
+  "en": "The system's historical result",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "78cdadbb",
+  "en": "In every plan (Plus, Pro and Max are the same; only the length differs)",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
   "h": "30d81b4d",
   "en": "Your payments",
   "file": "src/app/(app)/plans/page.tsx"
@@ -413,21 +443,6 @@
   "h": "c35b0729",
   "en": "Pay",
   "file": "src/app/(app)/plans/page.tsx"
- },
- {
-  "h": "ec65ee90",
-  "en": "Practice",
-  "file": "src/app/(app)/practice/page.tsx"
- },
- {
-  "h": "18bf142b",
-  "en": "Practice (bar replay)",
-  "file": "src/app/(app)/practice/page.tsx"
- },
- {
-  "h": "8496bde3",
-  "en": "Replay a past day bar by bar and practise entering setups with no money at risk. Which day it is stays hidden until the end.",
-  "file": "src/app/(app)/practice/page.tsx"
  },
  {
   "h": "f2531474",
@@ -845,6 +860,226 @@
   "file": "src/app/(app)/today/page.tsx"
  },
  {
+  "h": "7e88fbf4",
+  "en": "Run the robot 24/7 on a VPS",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "b05c41c4",
+  "en": "Plain steps to rent a cheap Windows VPS and keep MT5 and XauBot running day and night.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "68fdb4a3",
+  "en": "Rent a Windows VPS",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "643d8735",
+  "en": "A VPS is a rented computer that stays on in a data centre. The robot keeps working even when your own computer is off.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "430820e3",
+  "en": "System: Windows Server 2019 or 2022.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "7e61326c",
+  "en": "Size: 1–2 vCPU, 2 GB RAM, 30 GB+ disk. Enough for one MT5.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "46a342d4",
+  "en": "Price: about $5–10 a month. Search for \"Forex VPS\" or \"Windows VPS\".",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "e57c3cdc",
+  "en": "Location: close to your broker's server (often London or Europe). Some brokers give a free VPS above a certain deposit, so ask yours.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "1cbd626a",
+  "en": "Connect to the VPS",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "4ebaca9f",
+  "en": "After renting you get an IP address, a user name (often Administrator) and a password.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "70f66b8e",
+  "en": "From a Windows PC: open ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "e3da518b",
+  "en": " (mstsc) from the Start menu and enter the IP.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "fc21eaa3",
+  "en": "From a phone: install Microsoft's ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "b80ef1cd",
+  "en": " app (formerly Remote Desktop) and add the IP.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "fecd3d87",
+  "en": "From a Mac: the same Windows App from the App Store.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "5bb72ef2",
+  "en": "Install MT5 and sign in to your account",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "4290bbbb",
+  "en": "In the VPS's browser, download MetaTrader 5 from your broker's site and install it. In MT5 open ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "2071ffdb",
+  "en": " and sign in to your trading account (tick the option to save the password). With a small balance, use a cent account.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "c9815b92",
+  "en": "Copy XauBot in and connect it",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "0415998a",
+  "en": "In the VPS's browser, sign in to this site and open the ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "9297f181",
+  "en": "Bot page",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "93ab4a78",
+  "en": ". Follow its 3 steps: put XauBot.ex5 into ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "f18acc6c",
+  "en": ", allow the site's address under ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "25ce6421",
+  "en": ", then enter your token and start it on an XAUUSD chart. The ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "c27ce5eb",
+  "en": " button in the toolbar must be green.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "2b9ecb0e",
+  "en": "Keep it running",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "7d831f6e",
+  "en": "When you leave Remote Desktop, close the window with X. ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "91f2636a",
+  "en": "Do not sign out",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "15e528a7",
+  "en": ": that closes MT5.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "188506ae",
+  "en": "Add MT5 to Windows Startup so it opens by itself after a restart: press ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "e96ae395",
+  "en": " → ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "bd9c2efd",
+  "en": " and copy the MT5 shortcut into that folder.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "e2d68974",
+  "en": "Windows Update can restart the VPS. Connect once a week and check that MT5 is open and Algo Trading is green.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "1b278a24",
+  "en": "Close the charts you do not need in MT5 to save memory.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "b36a5f7a",
+  "en": "Watch it from your phone",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "42c1a2d4",
+  "en": "Signals and results arrive on Telegram. Whether the robot is online, its risk, and start or stop are on the ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "1bb09815",
+  "en": ", from your phone too. Sign in to the same account in the MT5 phone app to see the trades the robot opened (the phone app cannot run the robot itself).",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "478503eb",
+  "en": "Guide",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "c8762e6e",
+  "en": "The robot runs inside your MT5, so MT5 must always be on. The easiest way is a ~$5–10 a month Windows VPS. It takes 20–30 minutes to set up.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "0963155d",
+  "en": "Only a phone?",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "03b9d679",
+  "en": "You can trade the Telegram signals by hand: the entry, stop and target are all in the message. Only the robot needs a Windows PC or VPS.",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "0efc6573",
+  "en": "Step {0}: ",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "eec9c34e",
+  "en": "Register free",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
+  "h": "ca897d29",
+  "en": "Common questions",
+  "file": "src/app/(public)/guide/vps/page.tsx"
+ },
+ {
   "h": "744be623",
   "en": "Sign in",
   "file": "src/app/(public)/login/page.tsx"
@@ -855,98 +1090,148 @@
   "file": "src/app/(public)/login/page.tsx"
  },
  {
-  "h": "ab921214",
-  "en": "Which side commands the market today?",
+  "h": "106a84af",
+  "en": "A signal forms",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "4984e17a",
-  "en": "Combines D1, H4, H1, and M15 trend, momentum, and market structure into one clear score showing true buyer vs seller strength.",
+  "h": "1575c325",
+  "en": "When gold breaks the range of one of 3 sessions (Asia, New York open, New York late) and the daily and 4-hour trends agree, a setup forms. Fixed rules, not guesses.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "a1008bca",
-  "en": "Which hours see the strongest gold volatility?",
+  "h": "1c9f9b31",
+  "en": "On Telegram within 2 minutes",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "8710b9d6",
-  "en": "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient.",
+  "h": "61656f89",
+  "en": "Within ~2 minutes of the 15-minute candle closing, a chart picture and a text with entry, stop and target arrive. You can enter by hand from your phone.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "4fc0a7aa",
-  "en": "Hour by hour",
+  "h": "a7f6f130",
+  "en": "The robot trades it on your MT5",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "96f6eab0",
-  "en": "When do high-impact economic releases drop?",
+  "h": "41248398",
+  "en": "XauBot sizes the lot from the risk you chose and opens and closes the trade with its stop and target, automatically. Even while you sleep.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "599af018",
-  "en": "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases.",
+  "h": "cd212bcf",
+  "en": "How is this different from other signal groups?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "0f5d3dae",
-  "en": "Is your trading edge genuinely growing?",
+  "h": "88494c74",
+  "en": "The rules are fixed and were tested on broker data since 2019. Every signal's result, winners and losers alike, is open on this page. The robot trades the signals automatically, so you never miss an entry.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "aa384248",
-  "en": "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in.",
+  "h": "40215db4",
+  "en": "Do I need a computer?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "c5495dd8",
-  "en": "Control your MT5 bot directly from the web?",
+  "h": "cead0be6",
+  "en": "Signals arrive on Telegram on your phone, which is enough to trade them by hand. For the robot, MT5 must stay running on a Windows PC or a Windows VPS (the MT5 phone app cannot run robots). A ~$5–10 a month VPS is enough: ",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "6fb9f87f",
-  "en": "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade.",
+  "h": "74726720",
+  "en": "VPS guide",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "94581cd0",
-  "en": "The gold market, on Ulaanbaatar time",
+  "h": "b41809fd",
+  "en": "What is the minimum deposit?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "8546725b",
-  "en": "Gold market clarity,",
+  "h": "060e47ee",
+  "en": "From ~$50 with a cent account. On a small standard account even the smallest lot (0.01) is too much risk, so the robot skips that trade. On a cent account (for example JustMarkets Standard Cent) lots are 100 times smaller, so trades keep to the risk you chose.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "d662dd2c",
-  "en": "hour by hour.",
+  "h": "60012acb",
+  "en": "Which broker does it work with?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "2baf3970",
-  "en": "Track today's direction, hourly odds, and economic news reactions on Ulaanbaatar time — driven by clean, honest statistical data without market noise.",
+  "h": "e9a382a9",
+  "en": "Tested on JustMarkets. It works with any MT5 broker that offers XAUUSD. Pick one with a low spread and good gold conditions.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "2739c9e0",
-  "en": "Register",
+  "h": "e8bf4d98",
+  "en": "Can I lose money?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "b93f943d",
-  "en": "No fake predictions",
+  "h": "f38a742f",
+  "en": "Yes. About half the trades hit their stop, and there are losing months and years ({0}: {1}). Every trade has a stop and risks a fixed share of the account, so no single trade costs much. You choose the risk: lower risk means smaller profit and smaller falls.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "86a0fd04",
-  "en": "Real statistics",
+  "h": "796c82c7",
+  "en": "How many signals a week?",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "a25dae0f",
-  "en": "MT5 bot integrated",
+  "h": "ec511754",
+  "en": "About {0} on average. Some weeks none, some 3–4. The system waits for a proper setup.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c8906b5c",
+  "en": "How do I pay? Are there refunds?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "a1328535",
+  "en": "In tögrög through Wire: QPay, bank apps, cards, Toki. Access opens the moment the payment is confirmed. Payments are not refunded once access has opened; a duplicate or mistaken payment is checked and returned. Details in the ",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "5101dd52",
+  "en": "terms of service",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "d8f41346",
+  "en": "How do I start?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "6a69c599",
+  "en": "1) Register for free. 2) Choose a plan and pay. 3) Link Telegram on the Settings page. 4) Connect XauBot to your MT5 with the 3 steps on the Bot page. We suggest trying a demo or cent account first.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "bf944d45",
+  "en": "XAUUSD · Telegram signals · MT5 robot",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "fd510d12",
+  "en": "Gold signals",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "e239dbfd",
+  "en": "on Telegram,",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "752ed70d",
+  "en": "the robot places the trade.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "6fe3600f",
+  "en": "Rule-based XAUUSD signals reach your Telegram within 2 minutes with a chart, entry, stop and target. XauBot trades them on your MT5 automatically.",
   "file": "src/app/(public)/page.tsx"
  },
  {
@@ -960,83 +1245,68 @@
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "78aea115",
-  "en": "Loading data",
+  "h": "118e5b73",
+  "en": "The price is not in yet.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "01fb7bf2",
-  "en": "HOURLY ANALYSIS",
+  "h": "0acc2783",
+  "en": "Historical results",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "c87b0e63",
-  "en": "Hour-by-hour market pulse at a glance.",
+  "h": "66583015",
+  "en": "If you had followed this system since 2019",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "74691d02",
-  "en": "Clean and structured: session, hour, probability of gold rising or falling historically, and the sample size. Hours with major news are clearly highlighted.",
+  "h": "435801e0",
+  "en": "Pick a risk and see how a $1,500 account grew, and how deep it fell on the way. Want bigger profit? Choose it knowing the bigger falls.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "71af41f6",
-  "en": "Historical probability",
+  "h": "6eee68b6",
+  "en": "Year by year",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "b4e73548",
-  "en": "Based on last 6 months real data",
+  "h": "b0df0c8f",
+  "en": "Good years and flat ones.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "25d532c9",
-  "en": "News alerts",
+  "h": "bce56a91",
+  "en": "R is the amount risked on one trade. +20R = twenty times that risk in profit.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "0937e732",
-  "en": "Important news hours highlighted",
+  "h": "d03ba450",
+  "en": "How it works",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "43430b20",
-  "en": "up",
+  "h": "7d356147",
+  "en": "From signal to trade in 3 steps.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "3db9b915",
-  "en": "down",
+  "h": "dfc36c94",
+  "en": "Live record",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "a6b415e5",
-  "en": "Sample preview. View real statistics inside the platform.",
+  "h": "b97c1c15",
+  "en": "Every real signal since launch",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "c176a8e3",
-  "en": "KEY FEATURES",
+  "h": "cc9902d7",
+  "en": "The last {0} real signals",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "60ab0bbf",
-  "en": "5 essential checks before entering the market.",
-  "file": "src/app/(public)/page.tsx"
- },
- {
-  "h": "44e4625f",
-  "en": "Register to see it",
-  "file": "src/app/(public)/page.tsx"
- },
- {
-  "h": "27525b29",
-  "en": "How the signals actually did",
-  "file": "src/app/(public)/page.tsx"
- },
- {
-  "h": "7bf0ea96",
-  "en": "Every signal given, the winners and the losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.",
+  "h": "cf17be0b",
+  "en": "Not a backtest: the signals that actually went out, winners and losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.",
   "file": "src/app/(public)/page.tsx"
  },
  {
@@ -1045,54 +1315,104 @@
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "9bf2c47d",
-  "en": "100% Transparent",
+  "h": "9c5ffa9a",
+  "en": "One plan opens everything.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "f6535d44",
-  "en": "Numbers, not advice.",
+  "h": "8e6bad65",
+  "en": "Plus, Pro and Max open the same things; only the length differs. A longer plan costs less a month.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "46c757cd",
-  "en": "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.",
+  "h": "ea591ade",
+  "en": "{0} month{1}",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "c1a2dd3c",
-  "en": "Sample size",
+  "h": "3c97826a",
+  "en": "{0} a month · {1}% less",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "414aa48b",
-  "en": "On every stat",
+  "h": "1972cfda",
+  "en": "Choose {0}",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "c92d0b6a",
-  "en": "Signal record",
+  "h": "18162afd",
+  "en": "Register free first, then choose a plan and pay through Wire (QPay, bank apps, cards, Toki). It opens the moment you pay.",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "ca5ab6a1",
-  "en": "Public here, a day late",
+  "h": "68ad3da5",
+  "en": "What to expect",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "8c2d1543",
-  "en": "Risk disclosure",
+  "h": "c70417e9",
+  "en": "~{0} trades a week",
   "file": "src/app/(public)/page.tsx"
  },
  {
-  "h": "d95f4a89",
-  "en": "Fully transparent",
+  "h": "15ad5791",
+  "en": "Few, but by fixed rules. Not a signal every day.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "2d57aae5",
+  "en": "~50% win",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "cf70a20c",
+  "en": "About half hit their stop. That is normal.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "4e8d9d3d",
+  "en": "Winners {0}–{1}× the losers",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "d9da75f6",
+  "en": "That is where the profit comes from: bigger wins, small losses.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "68441ea2",
+  "en": "Small account → cent account",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "7eae7367",
+  "en": "With a few hundred dollars, a cent account makes lots 100 times smaller so the risk fits.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "1ce522a2",
+  "en": "Questions",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "2213a61c",
+  "en": "Get the next signal on your Telegram.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "ecc5c3f1",
+  "en": "Registration is free. Choose a plan and pay, and the signals, the robot and every page open at once.",
   "file": "src/app/(public)/page.tsx"
  },
  {
   "h": "5982006c",
   "en": "the site admin",
   "file": "src/app/(public)/privacy/page.tsx"
+ },
+ {
+  "h": "2739c9e0",
+  "en": "Register",
+  "file": "src/app/(public)/register/page.tsx"
  },
  {
   "h": "6a3aaab2",
@@ -1970,11 +2290,6 @@
   "file": "src/components/AuthForm.tsx"
  },
  {
-  "h": "5101dd52",
-  "en": "terms of service",
-  "file": "src/components/AuthForm.tsx"
- },
- {
   "h": "d2c39aee",
   "en": ", and agree to my personal data being processed.",
   "file": "src/components/AuthForm.tsx"
@@ -2025,6 +2340,186 @@
   "file": "src/components/AvatarUploader.tsx"
  },
  {
+  "h": "e7b4c989",
+  "en": "A test on historical data (backtest)",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "e2da05d1",
+  "en": "JustMarkets XAUUSD {0}, ${1} spread, on closed trades. Past results do not guarantee future profit.",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "5ed30f3f",
+  "en": "Result by year, in R",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "85610fab",
+  "en": "{0} trades · a year with missing data",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "b89fa01e",
+  "en": "{0} trades · {1}% in profit{2}",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "b3352613",
+  "en": "Trades a week",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "cabbb5f0",
+  "en": "{0} trades in all",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "9394db5d",
+  "en": "Trades in profit",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "2a7b49e7",
+  "en": "about half",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "1969690d",
+  "en": "targets {0}–{1}× the stop",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "e535e593",
+  "en": "+{0}R a trade on average",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "42454824",
+  "en": "to",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "a9b18073",
+  "en": "{0} · {1}% risk per trade · {2} · largest fall −{3}%",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "d0161785",
+  "en": "Result at each risk",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "4395772f",
+  "en": "{0}% risk",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "15e00b17",
+  "en": "fall −{0}%",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "ca54b71d",
+  "en": "balanced",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "244cda27",
+  "en": "careful",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "bb910b49",
+  "en": "aggressive",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "0489fdce",
+  "en": "Risk per trade (% of the account)",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "4e90719b",
+  "en": "An account that started with {0}",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "b9527888",
+  "en": "Total growth",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "29c7b948",
+  "en": "Balance curve from {0} to {1} at {2}% risk. Largest fall −{3}%.",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "b2ea1d16",
+  "en": "Fall from high (month end)",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "17f40990",
+  "en": "largest −{0}%",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "19e8a660",
+  "en": "Yearly average (CAGR)",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "f3dfce53",
+  "en": "Largest drawdown",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "916655c2",
+  "en": "Worst month",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "19af2305",
+  "en": "Best month",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "aa5fb2b5",
+  "en": "At {0}% risk {1} became {2}, but on the way the account fell as much as {3}%. Raise the risk and the profit and the falls grow together.",
+  "file": "src/components/BacktestResults.tsx"
+ },
+ {
+  "h": "5e1c5cdd",
+  "en": "One-click install (Windows)",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "7865024c",
+  "en": "Recommended",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "84accbf2",
+  "en": "Download the file and double-click it. It copies the robot into MT5, fills in the token and the site's address, and opens MT5 with the robot on an XAUUSD chart. For the one step left, allowing the site's address, it shows you exactly where to paste it.",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "37fc9371",
+  "en": "Download XauBot-Setup.bat",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "663c065e",
+  "en": "Each download makes a new token: the previous one stops working, so a robot set up before needs the new token entered again.",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "0722d585",
+  "en": "The file is not signed, so Windows SmartScreen may warn you: click \"More info\" → \"Run anyway\". The file holds your token, so do not share it.",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
   "h": "658f3664",
   "en": "Copy",
   "file": "src/components/BotConnect.tsx"
@@ -2057,6 +2552,11 @@
  {
   "h": "26f38071",
   "en": "done",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "e5604821",
+  "en": "Connect by hand — 3 steps",
   "file": "src/components/BotConnect.tsx"
  },
  {
@@ -2155,6 +2655,11 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
+  "h": "bf3ef5dd",
+  "en": "the account is too small: the smallest lot risks over {0}× your choice, so the robot skipped the trade. Use a cent account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
   "h": "695c1815",
   "en": "even the smallest lot does not fit your risk: raise the risk",
   "file": "src/components/BotPanel.tsx"
@@ -2162,6 +2667,26 @@
  {
   "h": "4a7bfad8",
   "en": "not enough free money (margin) in the account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a33ed861",
+  "en": "This account is small",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4dd5de2e",
+  "en": "The smallest trade, 0.01 lot, usually has a {0} stop, so one trade risks {1} of the balance{2}.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6edb6b6d",
+  "en": "The robot skips a trade when the smallest lot would risk over {0}× your choice.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "aae703d9",
+  "en": "A cent account (for example JustMarkets Standard Cent) makes lots 100 times smaller, so trades keep to the risk you chose.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2250,8 +2775,8 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "7bbcbaef",
-  "en": "Connect — 3 steps",
+  "h": "3033f235",
+  "en": "Connect MT5",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2335,8 +2860,8 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "4bb6a1f2",
-  "en": "Connect your MT5 with the 3 steps above before you start.",
+  "h": "6878ff25",
+  "en": "Connect your MT5 above before you start: in one click or by hand.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2540,6 +3065,11 @@
   "file": "src/components/CandleChart.tsx"
  },
  {
+  "h": "d88f264a",
+  "en": "My trades",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
   "h": "75d617e1",
   "en": "Bot trades",
   "file": "src/components/CandleChart.tsx"
@@ -2547,6 +3077,11 @@
  {
   "h": "2e7e4ae3",
   "en": "Loading…",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "78aea115",
+  "en": "Loading data",
   "file": "src/components/CandleChart.tsx"
  },
  {
@@ -2562,6 +3097,11 @@
  {
   "h": "88716f88",
   "en": "Times in {0}.",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "cac3d793",
+  "en": "entry",
   "file": "src/components/CandleChart.tsx"
  },
  {
@@ -2707,6 +3247,11 @@
  {
   "h": "ecd52513",
   "en": "Based on historical statistical calculations. Not financial advice — trade at your own risk.",
+  "file": "src/components/Disclaimer.tsx"
+ },
+ {
+  "h": "44ee752d",
+  "en": "Run the robot 24/7 (VPS)",
   "file": "src/components/Disclaimer.tsx"
  },
  {
@@ -2990,61 +3535,6 @@
   "file": "src/components/JournalView.tsx"
  },
  {
-  "h": "61e2a3f8",
-  "en": "Source",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "75afe364",
-  "en": "All",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "d748cd1d",
-  "en": "By hand",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "5e5681e4",
-  "en": "Robots",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "7a572af9",
-  "en": "30 days",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "2d8a9817",
-  "en": "90 days",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "923f702d",
-  "en": "All time",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "59f8a2fc",
-  "en": "Account",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "6d624270",
-  "en": "All accounts",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "24ee34de",
-  "en": "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.",
-  "file": "src/components/JournalView.tsx"
- },
- {
-  "h": "363235d2",
-  "en": "Go to the bot",
-  "file": "src/components/JournalView.tsx"
- },
- {
   "h": "4f1f0daa",
   "en": "Totals",
   "file": "src/components/JournalView.tsx"
@@ -3132,6 +3622,61 @@
  {
   "h": "fb80f7b7",
   "en": "losers",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "61e2a3f8",
+  "en": "Source",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "75afe364",
+  "en": "All",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "d748cd1d",
+  "en": "By hand",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "5e5681e4",
+  "en": "Robots",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "7a572af9",
+  "en": "30 days",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "2d8a9817",
+  "en": "90 days",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "923f702d",
+  "en": "All time",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "59f8a2fc",
+  "en": "Account",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "6d624270",
+  "en": "All accounts",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "24ee34de",
+  "en": "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "363235d2",
+  "en": "Go to the bot",
   "file": "src/components/JournalView.tsx"
  },
  {
@@ -3475,8 +4020,8 @@
   "file": "src/components/Paywall.tsx"
  },
  {
-  "h": "6a8a41fa",
-  "en": "A plan opens every number",
+  "h": "1d88d51a",
+  "en": "A plan opens the signals, the robot and every number",
   "file": "src/components/Paywall.tsx"
  },
  {
@@ -3485,18 +4030,8 @@
   "file": "src/components/Paywall.tsx"
  },
  {
-  "h": "35916a4e",
-  "en": "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.",
-  "file": "src/components/Paywall.tsx"
- },
- {
-  "h": "3c97826a",
-  "en": "{0} a month · {1}% less",
-  "file": "src/components/Paywall.tsx"
- },
- {
-  "h": "1972cfda",
-  "en": "Choose {0}",
+  "h": "724f27c5",
+  "en": "Telegram signals, the MT5 robot, rise/fall odds and setup entries open the moment you pay.",
   "file": "src/components/Paywall.tsx"
  },
  {
@@ -3513,6 +4048,76 @@
   "h": "758f8503",
   "en": "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.",
   "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "26bc52d3",
+  "en": "Telegram signals",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "94521ef2",
+  "en": "Picture + text: side, entry, stop, target. Within ~2 minutes of the 15-minute candle closing.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "22b4c007",
+  "en": "MT5 robot (XauBot)",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "4b98fc42",
+  "en": "Opens and closes the signals on your own MT5 account. Risk, start and stop from the web.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "8d67028e",
+  "en": "Morning brief at 08:00",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "7353dd88",
+  "en": "Monday to Friday on Telegram: price, trends, today's 3 setups, the key releases.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "72d5c9bf",
+  "en": "The 3 session breakouts on the live chart: range, entry, stop, target.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "0e1783d5",
+  "en": "The leading side, hourly rise/fall odds, key levels.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "8de4119e",
+  "en": "NFP, CPI, FOMC: when they land and how gold moved after them before.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "c5f1901f",
+  "en": "Journal and performance",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "a8f042d7",
+  "en": "Your MT5 closed trades arrive on their own, with win rate, P&L and drawdown broken down.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "1ceb6523",
+  "en": "Open a demo account and trade at the live price: market and pending orders, stops and targets, margin. Plus bar replay.",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "18996e5e",
+  "en": "Alerts",
+  "file": "src/components/PlanFeatures.tsx"
+ },
+ {
+  "h": "74dddc17",
+  "en": "Price and condition alerts to your phone and Telegram.",
+  "file": "src/components/PlanFeatures.tsx"
  },
  {
   "h": "8977e548",
@@ -4410,6 +5015,46 @@
   "file": "src/components/SetupParts.tsx"
  },
  {
+  "h": "259f451d",
+  "en": "Target hit",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "66e9bca0",
+  "en": "Stop hit",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "e57f1bc7",
+  "en": "Closed on time",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "332d4715",
+  "en": "{0} XAUUSD signal picture: entry {1}, stop {2}, target {3}, result {4}R",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "497a5a11",
+  "en": "A real signal, {0} ({1}). Telegram receives exactly this picture.",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "b261dcc8",
+  "en": "Asian breakout",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "91b67d63",
+  "en": "new signal",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
+  "h": "0c918288",
+  "en": "Example: the shape of the Telegram message. Real signals carry the prices and a chart.",
+  "file": "src/components/SignalExample.tsx"
+ },
+ {
   "h": "8b67f168",
   "en": "Target",
   "file": "src/components/SignalHistory.tsx"
@@ -4735,9 +5380,689 @@
   "file": "src/components/TodayCards.tsx"
  },
  {
+  "h": "17fd446d",
+  "en": "Money added",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "e2e7d2f3",
+  "en": "Money withdrawn",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "88cab64a",
+  "en": "The account starts over",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
   "h": "8a6979e4",
   "en": "Saved",
-  "file": "src/lib/actions/admin.ts"
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "b35c3185",
+  "en": "Added",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "a579599b",
+  "en": "Withdrawn",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "c917b618",
+  "en": "Started over",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "b34b4bef",
+  "en": "Money",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "57d85369",
+  "en": "Now {0}, started with {1}. Add money, take it out, or wipe every trade and start again with a new amount.",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "9dc3aa14",
+  "en": "Add",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "1dba6cb7",
+  "en": "Withdraw",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "1660c194",
+  "en": "Yes, wipe and start over",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "24299867",
+  "en": "Start over",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "00ffe1f1",
+  "en": "Every trade and the history are wiped and the account restarts at {0}.",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "28611d62",
+  "en": "Learning mode: tasks, warnings and a confirmation before risky trades",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "90b559ab",
+  "en": "Yes, delete the account",
+  "file": "src/components/demo/DemoAccountTab.tsx"
+ },
+ {
+  "h": "f50effc8",
+  "en": "A first trade with a stop loss",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "d623b133",
+  "en": "Pick BUY or SELL, press $5 under Stop loss and place it. A stop fixes in advance how much you can lose.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "ddf91a4b",
+  "en": "Place a Limit or Stop order",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "66b76738",
+  "en": "Choose Limit or Stop and click the chart to pick its price. The trade opens by itself when the price gets there.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "38a515ea",
+  "en": "A trade closed at its target",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "74abebbc",
+  "en": "Use 1:2 under Take profit to set the target twice the stop's distance. The profit is taken for you when it is reached.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "78c79471",
+  "en": "Move a stop to breakeven",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "a0f6f4df",
+  "en": "Once a trade is in profit, press BE on it. From then on that trade cannot lose.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "feb92c30",
+  "en": "Close part of a trade",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "3f0f5ec5",
+  "en": "Press ½ on a winning trade: bank half the profit and let the rest run.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "468d0ae5",
+  "en": "3 trades with a written reason",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "6548ef5a",
+  "en": "Before each trade write the reason under \"Why?\". Later the history shows which reasons work.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "997dcb96",
+  "en": "5 trades risking under 1%",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "1845b116",
+  "en": "Set a stop, then press 1% under Size by risk. The lots are worked out for you.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "36c163ab",
+  "en": "Beginner's tasks",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "5b641d5a",
+  "en": "All done. Now take 20+ trades and look for your edge in Stats.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "ab9887ca",
+  "en": "Bid, ask, spread",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "cc5079bd",
+  "en": "A BUY opens at the ask (the higher price), a SELL at the bid. The gap, the spread, is the broker's fee, which is why every new trade starts slightly in the red.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "64271698",
+  "en": "Lots and money",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "5fdea91c",
+  "en": "1 lot = 100 oz of gold. On 0.01 lot a $1 move is $1, on 0.10 lot $10, on 1 lot $100.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "32979f9c",
+  "en": "Never without a stop and target",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "410db9a5",
+  "en": "The stop closes a loss and the target a win, by themselves. Decide where you get out before you get in.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "2547425c",
+  "en": "The 1% rule",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "580c2336",
+  "en": "Risk no more than 1% of the account on one trade: ten losses in a row still leave 90%. Size by risk works it out.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "40ea4e21",
+  "en": "Margin and leverage",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "1fffe19f",
+  "en": "Opening a trade locks part of your money as margin. Equity over margin is the margin level: a margin call at 100%, and at 50% the worst trade is closed for you (stop-out).",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "e09c00e4",
+  "en": "Limit and Stop orders",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "01cff25c",
+  "en": "Limit: get in at a better price (waiting for a pullback). Stop: get in when a level breaks (a breakout). Both open by themselves when the price gets there, even with the site closed.",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "f77386a9",
+  "en": "How a trade works: 6 steps",
+  "file": "src/components/demo/DemoLearn.tsx"
+ },
+ {
+  "h": "f9611442",
+  "en": "Open a demo account",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "fef2334e",
+  "en": "Trade XAUUSD at the live price with no real money at risk. It works like a broker's demo account: bid/ask, spread, margin and stop-out are all real.",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "16970f4f",
+  "en": "Account name",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "b63e01de",
+  "en": "Starting balance (USD)",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "1ba91b9b",
+  "en": "Other amount",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "671f0b79",
+  "en": "Practice is most real with the amount you plan to put in a real account.",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "16731661",
+  "en": "1:{0} means $1 of margin opens a ${1} trade. One lot (100 oz) of gold takes {2} of margin. Higher leverage lets you open bigger trades, and blows the account up faster.",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "a1497316",
+  "en": "Your experience",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "2434f1c6",
+  "en": "I'm learning",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "ec534748",
+  "en": "Step-by-step tasks, the risk explained before every trade, and warnings.",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "c65d8f2e",
+  "en": "I have experience",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "0fcad317",
+  "en": "One-click trading, fewer prompts.",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "ae90c343",
+  "en": "Opening…",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "b4ae710f",
+  "en": "Open demo account",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "35afca3b",
+  "en": "Cancel",
+  "file": "src/components/demo/DemoOpenForm.tsx"
+ },
+ {
+  "h": "dd3ec7ca",
+  "en": "Price",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "00259de4",
+  "en": "No open trades. Open a BUY or SELL from the order ticket.",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "0272191c",
+  "en": "All closed",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "ada7afdb",
+  "en": "none",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "b94ec9a9",
+  "en": "Move the stop to the entry: no loss from here",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "e2939d44",
+  "en": "Stop moved to breakeven",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "e9d91ffe",
+  "en": "Half closed {0}",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "95e75b0b",
+  "en": "Closed {0}",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "21e223c4",
+  "en": "No pending orders. A Limit or Stop order opens on its own when the price reaches its level.",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "e6e48d6d",
+  "en": "Pending orders",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "d155d06d",
+  "en": "Type",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "d3d96082",
+  "en": "Distance",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "c2c76cb1",
+  "en": "Edit",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "bc6cc7ac",
+  "en": "Order cancelled",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "613435ed",
+  "en": "{0} min",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "dea4afaf",
+  "en": "{0}h {1}m",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "a49dd09e",
+  "en": "Held",
+  "file": "src/components/demo/DemoTables.tsx"
+ },
+ {
+  "h": "99494ae8",
+  "en": "+ Open a new account",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "01e39c06",
+  "en": "Since the start",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "9467292b",
+  "en": "Open P&L",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "399e0d77",
+  "en": "Margin call: the margin level is under 100%. At 50% the worst trade is closed for you.",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "43f9b538",
+  "en": "The market is closed or the live price is not coming in, so trading is paused. Open trades, stops, targets and orders carry on when the price is back.",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "40faccca",
+  "en": "Market context",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "550d17a1",
+  "en": "The site's reading",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "7a6ccb01",
+  "en": "buyers",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "c6a9d5ac",
+  "en": "Open ({0})",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "445b67c5",
+  "en": "Orders ({0})",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "7d96597f",
+  "en": "History",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "0fec8e8c",
+  "en": "Stats",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "175558fc",
+  "en": "Stats start from 3 closed trades. The more trades, the more the figures mean.",
+  "file": "src/components/demo/DemoTerminal.tsx"
+ },
+ {
+  "h": "85d59730",
+  "en": "The stop is on the wrong side: for a {0} it goes {1} the price.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "7373e32f",
+  "en": "The target is on the wrong side: for a {0} it goes {1} the price.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "3a8d4349",
+  "en": "No stop loss. Trading without one is the most common way accounts blow up.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "6b9ebdee",
+  "en": "This trade risks {0}% of the account. Most traders risk 1–2% at most per trade.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "12b120e2",
+  "en": "R:R 1:{0}: a win pays less than a loss costs.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "3a533196",
+  "en": "After this the margin level is {0}%. Margin call at 100%, stop-out at 50%.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "23f6fa3e",
+  "en": "A key release is less than 30 minutes away. Around news the price can jump several dollars and skip past a stop.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "2da5890f",
+  "en": "{0} {1} lots opened",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "a03b305c",
+  "en": "{0} {1} placed at {2}",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "c2f15fe5",
+  "en": "New order",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "0954315d",
+  "en": "Order type",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "5273f9ff",
+  "en": "{0} {1} price",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "46292aa8",
+  "en": "Buy Limit: buys when the price comes down to this level (buying cheaper).",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "3c6ce45c",
+  "en": "Sell Limit: sells when the price comes up to this level (selling dearer).",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "91f43568",
+  "en": "Buy Stop: buys when the price breaks up through this level (following a breakout).",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "6c3d3557",
+  "en": "Sell Stop: sells when the price breaks down through this level (following a breakout).",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "016418c9",
+  "en": "You can click the chart to pick the price.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "d551c0c2",
+  "en": "Fewer lots",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "b9334724",
+  "en": "More lots",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "3d9dcebd",
+  "en": "$1 move = ±${0} · margin {1}",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "0b44452a",
+  "en": "price",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "49b64664",
+  "en": "Size by risk",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "79fea859",
+  "en": "At the stop",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "cc2fc99c",
+  "en": "At the target",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "e575d973",
+  "en": "Why are you taking this trade?",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "182d8232",
+  "en": "(optional)",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "555db979",
+  "en": "e.g. 1H trend up, pulled back to EMA 50, stop under the last low",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "c71a40b4",
+  "en": "Warnings",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "878aa666",
+  "en": "Trading is paused while the live price is not coming in.",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "967aa5dd",
+  "en": "Sending…",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "23fe36ca",
+  "en": "I understand, place it",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "5c4bdaee",
+  "en": "Go back and change it",
+  "file": "src/components/demo/OrderTicket.tsx"
+ },
+ {
+  "h": "82ba4cec",
+  "en": "The market is closed or the live price is not coming in. Try again when it is.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "0ac516a2",
+  "en": "Lots go from 0.01 to 50 in steps of 0.01.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "d89414d1",
+  "en": "The order price is on the wrong side: Buy Limit below the market, Buy Stop above; Sell Limit above, Sell Stop below.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "6fd0f49c",
+  "en": "The stop loss is on the wrong side: below the price for a BUY, above it for a SELL.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "e0b2385c",
+  "en": "The take profit is on the wrong side: above the price for a BUY, below it for a SELL.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "6a340db1",
+  "en": "Not enough free margin. Use fewer lots or add money to the account.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "e751a2a2",
+  "en": "You cannot withdraw more than the free margin.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "f0d122b3",
+  "en": "That amount is not valid.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "76a5f34c",
+  "en": "Enter a name for the account.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "7cb05e0d",
+  "en": "The starting balance goes from $10 to $10,000,000.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "db249278",
+  "en": "Choose a leverage.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "593eeb48",
+  "en": "You can have up to 3 demo accounts.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "c2d69681",
+  "en": "The connection dropped. Try again.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "dad66cdd",
+  "en": "Not found. Reload the page.",
+  "file": "src/components/demo/common.ts"
+ },
+ {
+  "h": "7e36cd18",
+  "en": "No margin",
+  "file": "src/components/demo/common.ts"
  },
  {
   "h": "c122087d",
@@ -5740,6 +7065,136 @@
   "file": "src/lib/bot/liveDb.ts"
  },
  {
+  "h": "94aec663",
+  "en": "unclear",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "43430b20",
+  "en": "up",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "3db9b915",
+  "en": "down",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "c51f5d7a",
+  "en": "strong",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "bb63fa00",
+  "en": "moderate",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "edbc2ec9",
+  "en": "weak",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "0c5834c7",
+  "en": "trade open",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "12f74db5",
+  "en": "No trade today",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "3417b8ad",
+  "en": "No trade today: daily trend strength {0} < {1}",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "e008a259",
+  "en": "Not for now",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "010dcd36",
+  "en": "Possible if the 4-hour trend turns.",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "7ecc9ee5",
+  "en": "Possible today: BUY only (on a close above the range)",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "6eeddf4b",
+  "en": "Possible today: SELL only (on a close below the range)",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "11108b18",
+  "en": "☀️ <b>Morning brief · XAUUSD</b>",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "f23913c4",
+  "en": "{0} Price: <b>{1}</b>",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "db951a3d",
+  "en": "{0} Price: <b>{1}</b> ({2} · {3}% vs the previous close)",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "2c2e1546",
+  "en": "💰 Price: no data yet",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "42dd41ed",
+  "en": "Daily trend",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "6e9bfebf",
+  "en": "4-hour trend",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "b2613c2d",
+  "en": "<b>Today's setups</b>",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "9a91759c",
+  "en": "Range {0}–{1}, entry until {2} ({3})",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "3c3c2c1e",
+  "en": "📅 <b>Today's important releases</b> ({0})",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "56489342",
+  "en": "Breakouts from {0} minutes before to {1} minutes after a release are skipped.",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "c260a6d7",
+  "en": "📅 No important releases today.",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "dc9d6b7c",
+  "en": "🔔 Signals are sent the moment they fire.",
+  "file": "src/lib/brief.ts"
+ },
+ {
+  "h": "95926cc6",
+  "en": "/brief off — stop the morning brief",
+  "file": "src/lib/brief.ts"
+ },
+ {
   "h": "39355af9",
   "en": "RSI (14) {0} falls below {1}",
   "file": "src/lib/conditionAlerts.ts"
@@ -6475,11 +7930,6 @@
   "file": "src/lib/setup/setups.ts"
  },
  {
-  "h": "94aec663",
-  "en": "unclear",
-  "file": "src/lib/setup/setups.ts"
- },
- {
   "h": "ce516cc2",
   "en": "{0} complete ({1} {2})",
   "file": "src/lib/setup/setups.ts"
@@ -6760,31 +8210,6 @@
   "file": "src/lib/signals.ts"
  },
  {
-  "h": "259f451d",
-  "en": "Target hit",
-  "file": "src/lib/signals.ts"
- },
- {
-  "h": "66e9bca0",
-  "en": "Stop hit",
-  "file": "src/lib/signals.ts"
- },
- {
-  "h": "e57f1bc7",
-  "en": "Closed on time",
-  "file": "src/lib/signals.ts"
- },
- {
-  "h": "cac3d793",
-  "en": "entry",
-  "file": "src/lib/signals.ts"
- },
- {
-  "h": "91b67d63",
-  "en": "new signal",
-  "file": "src/lib/signals.ts"
- },
- {
   "h": "fc4434b7",
   "en": "Expected: {0}",
   "file": "src/lib/signals.ts"
@@ -6862,6 +8287,11 @@
  {
   "h": "1349f856",
   "en": "/status — current bias and the next important release",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "ee90fc19",
+  "en": "/brief — today's brief: price, trends, the 3 setups, news (/brief off — stop the 08:00 brief, /brief on — turn it back on)",
   "file": "src/lib/telegram.ts"
  },
  {
@@ -6982,6 +8412,16 @@
  {
   "h": "ca2c98bc",
   "en": "If you did not ask for this, ignore it, and do not forward it to anyone.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "805e51eb",
+  "en": "The morning brief is off. Signals still arrive. Send /brief on to get it again.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "f8562387",
+  "en": "The morning brief arrives Monday to Friday at {0} ({1}). Send /brief off to stop it.",
   "file": "src/lib/telegram.ts"
  },
  {

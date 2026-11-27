@@ -39,7 +39,18 @@ type Drawn = {
  * The live gold chart, M1 to W1. Draws the robot's own trades on it (an arrow where it entered, a dot where it
  * closed, coloured by the result) and its open positions with their stop and target. `focus` scrolls to a moment.
  */
-export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot: BotChartData | null; focus?: { at: number; n: number } | null }) {
+/** A pending order (or any other price to mark) drawn as a dashed line. */
+export type ChartLine = { price: number; title: string; tone: "up" | "down" | "muted" };
+const NO_LINES: ChartLine[] = [];
+
+export function CandleChart({ levels, bot, focus, owner = "bot", lines: extra = NO_LINES, onPickPrice }: {
+  levels: Levels | null; bot: BotChartData | null; focus?: { at: number; n: number } | null;
+  /** Whose trades `bot` holds: the MT5 robot's, or the member's own demo trades. */
+  owner?: "bot" | "demo";
+  lines?: ChartLine[];
+  /** Called with the price under a click on the chart (the demo order ticket takes it as the order's price). */
+  onPickPrice?: (price: number) => void;
+}) {
   const { t, zone, timeZone } = useViewer();
   const themeTick = useThemeTick();
   const ref = useRef<HTMLDivElement>(null);
@@ -52,6 +63,8 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
   const quote = useQuote();
   const drawn = useRef<Drawn | null>(null);
   const lines = useRef<IPriceLine[]>([]);
+  const pickRef = useRef(onPickPrice);
+  useEffect(() => { pickRef.current = onPickPrice; }, [onPickPrice]);
 
   useEffect(() => {
     try {
@@ -108,6 +121,11 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
           const k = p.time === undefined ? null : byTime.get(p.time as number) ?? null;
           setHover(k);
         });
+        chart.subscribeClick((p) => {
+          if (!p.point || !pickRef.current) return;
+          const price = series.coordinateToPrice(p.point.y);
+          if (price !== null && Number.isFinite(price)) pickRef.current(Math.round(price * 100) / 100);
+        });
         drawn.current = { chart, series, emas, markers, rows: candles, tf, at, colors: { up, down, muted } };
         setLastBar(candles[candles.length - 1]);
         lines.current = [];
@@ -158,9 +176,12 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
         if (p.tp > 0) add({ price: p.tp, title: "TP", color: d.colors.up, lineWidth: 1, lineStyle: 1, axisLabelVisible: true });
       }
     }
+    if (show.trades) {
+      for (const l of extra) add({ price: l.price, title: l.title, color: l.tone === "up" ? d.colors.up : l.tone === "down" ? d.colors.down : d.colors.muted, lineWidth: 1, lineStyle: 2, axisLabelVisible: true });
+    }
     marks.sort((a, b) => (a.time as number) - (b.time as number));
     d.markers.setMarkers(marks);
-  }, [drawnAt, levels, bot, show]);
+  }, [drawnAt, levels, bot, show, extra]);
 
   // The bar still forming follows the live price; a new bar opens when its time comes.
   useEffect(() => {
@@ -205,7 +226,7 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           {toggle("ema", "EMA")}
           {toggle("levels", t("Түвшин", "Levels"), !levels)}
-          {toggle("trades", t("Bot-ын арилжаа", "Bot trades"), !bot)}
+          {toggle("trades", owner === "demo" ? t("Миний арилжаа", "My trades") : t("Bot-ын арилжаа", "Bot trades"), !bot)}
         </div>
       </div>
       {/* The bar under the pointer (or the newest): open, high, low, close and its move. */}
@@ -234,7 +255,7 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
         <span>{t(`Цаг ${zone}-аар.`, `Times in ${zone}.`)}</span>
         {show.ema && keys.map(([name, color]) => <span key={name} className="flex items-center gap-1.5"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: color }} />{name}</span>)}
         {bot && show.trades && <>
-          <span className="flex items-center gap-1.5"><span aria-hidden className="text-emerald-400">▲</span><span aria-hidden className="text-red-400">▼</span>{t("bot орсон", "bot entry")}</span>
+          <span className="flex items-center gap-1.5"><span aria-hidden className="text-emerald-400">▲</span><span aria-hidden className="text-red-400">▼</span>{owner === "demo" ? t("орсон", "entry") : t("bot орсон", "bot entry")}</span>
           <span className="flex items-center gap-1.5"><span aria-hidden className="h-2 w-2 rounded-full bg-emerald-500" /><span aria-hidden className="h-2 w-2 rounded-full bg-red-500" />{t("хаасан, ашиг/алдагдал", "closed, profit/loss")}</span>
         </>}
       </div>
