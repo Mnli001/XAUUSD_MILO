@@ -162,6 +162,13 @@
       "when": 1795754852850,
       "tag": "0022_risk_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795755137745,
+      "tag": "0023_macro_series",
+      "breakpoints": true
     }
   ]
 }

@@ -308,3 +308,10 @@ export const riskRules = pgTable("risk_rules", {
   breach: text("breach"), // "RISK_MAX", or "RISK_DAILY:<day>"
   updatedAt: ts("updated_at").notNull().defaultNow(),
 }, (t) => [primaryKey({ columns: [t.userId, t.login] })]);
+
+/** Daily or weekly values of the things that move gold: the dollar, real yields, futures positioning. One row per series and date. */
+export const macroSeries = pgTable("macro_series", {
+  series: text("series").notNull(), // "DTWEXBGS", "DFII10", "DGS10", "COT_NC_NET", "COT_OI"
+  date: text("date").notNull(), // YYYY-MM-DD
+  value: doublePrecision("value").notNull(),
+}, (t) => [primaryKey({ columns: [t.series, t.date] })]);

@@ -9,6 +9,8 @@ import { runTelegramJobs } from "./signals";
 import { sendWeeklyReport, watchFeed } from "./watch";
 import { checkPriceAlerts } from "./priceAlerts";
 import { checkConditionAlerts } from "./conditionAlerts";
+import { ingestMacro } from "./ingest/macro";
+import { hasMacroData } from "./drivers";
 import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
@@ -45,6 +47,8 @@ async function run(job: Job, now: Date): Promise<void> {
   const fredKey = process.env.FRED_API_KEY;
   if (job === "calendar") {
     if (fredKey) console.log("[scheduler] calendar", JSON.stringify(await ingestCalendar(new FredCalendar(fredKey), now)));
+    // the dollar, real yields and gold futures positioning, for the drivers page (a short window once history is in)
+    try { console.log("[scheduler] macro", JSON.stringify(await ingestMacro(fredKey, now, (await hasMacroData()) ? 30 : 400))); } catch (e) { console.error("[scheduler] macro failed", e); }
     return;
   }
   if (!priceKey) return;

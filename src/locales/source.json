@@ -65,6 +65,16 @@
   "file": "src/app/(app)/chart/page.tsx"
  },
  {
+  "h": "1347bc88",
+  "en": "Gold drivers",
+  "file": "src/app/(app)/drivers/page.tsx"
+ },
+ {
+  "h": "3112b370",
+  "en": "The dollar, real yields and futures positioning: they usually set gold's longer direction. Updated once a day.",
+  "file": "src/app/(app)/drivers/page.tsx"
+ },
+ {
   "h": "1ed154dc",
   "en": "This page could not load",
   "file": "src/app/(app)/error.tsx"
@@ -1850,6 +1860,11 @@
   "file": "src/app/not-found.tsx"
  },
  {
+  "h": "089e4d73",
+  "en": "Macro",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
   "h": "e0ccc31f",
   "en": "Main menu",
   "file": "src/components/AppNav.tsx"
@@ -2077,6 +2092,16 @@
  {
   "h": "a0589951",
   "en": "daily loss stop reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a4fc17f8",
+  "en": "risk manager: today's loss limit reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "00adc87a",
+  "en": "risk manager: overall loss limit reached",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2525,6 +2550,91 @@
   "file": "src/components/ChartWorkspace.tsx"
  },
  {
+  "h": "ec0ebda6",
+  "en": "RSI falls below",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "5d6e1402",
+  "en": "RSI rises above",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "1322c2db",
+  "en": "EMA50 crosses above EMA200",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "1e0e02fb",
+  "en": "EMA50 crosses below EMA200",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "c8dff031",
+  "en": "A close above yesterday's high",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "59a88aa9",
+  "en": "A close below yesterday's low",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "4f286968",
+  "en": "Yesterday's high is swept",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "8b3bfa9c",
+  "en": "Yesterday's low is swept",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "f0b50da8",
+  "en": "Alert on a chart condition",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "41875087",
+  "en": "Checked on every closed bar. It notifies you each time the condition newly happens, until you delete it.",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "cca3205e",
+  "en": "Condition",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "4155597d",
+  "en": "Level",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "28b19ea3",
+  "en": "Set",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "f9116921",
+  "en": "Condition alerts",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "63e1d819",
+  "en": "last",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "d0c2273f",
+  "en": "Delete “{0}”",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "5797ea6a",
+  "en": "Delete",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
   "h": "5e52b851",
   "en": "Privacy and terms",
   "file": "src/components/ConsentBanner.tsx"
@@ -2568,6 +2678,146 @@
   "h": "ecd52513",
   "en": "Based on historical statistical calculations. Not financial advice — trade at your own risk.",
   "file": "src/components/Disclaimer.tsx"
+ },
+ {
+  "h": "0d7fcdc9",
+  "en": "Not enough data to measure its link with gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "c24f9bfa",
+  "en": "Over the last 60 days it moved against gold ({0}): when it rose, gold mostly fell.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "dd886924",
+  "en": "Over the last 60 days it moved with gold ({0}).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "db932292",
+  "en": "Over the last 60 days it moved almost independently of gold ({0}).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "d0d53158",
+  "en": "1 week",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "36a5378a",
+  "en": "1 month",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0e6a2562",
+  "en": "{0}: the last 90 business days",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b3381c9b",
+  "en": "No data yet. It updates once a day.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0e3d941c",
+  "en": "The dollar weakened over the last month: usually supportive for gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "1a96c53f",
+  "en": "The dollar strengthened over the last month: usually a headwind for gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "fdcd32dc",
+  "en": "Real yields fell: holding gold, which pays no interest, got cheaper.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "d1905101",
+  "en": "Real yields rose: holding gold got more expensive.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "e8f995fb",
+  "en": "Speculators' net long is near its 1-year high: a crowded side, sharp pullbacks are possible.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "1e2ba7a2",
+  "en": "Speculators' net long is near its 1-year low: plenty of room for buying.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "799c628c",
+  "en": "In short",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "658c6578",
+  "en": "Dollar index (broad)",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "7be5d266",
+  "en": "The dollar against other currencies. Gold is priced in dollars, so a weaker dollar usually lifts gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "a6ac7bbb",
+  "en": "10-year real yield",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0f0a9efb",
+  "en": "The yield above inflation (TIPS). When it is high, holding gold, which pays nothing, costs more.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b5abeac7",
+  "en": "10-year nominal yield",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b7fd9fa0",
+  "en": "The yield on 10-year US government bonds.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "20a1c3f2",
+  "en": "COT: speculators' position",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "cf8ef239",
+  "en": "net long contracts",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "6b252bdd",
+  "en": "Net long: the last 52 weeks",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0c41d2ea",
+  "en": "Non-commercial traders' long minus short in COMEX gold futures, from the CFTC's weekly report.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "3910445f",
+  "en": "{0}% of open interest. {1}th percentile of the past year (100 = the most).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "41dc8d26",
+  "en": "No data yet. It updates weekly.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "4d1eb9ed",
+  "en": "Sources: FRED (St. Louis Fed), CFTC Commitments of Traders. Not financial advice.",
+  "file": "src/components/DriversView.tsx"
  },
  {
   "h": "cda0a251",
@@ -2940,11 +3190,6 @@
   "file": "src/components/Paywall.tsx"
  },
  {
-  "h": "36a5378a",
-  "en": "1 month",
-  "file": "src/components/Paywall.tsx"
- },
- {
   "h": "9fde1bc4",
   "en": "6 months",
   "file": "src/components/Paywall.tsx"
@@ -3030,11 +3275,6 @@
   "file": "src/components/PriceAlertsCard.tsx"
  },
  {
-  "h": "28b19ea3",
-  "en": "Set",
-  "file": "src/components/PriceAlertsCard.tsx"
- },
- {
   "h": "1367fe55",
   "en": "You have not chosen where alerts go. ",
   "file": "src/components/PriceAlertsCard.tsx"
@@ -3077,11 +3317,6 @@
  {
   "h": "938dd235",
   "en": "Delete the {0} alert",
-  "file": "src/components/PriceAlertsCard.tsx"
- },
- {
-  "h": "5797ea6a",
-  "en": "Delete",
   "file": "src/components/PriceAlertsCard.tsx"
  },
  {
@@ -3453,6 +3688,81 @@
   "h": "1a30bf3b",
   "en": "ended",
   "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "e26f152d",
+  "en": "Risk manager",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "24ab446b",
+  "en": "Set a daily and an overall loss limit like a prop firm. At 80% you are warned, at 100% the bot stops. Measured on the account's equity (open trades included).",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "b1f9d2fd",
+  "en": "Today's loss limit was reached: the bot stays off until tomorrow.",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "e4306ac5",
+  "en": "The overall loss limit was reached: the bot stays off until you update the rules.",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "97e60a97",
+  "en": "Today's loss",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "18228c41",
+  "en": "Overall loss",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "bd836d48",
+  "en": "Profit target",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "e8511c37",
+  "en": "Presets",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "fe228a66",
+  "en": "Account size ($)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "94419c07",
+  "en": "Daily limit (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "f593dd53",
+  "en": "Overall limit (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "7c381352",
+  "en": "Profit target (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "49c5d8f9",
+  "en": "optional",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "7cdef1af",
+  "en": "Close the robot's open trades when a limit is reached",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "5dc9b183",
+  "en": "Remove limits",
+  "file": "src/components/RiskCard.tsx"
  },
  {
   "h": "716db864",
@@ -4115,6 +4425,26 @@
   "file": "src/lib/actions/alerts.ts"
  },
  {
+  "h": "228b2e92",
+  "en": "Alerts come with a plan.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "1d4966fe",
+  "en": "Enter an RSI level between 5 and 95.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "7965b8bd",
+  "en": "You can have up to {0} condition alerts. Delete one and try again.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "6dff666c",
+  "en": "Choose a condition.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
   "h": "7dbf917d",
   "en": "Choose a picture",
   "file": "src/lib/actions/avatar.ts"
@@ -4193,6 +4523,46 @@
   "h": "b3246bdf",
   "en": "Too many attempts. Try again in an hour.",
   "file": "src/lib/actions/register.ts"
+ },
+ {
+  "h": "39387bcb",
+  "en": "The risk manager comes with a plan.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "ac83ec3c",
+  "en": "Connect your MT5 first.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "0eef7971",
+  "en": "Limits removed.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "6c9300ef",
+  "en": "Enter the account size as a number above 0.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "54c91a13",
+  "en": "The daily limit must be 0–50%.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "213fbe9f",
+  "en": "The overall limit must be 0–100% and not below the daily limit.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "6f1c8f34",
+  "en": "The profit target must be a percent above 0.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "9df69201",
+  "en": "Saved. It applies from the robot's next report.",
+  "file": "src/lib/actions/risk.ts"
  },
  {
   "h": "a3227488",
@@ -5010,6 +5380,71 @@
   "file": "src/lib/bot/liveDb.ts"
  },
  {
+  "h": "39355af9",
+  "en": "RSI (14) {0} falls below {1}",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "d9bf77fd",
+  "en": "RSI (14) {0} rises above {1}",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "1dffd803",
+  "en": "{0}: EMA50 crosses above EMA200 (golden cross)",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "064006a8",
+  "en": "{0}: EMA50 crosses below EMA200 (death cross)",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "ba8a30e6",
+  "en": "🔔 <b>RSI (14) {0} fell below {1}: {2}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "3c46acd4",
+  "en": "🔔 <b>RSI (14) {0} rose above {1}: {2}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "3e162302",
+  "en": "🔔 <b>{0}: EMA50 crossed above EMA200 (golden cross)</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "c0dfb941",
+  "en": "🔔 <b>{0}: EMA50 crossed below EMA200 (death cross)</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "222ce3cb",
+  "en": "🔔 <b>Price closed above yesterday's high {0}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "6b65fcf1",
+  "en": "🔔 <b>Price closed below yesterday's low {0}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "760af7dd",
+  "en": "🔔 <b>Yesterday's high {0} was swept</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "824cbc13",
+  "en": "🔔 <b>Yesterday's low {0} was swept</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "7f1bbe2b",
+  "en": "XAUUSD {0} · bar closed {1} ({2})",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
   "h": "65f39059",
   "en": "US",
   "file": "src/lib/data/calendarProvider.ts"
@@ -5433,6 +5868,56 @@
   "h": "0584cb08",
   "en": "Renewing now adds to the time you have left, so no day is lost.",
   "file": "src/lib/renewal.ts"
+ },
+ {
+  "h": "037f1e88",
+  "en": "⚠️ <b>Past 80% of today's loss limit</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "81879430",
+  "en": "Today −{0} of {1}. At the limit the bot stops for the day.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "4d73a433",
+  "en": "⚠️ <b>Past 80% of the overall loss limit</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "84593b0a",
+  "en": "Overall −{0} of {1}.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "f3d4df21",
+  "en": "⛔ <b>Today's loss limit reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "6c587847",
+  "en": "Today −{0}. The bot has stopped for the day{1}. It can run again tomorrow.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "3081ed9f",
+  "en": "⛔ <b>Overall loss limit reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "3702b15c",
+  "en": "Overall −{0}. The bot has stopped{1}. It stays off until you update the rules.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "4fb93df0",
+  "en": "🎯 <b>Profit target reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "465d5c40",
+  "en": "+{0} of {1}.",
+  "file": "src/lib/risk.ts"
  },
  {
   "h": "d9b530e3",
