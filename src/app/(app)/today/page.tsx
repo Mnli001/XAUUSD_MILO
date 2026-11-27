@@ -15,7 +15,7 @@ import { getReasoning } from "@/lib/reasoningLive";
 import { AccountChips, SetupsCard, type DashSetup } from "@/components/MyDashboard";
 import { botSummary, tradeSummary, latestPaidPlan, planSummary } from "@/lib/dashboard";
 import { botTrades } from "@/lib/botPerformance";
-import { getSetups } from "@/lib/setup/build";
+import { getSetupsCached } from "@/lib/setup/build";
 import { orderSetups } from "@/lib/setup/order";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { PriceAlertsCard, PriceAlertsLocked, type AlertRow } from "@/components/PriceAlertsCard";
@@ -67,7 +67,7 @@ export default async function TodayPage() {
     paid ? getReasoning(now, v.locale) : Promise.resolve(null),
     latestPaidPlan(user.id),
     botSummary(user.id, now),
-    paid ? getSetups(now, v).catch((e) => { console.error("[today] setups failed", e); return null; }) : Promise.resolve(null),
+    paid ? getSetupsCached(now, v).catch((e) => { console.error("[today] setups failed", e); return null; }) : Promise.resolve(null),
   ]);
   // The robot's own results are the user's data, shown with or without a plan; its live state is not.
   const closed = bot.account ? await botTrades(user.id, bot.account) : [];

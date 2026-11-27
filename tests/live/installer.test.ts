@@ -43,7 +43,7 @@ test("the script takes gold from the login server's own folder and says how to a
   expect(ps).toContain("Inputs → Load → XauBot.set");
   expect(ps).toContain("Common → tick Allow Algo Trading → OK.");
   expect(ps).toContain("If the chart shows no robot:");
-  expect(ps).toContain("Чарт дээр robot харагдахгүй бол:");
+  expect(ps).toContain("Чарт дээр робот харагдахгүй бол:");
 });
 
 test("the script carries the preset and the startup config as literals, the gold symbol filled in when it runs", () => {
@@ -53,7 +53,7 @@ test("the script carries the preset and the startup config as literals, the gold
   expect(ps).toContain(`$SiteOrigin = 'https://xau.example.mn'`);
   expect(ps).toContain("/api/bot/download?file=ex5");
   expect(ps).toContain("'x-bot-token' = $BotToken");
-  expect(ps).toContain("Робот холбогдмогц сайтын Bot хуудсан дээр ''Холбогдлоо ✓'' гарна"); // a quote is doubled inside '…'
+  expect(ps).toContain("Робот холбогдмогц сайтын Робот хуудсан дээр ''Холбогдлоо ✓'' гарна"); // a quote is doubled inside '…'
   // it never stops or kills a terminal
   expect(ps).not.toMatch(/Stop-Process|taskkill|\.Kill\(/i);
 });
@@ -228,7 +228,7 @@ onWindows("dry run with helper folders: bridge.ps1 (UTF-8 BOM), bridge.vbs (UTF-
   expect(h.startup.equals(h.vbs)).toBe(true);
   expect(out).toContain("The helper that links the robot to the site was installed:");
   expect(out).toContain("The helper starts hidden every time Windows starts (Startup):");
-  expect(out).toContain("As soon as the robot connects, the site's Bot page shows 'Connected ✓'");
+  expect(out).toContain("As soon as the robot connects, the site's Robot page shows 'Connected ✓'");
   expect(out).toContain("To remove the helper:");
 }, 60_000);
 

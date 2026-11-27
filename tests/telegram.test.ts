@@ -49,7 +49,7 @@ test("pressing Start with the user's code links that chat to that user, once", a
   const code = await newLinkCode(u.id);
   expect(code).toMatch(/^[a-f0-9]{24}$/);
   await handleUpdate(start(`/start ${code}`));
-  expect(await findUserById(u.id)).toMatchObject({ telegramChatId: "555", telegramLinkCode: null, telegramLinkExpiresAt: null });
+  expect(await findUserById(u.id)).toMatchObject({ telegramChatId: "555", telegramLinkedVia: "CODE", telegramLinkCode: null, telegramLinkExpiresAt: null });
   expect(sends().at(-1)).toMatchObject({ url: expect.stringContaining("/bot123:test/sendMessage"), body: { chat_id: "555", parse_mode: "HTML" } });
   expect(lastText()).toContain("Холбогдлоо, a.");
   expect(lastText()).toContain("/status");
@@ -162,7 +162,7 @@ test("a chat that blocked the bot is unlinked instead of failing on every signal
   await linkUser(u.id, "555");
   replies = [{ status: 403, body: { ok: false, error_code: 403, description: "Forbidden: bot was blocked by the user" } }];
   expect(await deliver("555", "hi")).toBe(false);
-  expect((await findUserById(u.id))!.telegramChatId).toBeNull();
+  expect((await findUserById(u.id))!).toMatchObject({ telegramChatId: null, telegramLinkedVia: null });
 });
 test("blocking the bot (my_chat_member: kicked) unlinks the chat", async () => {
   const u = await makeUser("a@x.mn");
@@ -173,9 +173,9 @@ test("blocking the bot (my_chat_member: kicked) unlinks the chat", async () => {
 });
 test("unlinking forgets the chat", async () => {
   const u = await makeUser("a@x.mn");
-  await db.execute(sql`UPDATE users SET telegram_chat_id = '5' WHERE id = ${u.id}`);
+  await db.execute(sql`UPDATE users SET telegram_chat_id = '5', telegram_linked_via = 'EMAIL' WHERE id = ${u.id}`);
   await unlinkTelegram(u.id);
-  expect((await findUserById(u.id))!.telegramChatId).toBeNull();
+  expect((await findUserById(u.id))!).toMatchObject({ telegramChatId: null, telegramLinkedVia: null });
 });
 test("the webhook only accepts calls that carry Telegram's secret header", async () => {
   const u = await makeUser("a@x.mn");
@@ -215,7 +215,7 @@ test("an email from a chat does not link it: the account is shown a request and 
 
   expect(await confirmPendingTelegram(u.id, new Date(now.getTime() + 60_000))).toBe(true);
   row = (await findUserById(u.id))!;
-  expect(row).toMatchObject({ telegramChatId: "555", telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null });
+  expect(row).toMatchObject({ telegramChatId: "555", telegramLinkedVia: "EMAIL", telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null });
   expect(lastText()).toContain("Холбогдлоо, a.");
   expect(lastText()).toContain("2099-01-01"); // the bot says the subscription was recognised
   expect(sends().at(-1)!.body.chat_id).toBe("555");
@@ -251,7 +251,7 @@ test("confirming moves the chat from any other account and spends its other requ
   await db.execute(sql`UPDATE users SET telegram_pending_chat_id = '555', telegram_pending_expires_at = '2099-01-01' WHERE id = ${c.id}`);
   expect(await confirmPendingTelegram(a.id, now)).toBe(true);
   expect((await findUserById(a.id))!.telegramChatId).toBe("555");
-  expect((await findUserById(b.id))!.telegramChatId).toBeNull(); // one chat, one account
+  expect((await findUserById(b.id))!).toMatchObject({ telegramChatId: null, telegramLinkedVia: null }); // one chat, one account
   expect((await findUserById(c.id))!.telegramPendingChatId).toBeNull();
 });
 test("an open request is not replaced by another chat's until it lapses; the same chat may renew it", async () => {
@@ -339,8 +339,10 @@ test("a chat linked by code without unlinking first (code pressed in the same ch
   const now = new Date("2026-11-24T10:00:00Z");
   await handleUpdate(say("a@x.mn"), now);
   await confirmPendingTelegram(u.id, now);
+  expect((await findUserById(u.id))!.telegramLinkedVia).toBe("EMAIL");
   const code = await newLinkCode(u.id, now);
   await handleUpdate(start(`/start ${code}`, 555), now);
+  expect((await findUserById(u.id))!.telegramLinkedVia).toBe("CODE");
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
   await handleUpdate(start("/reset", 555), now);
   warn.mockRestore();
@@ -361,4 +363,21 @@ test("/sample answers anyone with a plan, and tells someone without one how to g
   await db.execute(sql`UPDATE users SET access_until = '2020-01-01' WHERE id = ${u.id}`);
   await handleUpdate(start("/sample"));
   expect(lastText()).toContain("хугацаа дууссан");
+});
+
+test("migration 0032 moves the old email-link marker into telegram_linked_via and marks every other linked chat CODE", async () => {
+  const { readFileSync } = await import("node:fs");
+  const migration = readFileSync(new URL("../drizzle/0032_telegram_linked_via.sql", import.meta.url), "utf8");
+  const byEmail = await makeUser("e@x.mn"), byCode = await makeUser("c@x.mn"), gone = await makeUser("g@x.mn"), none = await makeUser("n@x.mn"), waiting = await makeUser("w@x.mn");
+  await db.execute(sql`UPDATE users SET telegram_chat_id = '1', telegram_pending_username = '~email-linked' WHERE id = ${byEmail.id}`);
+  await db.execute(sql`UPDATE users SET telegram_chat_id = '2' WHERE id = ${byCode.id}`);
+  await db.execute(sql`UPDATE users SET telegram_pending_username = '~email-linked' WHERE id = ${gone.id}`); // linked by email, chat since forgotten
+  await db.execute(sql`UPDATE users SET telegram_pending_chat_id = '3', telegram_pending_username = 'bat_trader' WHERE id = ${waiting.id}`);
+  for (const stmt of migration.split("--> statement-breakpoint").map((x) => x.trim()).filter((x) => /^(--[^\n]*\n)*UPDATE/.test(x))) await db.execute(sql.raw(stmt));
+  const row = async (id: string) => (await findUserById(id))!;
+  expect(await row(byEmail.id)).toMatchObject({ telegramChatId: "1", telegramLinkedVia: "EMAIL", telegramPendingUsername: null });
+  expect(await row(byCode.id)).toMatchObject({ telegramChatId: "2", telegramLinkedVia: "CODE" });
+  expect(await row(gone.id)).toMatchObject({ telegramChatId: null, telegramLinkedVia: null, telegramPendingUsername: null });
+  expect(await row(none.id)).toMatchObject({ telegramChatId: null, telegramLinkedVia: null });
+  expect(await row(waiting.id)).toMatchObject({ telegramLinkedVia: null, telegramPendingUsername: "bat_trader" });
 });

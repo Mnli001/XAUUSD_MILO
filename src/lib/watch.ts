@@ -105,7 +105,7 @@ function weeklyParts(week: { kind: string; r: number | null }[], all: { kind: st
       : t(`Өнгөрсөн 7 хоног: ${week.length} дохио · ашигтай ${w.wins} · алдагдалтай ${w.losses}${w.open ? ` · нээлттэй ${w.open}` : ""} · нийт <b>${sign(w.totalR)}</b>`, `Last week: ${week.length} signals · won ${w.wins} · lost ${w.losses}${w.open ? ` · open ${w.open}` : ""} · total <b>${sign(w.totalR)}</b>`),
     total: a.closed > 0 ? t(`Эхнээс нь: ${a.closed} арилжаа · ${a.winPct}% ашигтай · нийт <b>${sign(a.totalR)}</b>`, `Since the start: ${a.closed} trades · ${a.winPct}% profitable · total <b>${sign(a.totalR)}</b>`) : "",
     bot: extra.bot && extra.bot.trades > 0
-      ? t(`🤖 Таны bot (7 хоног): ${extra.bot.trades} арилжаа · ашигтай ${extra.bot.wins} · <b>${money(extra.bot.pnl)}</b>`, `🤖 Your bot (7 days): ${extra.bot.trades} trades · won ${extra.bot.wins} · <b>${money(extra.bot.pnl)}</b>`)
+      ? t(`🤖 Таны робот (7 хоног): ${extra.bot.trades} арилжаа · ашигтай ${extra.bot.wins} · <b>${money(extra.bot.pnl)}</b>`, `🤖 Your robot (7 days): ${extra.bot.trades} trades · won ${extra.bot.wins} · <b>${money(extra.bot.pnl)}</b>`)
       : "",
     eventsHead: extra.events === undefined ? "" : events.length ? t("📅 <b>Ирэх 7 хоногийн чухал мэдээ</b>", "📅 <b>Key releases in the week ahead</b>") : t("📅 Ирэх 7 хоногт чухал мэдээ алга.", "📅 No key releases in the week ahead."),
     events: events.map((e) => `${v.date(e.time)} ${v.time(e.time)} · ${esc(eventTitle(e, t))}`),

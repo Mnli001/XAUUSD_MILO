@@ -25,8 +25,8 @@
   "file": "src/app/(app)/bot/history/page.tsx"
  },
  {
-  "h": "d9cb851e",
-  "en": "Bot",
+  "h": "73d1357f",
+  "en": "Robot",
   "file": "src/app/(app)/bot/page.tsx"
  },
  {
@@ -45,8 +45,8 @@
   "file": "src/app/(app)/chart/page.tsx"
  },
  {
-  "h": "df7b0ca1",
-  "en": "Live XAUUSD candles from M1 to W1, EMA 20/50/200 and today's R1, pivot and S1 levels. Your MT5 robot's trades are on the chart, their profit and loss in Bot history below (your robot only; the site's signals are on the Signal history page).",
+  "h": "30b4f570",
+  "en": "Live XAUUSD candles from M1 to W1, EMA 20/50/200 and today's R1, pivot and S1 levels. Your MT5 robot's trades are on the chart, their profit and loss in Robot history below (your robot only; the site's signals are on the Signal history page).",
   "file": "src/app/(app)/chart/page.tsx"
  },
  {
@@ -240,8 +240,8 @@
   "file": "src/app/(app)/pay/[id]/page.tsx"
  },
  {
-  "h": "1a30cd36",
-  "en": "Wire's payment page opens: pick QPay, a bank app, a card, Toki and more. Come back here after paying and your access will be open.",
+  "h": "c2591d34",
+  "en": "The payment page opens: pay by QPay / a bank app (cards and Toki work too). Come back here after paying and your access will be open.",
   "file": "src/app/(app)/pay/[id]/page.tsx"
  },
  {
@@ -280,13 +280,13 @@
   "file": "src/app/(app)/performance/page.tsx"
  },
  {
-  "h": "26344b33",
-  "en": "No MT5 robot is connected. Connect it on the Bot page and every trade it closes shows up here by itself.",
+  "h": "539d82aa",
+  "en": "No MT5 robot is connected. Connect it on the Robot page and every trade it closes shows up here by itself.",
   "file": "src/app/(app)/performance/page.tsx"
  },
  {
-  "h": "77a90893",
-  "en": "Open the bot",
+  "h": "b7f808c1",
+  "en": "Open the Robot page",
   "file": "src/app/(app)/performance/page.tsx"
  },
  {
@@ -560,8 +560,8 @@
   "file": "src/app/(app)/profile/page.tsx"
  },
  {
-  "h": "0fab0269",
-  "en": "Bot · 30 days",
+  "h": "19489654",
+  "en": "Robot · 30 days",
   "file": "src/app/(app)/profile/page.tsx"
  },
  {
@@ -770,8 +770,8 @@
   "file": "src/app/(app)/settings/page.tsx"
  },
  {
-  "h": "930fcbd2",
-  "en": "Without a plan the odds, setups and the bot stay hidden.",
+  "h": "d00ccc95",
+  "en": "Without a plan the odds, setups and the robot stay hidden.",
   "file": "src/app/(app)/settings/page.tsx"
  },
  {
@@ -1630,6 +1630,11 @@
   "file": "src/app/admin/bot/backtest/page.tsx"
  },
  {
+  "h": "d9cb851e",
+  "en": "Bot",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
   "h": "ed29bcdd",
   "en": "Bot — backtest",
   "file": "src/app/admin/bot/backtest/page.tsx"
@@ -2365,11 +2370,6 @@
   "file": "src/components/AppNav.tsx"
  },
  {
-  "h": "73d1357f",
-  "en": "Robot",
-  "file": "src/components/AppNav.tsx"
- },
- {
   "h": "089e4d73",
   "en": "Macro",
   "file": "src/components/AppNav.tsx"
@@ -2582,6 +2582,16 @@
  {
   "h": "5f16d4f4",
   "en": "The rules and settings were chosen on 2019–2022 and checked on 2023 onward.{0}{1}",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "49772a90",
+  "en": "Backtest on historical data · not forward-tested",
+  "file": "src/components/BacktestFacts.tsx"
+ },
+ {
+  "h": "0ec24245",
+  "en": "Details",
   "file": "src/components/BacktestFacts.tsx"
  },
  {
@@ -4395,11 +4405,6 @@
   "file": "src/components/MyDashboard.tsx"
  },
  {
-  "h": "19489654",
-  "en": "Robot · 30 days",
-  "file": "src/components/MyDashboard.tsx"
- },
- {
   "h": "be0cbe9c",
   "en": "{0}% won",
   "file": "src/components/MyDashboard.tsx"
@@ -5840,8 +5845,8 @@
   "file": "src/components/TelegramConfirm.tsx"
  },
  {
-  "h": "85cb6846",
-  "en": " wrote your email to the bot on Telegram. If that was you, confirm. If not, decline: nothing is sent to them.",
+  "h": "813cdb49",
+  "en": " wrote your email to the Telegram bot. If that was you, confirm. If not, decline: nothing is sent to them.",
   "file": "src/components/TelegramConfirm.tsx"
  },
  {
@@ -6995,8 +7000,8 @@
   "file": "src/lib/actions/telegram.ts"
  },
  {
-  "h": "2efb4d96",
-  "en": "The bot was blocked or the chat deleted, so Telegram was unlinked. Link it again with “Link Telegram”.",
+  "h": "adf55497",
+  "en": "The Telegram bot was blocked or the chat deleted, so Telegram was unlinked. Link it again with “Link Telegram”.",
   "file": "src/lib/actions/telegram.ts"
  },
  {
@@ -7010,8 +7015,8 @@
   "file": "src/lib/actions/telegram.ts"
  },
  {
-  "h": "7f637d40",
-  "en": "The request has expired. Send your email to the bot again.",
+  "h": "d71a7f63",
+  "en": "The request has expired. Send your email to the Telegram bot again.",
   "file": "src/lib/actions/telegram.ts"
  },
  {
@@ -8055,8 +8060,8 @@
   "file": "src/lib/glossary.ts"
  },
  {
-  "h": "c3dc3a0c",
-  "en": "A practice account with no real money. Try the bot, the setups and your lot size here first, and move to a real account once you are used to them.",
+  "h": "85834f05",
+  "en": "A practice account with no real money. Try the robot, the setups and your lot size here first, and move to a real account once you are used to them.",
   "file": "src/lib/glossary.ts"
  },
  {
@@ -8065,8 +8070,8 @@
   "file": "src/lib/glossary.ts"
  },
  {
-  "h": "ce266a30",
-  "en": "The broker's trading app (computer and phone). The site's bot runs inside MT5 and trades in your account.",
+  "h": "ec0303b9",
+  "en": "The broker's trading app (computer and phone). The site's robot runs inside MT5 and trades in your account.",
   "file": "src/lib/glossary.ts"
  },
  {
@@ -8455,8 +8460,8 @@
   "file": "src/lib/risk.ts"
  },
  {
-  "h": "81879430",
-  "en": "Today −{0} of {1}. At the limit the bot stops for the day.",
+  "h": "a2d3a45f",
+  "en": "Today −{0} of {1}. At the limit the robot stops for the day.",
   "file": "src/lib/risk.ts"
  },
  {
@@ -8475,8 +8480,8 @@
   "file": "src/lib/risk.ts"
  },
  {
-  "h": "6c587847",
-  "en": "Today −{0}. The bot has stopped for the day{1}. It can run again tomorrow.",
+  "h": "e74da0c8",
+  "en": "Today −{0}. The robot has stopped for the day{1}. It can run again tomorrow.",
   "file": "src/lib/risk.ts"
  },
  {
@@ -8485,8 +8490,8 @@
   "file": "src/lib/risk.ts"
  },
  {
-  "h": "3702b15c",
-  "en": "Overall −{0}. The bot has stopped{1}. It stays off until you update the rules.",
+  "h": "c4535d53",
+  "en": "Overall −{0}. The robot has stopped{1}. It stays off until you update the rules.",
   "file": "src/lib/risk.ts"
  },
  {
@@ -9330,8 +9335,8 @@
   "file": "src/lib/watch.ts"
  },
  {
-  "h": "044a01d5",
-  "en": "🤖 Your bot (7 days): {0} trades · won {1} · <b>{2}</b>",
+  "h": "aa50c854",
+  "en": "🤖 Your robot (7 days): {0} trades · won {1} · <b>{2}</b>",
   "file": "src/lib/watch.ts"
  },
  {

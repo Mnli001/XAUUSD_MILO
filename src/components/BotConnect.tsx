@@ -26,9 +26,9 @@ export function OneClickInstall() {
         {t("Нэг товчоор суулгах (Windows)", "One-click install (Windows)")}
         <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">{t("Зөвлөе", "Recommended")}</span>
       </h3>
-      <p className="mt-1 text-sm leading-relaxed text-zinc-300">{t("Файлыг татаад давхар товшино. Бүгдийг өөрөө тохируулна: robot-ыг MT5-д хуулж, token болон site-ын хаягийг бичээд, Windows-той хамт асдаг жижиг далд туслахыг суулгаж, MT5-ыг алтны чарт дээр robot-тай нь нээнэ. Хаяг гараар нэмэх юм уу өөр алхам хийх шаардлагагүй.", "Download the file and double-click it. It sets everything up: it copies the robot into MT5, fills in the token and the site's address, installs a small background helper that starts with Windows, and opens MT5 with the robot on the gold chart. There is no address to add by hand and nothing else to do.")}</p>
+      <p className="mt-1 text-sm leading-relaxed text-zinc-300">{t("Файлыг татаад давхар товшино. Бүгдийг өөрөө тохируулна: роботыг MT5-д хуулж, token болон site-ын хаягийг бичээд, Windows-той хамт асдаг жижиг далд туслахыг суулгаж, MT5-ыг алтны чарт дээр роботтой нь нээнэ. Хаяг гараар нэмэх юм уу өөр алхам хийх шаардлагагүй.", "Download the file and double-click it. It sets everything up: it copies the robot into MT5, fills in the token and the site's address, installs a small background helper that starts with Windows, and opens MT5 with the robot on the gold chart. There is no address to add by hand and nothing else to do.")}</p>
       <a href={INSTALLER_HREF} className="btn mt-3 inline-flex">{t("XauBot-Setup.bat татах", "Download XauBot-Setup.bat")}</a>
-      <p className="mt-3 text-xs leading-relaxed text-amber-300">{t("Татах бүрт шинэ token үүсгэнэ: өмнөх token ажиллахаа болих тул өмнө нь тохируулсан robot-д шинэ token-оо дахин оруулна.", "Each download makes a new token: the previous one stops working, so a robot set up before needs the new token entered again.")}</p>
+      <p className="mt-3 text-xs leading-relaxed text-amber-300">{t("Татах бүрт шинэ token үүсгэнэ: өмнөх token ажиллахаа болих тул өмнө нь тохируулсан роботод шинэ token-оо дахин оруулна.", "Each download makes a new token: the previous one stops working, so a robot set up before needs the new token entered again.")}</p>
       <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t("Файл гарын үсэггүй тул Windows SmartScreen анхааруулга гарч болно: «More info» → «Run anyway» дарна. Файлд таны token бичигдсэн тул түүнийг бусадтай хуваалцахгүй.", "The file is not signed, so Windows SmartScreen may warn you: click \"More info\" → \"Run anyway\". The file holds your token, so do not share it.")}</p>
     </div>
   );
@@ -74,9 +74,9 @@ type StepText = { title: string; body: ReactNode; after?: ReactNode };
 
 function connectStepsMn(): StepText[] {
   return [
-    { title: "Robot-ын файлыг MT5-д хийх", body: <><a className={LINK} href={EX5_HREF}>XauBot.ex5 татах</a>. MT5 дээр <span className={MENU}>File → Open Data Folder</span> дарж, нээгдсэн хавтасны <span className={MENU}>MQL5 → Experts</span> дотор файлыг хуулна. Дараа нь зүүн талын <span className={MENU}>Navigator</span> дотор <span className={MENU}>Expert Advisors</span> дээр баруун товч → <span className={MENU}>Refresh</span>.</> },
+    { title: "Роботын файлыг MT5-д хийх", body: <><a className={LINK} href={EX5_HREF}>XauBot.ex5 татах</a>. MT5 дээр <span className={MENU}>File → Open Data Folder</span> дарж, нээгдсэн хавтасны <span className={MENU}>MQL5 → Experts</span> дотор файлыг хуулна. Дараа нь зүүн талын <span className={MENU}>Navigator</span> дотор <span className={MENU}>Expert Advisors</span> дээр баруун товч → <span className={MENU}>Refresh</span>.</> },
     { title: "Site-ын хаягийг зөвшөөрөх", body: <>MT5 дээр <span className={MENU}>Tools → Options → Expert Advisors</span>. <span className={MENU}>Allow WebRequest for listed URL</span>-ийг чагталж, доорх хаягийг жагсаалтад нэмээд OK дарна.</> },
-    { title: "Token үүсгээд robot-ыг асаах", body: <>Доорх товчоор token-оо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд token-оо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
+    { title: "Token үүсгээд роботыг асаах", body: <>Доорх товчоор token-оо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд token-оо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
   ];
 }
 
@@ -93,10 +93,10 @@ function troubleMn(): ReactNode[] {
     <>Token буруу эсвэл хуучин: шинэ token үүсгэвэл өмнөх нь ажиллахаа больдог. Хамгийн сүүлийн token-оо <span className={MENU}>BotToken</span>-д буулгана.</>,
     <>Хаяг зөвшөөрөгдөөгүй: 2-р алхмын хаяг <span className={MENU}>Allow WebRequest</span> жагсаалтад яг адилхан бичигдсэн эсэхийг шалгана.</>,
     <>Чарт дээр «Туслах ажиллахгүй байна» гэж гарвал XauBot-Setup.bat-ийг дахин ажиллуулна: туслахыг дахин суулгаж асаана.</>,
-    <>Чарт дээр «Netting данс» гэж гарвал robot арилжаа хийхгүй: брокероосоо hedging данс нээнэ.</>,
-    <>Чарт дээр алдагдлын хязгаар хүрсэн гэж гарвал robot өөрийн арилжааг хааж, шинээр орохгүй: өдрийн хязгаар дараагийн брокерын өдөр, оргилоос уналтын хязгаар robot-ын <span className={MENU}>ResetLossLock</span> тохиргоогоор арилна.</>,
-    <>Algo Trading унтраалттай: дээд самбарын товч ногоон, robot-ын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
-    <>Бямба, ням гарагт алтны зах хаалттай: тэр үед robot холбогдсон ч арилжаа хийхгүй.</>,
+    <>Чарт дээр «Netting данс» гэж гарвал робот арилжаа хийхгүй: брокероосоо hedging данс нээнэ.</>,
+    <>Чарт дээр алдагдлын хязгаар хүрсэн гэж гарвал робот өөрийн арилжааг хааж, шинээр орохгүй: өдрийн хязгаар дараагийн брокерын өдөр, оргилоос уналтын хязгаар роботын <span className={MENU}>ResetLossLock</span> тохиргоогоор арилна.</>,
+    <>Algo Trading унтраалттай: дээд самбарын товч ногоон, роботын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
+    <>Бямба, ням гарагт алтны зах хаалттай: тэр үед робот холбогдсон ч арилжаа хийхгүй.</>,
     <>.ex5 файл ачаалагдахгүй бол эх кодыг <a className={LINK} href={MQ5_HREF}>XauBot.mq5</a> татаж, MetaEditor (F4) дээр нээгээд Compile (F7) дарна.</>,
   ];
 }
@@ -159,7 +159,7 @@ export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot, ins
                   {tokenSlot}
                   <p className="mt-3 text-sm leading-relaxed text-zinc-300">{s.after}</p>
                   {syncUrl && <>
-                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Robot-ын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Роботын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
                     <CopyField value={syncUrl} label="ServerUrl" />
                   </>}
                 </>

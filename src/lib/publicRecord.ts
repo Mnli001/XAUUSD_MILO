@@ -123,9 +123,9 @@ export async function setPublicRecord(adminId: string, login: string, sinceDay: 
   const since = ubLocalToUtc(day, "00:00");
   if (!login) return { error: t("Данс сонгоно уу", "Choose an account") };
   const [bot] = await db.select().from(schema.botLive).where(and(eq(schema.botLive.userId, adminId), eq(schema.botLive.login, login)));
-  if (!bot) return { error: t("Энэ данс таных биш эсвэл robot холбогдоогүй байна", "This account is not yours or no robot has connected from it") };
+  if (!bot) return { error: t("Энэ данс таных биш эсвэл робот холбогдоогүй байна", "This account is not yours or no robot has connected from it") };
   const balance = (bot.status as Status)?.account?.balance;
-  if (typeof balance !== "number" || !Number.isFinite(balance)) return { error: t("Энэ данснаас robot balance мэдээлээгүй байна. Robot-оо асаагаад дахин оролдоно уу.", "The robot has not reported a balance from this account yet. Turn the robot on and try again.") };
+  if (typeof balance !== "number" || !Number.isFinite(balance)) return { error: t("Энэ данснаас робот balance мэдээлээгүй байна. Роботоо асаагаад дахин оролдоно уу.", "The robot has not reported a balance from this account yet. Turn the robot on and try again.") };
   const [{ closed }] = await db.select({ closed: sum(schema.botDeals.profit) }).from(schema.botDeals)
     .where(and(eq(schema.botDeals.userId, adminId), eq(schema.botDeals.login, login), gte(schema.botDeals.closeTime, since)));
   const startBalance = round(balance - Number(closed ?? 0));

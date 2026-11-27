@@ -133,7 +133,7 @@ export function LiveRecordView({ record, v }: { record: PublicRecord | null; v: 
           </table>
         </div>
       </div>
-      <p className="text-sm text-zinc-500">{t("Эзэмшигчийн өөрийн MT5 данс дээрх XauBot-ын хаагдсан арилжаа, robot-ын тайлангаас автоматаар. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Closed XauBot trades on the owner's own MT5 account, taken automatically from the robot's reports. Past results do not guarantee future profit.")}</p>
+      <p className="text-sm text-zinc-500">{t("Эзэмшигчийн өөрийн MT5 данс дээрх XauBot-ын хаагдсан арилжаа, роботын тайлангаас автоматаар. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Closed XauBot trades on the owner's own MT5 account, taken automatically from the robot's reports. Past results do not guarantee future profit.")}</p>
     </div>
   );
 }

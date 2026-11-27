@@ -225,6 +225,13 @@
       "when": 1795774451667,
       "tag": "0031_journal_manual",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795779331207,
+      "tag": "0032_telegram_linked_via",
+      "breakpoints": true
     }
   ]
 }

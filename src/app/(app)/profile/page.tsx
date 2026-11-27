@@ -104,7 +104,7 @@ export default async function ProfilePage() {
         <Tile icon="wallet" label={t("Багц", "Plan")} href="/plans" note={plan.kind === "active" ? t(`${v.date(plan.until)} хүртэл`, `until ${v.date(plan.until)}`) : plan.kind === "admin" ? t("хугацаагүй", "no end date") : t("Багц сонгох", "Choose a plan")}>
           {plan.kind === "active" ? (plan.plan ? PLANS[plan.plan].name : t("Идэвхтэй", "Active")) : plan.kind === "admin" ? t("Админ", "Admin") : t("Алга", "None")}
         </Tile>
-        <Tile icon="chart" label={t("Bot-ын 30 хоног", "Bot · 30 days")} href="/performance" note={month.month.closed > 0 ? t(`${month.month.closed} арилжаа${month.month.winRate !== null ? ` · ${month.month.winRate}% ашигтай` : ""}`, `${month.month.closed} trades${month.month.winRate !== null ? ` · ${month.month.winRate}% won` : ""}`) : t("Арилжаа хараахан алга", "No trades yet")}>
+        <Tile icon="chart" label={t("Роботын 30 хоног", "Robot · 30 days")} href="/performance" note={month.month.closed > 0 ? t(`${month.month.closed} арилжаа${month.month.winRate !== null ? ` · ${month.month.winRate}% ашигтай` : ""}`, `${month.month.closed} trades${month.month.winRate !== null ? ` · ${month.month.winRate}% won` : ""}`) : t("Арилжаа хараахан алга", "No trades yet")}>
           {month.month.closed > 0 ? <Pnl value={month.month.pnl} /> : "—"}
         </Tile>
         <Tile icon="bot" label={t("MT5 данс", "MT5 accounts")} href="/bot" note={accounts.length ? t(`${running} нь ажиллаж байна`, `${running} running`) : t("Холбогдоогүй", "Not connected")}>
@@ -158,7 +158,7 @@ export default async function ProfilePage() {
             {accounts.length === 0 ? (
               <li className="glass-tile flex items-center gap-3 px-3.5 py-3 text-sm">
                 <span aria-hidden className="h-2 w-2 rounded-full bg-zinc-600" />
-                <span className="min-w-0 flex-1"><span className="font-semibold text-zinc-100">MT5</span><span className="block text-xs text-zinc-500">{t("Robot холбогдоогүй", "No robot connected")}</span></span>
+                <span className="min-w-0 flex-1"><span className="font-semibold text-zinc-100">MT5</span><span className="block text-xs text-zinc-500">{t("Робот холбогдоогүй", "No robot connected")}</span></span>
                 <Link href="/bot" className="text-xs font-semibold text-amber-300 hover:text-amber-200">{t("Холбох", "Connect")}</Link>
               </li>
             ) : accounts.map((a) => (

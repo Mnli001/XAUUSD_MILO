@@ -5,9 +5,10 @@
 // that left the code are dropped from src/locales/<code>.json. Run: npm run i18n:extract (also runs before every build).
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url)); // a plain path on Windows too (.pathname gives "/C:/…")
 const SRC = join(ROOT, "src");
 const OUT = join(SRC, "locales");
 const SKIP = [/src\/lib\/legalText\.ts$/, /src\/locales\//]; // the legal texts stay in Mongolian and English
@@ -39,7 +40,7 @@ const files = [];
 const seen = new Map();
 let fileCount = 0;
 for (const f of files.sort()) {
-  const rel = relative(ROOT, f);
+  const rel = relative(ROOT, f).split("\\").join("/"); // forward slashes on Windows too
   if (SKIP.some((re) => re.test(rel))) continue;
   fileCount++;
   const code = readFileSync(f, "utf8");

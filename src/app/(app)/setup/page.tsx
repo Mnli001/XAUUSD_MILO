@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LotCalculator } from "@/components/LotCalculator";
-import { getSetups, BROKER_RECORD, type Setup } from "@/lib/setup/build";
+import { getSetupsCached, BROKER_RECORD, type Setup } from "@/lib/setup/build";
 import { getNextHighEvent } from "@/lib/events";
 import { TelegramCard } from "@/components/TelegramCard";
 import { requireUser } from "@/lib/auth";
@@ -38,7 +38,7 @@ export default async function SetupPage() {
   const now = new Date();
   const user = await requireUser();
   const { paid, payOn, contact } = paywallFor(user, now);
-  const [view, next, reasoning, live] = await Promise.all([getSetups(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null), paid ? signalHistory(now, SIGNAL_WINDOW) : Promise.resolve([])]);
+  const [view, next, reasoning, live] = await Promise.all([getSetupsCached(now, v), getNextHighEvent(now), paid ? getReasoning(now, v.locale) : Promise.resolve(null), paid ? signalHistory(now, SIGNAL_WINDOW) : Promise.resolve([])]);
   const candles = view.candles.map((c) => ({ ...c, time: c.time.toISOString() }));
 
   // Most actionable first (active, watch, forming, off); the rules otherwise keep their fixed order.

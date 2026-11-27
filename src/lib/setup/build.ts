@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import { db, schema } from "../db";
 import type { Candle } from "../analysis/indicators";
 import { SESSION_IDEAS, RECORD_BALANCE, ideaContext, ideaTrades } from "../bot/ideas";
 import { loadBacktestData } from "../bot/run";
 import { finalCandles, loadCandles, SYMBOL } from "../ingest/prices";
-import { type SetupHistory, type SetupNow, historyOf, rangeSetup } from "./setups";
+import { type AsianScores, type SetupHistory, type SetupNow, historyOf, rangeSetup } from "./setups";
 import { type SessionId, type SessionRule, SESSION_RULES, hourUtc } from "./sessionRules";
 import { MN_VIEWER, type Viewer } from "../viewer";
 
@@ -46,7 +46,7 @@ export const LIVE_H4_BARS = 2000;
 
 type Records = { at: number; historyFrom: Date | null; rows: { all: SetupHistory; recent: SetupHistory }[] };
 let records: Records | null = null;
-export const clearSetupCache = () => { records = null; };
+export const clearSetupCache = () => { records = null; inputsMemo = null; };
 
 /** Replaying three years of candles is slow and changes little from hour to hour, so it is kept. */
 async function getRecords(now: Date): Promise<Records> {
@@ -131,8 +131,13 @@ export function describe(rule: SessionRule, v: Viewer = MN_VIEWER): { name: stri
 }
 
 
-/** The setup read against the latest stored candles (closed bars only), each with its rule's replayed record. */
-export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<SetupsView> {
+/** What a reading needs that does not depend on the viewer or the clock: the stored candles, trend scores, releases, records. */
+type SetupInputs = {
+  rec: Records; bars: Candle[]; scores: AsianScores; news: Date[];
+  candles: Candle[]; lastCandleAt: Date | null; trend: { daily: number | null; h4: number | null };
+};
+
+async function loadInputs(now: Date): Promise<SetupInputs> {
   const [rec, m15, h4, d1, events] = await Promise.all([
     getRecords(now),
     loadCandles(SYMBOL, "15min", 700),
@@ -145,8 +150,19 @@ export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<Setup
   // A bar still forming decides nothing, and neither does a stored copy of a bar fetched before it closed (finalCandles).
   const closed = finalCandles(m15, "15min", now);
   const { ctx } = ideaContext({ m15: closed, h4: finalCandles(h4, "4h", now), d1: finalCandles(d1, "1day", now), news });
-  const scores = { daily: ctx.daily.slice(-200), h4: ctx.h4.slice(-200), atrD: ctx.atrD.slice(-200) };
-  const bars = closed.slice(-200);
+  return {
+    rec, news,
+    scores: { daily: ctx.daily.slice(-200), h4: ctx.h4.slice(-200), atrD: ctx.atrD.slice(-200) },
+    bars: closed.slice(-200),
+    candles: m15.slice(-CHART_BARS),
+    lastCandleAt: m15.at(-1)?.time ?? null,
+    trend: { daily: ctx.daily.at(-1) ?? null, h4: ctx.h4.at(-1) ?? null },
+  };
+}
+
+/** The setups on the viewer's clock and language, read at `now` from inputs loaded once. Cheap: 200 bars per rule. */
+function present(inp: SetupInputs, now: Date, v: Viewer): SetupsView {
+  const { bars, scores, news, rec } = inp;
   const yesterday = new Date(now.getTime() - 864e5).toISOString().slice(0, 10);
   const read = (rule: SessionRule) => {
     // A rule that holds overnight may still have yesterday's trade open before today's range: show that one while it is.
@@ -155,9 +171,47 @@ export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<Setup
   };
   return {
     setups: SESSION_RULES.map((rule, i) => ({ ...read(rule), id: rule.id, ...describe(rule, v), history: rec.rows[i].all, recent: rec.rows[i].recent })),
-    candles: m15.slice(-CHART_BARS),
-    lastCandleAt: m15.at(-1)?.time ?? null,
+    candles: inp.candles,
+    lastCandleAt: inp.lastCandleAt,
     historyFrom: rec.historyFrom,
-    trend: { daily: ctx.daily.at(-1) ?? null, h4: ctx.h4.at(-1) ?? null },
+    trend: inp.trend,
   };
+}
+
+/** The setup read against the latest stored candles (closed bars only), each with its rule's replayed record. Always fresh. */
+export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<SetupsView> {
+  return present(await loadInputs(now), now, v);
+}
+
+/**
+ * getSetups for pages (Setup, Today), with the heavy part kept per bar. Loading ~3700 candles and scoring the trends
+ * can only give a new answer when a new 15-minute bar is stored (the newest stored bar is the one still forming, so
+ * a newer one is what makes the bar before it final), so the inputs are keyed by the newest stored 15-minute candle
+ * (one indexed lookup): a new bar recomputes at once. They are also refreshed after SETUPS_TTL_MS so a release added to
+ * the calendar or a rewritten forming bar is never older than that. The viewer's language, time zone and the clock
+ * (entry windows, market hours) are applied on every call from the kept inputs, so viewers share one computation and
+ * concurrent callers share one load. The signal pipeline, the robot and Telegram keep calling getSetups.
+ */
+export const SETUPS_TTL_MS = process.env.NODE_ENV === "test" ? 0 : 60_000;
+let inputsMemo: { key: string; at: number; inputs: Promise<SetupInputs> } | null = null;
+export const forgetSetupInputs = () => { inputsMemo = null; };
+
+async function latestBarKey(): Promise<string> {
+  const [row] = await db.select({ at: max(schema.candles.time) }).from(schema.candles)
+    .where(and(eq(schema.candles.symbol, SYMBOL), eq(schema.candles.timeframe, "15min")));
+  return row?.at ? new Date(row.at).toISOString() : "";
+}
+
+export async function getSetupsCached(now: Date, v: Viewer = MN_VIEWER, ttlMs = SETUPS_TTL_MS): Promise<SetupsView> {
+  const key = await latestBarKey();
+  const t = now.getTime();
+  let entry = inputsMemo;
+  if (!(entry && entry.key === key && t - entry.at < ttlMs && t >= entry.at)) {
+    entry = { key, at: t, inputs: loadInputs(now) };
+    const mine = entry;
+    inputsMemo = mine;
+    // a failed load is not kept: the next request tries again
+    mine.inputs.catch(() => { if (inputsMemo === mine) inputsMemo = null; });
+  }
+  return present(await entry.inputs, now, v);
 }

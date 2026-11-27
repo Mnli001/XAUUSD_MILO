@@ -44,7 +44,7 @@ export default async function SettingsPage() {
         {plan && (
           <section className="card" aria-labelledby="plan-h">
             <h2 id="plan-h" className="card-title">{t("Багц", "Plan")}</h2>
-            <p className="mt-2 text-sm text-zinc-300">{plan === "active" ? t("Таны багц идэвхтэй. Сунгавал үлдсэн хоног хасагдахгүй.", "Your plan is active. Renewing keeps the days left.") : t("Багцгүй үед өсөх/унах магадлал, setup, bot нууцлагдсан харагдана.", "Without a plan the odds, setups and the bot stay hidden.")}</p>
+            <p className="mt-2 text-sm text-zinc-300">{plan === "active" ? t("Таны багц идэвхтэй. Сунгавал үлдсэн хоног хасагдахгүй.", "Your plan is active. Renewing keeps the days left.") : t("Багцгүй үед өсөх/унах магадлал, setup, робот нууцлагдсан харагдана.", "Without a plan the odds, setups and the robot stay hidden.")}</p>
             <Link href="/plans" className="btn mt-4">{plan === "active" ? t("Багц сунгах", "Renew plan") : t("Багц сонгох", "Choose a plan")}</Link>
           </section>
         )}

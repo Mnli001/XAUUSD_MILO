@@ -68,7 +68,7 @@ export default async function PayPage({ params }: { params: Promise<{ id: string
           {p.checkoutUrl && (
             <div>
               <a href={p.checkoutUrl} className="btn w-full sm:w-auto">{t(`${tugrik(p.amount)} төлөх`, `Pay ${tugrik(p.amount)}`)}</a>
-              <p className="mt-3 text-sm text-zinc-400">{t("Wire-ийн төлбөрийн хуудас нээгдэнэ: QPay, банкны app, карт, Toki зэргээс сонгоод төлнө. Төлсний дараа энд буцаж ирэхэд эрх тань нээгдсэн байна.", "Wire's payment page opens: pick QPay, a bank app, a card, Toki and more. Come back here after paying and your access will be open.")}</p>
+              <p className="mt-3 text-sm text-zinc-400">{t("Төлбөрийн хуудас нээгдэнэ: QPay / банкны аппаар (мөн карт, Toki) төлнө. Төлсний дараа энд буцаж ирэхэд эрх тань нээгдсэн байна.", "The payment page opens: pay by QPay / a bank app (cards and Toki work too). Come back here after paying and your access will be open.")}</p>
             </div>
           )}
         </section>

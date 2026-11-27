@@ -136,9 +136,12 @@ export async function deliverPhoto(chatId: string, png: Buffer | null, caption: 
   }
 }
 
+/** What an account holds once its chat is gone: no chat, and so no way it was linked. */
+const unlinked = { telegramChatId: null, telegramLinkedVia: null };
+
 /** Forgets a chat that can no longer be reached, for every account that had it. */
 export async function forgetChat(chatId: string): Promise<number> {
-  const rows = await db.update(schema.users).set({ telegramChatId: null }).where(eq(schema.users.telegramChatId, chatId)).returning({ id: schema.users.id });
+  const rows = await db.update(schema.users).set(unlinked).where(eq(schema.users.telegramChatId, chatId)).returning({ id: schema.users.id });
   if (rows.length) console.warn(`[telegram] chat unreachable (blocked or deleted), unlinked ${rows.length} account(s)`);
   return rows.length;
 }
@@ -188,7 +191,7 @@ export async function newLinkCode(userId: string, now = new Date()): Promise<str
 }
 
 export async function unlinkTelegram(userId: string): Promise<void> {
-  await db.update(schema.users).set({ telegramChatId: null, telegramLinkCode: null, telegramLinkExpiresAt: null, telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null }).where(eq(schema.users.id, userId));
+  await db.update(schema.users).set({ ...unlinked, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending }).where(eq(schema.users.id, userId));
 }
 
 const HOW_TO_LINK = {
@@ -254,10 +257,10 @@ const COMMAND = /^\/(\w+)(?:@\w+)?(?:\s|$)/;
 
 async function linkChat(chat: string, code: string, now: Date): Promise<void> {
   const linked = await db.transaction(async (tx) => {
-    const [user] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending })
+    const [user] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkedVia: "CODE", telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending })
       .where(and(eq(schema.users.telegramLinkCode, code), gt(schema.users.telegramLinkExpiresAt, now))).returning();
     // one chat belongs to one account, or that chat would get every signal twice
-    if (user) await tx.update(schema.users).set({ telegramChatId: null }).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, user.id)));
+    if (user) await tx.update(schema.users).set(unlinked).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, user.id)));
     return user;
   });
   if (linked) {
@@ -284,15 +287,11 @@ async function linkChat(chat: string, code: string, now: Date): Promise<void> {
 export const PENDING_TTL_MS = 30 * 60 * 1000;
 
 /**
- * Kept in telegram_pending_username while a chat is linked through the email request (the pending columns are
- * otherwise empty once a chat is linked; real usernames are [A-Za-z0-9_] only, so this can never be one).
- * Such a chat gets signals, but cannot ask for /reset until it is linked again with the site's one-time code.
- * Chats linked before this marker existed carry nothing and keep working.
- * TODO(migration): a proper column, users.telegram_linked_via ('CODE' | 'EMAIL'), would replace this marker.
+ * How the linked chat was linked (users.telegram_linked_via): "CODE" with the site's one-time code, "EMAIL" through
+ * the email request (one yes on the site). An email-linked chat gets signals, but cannot ask for /reset until it is
+ * linked again with the code. A chat with no record (linked before it was kept) counts as linked by code, as it did.
  */
-export const EMAIL_LINKED = "~email-linked";
-/** Whether this linked chat proved it is the owner's with the site's one-time code (or was linked before that was tracked). */
-export const linkedByCode = (u: Pick<User, "telegramPendingUsername">) => u.telegramPendingUsername !== EMAIL_LINKED;
+export const linkedByCode = (u: Pick<User, "telegramLinkedVia">) => u.telegramLinkedVia !== "EMAIL";
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
 /** The display name the chat chose (free text: anyone can call themselves anything, so it is never shown alone). */
@@ -349,7 +348,7 @@ export type PendingTelegram = {
 /** The link request waiting for this user's yes or no, or null when there is none (or it has lapsed). */
 export function pendingTelegram(u: Pick<User, "telegramPendingChatId" | "telegramPendingName" | "telegramPendingExpiresAt"> & Partial<Pick<User, "telegramPendingUsername">>, now: Date): PendingTelegram | null {
   if (!u.telegramPendingChatId || !u.telegramPendingExpiresAt || u.telegramPendingExpiresAt.getTime() <= now.getTime()) return null;
-  const username = u.telegramPendingUsername && u.telegramPendingUsername !== EMAIL_LINKED ? u.telegramPendingUsername : null;
+  const username = u.telegramPendingUsername || null;
   const displayName = u.telegramPendingName || null;
   const verified = [username ? `@${username}` : null, `ID ${u.telegramPendingChatId}`].filter(Boolean).join(" · "); // i18n-ok: handle and number, the same in both languages
   return { name: displayName ? `${verified} — “${displayName}”` : verified, displayName, username, chatId: u.telegramPendingChatId };
@@ -367,11 +366,11 @@ export async function confirmPendingTelegram(userId: string, now = new Date()): 
     }
     const chat = u.telegramPendingChatId!;
     // one chat belongs to one account, or that chat would get every signal twice
-    await tx.update(schema.users).set({ telegramChatId: null }).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, userId)));
+    await tx.update(schema.users).set(unlinked).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, userId)));
     // the same chat may have asked for other addresses too; those requests are spent
     await tx.update(schema.users).set(clearPending).where(and(eq(schema.users.telegramPendingChatId, chat), ne(schema.users.id, userId)));
-    // linked by email: signals yes, /reset only after the one-time code (see EMAIL_LINKED)
-    const [done] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending, telegramPendingUsername: EMAIL_LINKED }).where(eq(schema.users.id, userId)).returning();
+    // linked by email: signals yes, /reset only after the one-time code (see linkedByCode)
+    const [done] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkedVia: "EMAIL", telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending }).where(eq(schema.users.id, userId)).returning();
     return done;
   });
   if (!linked) return false;

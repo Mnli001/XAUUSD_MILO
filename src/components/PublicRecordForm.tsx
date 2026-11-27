@@ -13,7 +13,7 @@ export function PublicRecordForm({ accounts, today, current }: { accounts: Recor
   return (
     <form action={action} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_12rem_auto] sm:items-end">
       <div className="min-w-0">
-        <label className="label" htmlFor="record-login">{t("Robot-ын данс", "Robot account")}</label>
+        <label className="label" htmlFor="record-login">{t("Роботын данс", "Robot account")}</label>
         <select className="input" id="record-login" name="login" required defaultValue={current ?? accounts[0]?.login}>
           {accounts.map((a) => <option key={a.login} value={a.login}>{a.label} · {modeWord(a.mode)}</option>)}
         </select>

@@ -3,8 +3,9 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useFullscreen, FullscreenButton, FullscreenExit } from "@/components/useFullscreen";
 
 function Box() {
-  const fs = useFullscreen<HTMLDivElement>();
-  return <div ref={fs.ref} data-testid="box" className={`${fs.full ? "full" : ""} ${fs.boxClass}`}><FullscreenButton fs={fs} /><FullscreenExit fs={fs} /></div>;
+  const { ref, full, toggle, boxClass } = useFullscreen<HTMLDivElement>();
+  const fs = { full, toggle };
+  return <div ref={ref} data-testid="box" className={`${full ? "full" : ""} ${boxClass}`}><FullscreenButton fs={fs} /><FullscreenExit fs={fs} /></div>;
 }
 
 test("without the browser's fullscreen (an iPhone), the box fills the window instead, and Escape or the button brings it back", () => {
@@ -24,6 +25,7 @@ test("with the browser's fullscreen, the box itself goes fullscreen and follows 
   let current: Element | null = null;
   Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
   Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => current });
+  // eslint-disable-next-line @typescript-eslint/no-this-alias -- the stub records which element asked, as the browser does
   HTMLElement.prototype.requestFullscreen = function () { current = this; document.dispatchEvent(new Event("fullscreenchange")); return Promise.resolve(); };
   document.exitFullscreen = () => { current = null; document.dispatchEvent(new Event("fullscreenchange")); return Promise.resolve(); };
   render(<Box />);

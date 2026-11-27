@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   telegramPendingName: text("telegram_pending_name"), // how that chat calls itself, shown beside the yes/no
   telegramPendingExpiresAt: ts("telegram_pending_expires_at"), // the request above lapses after this
   telegramPendingUsername: text("telegram_pending_username"), // that chat's @username as Telegram reports it (the display name above is free text)
+  telegramLinkedVia: text("telegram_linked_via").$type<"CODE" | "EMAIL">(), // how the linked chat proved it is the owner's: the site's one-time code, or a yes on the site to an email request (no /reset)
   sessionVersion: integer("session_version").notNull().default(0), // in every session token; bumped on a password change or reset, which signs out every other session
   signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
   signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
