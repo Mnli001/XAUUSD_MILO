@@ -166,8 +166,8 @@ export function KeyStats({ t, c = CURVES }: { t: T; c?: BacktestCurves }) {
 }
 
 /**
- * The headline proof: "$1,500 → $6,494 · 2019–2026 · 1.5% risk", with the drawdown it took to get there and, in the
- * same type, what kind of number it is. The figure never stands alone.
+ * The headline proof leads with the yearly average and the largest fall ("+18% a year · largest fall −10%"), then the
+ * dollar path and the risk, and in the same type what kind of number it is. The figure never stands alone.
  */
 export function ProofLine({ t, c = CURVES, risk = HERO_RISK, size = "lg" }: { t: T; c?: Curves; risk?: number; size?: "lg" | "sm" }) {
   const r = riskCurve(risk, c);
@@ -175,10 +175,13 @@ export function ProofLine({ t, c = CURVES, risk = HERO_RISK, size = "lg" }: { t:
   return (
     <div className="min-w-0">
       <span className={`font-display block leading-none text-zinc-50 tabular-nums ${big ? "text-[clamp(2.2rem,7vw,3.4rem)]" : "text-[30px] sm:text-[36px]"}`}>
-        {usd(c.start)} <span aria-hidden className="text-amber-400">→</span><span className="sr-only">{t("-аас", "to")}</span> <span className="gold-text">{usd(finalBalance(r))}</span>
+        <span className="gold-text">{signedPct(r.cagr, 1)}</span> <span className={big ? "text-[0.45em] text-zinc-300" : "text-[0.5em] text-zinc-300"}>{t("жилд дунджаар", "a year on average")}</span>
       </span>
-      <span className={`mt-2 block text-zinc-300 tabular-nums ${big ? "text-base sm:text-lg" : "text-sm"}`}>
-        {t(`${spanLabel(c)} · арилжаа бүрт ${r.risk}% эрсдэлтэй · ${signedPct(r.finalPct, 0)} · хамгийн их уналт −${r.maxDD.toFixed(1)}%`, `${spanLabel(c)} · ${r.risk}% risk per trade · ${signedPct(r.finalPct, 0)} · largest fall −${r.maxDD.toFixed(1)}%`)}
+      <span className={`mt-2 block font-semibold text-red-300 tabular-nums ${big ? "text-lg sm:text-xl" : "text-base"}`}>
+        {t(`Хамгийн их уналт −${r.maxDD.toFixed(1)}%`, `Largest fall −${r.maxDD.toFixed(1)}%`)}
+      </span>
+      <span className={`mt-1.5 block text-zinc-300 tabular-nums ${big ? "text-base sm:text-lg" : "text-sm"}`}>
+        {t(`${usd(c.start)} → ${usd(finalBalance(r))} (${signedPct(r.finalPct, 0)}) · ${spanLabel(c)} · арилжаа бүрт ${r.risk}% эрсдэлтэй`, `${usd(c.start)} → ${usd(finalBalance(r))} (${signedPct(r.finalPct, 0)}) · ${spanLabel(c)} · ${r.risk}% risk per trade`)}
       </span>
       <BacktestHonesty t={t} c={c} size={size} className="mt-1.5" />
     </div>

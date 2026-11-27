@@ -239,7 +239,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
           <h2 id="connect-h" className="flex items-center gap-2 font-display text-[22px] leading-tight text-zinc-50 sm:text-[26px]">
             <Icon name="link" className="h-5 w-5 text-amber-400" />{t("MT5 холбох", "Connect MT5")}
           </h2>
-          <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Windows компьютер эсвэл VPS дээрх MT5-аа нээгээд дансаараа нэвтэрнэ. Дараа нь:", "Open MT5 on your Windows computer or VPS and sign in to your account. Then:")}</p>
+          <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Windows компьютер дээрх MT5-аа нээгээд дансаараа нэвтэрнэ. Дараа нь:", "Open MT5 on your Windows computer and sign in to your account. Then:")}</p>
           <div onClickCapture={confirmInstaller}>
             <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer}
               tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} />} />

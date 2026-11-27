@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 
 const LANDING = readFileSync("src/app/(public)/page.tsx", "utf8");
-const GUIDE = readFileSync("src/app/(public)/guide/vps/page.tsx", "utf8");
 const FOOTER = readFileSync("src/components/Disclaimer.tsx", "utf8");
 
 describe("landing page affordances", () => {
@@ -33,14 +32,12 @@ describe("landing page affordances", () => {
     expect(LANDING).toMatch(/<BacktestNote /);
   });
 
-  it("the VPS guide is linked from the FAQ and the footer", () => {
-    expect(LANDING).toMatch(/href="\/guide\/vps"/);
-    expect(FOOTER).toMatch(/href="\/guide\/vps"/);
-    expect(GUIDE).toMatch(/href="\/bot"/);
+  it("asks for no paid extras: no VPS guide or VPS wording", () => {
+    for (const src of [LANDING, FOOTER]) expect(src).not.toMatch(/guide\/vps|VPS/);
   });
 
   it("promises no outcome: no 'while you sleep', no 'never miss an entry'", () => {
-    for (const src of [LANDING, GUIDE, FOOTER]) expect(src).not.toMatch(/унтаж байсан ч|while you sleep|орох цэгээ алдахгүй|never miss an entry/i);
+    for (const src of [LANDING, FOOTER]) expect(src).not.toMatch(/унтаж байсан ч|while you sleep|орох цэгээ алдахгүй|never miss an entry/i);
   });
 
   it("puts the live record and what was thrown away on the page, and names payment as QPay / bank app", () => {
@@ -51,6 +48,6 @@ describe("landing page affordances", () => {
   });
 
   it("makes no claims the data cannot back", () => {
-    for (const src of [LANDING, GUIDE]) expect(src).not.toMatch(/guarantee[ds]? (profit|returns)|баталгаат ашиг|testimonial|\d[\d,]* (users|traders|хэрэглэгч)/i);
+    for (const src of [LANDING]) expect(src).not.toMatch(/guarantee[ds]? (profit|returns)|баталгаат ашиг|testimonial|\d[\d,]* (users|traders|хэрэглэгч)/i);
   });
 });
