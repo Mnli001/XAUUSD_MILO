@@ -19,5 +19,5 @@ test("shows the totals, the lessons and the trades", () => {
 test("explains how trades get here when there are none", () => {
   render(<JournalPanel rows={[]} s={journalStats([], MN_VIEWER)} v={MN_VIEWER} filter={{ src: "all", days: "90", login: "" }} logins={[]} />);
   expect(screen.getByText(/v3\.90/)).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Бот руу очих" })).toHaveAttribute("href", "/bot");
+  expect(screen.getByRole("link", { name: "Bot руу очих" })).toHaveAttribute("href", "/bot");
 });

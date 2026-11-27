@@ -19,7 +19,7 @@ const VERDICT_TEXT: Record<Tone, string> = { on: "text-emerald-400", off: "text-
 const verdictOf = (t: T): Record<PaperVerdict, { title: string; body: string; cls: Tone }> => ({
   PENDING: { title: t("Шалгалт үргэлжилж байна", "Test in progress"), body: t(`Дүгнэлт ${PAPER_MIN_TRADES} арилжаа хуримтлагдсаны дараа гарна. Түүнээс өмнөх тоонд итгэж болохгүй.`, `The verdict comes after ${PAPER_MIN_TRADES} trades have accumulated. Numbers before that cannot be trusted.`), cls: "off" },
   PASSED: { title: t("Тэнцсэн", "Passed"), body: t("Урьдчилан тогтоосон шалгуурыг шинэ дата дээр давлаа. Дараагийн алхам нь MT5 demo данс. Энэ нь ашгийн баталгаа биш.", "It cleared the criteria set in advance on new data. The next step is an MT5 demo account. This is not a guarantee of profit."), cls: "on" },
-  FAILED: { title: t("Тэнцээгүй", "Failed"), body: t("Шинэ дата дээр шалгуурт хүрсэнгүй. Энэ дүрмээр бот хийх үндэслэл алга.", "It did not meet the criteria on new data. There is no basis for building a bot on this rule."), cls: "down" },
+  FAILED: { title: t("Тэнцээгүй", "Failed"), body: t("Шинэ дата дээр шалгуурт хүрсэнгүй. Энэ дүрмээр bot хийх үндэслэл алга.", "It did not meet the criteria on new data. There is no basis for building a bot on this rule."), cls: "down" },
 });
 const phaseOf = (t: T): Record<TodayStatus["phase"], string> => ({
   NO_DATA: t("Үнийн дата алга — cron ажиллаж байгаа эсэхийг шалгана уу", "No price data — check that cron is running"),
@@ -41,8 +41,8 @@ export default async function PaperPage() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <div>
-        <BackLink href="/admin/bot">{t("Бот", "Bot")}</BackLink>
-        <h1 className="page-title">{t("Бот — цаасан арилжаа", "Bot — paper trading")}</h1>
+        <BackLink href="/admin/bot">{t("Bot", "Bot")}</BackLink>
+        <h1 className="page-title">{t("Bot — цаасан арилжаа", "Bot — paper trading")}</h1>
         <p className="page-lede">{t("“Азийн хүрээний breakout + өдрийн trend” дүрмийг шинэ дата дээр бодит цагт шалгана. Мөнгө оролцохгүй, захиалга хаашаа ч илгээгдэхгүй.", "Tests the “Asian range breakout + daily trend” rule on new data in real time. No money is involved and no order is sent anywhere.")}</p>
       </div>
 

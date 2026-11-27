@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <SectionLink href="/admin/revenue">{t("Орлого", "Revenue")}</SectionLink>
             <SectionLink href="/admin/payments">{t("Төлбөр", "Payments")}</SectionLink>
             <SectionLink href="/admin/events">{t("Мэдээ", "News")}</SectionLink>
-            <SectionLink href="/admin/bot">{t("Ботын судалгаа", "Bot research")}</SectionLink>
+            <SectionLink href="/admin/bot">{t("Bot-ын судалгаа", "Bot research")}</SectionLink>
           </nav>
           <Link href="/today" className="flex shrink-0 items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-100">
             <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>

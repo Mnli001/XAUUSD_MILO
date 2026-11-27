@@ -205,7 +205,7 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           {toggle("ema", "EMA")}
           {toggle("levels", t("Түвшин", "Levels"), !levels)}
-          {toggle("trades", t("Ботын арилжаа", "Bot trades"), !bot)}
+          {toggle("trades", t("Bot-ын арилжаа", "Bot trades"), !bot)}
         </div>
       </div>
       {/* The bar under the pointer (or the newest): open, high, low, close and its move. */}
@@ -234,7 +234,7 @@ export function CandleChart({ levels, bot, focus }: { levels: Levels | null; bot
         <span>{t(`Цаг ${zone}-аар.`, `Times in ${zone}.`)}</span>
         {show.ema && keys.map(([name, color]) => <span key={name} className="flex items-center gap-1.5"><span aria-hidden className="h-[5px] w-4 rounded-full" style={{ background: color }} />{name}</span>)}
         {bot && show.trades && <>
-          <span className="flex items-center gap-1.5"><span aria-hidden className="text-emerald-400">▲</span><span aria-hidden className="text-red-400">▼</span>{t("бот орсон", "bot entry")}</span>
+          <span className="flex items-center gap-1.5"><span aria-hidden className="text-emerald-400">▲</span><span aria-hidden className="text-red-400">▼</span>{t("bot орсон", "bot entry")}</span>
           <span className="flex items-center gap-1.5"><span aria-hidden className="h-2 w-2 rounded-full bg-emerald-500" /><span aria-hidden className="h-2 w-2 rounded-full bg-red-500" />{t("хаасан, ашиг/алдагдал", "closed, profit/loss")}</span>
         </>}
       </div>

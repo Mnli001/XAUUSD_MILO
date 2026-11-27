@@ -14,7 +14,7 @@ export default async function GlossaryPage() {
     <div className="reveal space-y-5 sm:space-y-7">
       <header>
         <h1 className="page-title">{t("Нэр томьёо", "Glossary")}</h1>
-        <p className="page-lede mt-3">{t("Сайтад гардаг арилжааны үг бүрийн энгийн тайлбар. Шинээр эхэлж байгаа бол эхлээд “Үндсэн ойлголт”-ыг уншаарай.", "A plain explanation of every trading word the site uses. If you are new, start with “The basics”.")}</p>
+        <p className="page-lede mt-3">{t("Site-ад гардаг арилжааны үг бүрийн энгийн тайлбар. Шинээр эхэлж байгаа бол эхлээд “Үндсэн ойлголт”-ыг уншаарай.", "A plain explanation of every trading word the site uses. If you are new, start with “The basics”.")}</p>
         <nav aria-label={t("Бүлгүүд", "Sections")} className="mt-4 flex flex-wrap gap-2">
           {GLOSSARY_GROUPS.map((g) => (
             <a key={g.id} href={`#${g.id}`} className="btn-ghost text-sm">{t(g.title.mn, g.title.en)}</a>

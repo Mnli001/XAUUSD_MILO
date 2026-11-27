@@ -33,8 +33,8 @@ export function RiskCard({ view, presets }: { view: RiskView; presets: Preset[] 
   return (
     <section id="risk" className="card scroll-mt-24" aria-labelledby="risk-h">
       <h2 id="risk-h" className="card-title">{t("Эрсдэлийн менежер", "Risk manager")}</h2>
-      <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Prop firm шиг өдрийн болон нийт алдагдлын хязгаар тавина. 80%-д хүрэхэд сануулна, 100%-д хүрэхэд бот зогсоно. Хэмжилт нь дансны equity (нээлттэй арилжааны ашиг/алдагдал орсон) дээр.", "Set a daily and an overall loss limit like a prop firm. At 80% you are warned, at 100% the bot stops. Measured on the account's equity (open trades included).")}</p>
-      {view.breach && <p role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-200">{view.breach === "RISK_DAILY" ? t("Өнөөдрийн алдагдлын хязгаарт хүрсэн: бот маргааш хүртэл зогсоно.", "Today's loss limit was reached: the bot stays off until tomorrow.") : t("Нийт алдагдлын хязгаарт хүрсэн: дүрмээ шинэчилтэл бот асахгүй.", "The overall loss limit was reached: the bot stays off until you update the rules.")}</p>}
+      <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Prop firm шиг өдрийн болон нийт алдагдлын хязгаар тавина. 80%-д хүрэхэд сануулна, 100%-д хүрэхэд bot зогсоно. Хэмжилт нь дансны equity (нээлттэй арилжааны ашиг/алдагдал орсон) дээр.", "Set a daily and an overall loss limit like a prop firm. At 80% you are warned, at 100% the bot stops. Measured on the account's equity (open trades included).")}</p>
+      {view.breach && <p role="alert" className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-200">{view.breach === "RISK_DAILY" ? t("Өнөөдрийн алдагдлын хязгаарт хүрсэн: bot маргааш хүртэл зогсоно.", "Today's loss limit was reached: the bot stays off until tomorrow.") : t("Нийт алдагдлын хязгаарт хүрсэн: дүрмээ шинэчилтэл bot асахгүй.", "The overall loss limit was reached: the bot stays off until you update the rules.")}</p>}
       {view.reading && (
         <div className="mt-4 space-y-3">
           <Meter label={t("Өнөөдрийн алдагдал", "Today's loss")} bar={view.reading.daily} />
@@ -55,7 +55,7 @@ export function RiskCard({ view, presets }: { view: RiskView; presets: Preset[] 
           <div><label className="label" htmlFor="risk-max">{t("Нийт хязгаар (%)", "Overall limit (%)")}</label><input id="risk-max" name="maxLossPct" className="input tabular-nums" type="number" min="0.1" max="100" step="0.1" required value={vals.max} onChange={(e) => setVals({ ...vals, max: e.target.value })} /></div>
           <div><label className="label" htmlFor="risk-target">{t("Ашгийн зорилт (%)", "Profit target (%)")}</label><input id="risk-target" name="profitTargetPct" className="input tabular-nums" type="number" min="0.1" step="0.1" placeholder={t("заавал биш", "optional")} value={vals.target} onChange={(e) => setVals({ ...vals, target: e.target.value })} /></div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" name="closeOnBreach" defaultChecked={r?.closeOnBreach ?? true} />{t("Хязгаарт хүрэхэд роботын нээлттэй арилжааг хаах", "Close the robot's open trades when a limit is reached")}</label>
+        <label className="flex items-center gap-2 text-sm text-zinc-300"><input type="checkbox" name="closeOnBreach" defaultChecked={r?.closeOnBreach ?? true} />{t("Хязгаарт хүрэхэд robot-ын нээлттэй арилжааг хаах", "Close the robot's open trades when a limit is reached")}</label>
         <div className="flex flex-wrap gap-3">
           <button className="btn" disabled={pending}>{t("Хадгалах", "Save")}</button>
           {r && <button className="btn-ghost text-red-300" name="remove" value="1" formNoValidate disabled={pending}>{t("Хязгаарыг арилгах", "Remove limits")}</button>}

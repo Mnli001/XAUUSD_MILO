@@ -72,7 +72,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
   const head = (
     <div>
       <h1 className="page-title">{t("Гүйцэтгэл", "Performance")}</h1>
-      <p className="page-lede">{t("Таны MT5 робот дээр хаагдсан арилжаанаас автоматаар тооцсон статистик. Гараар юу ч бичих шаардлагагүй. Ирээдүйн ашгийг батлахгүй.", "Statistics worked out automatically from the trades your MT5 robot closed. Nothing to type in. They do not promise future profit.")}</p>
+      <p className="page-lede">{t("Таны MT5 robot дээр хаагдсан арилжаанаас автоматаар тооцсон статистик. Гараар юу ч бичих шаардлагагүй. Ирээдүйн ашгийг батлахгүй.", "Statistics worked out automatically from the trades your MT5 robot closed. Nothing to type in. They do not promise future profit.")}</p>
     </div>
   );
   // One account at a time: a demo and a real account added together would say nothing true about either.
@@ -93,9 +93,9 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
       <div className="space-y-4 sm:space-y-5">{head}{picker}
         <div className="card text-sm leading-relaxed text-zinc-400">
           {login
-            ? t("Энэ дансанд робот хаасан арилжаа алга. Робот арилжаа хаах бүрд статистик энд автоматаар нэмэгдэнэ.", "The robot has not closed a trade on this account yet. Each trade it closes is added here by itself.")
-            : t("MT5 робот холбогдоогүй байна. Бот хуудаснаас роботоо холбовол хаагдсан арилжаа бүрийн статистик энд автоматаар гарна.", "No MT5 robot is connected. Connect it on the Bot page and every trade it closes shows up here by itself.")}
-          <div className="mt-3"><Link href="/bot" className="font-semibold text-amber-300 hover:text-amber-200">{t("Бот руу", "Open the bot")}</Link></div>
+            ? t("Энэ дансанд robot хаасан арилжаа алга. Robot арилжаа хаах бүрд статистик энд автоматаар нэмэгдэнэ.", "The robot has not closed a trade on this account yet. Each trade it closes is added here by itself.")
+            : t("MT5 robot холбогдоогүй байна. Bot хуудаснаас robot-оо холбовол хаагдсан арилжаа бүрийн статистик энд автоматаар гарна.", "No MT5 robot is connected. Connect it on the Bot page and every trade it closes shows up here by itself.")}
+          <div className="mt-3"><Link href="/bot" className="font-semibold text-amber-300 hover:text-amber-200">{t("Bot руу", "Open the bot")}</Link></div>
         </div>
       </div>
     );
@@ -111,7 +111,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
       {current?.mode === "DEMO" && <p className="text-sm text-zinc-400">{t("Demo данс: бодит мөнгө биш. Жинхэнэ дансны үр дүн өөр байж болно.", "Demo account: not real money. A real account can do differently.")}</p>}
       <Figures label={t("Гол үзүүлэлт", "Key figures")} items={[
         { label: t("Нийт P&L", "Total P&L"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl)}</>, tone: tone(p.totalPnl), hint: <TermHint id="pnl" />,
-          note: t("Роботын хаасан бүх арилжааны нийт ашиг, алдагдал", "Every trade the robot closed, profit and loss added up") },
+          note: t("Robot-ын хаасан бүх арилжааны нийт ашиг, алдагдал", "Every trade the robot closed, profit and loss added up") },
         { label: t("Ашигтай хаагдсан хувь (Win rate)", "Win rate"), value: `${p.winRate!.toFixed(1)}%`, hint: <TermHint id="win-rate" />,
           note: t("Ашигтай хаагдсан арилжааны хувь", "Share of trades closed in profit") },
         { label: t("Ашиг ÷ алдагдал (Profit factor)", "Profit factor"), value: p.profitFactor === null ? "—" : p.profitFactor.toFixed(2), hint: <TermHint id="profit-factor" />,
@@ -132,7 +132,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
         <Breakdown id="by-weekday" t={t} title={t("Гарагаар", "By weekday")} rows={rows(p.byWeekday, (k) => weekdayName(Number(k), t))} />
         <Breakdown id="by-hour" t={t} title={`${t("Нээсэн цагаар", "By opening hour")} · ${v.zone}`} rows={rows(p.byHour, (k) => v.ub(`${k.padStart(2, "0")}:00`), (k) => sessionColor(sessionOfUbHour(Number(k))))} />
       </div>
-      <p className="max-w-prose text-xs leading-relaxed text-zinc-500">{t("Зөвхөн хаагдсан арилжаа тооцогдоно; ашиг, алдагдлыг робот MT5-аас тайлагнасан дүнгээр нь авна. Нээсэн цагийг робот бүртгэсэн бол түүгээр, үгүй бол хаагдсан цагаар нь тооцно. Profit factor нь алдагдалтай арилжаа байхгүй үед гарахгүй.", "Only closed trades are counted, at the profit or loss the robot reported from MT5. The opening hour is the one the robot recorded, else the closing hour. Profit factor is not shown when there are no losing trades.")}</p>
+      <p className="max-w-prose text-xs leading-relaxed text-zinc-500">{t("Зөвхөн хаагдсан арилжаа тооцогдоно; ашиг, алдагдлыг robot MT5-аас тайлагнасан дүнгээр нь авна. Нээсэн цагийг robot бүртгэсэн бол түүгээр, үгүй бол хаагдсан цагаар нь тооцно. Profit factor нь алдагдалтай арилжаа байхгүй үед гарахгүй.", "Only closed trades are counted, at the profit or loss the robot reported from MT5. The opening hour is the one the robot recorded, else the closing hour. Profit factor is not shown when there are no losing trades.")}</p>
     </div>
   );
 }

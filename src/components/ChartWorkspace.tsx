@@ -48,7 +48,7 @@ export function ChartWorkspace({ levels, poll = true }: { levels: Levels | null;
       <CandleChart levels={levels} bot={bot} focus={focus} />
       {data && (data.account
         ? <BotTradeHistory trades={data.trades} now={data.fetchedAt} onPick={(at) => { setFocus((f) => ({ at, n: (f?.n ?? 0) + 1 })); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-        : <section aria-labelledby="history-h" className="space-y-2"><h2 id="history-h" className="text-lg font-semibold text-zinc-100">{t("Ботын түүх", "Bot history")}</h2><p className="card text-sm text-zinc-400">{t("MT5 робот холбогдоогүй байна. Бот хуудаснаас холбовол арилжаа бүр нь чарт дээр болон энд ашиг, алдагдалтайгаа гарна.", "No MT5 robot is connected. Connect it on the Bot page and every trade shows on the chart and here, with its profit or loss.")}</p></section>)}
+        : <section aria-labelledby="history-h" className="space-y-2"><h2 id="history-h" className="text-lg font-semibold text-zinc-100">{t("Bot-ын түүх", "Bot history")}</h2><p className="card text-sm text-zinc-400">{t("MT5 robot холбогдоогүй байна. Bot хуудаснаас холбовол арилжаа бүр нь чарт дээр болон энд ашиг, алдагдалтайгаа гарна.", "No MT5 robot is connected. Connect it on the Bot page and every trade shows on the chart and here, with its profit or loss.")}</p></section>)}
     </div>
   );
 }

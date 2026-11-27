@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => path }));
 vi.mock("@/lib/actions/session", () => ({ logoutAction: async () => {} }));
 import { AppNav, currentHref } from "@/components/AppNav";
 
-const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот", "Дохионы түүх", "Макро", "Зах зээл", "Дасгал", "Журнал", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Профайл"];
+const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Bot", "Дохионы түүх", "Макро", "Зах зээл", "Дасгал", "Журнал", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Profile"];
 
 test("the section you are in is marked as current, in both the rail and the phone tab bar", () => {
   path = "/news";
@@ -24,7 +24,7 @@ test("Signal history is its own page: on it, Signal history is current and Bot i
   render(<AppNav name="Ану" isAdmin={false} />);
   const rail = screen.getByRole("navigation", { name: "Үндсэн цэс" });
   expect(within(rail).getByRole("link", { name: "Дохионы түүх" })).toHaveAttribute("aria-current", "page");
-  expect(within(rail).getByRole("link", { name: "Бот" })).not.toHaveAttribute("aria-current");
+  expect(within(rail).getByRole("link", { name: "Bot" })).not.toHaveAttribute("aria-current");
   expect(currentHref("/bot", ["/bot", "/bot/history"])).toBe("/bot");
   expect(currentHref("/bot/history", ["/bot", "/bot/history"])).toBe("/bot/history");
   expect(currentHref("/botx", ["/bot"])).toBeNull();
@@ -74,7 +74,7 @@ test("the phone tab bar holds five tabs; Performance lives in the menu", () => {
   path = "/today";
   render(<AppNav name="Ану" isAdmin={false} />);
   const bar = screen.getByRole("navigation", { name: "Доод цэс" });
-  expect(within(bar).getAllByRole("link").map((a) => a.textContent)).toEqual(["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот"]);
+  expect(within(bar).getAllByRole("link").map((a) => a.textContent)).toEqual(["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Bot"]);
   fireEvent.click(screen.getByRole("button", { name: "Цэс" }));
   expect(within(screen.getByRole("navigation", { name: "Бүх хуудас" })).getByRole("link", { name: "Гүйцэтгэл" })).toHaveAttribute("href", "/performance");
 });
@@ -84,5 +84,5 @@ test("the account row shows the profile picture when there is one and leads to t
   const { container } = render(<AppNav name="Ану" isAdmin={false} avatar="/api/avatar?v=1" />);
   expect(container.querySelector('img[src="/api/avatar?v=1"]')).not.toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /Ану/ }));
-  expect(screen.getByRole("menuitem", { name: "Профайл" })).toHaveAttribute("href", "/profile");
+  expect(screen.getByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "/profile");
 });

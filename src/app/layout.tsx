@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   const origin = siteOrigin();
   const title = t("XAU Analytics — алтны зах зээлийн шинжилгээ", "XAU Analytics — gold market analysis");
-  const description = t("Алтны (XAUUSD) чиглэл, цагийн магадлал, setup дохио, мэдээний календарь, MT5 робот: Улаанбаатарын цагаар.", "Gold (XAUUSD) direction, hourly odds, setup signals, the news calendar and an MT5 robot, on Ulaanbaatar time.");
+  const description = t("Алтны (XAUUSD) чиглэл, цагийн магадлал, setup дохио, мэдээний календарь, MT5 robot: Улаанбаатарын цагаар.", "Gold (XAUUSD) direction, hourly odds, setup signals, the news calendar and an MT5 robot, on Ulaanbaatar time.");
   return {
     // Pages set a short title ("Setup"); the template adds the brand. Pages without one get the full title.
     title: { default: title, template: "%s — XAU Analytics" },

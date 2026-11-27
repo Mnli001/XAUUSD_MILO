@@ -23,7 +23,7 @@ import { LOCALE_NAMES } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Профайл — XAU Analytics", "Profile — XAU Analytics") };
+  return { title: t("Profile — XAU Analytics", "Profile — XAU Analytics") };
 }
 
 const DAY = 864e5;
@@ -83,7 +83,7 @@ export default async function ProfilePage() {
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
           <AvatarUploader name={user.name} src={avatar} />
           <div className="min-w-0 flex-1 text-center sm:text-left">
-            <p className="text-xs font-medium text-amber-400">{t("Профайл", "Profile")}</p>
+            <p className="text-xs font-medium text-amber-400">{t("Profile", "Profile")}</p>
             <h1 id="me-h" className="font-display mt-1 text-[30px] leading-tight break-words text-zinc-50 sm:text-[40px]">{user.name}</h1>
             <p className="mt-1 text-sm break-all text-zinc-400">{user.email}</p>
             <p className="mt-3 flex flex-wrap justify-center gap-2 text-xs sm:justify-start">
@@ -104,7 +104,7 @@ export default async function ProfilePage() {
         <Tile icon="wallet" label={t("Багц", "Plan")} href="/plans" note={plan.kind === "active" ? t(`${v.date(plan.until)} хүртэл`, `until ${v.date(plan.until)}`) : plan.kind === "admin" ? t("хугацаагүй", "no end date") : t("Багц сонгох", "Choose a plan")}>
           {plan.kind === "active" ? (plan.plan ? PLANS[plan.plan].name : t("Идэвхтэй", "Active")) : plan.kind === "admin" ? t("Админ", "Admin") : t("Алга", "None")}
         </Tile>
-        <Tile icon="chart" label={t("Ботын 30 хоног", "Bot · 30 days")} href="/performance" note={month.month.closed > 0 ? t(`${month.month.closed} арилжаа${month.month.winRate !== null ? ` · ${month.month.winRate}% ашигтай` : ""}`, `${month.month.closed} trades${month.month.winRate !== null ? ` · ${month.month.winRate}% won` : ""}`) : t("Арилжаа хараахан алга", "No trades yet")}>
+        <Tile icon="chart" label={t("Bot-ын 30 хоног", "Bot · 30 days")} href="/performance" note={month.month.closed > 0 ? t(`${month.month.closed} арилжаа${month.month.winRate !== null ? ` · ${month.month.winRate}% ашигтай` : ""}`, `${month.month.closed} trades${month.month.winRate !== null ? ` · ${month.month.winRate}% won` : ""}`) : t("Арилжаа хараахан алга", "No trades yet")}>
           {month.month.closed > 0 ? <Pnl value={month.month.pnl} /> : "—"}
         </Tile>
         <Tile icon="bot" label={t("MT5 данс", "MT5 accounts")} href="/bot" note={accounts.length ? t(`${running} нь ажиллаж байна`, `${running} running`) : t("Холбогдоогүй", "Not connected")}>
@@ -158,7 +158,7 @@ export default async function ProfilePage() {
             {accounts.length === 0 ? (
               <li className="glass-tile flex items-center gap-3 px-3.5 py-3 text-sm">
                 <span aria-hidden className="h-2 w-2 rounded-full bg-zinc-600" />
-                <span className="min-w-0 flex-1"><span className="font-semibold text-zinc-100">MT5</span><span className="block text-xs text-zinc-500">{t("Робот холбогдоогүй", "No robot connected")}</span></span>
+                <span className="min-w-0 flex-1"><span className="font-semibold text-zinc-100">MT5</span><span className="block text-xs text-zinc-500">{t("Robot холбогдоогүй", "No robot connected")}</span></span>
                 <Link href="/bot" className="text-xs font-semibold text-amber-300 hover:text-amber-200">{t("Холбох", "Connect")}</Link>
               </li>
             ) : accounts.map((a) => (
@@ -186,7 +186,7 @@ export default async function ProfilePage() {
             <Link href="/terms" className="font-semibold text-amber-300 hover:text-amber-200">{t("Үйлчилгээний нөхцөл", "Terms of service")}</Link>
             {journal.length > 0 && <a href="/api/trades/export" download className="font-semibold text-amber-300 hover:text-amber-200">{t(`Хуучин журнал (${journal.length}) татах`, `Download old journal (${journal.length})`)}</a>}
           </p>
-          <p className="mt-4 text-xs leading-relaxed text-zinc-500">{t("Профайл зураг зөвхөн танд харагдана. Бүртгэлээ устгахыг Тохиргоо хуудсаас хийнэ: таны бүх мэдээлэл, зураг хамт устна.", "Your profile picture is visible only to you. Delete your account from the Settings page: all your data, the picture included, goes with it.")}</p>
+          <p className="mt-4 text-xs leading-relaxed text-zinc-500">{t("Profile зураг зөвхөн танд харагдана. Бүртгэлээ устгахыг Тохиргоо хуудсаас хийнэ: таны бүх мэдээлэл, зураг хамт устна.", "Your profile picture is visible only to you. Delete your account from the Settings page: all your data, the picture included, goes with it.")}</p>
         </section>
       </div>
 

@@ -5,7 +5,7 @@ import "./globals.css";
 /** Both languages: this replaces the root layout, so the visitor's language setting is not known here. */
 const COPY = {
   title: { mn: "Алдаа гарлаа", en: "Something went wrong" },
-  body: { mn: "Сайтыг ачаалах үед алдаа гарлаа. Дахин оролдоно уу; давтагдвал админд хэлээрэй.", en: "The site failed to load. Try again; if it keeps happening, tell the admin." },
+  body: { mn: "Site-ыг ачаалах үед алдаа гарлаа. Дахин оролдоно уу; давтагдвал админд хэлээрэй.", en: "The site failed to load. Try again; if it keeps happening, tell the admin." },
   retry: { mn: "Дахин оролдох", en: "Try again" },
 };
 

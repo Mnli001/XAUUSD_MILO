@@ -358,7 +358,7 @@ export function tradeOpenedText(owner: { locale: string }, e: { side: string; lo
   const t = translator(parseLocale(owner.locale));
   const backing = e.side === "BUY" ? e.cBuy : e.cSell;
   return [
-    `${e.side === "BUY" ? "🟢" : "🔴"} <b>${t("Робот арилжаа нээлээ", "The robot opened a trade")}</b>`,
+    `${e.side === "BUY" ? "🟢" : "🔴"} <b>${t("Robot арилжаа нээлээ", "The robot opened a trade")}</b>`,
     `${esc(e.side)} ${e.lots} · ${px(e.openPrice)}`,
     e.cTotal ? t(`Чиглэлийг ${e.cTotal} аргын ${backing} нь дэмжиж байв`, `${backing} of ${e.cTotal} methods backed this side`) : "",
   ].filter(Boolean).join("\n");
@@ -366,7 +366,7 @@ export function tradeOpenedText(owner: { locale: string }, e: { side: string; lo
 export function tradeClosedText(owner: { locale: string }, d: { side: string; lots: number; openPrice: number; closePrice: number; profit: number }): string {
   const t = translator(parseLocale(owner.locale));
   return [
-    `${d.profit >= 0 ? "✅" : "❌"} <b>${t("Робот арилжаа хаалаа", "The robot closed a trade")}</b> ${usd(d.profit)}`,
+    `${d.profit >= 0 ? "✅" : "❌"} <b>${t("Robot арилжаа хаалаа", "The robot closed a trade")}</b> ${usd(d.profit)}`,
     `${esc(d.side)} ${d.lots} · ${px(d.openPrice)} → ${px(d.closePrice)}`,
   ].join("\n");
 }

@@ -52,9 +52,9 @@ type StepText = { title: string; body: ReactNode; after?: ReactNode };
 
 function connectStepsMn(): StepText[] {
   return [
-    { title: "Роботын файлыг MT5-д хийх", body: <><a className={LINK} href={EX5_HREF}>XauBot.ex5 татах</a>. MT5 дээр <span className={MENU}>File → Open Data Folder</span> дарж, нээгдсэн хавтасны <span className={MENU}>MQL5 → Experts</span> дотор файлыг хуулна. Дараа нь зүүн талын <span className={MENU}>Navigator</span> дотор <span className={MENU}>Expert Advisors</span> дээр баруун товч → <span className={MENU}>Refresh</span>.</> },
-    { title: "Сайтын хаягийг зөвшөөрөх", body: <>MT5 дээр <span className={MENU}>Tools → Options → Expert Advisors</span>. <span className={MENU}>Allow WebRequest for listed URL</span>-ийг чагталж, доорх хаягийг жагсаалтад нэмээд OK дарна.</> },
-    { title: "Token үүсгээд роботыг асаах", body: <>Доорх товчоор token-оо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд token-оо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
+    { title: "Robot-ын файлыг MT5-д хийх", body: <><a className={LINK} href={EX5_HREF}>XauBot.ex5 татах</a>. MT5 дээр <span className={MENU}>File → Open Data Folder</span> дарж, нээгдсэн хавтасны <span className={MENU}>MQL5 → Experts</span> дотор файлыг хуулна. Дараа нь зүүн талын <span className={MENU}>Navigator</span> дотор <span className={MENU}>Expert Advisors</span> дээр баруун товч → <span className={MENU}>Refresh</span>.</> },
+    { title: "Site-ын хаягийг зөвшөөрөх", body: <>MT5 дээр <span className={MENU}>Tools → Options → Expert Advisors</span>. <span className={MENU}>Allow WebRequest for listed URL</span>-ийг чагталж, доорх хаягийг жагсаалтад нэмээд OK дарна.</> },
+    { title: "Token үүсгээд robot-ыг асаах", body: <>Доорх товчоор token-оо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд token-оо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
   ];
 }
 
@@ -70,8 +70,8 @@ function troubleMn(): ReactNode[] {
   return [
     <>Token буруу эсвэл хуучин: шинэ token үүсгэвэл өмнөх нь ажиллахаа больдог. Хамгийн сүүлийн token-оо <span className={MENU}>BotToken</span>-д буулгана.</>,
     <>Хаяг зөвшөөрөгдөөгүй: 2-р алхмын хаяг <span className={MENU}>Allow WebRequest</span> жагсаалтад яг адилхан бичигдсэн эсэхийг шалгана.</>,
-    <>Algo Trading унтраалттай: дээд самбарын товч ногоон, роботын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
-    <>Бямба, ням гарагт алтны зах хаалттай: тэр үед робот холбогдсон ч арилжаа хийхгүй.</>,
+    <>Algo Trading унтраалттай: дээд самбарын товч ногоон, robot-ын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
+    <>Бямба, ням гарагт алтны зах хаалттай: тэр үед robot холбогдсон ч арилжаа хийхгүй.</>,
     <>.ex5 файл ачаалагдахгүй бол эх кодыг <a className={LINK} href={MQ5_HREF}>XauBot.mq5</a> татаж, MetaEditor (F4) дээр нээгээд Compile (F7) дарна.</>,
   ];
 }
@@ -119,12 +119,12 @@ export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot }: {
                 {state(i) !== "todo" && <span className={`ml-2 text-xs font-medium ${state(i) === "done" ? "text-emerald-400" : "text-amber-300"}`}>· {stateText[state(i)]}</span>}
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">{s.body}</p>
-              {i === 1 && <CopyField value={origin} label={t("Сайтын хаяг", "Site address")} />}
+              {i === 1 && <CopyField value={origin} label={t("Site-ын хаяг", "Site address")} />}
               {i === 2 && (
                 <>
                   {tokenSlot}
                   <p className="mt-3 text-sm leading-relaxed text-zinc-300">{s.after}</p>
-                  <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Роботын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Robot-ын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
                   <CopyField value={syncUrl} label="ServerUrl" />
                 </>
               )}

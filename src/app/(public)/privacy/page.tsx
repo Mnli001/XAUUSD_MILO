@@ -12,5 +12,5 @@ export async function generateMetadata() {
 export default async function PrivacyPage() {
   const v = await getViewer();
   const contact = siteAdminContact();
-  return <LegalDoc v={v} doc={legalFor(PRIVACY, v.locale)} fill={{ name: legalName(), contact: contact ? (contact.url ?? contact.text) : v.t("сайтын админ", "the site admin"), version: LEGAL_VERSION }} />;
+  return <LegalDoc v={v} doc={legalFor(PRIVACY, v.locale)} fill={{ name: legalName(), contact: contact ? (contact.url ?? contact.text) : v.t("site-ын админ", "the site admin"), version: LEGAL_VERSION }} />;
 }

@@ -21,6 +21,6 @@ export async function resetPasswordAction(_prev: ResetState, form: FormData): Pr
   if (password !== String(form.get("confirm") ?? "")) return { error: t("Хоёр нууц үг таарахгүй байна", "The two passwords do not match") };
   const r = await resetPasswordWithToken(token, password);
   if (r.error === "password") return { error: t("Нууц үг 8-аас дээш тэмдэгттэй байх ёстой", "Password must be 8 characters or more") };
-  if (r.error) return { error: t("Холбоос хүчингүй эсвэл хугацаа нь дууссан байна. Telegram ботод /reset гэж дахин бичнэ үү.", "This link is invalid or has expired. Send /reset to the Telegram bot again.") };
+  if (r.error) return { error: t("Холбоос хүчингүй эсвэл хугацаа нь дууссан байна. Telegram bot-од /reset гэж дахин бичнэ үү.", "This link is invalid or has expired. Send /reset to the Telegram bot again.") };
   redirect("/login?reset=1");
 }

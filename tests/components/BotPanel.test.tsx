@@ -45,7 +45,7 @@ test("creating a token shows it once with a Copy button and a warning", async ()
 test("a copy button falls back to selecting the text when the clipboard is not allowed", async () => {
   Object.defineProperty(navigator, "clipboard", { value: { writeText: vi.fn(async () => { throw new Error("denied"); }) }, configurable: true });
   panel(view());
-  await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Хуулах: Сайтын хаяг/ })); });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Хуулах: Site-ын хаяг/ })); });
   expect(window.getSelection()?.toString()).toBe("https://example.mn");
 });
 
@@ -61,7 +61,7 @@ test("once connected the connect card is one line, and the status card shows the
   const row = screen.getByRole("region", { name: "MT5 холболт" });
   expect(row).toHaveTextContent(/MT5 холбогдсон.*данс ••••4567/);
   expect(within(row).getByRole("button", { name: "Шинэ token үүсгэх" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Бот зогссон" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Bot зогссон" })).toBeInTheDocument();
   expect(screen.getByText("$2,000.00")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Эхлүүлэх/ })).toBeEnabled();
   expect(screen.getByText("Одоогоор нээлттэй арилжаа алга.")).toBeInTheDocument();
@@ -71,7 +71,7 @@ test("once connected the connect card is one line, and the status card shows the
 test("a real account without permission says so next to Start; an old robot file asks for the new one", () => {
   panel(view({ ...connected, accountMode: "REAL", robotVersion: 12 }));
   expect(screen.getByText(/Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөөгүй/)).toBeInTheDocument();
-  expect(screen.getByText(/Роботын шинэ файлаа татаж солино уу/)).toBeInTheDocument();
+  expect(screen.getByText(/Robot-ын шинэ файлаа татаж солино уу/)).toBeInTheDocument();
 });
 
 test("the risk card offers % of balance or a fixed lot, with the dollar risk worked out from the balance", () => {
