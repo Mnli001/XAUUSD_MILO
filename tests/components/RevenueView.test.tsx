@@ -55,3 +55,21 @@ test("the plan mix lists Plus, Pro and Max with counts and revenue", () => {
   expect(within(mix).getByText("Plus").closest("tr")!.textContent).toMatch(/3.*150,000₮/);
   expect(within(mix).getByText("Max").closest("tr")!.textContent).toMatch(/0.*0₮/);
 });
+
+test("the user flow shows the funnel and signups month by month", () => {
+  const r = revenueReport(
+    [{ userId: "a", plan: "PLUS", amount: 50000, paidAt: d("2026-11-03T03:00:00Z"), accessUntil: d("2026-12-03T03:00:00Z") }],
+    [
+      { id: "a", email: "a@x.mn", role: "USER", accessUntil: d("2026-12-03T03:00:00Z"), createdAt: d("2026-11-02T03:00:00Z") },
+      { id: "b", email: "b@x.mn", role: "USER", accessUntil: null, createdAt: d("2026-11-10T03:00:00Z") },
+    ],
+    now,
+  );
+  render(<RevenueView r={r} v={MN_VIEWER} />);
+  const flow = screen.getByRole("region", { name: "Хэрэглэгчийн урсгал" });
+  expect(within(flow).getByText("Энэ сард 2 бүртгүүлсэн · өмнөх сард 0")).toBeInTheDocument();
+  const steps = within(within(flow).getByRole("list", { name: "Бүртгүүлснээс идэвхтэй хүртэл" })).getAllByRole("listitem").map((li) => li.textContent);
+  expect(steps).toEqual(["Бүртгүүлсэн2", "Төлбөр хийсэн1бүртгүүлсний 50%", "Дахин төлсөн0төлсний 0%", "Одоо идэвхтэй1бүртгүүлсний 50%"]);
+  const nov = within(within(flow).getByRole("table", { name: "Сар бүр бүртгүүлсэн" })).getByText("2026-11").closest("tr")!;
+  expect(nov.textContent).toBe("2026-112150%");
+});

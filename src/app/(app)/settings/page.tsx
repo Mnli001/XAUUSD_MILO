@@ -8,6 +8,8 @@ import { listTrades } from "@/lib/trades";
 import { AppearanceForm, DeleteAccountForm, PasswordForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
 import { TelegramCard } from "@/components/TelegramCard";
 import { SoundToggle } from "@/components/SoundToggle";
+import { PushCard } from "@/components/PushCard";
+import { pushDeviceCount, vapidPublicKey } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -23,6 +25,7 @@ export default async function SettingsPage() {
   const access = user.role === "ADMIN" ? t("хугацаагүй (админ)", "no expiry (admin)") : user.accessUntil ? t(`${v.dateTime(user.accessUntil)} хүртэл (${v.zone})`, `until ${v.dateTime(user.accessUntil)} (${v.zone})`) : "—";
   const plan = user.role === "ADMIN" ? null : user.accessUntil && user.accessUntil > new Date() ? "active" : "none";
   const linked = !!user.telegramChatId;
+  const devices = await pushDeviceCount(user.id);
   return (
     <div className="space-y-4 sm:space-y-5">
       <div>
@@ -50,10 +53,12 @@ export default async function SettingsPage() {
         <div className="md:col-span-2"><SoundToggle /></div>
 
         <div className="space-y-4 sm:space-y-5 md:col-span-2">
+          <PushCard publicKey={await vapidPublicKey()} paid={hasAccess(user, new Date())} />
           <TelegramCard configured={telegramConfigured()} linked={linked} isAdmin={user.role === "ADMIN"} paid={hasAccess(user, new Date())} pending={user.telegramChatId ? null : pendingTelegram(user, new Date())} />
-          {linked && (
+          {(linked || devices > 0) && (
             <section className="card">
-              <h2 className="card-title">{t("Telegram мэдэгдэл", "Telegram notifications")}</h2>
+              <h2 className="card-title">{t("Юуг мэдэгдэх вэ", "What to notify you about")}</h2>
+              <p className="mt-1 text-xs text-zinc-500">{t("Telegram болон утасны мэдэгдэлд хоёуланд нь хамаарна.", "Applies to both Telegram and phone notifications.")}</p>
               <SignalPrefsForm paused={user.signalsPaused} muted={user.signalsMuted.split(",").filter(Boolean)} news={user.signalsNews} />
             </section>
           )}

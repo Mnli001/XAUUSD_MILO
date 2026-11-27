@@ -11,7 +11,9 @@ export const DELETED_PAYER = "(deleted)";
  * (UTC+8, no daylight saving), so a payment at 23:30 on the 30th lands in that month.
  */
 export type PaidRow = { userId: string; plan: string; amount: number; paidAt: Date; accessUntil: Date | null };
-export type UserRow = { id: string; email: string; role: Role; accessUntil: Date | null };
+export type UserRow = { id: string; email: string; role: Role; accessUntil: Date | null; createdAt?: Date };
+/** People who registered in a month, and how many of them have paid at any time since. */
+export type SignupMonth = { key: string; signups: number; paid: number; paidPct: number | null };
 export type Month = { key: string; revenue: number; payments: number; newPayers: number; renewals: number };
 
 const DAY = 864e5;
@@ -72,6 +74,24 @@ export function revenueReport(paid: readonly PaidRow[], users: readonly UserRow[
   left.sort((a, b) => b.until.getTime() - a.until.getTime());
 
   const payers = new Set(paid.map((p) => p.userId)).size;
+
+  // The user flow: who registered when, and how far each got (paid once, paid again, still active).
+  const payCount = new Map<string, number>();
+  for (const p of paid) payCount.set(p.userId, (payCount.get(p.userId) ?? 0) + 1);
+  const signups = new Map<string, SignupMonth>(keys.map((k) => [k, { key: k, signups: 0, paid: 0, paidPct: null }]));
+  for (const u of customers) {
+    const m = u.createdAt ? signups.get(ubMonth(u.createdAt)) : undefined;
+    if (!m) continue;
+    m.signups++;
+    if (payCount.has(u.id)) m.paid++;
+  }
+  for (const m of signups.values()) m.paidPct = m.signups ? Math.round((m.paid / m.signups) * 100) : null;
+  const funnel = {
+    registered: customers.length,
+    paid: customers.filter((u) => payCount.has(u.id)).length,
+    repeat: customers.filter((u) => (payCount.get(u.id) ?? 0) > 1).length,
+    active: active.length,
+  };
   const revenue = paid.reduce((s, p) => s + p.amount, 0);
   return {
     thisMonth: monthOf(thisKey),
@@ -83,6 +103,8 @@ export function revenueReport(paid: readonly PaidRow[], users: readonly UserRow[
     renewed,
     left,
     renewalPct: dueEnd.size ? Math.round((renewed / dueEnd.size) * 100) : null,
+    signups: keys.map((k) => signups.get(k)!),
+    funnel,
     allTime: { revenue, payments: paid.length, payers, registered: customers.length, payingPct: customers.length ? Math.round((payers / customers.length) * 100) : 0 },
     plans: PLAN_IDS.map((plan) => {
       const rows = paid.filter((p) => p.plan === plan);
@@ -101,7 +123,7 @@ export async function getRevenue(now: Date): Promise<RevenueReport> {
   const [paid, users] = await Promise.all([
     db.select({ userId: schema.payments.userId, plan: schema.payments.plan, amount: schema.payments.amount, paidAt: schema.payments.paidAt, accessUntil: schema.payments.accessUntil })
       .from(schema.payments).where(eq(schema.payments.status, "PAID")),
-    db.select({ id: schema.users.id, email: schema.users.email, role: schema.users.role, accessUntil: schema.users.accessUntil }).from(schema.users),
+    db.select({ id: schema.users.id, email: schema.users.email, role: schema.users.role, accessUntil: schema.users.accessUntil, createdAt: schema.users.createdAt }).from(schema.users),
   ]);
   const rows = paid.flatMap((p) => (p.paidAt ? [{ ...p, userId: p.userId ?? DELETED_PAYER, paidAt: p.paidAt }] : []));
   return revenueReport(rows, users, now);

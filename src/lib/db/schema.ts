@@ -242,3 +242,32 @@ export const passwordResets = pgTable("password_resets", {
   usedAt: ts("used_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/**
+ * A browser or installed app that agreed to receive push notifications. One user can have several (phone, laptop).
+ * A subscription the push service reports gone (404/410) is deleted on the next send.
+ */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [index("push_subscriptions_user").on(t.userId)]);
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+
+/**
+ * "Tell me when gold reaches this price". `direction` is fixed when it is set: "above" when the level was above the
+ * price at that moment (it fires once price reaches it from below), "below" otherwise. It fires once, then stays as history.
+ */
+export const priceAlerts = pgTable("price_alerts", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  level: doublePrecision("level").notNull(),
+  direction: text("direction").notNull(), // "above" | "below"
+  createdAt: ts("created_at").notNull().defaultNow(),
+  triggeredAt: ts("triggered_at"),
+  triggeredPrice: doublePrecision("triggered_price"),
+}, (t) => [index("price_alerts_open").on(t.triggeredAt, t.direction, t.level), index("price_alerts_user").on(t.userId, t.createdAt)]);
+export type PriceAlert = typeof priceAlerts.$inferSelect;
