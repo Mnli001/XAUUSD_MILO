@@ -1,4 +1,6 @@
-import { parseGate, parseConfig, commandFor, blackoutWindows, reportSchema, minRobotVersion, DEFAULT_GATE, DEFAULT_LIVE_CONFIG, GATE_ROBOT_VERSION, type LiveConfig } from "@/lib/bot/live";
+import { parseGate, parseConfig, commandFor, blackoutWindows, reportSchema, minRobotVersion, DEFAULT_GATE, DEFAULT_LIVE_CONFIG as NEW_BOT_CONFIG, GATE_ROBOT_VERSION, type LiveConfig } from "@/lib/bot/live";
+/** The older tools are tested on the settings a bot had before the Setup signals became the default: the scalper with the plain filter. */
+const DEFAULT_LIVE_CONFIG: LiveConfig = { ...NEW_BOT_CONFIG, mode: "SCALPER", gate: DEFAULT_GATE };
 import { enT } from "@/lib/i18n";
 
 /** The gate form as the bot page posts it: numbers as strings, a ticked checkbox as "on", an unticked one absent. */
@@ -10,7 +12,8 @@ const running = (config: LiveConfig) => ({ state: "RUNNING" as const, runId: "r"
 
 describe("the entry filter's settings", () => {
   test("it is on by default, with conservative values", () => {
-    expect(DEFAULT_LIVE_CONFIG.gate).toEqual(DEFAULT_GATE);
+    // A new bot runs the Setup signals at 1% of the balance; the filter's own checks keep their defaults.
+    expect(NEW_BOT_CONFIG).toMatchObject({ mode: "ASIAN", gate: { ...DEFAULT_GATE, riskMode: "PCT", riskValue: 1 } });
     expect(DEFAULT_GATE).toMatchObject({ on: true, trend: true, sessionStartUb: 15, sessionEndUb: 1, newsBeforeMin: 30, newsAfterMin: 60, maxTradesDay: 6, dailyLossPct: 3 });
   });
   test("the page's form is read into the gate, and saving it keeps every tool's settings", () => {
@@ -128,10 +131,10 @@ describe("sizing and stops", () => {
     expect(commandFor(run(DEFAULT_LIVE_CONFIG), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ rMode: 0, rVal: 0, sMode: 0, sAtr: 0 });
   });
   test("dollars per trade and percent of balance are saved and sent", () => {
-    const usd = parseGate(form({ gRiskMode: "USD", gRiskVal: "10" })).config!;
+    const usd = parseGate(form({ gRiskMode: "USD", gRiskVal: "10" }), DEFAULT_LIVE_CONFIG).config!;
     expect(usd.gate).toMatchObject({ riskMode: "USD", riskValue: 10, siteStops: false });
     expect(commandFor(run(usd), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ rMode: 1, rVal: 10 });
-    const pct = parseGate(form({ gRiskMode: "PCT", gRiskVal: "2", gSiteStops: "on" })).config!;
+    const pct = parseGate(form({ gRiskMode: "PCT", gRiskVal: "2", gSiteStops: "on" }), DEFAULT_LIVE_CONFIG).config!;
     expect(commandFor(run(pct), { mode: "DEMO" }, GATE_ROBOT_VERSION, "mn", "", { buy: 10, sell: 1, total: 16, atrH1: 9.876 })).toMatchObject({ rMode: 2, rVal: 2, sMode: 1, sAtr: 9.88, sStop: 1.5, sRR: 2 });
   });
   test("a risk mode needs its amount", () => {
@@ -139,7 +142,7 @@ describe("sizing and stops", () => {
     expect(parseGate(form({ gRiskMode: "PCT", gRiskVal: "60" })).error).toBeTruthy();
   });
   test("site stops with no reading send a zero distance, so the robot waits", () => {
-    const c = parseGate(form({ gRiskMode: "LOTS", gSiteStops: "on" })).config!;
+    const c = parseGate(form({ gRiskMode: "LOTS", gSiteStops: "on" }), DEFAULT_LIVE_CONFIG).config!;
     expect(commandFor(run(c), { mode: "DEMO" }, GATE_ROBOT_VERSION)).toMatchObject({ sMode: 1, sAtr: 0 });
   });
   test("the risk setting still applies with the filter switched off", () => {

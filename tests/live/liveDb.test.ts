@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { DEFAULT_GATE } from "@/lib/bot/live";
-import { getLive, saveLiveConfig, saveGateConfig, startBot, stopBot, requestCloseAll, rotateToken, handleSync, getLiveView } from "@/lib/bot/liveDb";
+import { DEFAULT_GATE, DEFAULT_LIVE_CONFIG, ROBOT_FILE_VERSION, type BotMode } from "@/lib/bot/live";
+import { getLive, saveLiveConfig, saveGateConfig, saveSimpleConfig, startBot, stopBot, requestCloseAll, rotateToken, handleSync, getLiveView, getEntryStats } from "@/lib/bot/liveDb";
 import { POST } from "@/app/api/bot/sync/route";
 import type { User } from "@/lib/db/schema";
 import { resetDb } from "../helpers/db";
@@ -13,8 +13,12 @@ const report = (o: Record<string, unknown> = {}) => ({
   account: { login: "51234567", mode: "DEMO", balance: 10000, equity: 10012.5, currency: "USD" },
   symbol: "XAUUSDm", bid: 4100.1, ask: 4100.4, signal: "BUY", reason: "EMA9>EMA21", runPnl: 12.5,
   positions: [{ ticket: "11", side: "BUY", lots: 0.05, openPrice: 4099, sl: 4095, tp: 4107, profit: 12.5 }],
-  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: 11, ...o,
+  deals: [], finished: "", plannedSeconds: 360, elapsedSeconds: 42, version: ROBOT_FILE_VERSION, ...o,
 });
+/** Puts a bot on one of the older tools, as a robot saved before Start always ran the Setup signals would be. */
+const setMode = (userId: string, mode: BotMode) => db.execute(sql`UPDATE bot_live SET config = jsonb_set(config, '{mode}', to_jsonb(${mode}::text)) WHERE user_id = ${userId}`);
+/** Starts a bot and keeps it on an older tool, to check that tool still reaches the robot as before. */
+const runAs = async (userId: string, mode: BotMode) => { await startBot(userId, now); await setMode(userId, mode); };
 
 beforeEach(async () => {
   await resetDb();
@@ -73,8 +77,8 @@ test("start, sync, stop", async () => {
   expect((await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "5", slAtr: "1.5", tpAtr: "2", profitTarget: "40" })).error).toBeUndefined();
   await startBot(admin.id, now);
   const cmd = (await handleSync(token, report(), now))!;
-  // The scalper is retired: a bot still set to it starts as the day trader, one trade at a time, with the lot size it had.
-  expect(cmd).toMatchObject({ state: "RUNNING", mode: "DAY", lots: 0.3, maxPositions: 1, closeAll: false });
+  // Start always runs the Setup signals: a bot still set to the retired scalper moves over, one trade at a time, with the lot size it had.
+  expect(cmd).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.3, maxPositions: 1, closeAll: false });
   expect(cmd.runId).toBeTruthy();
 
   const v = await getLiveView(admin.id, new Date(now.getTime() + 3000));
@@ -136,10 +140,10 @@ test("reports from a robot that does not send its timing are still accepted", as
 
 test("the basket tool runs end to end: saved, started, refused on an old robot file, reported", async () => {
   expect((await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" })).error).toBeUndefined();
-  await startBot(admin.id, now);
+  await runAs(admin.id, "BASKET");
   expect(await handleSync(token, report({ version: 8 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   expect(await getLive(admin.id)).toMatchObject({ state: "STOPPED", stopReason: "OLD_ROBOT" });
-  await startBot(admin.id, now);
+  await runAs(admin.id, "BASKET");
   expect(await handleSync(token, report({ version: 9 }), now)).toMatchObject({ state: "RUNNING", mode: "BASKET", lots: 0.02, maxPositions: 8, profitTarget: 6, maxLoss: 15 });
   expect(await getLiveView(admin.id, now)).toMatchObject({ robotVersion: 9, config: { mode: "BASKET", basket: { count: 8 } } });
 });
@@ -159,20 +163,23 @@ describe("the entry filter", () => {
   test("a bot saved before the filter existed gets the default filter", async () => {
     await getLive(admin.id);
     await db.execute(sql`UPDATE bot_live SET config = config - 'gate' WHERE user_id = ${admin.id}`);
-    expect((await getLive(admin.id)).config.gate).toEqual(DEFAULT_GATE);
+    expect((await getLive(admin.id)).config.gate).toEqual(DEFAULT_LIVE_CONFIG.gate);
+    expect(DEFAULT_LIVE_CONFIG.gate).toEqual({ ...DEFAULT_GATE, riskMode: "PCT", riskValue: 1 });
   });
   test("it is saved on its own, keeps the tool settings, and reaches the robot", async () => {
     await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "2", slAtr: "1", tpAtr: "2" });
     expect((await saveGateConfig(admin.id, gateForm)).error).toBeUndefined();
     expect((await saveGateConfig(admin.id, { ...gateForm, gStart: "25" })).error).toBeTruthy();
     expect((await getLive(admin.id)).config).toMatchObject({ lots: 0.3, gate: { maxTradesDay: 4, dailyLossPct: 2 } });
-    await startBot(admin.id, now);
+    await runAs(admin.id, "DAY");
     expect(await handleSync(token, report(), now)).toMatchObject({ state: "RUNNING", lots: 0.3, gateOn: true, gMaxTrades: 4, gDailyLossPct: 2 });
   });
   test("the robot is sent the windows around stored HIGH-impact releases only", async () => {
     await release("2026-11-23T13:30:00Z");
     await release("2026-11-23T12:00:00Z", "MEDIUM");
     await release("2026-11-20T13:30:00Z"); // long over
+    await getLive(admin.id);
+    await setMode(admin.id, "DAY"); // the Setup signals take no news windows (see the test below)
     const s = (iso: string) => Math.floor(Date.parse(iso) / 1000);
     expect((await handleSync(token, report(), now))!.blackouts).toBe(`${s("2026-11-23T13:00:00Z")}-${s("2026-11-23T14:30:00Z")}`);
     await saveGateConfig(admin.id, { ...gateForm, gNewsBefore: "0", gNewsAfter: "0" });
@@ -206,24 +213,24 @@ describe("entries, presets and trade notices", () => {
     expect(entries[0]).toMatchObject({ userId: admin.id, ticket: "11", side: "BUY", lots: 0.05, session: "Лондон" }); // i18n-ok: the stored session key (18:00 UB)
     const deal = { ticket: "900", position: "11", side: "BUY", lots: 0.05, openPrice: 4099, closePrice: 4104, profit: 25, closeTime: now.toISOString() };
     await handleSync(token, report({ positions: [], deals: [deal] }), new Date(now.getTime() + 2000));
-    const view = await getLiveView(admin.id, now);
-    expect(view.entryStats.trades).toBe(1);
-    expect(view.entryStats.bySession).toEqual([{ key: "Лондон", trades: 1, wins: 1, pnl: 25 }]); // i18n-ok
-    expect(view.entryStats.byBacking[0]).toMatchObject({ trades: 1, wins: 1, pnl: 25 });
+    const stats = await getEntryStats(admin.id, "51234567");
+    expect(stats.trades).toBe(1);
+    expect(stats.bySession).toEqual([{ key: "Лондон", trades: 1, wins: 1, pnl: 25 }]); // i18n-ok
+    expect(stats.byBacking[0]).toMatchObject({ trades: 1, wins: 1, pnl: 25 });
   });
   test("a deal from an older robot file, without its position, is stored and simply not grouped", async () => {
     const deal = { ticket: "901", side: "SELL", lots: 0.01, openPrice: 4100, closePrice: 4101, profit: -1, closeTime: now.toISOString() };
     await handleSync(token, report({ positions: [], deals: [deal] }), now);
     const view = await getLiveView(admin.id, now);
     expect(view.dealCount).toBe(1);
-    expect(view.entryStats.trades).toBe(0);
+    expect((await getEntryStats(admin.id, "51234567")).trades).toBe(0);
   });
   test("a preset fills the filter in one go and keeps the tool settings", async () => {
     await saveLiveConfig(admin.id, { lots: "0.3", maxPositions: "2", slAtr: "1", tpAtr: "2" });
     expect(await saveGateConfig(admin.id, { preset: "CAREFUL" })).toEqual({});
     const c = (await getLive(admin.id)).config;
     expect(c).toMatchObject({ lots: 0.3, gate: { on: true, minAgree: 10, maxTradesDay: 3, riskMode: "PCT", riskValue: 1, siteStops: true, protect: true, sessionStartUb: 15 } });
-    await startBot(admin.id, now);
+    await runAs(admin.id, "DAY");
     expect(await handleSync(token, report(), now)).toMatchObject({ cMin: 10, rMode: 2, rVal: 1, sMode: 1, protect: true });
   });
   test("the notices name the side, the price and the result in the owner's language", async () => {
@@ -231,5 +238,53 @@ describe("entries, presets and trade notices", () => {
     expect(tradeOpenedText({ locale: "en" }, { side: "BUY", lots: 0.01, openPrice: 4100.5, cBuy: 11, cSell: 2, cTotal: 16 })).toContain("11 of 16 methods backed this side");
     expect(tradeClosedText({ locale: "en" }, { side: "SELL", lots: 0.01, openPrice: 4100, closePrice: 4096.5, profit: 3.5 })).toMatch(/closed a trade.*\+\$3\.50[\s\S]*4100\.00 → 4096\.50/);
     expect(tradeClosedText({ locale: "mn" }, { side: "BUY", lots: 0.01, openPrice: 4100, closePrice: 4098, profit: -2 })).toContain("−$2.00");
+  });
+});
+
+describe("the Bot page: Setup signals only, with one risk setting", () => {
+  test("saving the risk as % of balance moves the bot to the Setup signals and keeps every other setting", async () => {
+    await saveLiveConfig(admin.id, { mode: "BASKET", bLots: "0.02", bCount: "8", bProfit: "6", bLoss: "15" });
+    await saveGateConfig(admin.id, { preset: "CAREFUL" });
+    const before = (await getLive(admin.id)).config;
+    expect(await saveSimpleConfig(admin.id, { sizing: "PCT", pct: "2.5", allowReal: "on" })).toEqual({});
+    const c = (await getLive(admin.id)).config;
+    expect(c).toMatchObject({ mode: "ASIAN", allowReal: true, basket: before.basket, rule: before.rule, gate: { ...before.gate, riskMode: "PCT", riskValue: 2.5 } });
+    await startBot(admin.id, now);
+    expect(await handleSync(token, report(), now)).toMatchObject({ state: "RUNNING", mode: "ASIAN", rMode: 2, rVal: 2.5, gateOn: false, cMin: 0 });
+  });
+  test("a fixed lot is saved as the rule's lot with no risk amount; the real-account switch goes off when unticked", async () => {
+    await saveSimpleConfig(admin.id, { sizing: "PCT", pct: "1", allowReal: "on" });
+    expect(await saveSimpleConfig(admin.id, { sizing: "LOTS", lots: "0.07" })).toEqual({});
+    expect((await getLive(admin.id)).config).toMatchObject({ mode: "ASIAN", allowReal: false, rule: { lots: 0.07 }, gate: { riskMode: "LOTS", riskValue: 0 } });
+    await startBot(admin.id, now);
+    expect(await handleSync(token, report(), now)).toMatchObject({ mode: "ASIAN", lots: 0.07, rMode: 0, rVal: 0 });
+  });
+  test("values outside the allowed range are refused in the viewer's language and nothing is saved", async () => {
+    const { enT } = await import("@/lib/i18n");
+    const before = (await getLive(admin.id)).config;
+    for (const bad of [{ sizing: "PCT", pct: "0.05" }, { sizing: "PCT", pct: "6" }, { sizing: "PCT", pct: "" }, { sizing: "LOTS", lots: "0" }, { sizing: "LOTS", lots: "abc" }, { sizing: "USD", pct: "1" }, {}]) {
+      expect((await saveSimpleConfig(admin.id, bad)).error, JSON.stringify(bad)).toBeTruthy();
+    }
+    expect((await saveSimpleConfig(admin.id, { sizing: "PCT", pct: "9" }, enT)).error).toBe("Risk must be 0.1–5% of balance");
+    expect((await saveSimpleConfig(admin.id, { sizing: "LOTS", lots: "0" }, enT)).error).toBe("Lots must be 0.01–100");
+    expect((await saveSimpleConfig(admin.id, {}, enT)).error).toBe("Choose how to size a trade");
+    expect((await saveSimpleConfig(admin.id, { sizing: "PCT", pct: "9" })).error).toMatch(/балансын/);
+    expect((await getLive(admin.id)).config).toEqual(before);
+  });
+  test("Start always runs the Setup signals, whatever tool the bot was saved on", async () => {
+    for (const mode of ["DAY", "READING", "BASKET", "SCALPER"] as const) {
+      await stopBot(admin.id, "MANUAL", now);
+      await saveGateConfig(admin.id, { preset: "BALANCED" });
+      await setMode(admin.id, mode);
+      await startBot(admin.id, now);
+      const c = (await getLive(admin.id)).config;
+      expect(c.mode, mode).toBe("ASIAN");
+      expect(c.gate).toMatchObject({ minAgree: 9, riskMode: "PCT", riskValue: 2 }); // the rest is kept
+      expect(await handleSync(token, report(), now)).toMatchObject({ state: "RUNNING", mode: "ASIAN" });
+    }
+  });
+  test("a robot file older than the Setup signals need is told to stop, with the reason the page shows", async () => {
+    await startBot(admin.id, now);
+    expect(await handleSync(token, report({ version: 12 }), now)).toMatchObject({ state: "STOPPED", reason: "OLD_ROBOT" });
   });
 });

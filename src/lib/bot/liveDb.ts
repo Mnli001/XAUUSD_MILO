@@ -5,7 +5,7 @@ import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
 import { parseLocale } from "../prefs";
-import { type Command, type DayOrderFields, type LiveConfig, type Report, type SessionOrderFields, BLACKOUT_HORIZON_MS, MAX_REPORT_CHARS, stoppedCommand, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, reportSchema } from "./live";
+import { type Command, type DayOrderFields, type LiveConfig, type Report, type SessionOrderFields, BLACKOUT_HORIZON_MS, MAX_REPORT_CHARS, stoppedCommand, DEFAULT_LIVE_CONFIG, blackoutWindows, commandFor, hashToken, newToken, parseConfig, parseGate, parseSimple, reportSchema } from "./live";
 import { getReasoning } from "../reasoningLive";
 import { DAY_MIN_LEAN, dayOrderFrom, getDayState } from "./daySignal";
 import { getAsianOrders } from "../setup/build";
@@ -62,7 +62,15 @@ export async function saveGateConfig(userId: string, input: unknown, t: T = mnT,
   return {};
 }
 
-/** The no-entry windows the robot is sent: stored HIGH-impact releases from `after` minutes ago to the horizon. */
+/** The Bot page's settings: Setup signals, sized by % of balance or a fixed lot, and the real-account switch. The rest is kept. */
+export async function saveSimpleConfig(userId: string, input: unknown, t: T = mnT, login?: string): Promise<{ error?: string }> {
+  const live = await getLive(userId, login);
+  const r = parseSimple(input, live.config, t);
+  if (!r.config) return { error: r.error };
+  await update(userId, live.login, { config: r.config });
+  return {};
+}
+
 /**
  * The order(s) for this bot right now. The Asian tool trades the Setup page's own breakouts (every session's live
  * setup, so the robot and the Telegram signal never disagree); the day trader its own setup when the reading backs it.
@@ -98,9 +106,10 @@ async function blackoutsFor(config: LiveConfig, now: Date): Promise<string> {
 
 export async function startBot(userId: string, now: Date, login?: string): Promise<void> {
   const live = await getLive(userId, login);
-  // The scalper is retired (its entries had no edge in testing): a bot still set to it starts as the day trader.
-  if (live.config.mode === "SCALPER") await update(userId, live.login, { config: { ...live.config, mode: "DAY", rule: { ...live.config.rule, lots: live.config.lots } } }); // keeps the lot size it had
-  await update(userId, live.login, { state: "RUNNING", runId: crypto.randomUUID(), closeAll: false, startedAt: now, stoppedAt: null, stopReason: null });
+  // Start always runs the site's Setup signals. A bot saved on another tool (Day trader, Reading, Basket or the retired
+  // scalper) is moved over; the scalper's lot size goes with it, every other setting stays as it was.
+  const config = { ...live.config, mode: "ASIAN" as const, rule: live.config.mode === "SCALPER" ? { ...live.config.rule, lots: live.config.lots } : live.config.rule };
+  await update(userId, live.login, { config, state: "RUNNING", runId: crypto.randomUUID(), closeAll: false, startedAt: now, stoppedAt: null, stopReason: null });
 }
 
 /** Stopping also asks the terminal to close the bot's open positions. */
@@ -293,8 +302,6 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     dayPnl: status?.dayPnl ?? null,
     dailyLossHit: status?.dailyLossHit ?? null,
     deals,
-    entryStats: await getEntryStats(userId, live.login),
-    day: await getDayState(now).catch(() => ({ fresh: null, recent: [], asOf: 0 })),
     dealCount: n,
     pnl24h: Number(total ?? 0),
   };

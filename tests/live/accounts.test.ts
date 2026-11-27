@@ -1,7 +1,8 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { getLive, saveLiveConfig, startBot, stopBot, rotateToken, handleSync, getLiveView, listAccounts } from "@/lib/bot/liveDb";
+import { getLive, saveLiveConfig, saveSimpleConfig, startBot, stopBot, rotateToken, handleSync, getLiveView, listAccounts } from "@/lib/bot/liveDb";
 import type { User } from "@/lib/db/schema";
+import { ROBOT_FILE_VERSION } from "@/lib/bot/live";
 import { resetDb } from "../helpers/db";
 import { makeUser } from "../helpers/users";
 
@@ -10,7 +11,7 @@ const now = new Date("2026-11-23T10:00:00Z");
 const later = (s: number) => new Date(now.getTime() + s * 1000);
 const report = (login: string, server: string | undefined, o: Record<string, unknown> = {}) => ({
   account: { login, mode: "DEMO", balance: login === "969508" ? 5000 : 100000, equity: 100000, currency: "USD", ...(server ? { server } : {}) },
-  symbol: "XAUUSD", bid: 4100.1, ask: 4100.4, signal: "NONE", reason: "", runPnl: 0, version: 11,
+  symbol: "XAUUSD", bid: 4100.1, ask: 4100.4, signal: "NONE", reason: "", runPnl: 0, version: ROBOT_FILE_VERSION,
   positions: [], deals: [], finished: "", ...o,
 });
 const MQ = ["5058238423", "MetaQuotes-Demo"] as const;
@@ -46,10 +47,10 @@ test("a second account appears on its own, stopped, with default settings; the f
 test("each account has its own settings, start/stop and view", async () => {
   await handleSync(token, report(...MQ), now);
   await handleSync(token, report(...MOT), now);
-  await saveLiveConfig(user.id, { mode: "BASKET", bLots: "0.01", bCount: "5", bProfit: "5", bLoss: "10" }, undefined, MOT[0]);
+  expect(await saveSimpleConfig(user.id, { sizing: "LOTS", lots: "0.05" }, undefined, MOT[0])).toEqual({});
   await startBot(user.id, now, MOT[0]);
-  expect(await handleSync(token, report(...MOT), later(1))).toMatchObject({ state: "RUNNING", mode: "BASKET", maxPositions: 5 });
-  expect(await handleSync(token, report(...MQ), later(1))).toMatchObject({ state: "STOPPED", mode: "SCALPER" });
+  expect(await handleSync(token, report(...MOT), later(1))).toMatchObject({ state: "RUNNING", mode: "ASIAN", lots: 0.05, rMode: 0 });
+  expect(await handleSync(token, report(...MQ), later(1))).toMatchObject({ state: "STOPPED", mode: "ASIAN", lots: 0.01, rMode: 2, rVal: 1 });
   expect(await getLiveView(user.id, later(2), MOT[0])).toMatchObject({ account: MOT[0], state: "RUNNING", balance: 5000, accountServer: MOT[1] });
   expect(await getLiveView(user.id, later(2), MQ[0])).toMatchObject({ account: MQ[0], state: "STOPPED", balance: 100000 });
   await stopBot(user.id, "MANUAL", later(3), MOT[0]);

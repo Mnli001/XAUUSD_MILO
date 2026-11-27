@@ -1,13 +1,15 @@
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
-import { getT } from "@/lib/prefs.server";
+import { getViewer } from "@/lib/prefs.server";
+import { BacktestGuide } from "@/components/BacktestGuide";
 import { Station } from "@/components/Timetable";
 
 export const dynamic = "force-dynamic";
 
 export default async function BotResearchPage() {
   await requireAdmin(); // the layout's check does not guard this page: layouts do not re-run on navigation
-  const t = await getT();
+  const v = await getViewer();
+  const { t } = v;
   const stops: [string, string, string][] = [
     ["/admin/bot/backtest", "Backtest", t("Дүрмийг өнгөрсөн дата дээр шалгах.", "Test a rule on past data.")],
     ["/admin/bot/paper", t("Цаасан арилжаа", "Paper trading"), t("Сонгосон дүрмийг урагшаа, мөнгөгүйгээр шалгах.", "Test the chosen rule going forward, without money.")],
@@ -36,6 +38,8 @@ export default async function BotResearchPage() {
           ))}
         </ol>
       </nav>
+      {/* How to replay the robot in MT5's own Strategy Tester: research only, so it lives here rather than on the user's Bot page. */}
+      <BacktestGuide v={v} />
     </div>
   );
 }

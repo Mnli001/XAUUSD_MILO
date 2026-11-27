@@ -1,4 +1,6 @@
-import { parseConfig, commandFor, newToken, hashToken, reportSchema, ASIAN_ROBOT_VERSION, DEFAULT_LIVE_CONFIG, type LiveConfig } from "@/lib/bot/live";
+import { parseConfig, commandFor, newToken, hashToken, reportSchema, ASIAN_ROBOT_VERSION, DEFAULT_LIVE_CONFIG as NEW_BOT_CONFIG, DEFAULT_GATE, type LiveConfig } from "@/lib/bot/live";
+/** The older tools are tested on the settings a bot had before the Setup signals became the default: the scalper with the plain filter. */
+const DEFAULT_LIVE_CONFIG: LiveConfig = { ...NEW_BOT_CONFIG, mode: "SCALPER", gate: DEFAULT_GATE };
 
 /** Robot v2.80, the first file with the entry filter; the web runs no tool on an older one. */
 const V = 9;
@@ -8,7 +10,7 @@ const demo = { mode: "DEMO" as const };
 const real = { mode: "REAL" as const };
 
 test("config accepts any positive lot size and has no daily limit", () => {
-  const r = parseConfig({ lots: "25", maxPositions: "11", slAtr: "1.5", tpAtr: "2", profitTarget: "", maxLoss: "", allowReal: "on" });
+  const r = parseConfig({ lots: "25", maxPositions: "11", slAtr: "1.5", tpAtr: "2", profitTarget: "", maxLoss: "", allowReal: "on" }, DEFAULT_LIVE_CONFIG);
   expect(r.error).toBeUndefined();
   expect(r.config).toEqual({ mode: "SCALPER", basket: DEFAULT_LIVE_CONFIG.basket, rule: DEFAULT_LIVE_CONFIG.rule, gate: DEFAULT_LIVE_CONFIG.gate, lots: 25, maxPositions: 11, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: true });
   expect(Object.keys(DEFAULT_LIVE_CONFIG)).not.toContain("dailyLossPct");

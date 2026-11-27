@@ -59,7 +59,12 @@ export type LiveConfig = {
 };
 
 export const DEFAULT_BASKET: BasketConfig = { lots: 0.01, count: 5, profit: 5, loss: 10 };
-export const DEFAULT_LIVE_CONFIG: LiveConfig = { mode: "SCALPER", basket: DEFAULT_BASKET, rule: { lots: 0.01 }, gate: DEFAULT_GATE, lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: false };
+/**
+ * A new bot runs the site's Setup signals (ASIAN) and sizes each trade at 1% of the balance. The entry filter's own
+ * defaults stay in DEFAULT_GATE: the Setup signals send it switched off (see gateFields), the older tools still read it.
+ */
+export const DEFAULT_RISK_PCT = 1;
+export const DEFAULT_LIVE_CONFIG: LiveConfig = { mode: "ASIAN", basket: DEFAULT_BASKET, rule: { lots: 0.01 }, gate: { ...DEFAULT_GATE, riskMode: "PCT", riskValue: DEFAULT_RISK_PCT }, lots: 0.01, maxPositions: 3, slAtr: 1.5, tpAtr: 2, profitTarget: null, maxLoss: null, allowReal: false };
 
 const blank = (v: unknown) => (v === "" || v === undefined || v === null ? null : v);
 const positive = (msg: string) => z.coerce.number({ message: msg }).finite().positive(msg);
@@ -104,6 +109,38 @@ export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_C
   }
   const r = configSchema(t).safeParse(input);
   return r.success ? { config: { ...r.data, mode, basket: current.basket, rule: current.rule, gate: current.gate } } : { error: r.error.issues[0].message };
+}
+
+/** The Bot page's one settings form: how big each Setup-signal trade is, and whether a real account may trade. */
+export const SIMPLE_RISK_PCT = { min: 0.1, max: 5 } as const;
+export const SIMPLE_MAX_LOTS = 100;
+const simpleSchema = (t: T) => z.discriminatedUnion("sizing", [
+  z.object({
+    sizing: z.literal("PCT"),
+    pct: z.preprocess(blank, z.coerce.number({ message: t("Эрсдэлийн хувийг оруулна уу", "Enter the risk percent") }).finite()
+      .min(SIMPLE_RISK_PCT.min, t(`Эрсдэл балансын ${SIMPLE_RISK_PCT.min}–${SIMPLE_RISK_PCT.max}% байна`, `Risk must be ${SIMPLE_RISK_PCT.min}–${SIMPLE_RISK_PCT.max}% of balance`))
+      .max(SIMPLE_RISK_PCT.max, t(`Эрсдэл балансын ${SIMPLE_RISK_PCT.min}–${SIMPLE_RISK_PCT.max}% байна`, `Risk must be ${SIMPLE_RISK_PCT.min}–${SIMPLE_RISK_PCT.max}% of balance`))),
+    allowReal,
+  }),
+  z.object({
+    sizing: z.literal("LOTS"),
+    lots: z.preprocess(blank, z.coerce.number({ message: t("Лотын хэмжээг оруулна уу", "Enter the lot size") }).finite()
+      .min(0.01, t(`Лот 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))
+      .max(SIMPLE_MAX_LOTS, t(`Лот 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))),
+    allowReal,
+  }),
+], { error: () => t("Эрсдэлийн төрлөө сонгоно уу", "Choose how to size a trade") });
+
+/**
+ * The simple settings: always the Setup signals (ASIAN), sized by % of balance or by a fixed lot. Every other
+ * setting (the older tools' fields, the filter's checks) is kept as it was, so an older robot keeps working.
+ */
+export function parseSimple(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
+  const r = simpleSchema(t).safeParse(input);
+  if (!r.success) return { error: r.error.issues[0].message };
+  const gate = { ...DEFAULT_GATE, ...current.gate };
+  if (r.data.sizing === "PCT") return { config: { ...current, mode: "ASIAN", allowReal: r.data.allowReal, gate: { ...gate, riskMode: "PCT", riskValue: r.data.pct } } };
+  return { config: { ...current, mode: "ASIAN", allowReal: r.data.allowReal, rule: { ...current.rule, lots: r.data.lots }, gate: { ...gate, riskMode: "LOTS", riskValue: 0 } } };
 }
 
 const zeroIfBlank = (v: unknown) => (v === "" || v === undefined || v === null ? 0 : v);

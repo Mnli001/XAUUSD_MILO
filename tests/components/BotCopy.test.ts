@@ -11,20 +11,20 @@ function texts(file: string): string[] {
 }
 
 const PANEL = "src/components/BotPanel.tsx";
+const CONNECT = "src/components/BotConnect.tsx";
 const PAGE = "src/app/(app)/bot/page.tsx";
+const FILES = [PANEL, CONNECT, PAGE];
 
-describe("bot page copy matches the tools that exist", () => {
-  it("never tells the owner about the retired Scalper tool", () => {
-    for (const f of [PANEL, PAGE]) expect(texts(f).filter((s) => /scalper/i.test(s)), f).toEqual([]);
+describe("the Bot page speaks only of the Setup signals, in plain words", () => {
+  it("names none of the retired or hidden tools", () => {
+    for (const f of FILES) expect(texts(f).filter((s) => /scalper|day trader|basket|\bReading\b|Дүгнэлт|^"Багц"$|Багц дохио|Багц хэрэгсэл/i.test(s)), f).toEqual([]);
   });
-
-  it("does not offer the site-stops switch, which no current tool reads", () => {
-    expect(readFileSync(PANEL, "utf8")).not.toMatch(/name="gSiteStops"/);
+  it("uses no indicator jargon", () => {
+    for (const f of FILES) expect(readFileSync(f, "utf8"), f).not.toMatch(/\b(EMA|RSI|ATR|FVG|MSS)\b|sweep/);
   });
-
-  it("says which tools the winner protection works for", () => {
-    const protect = texts(PANEL).filter((s) => /\+1R/.test(s));
-    expect(protect.some((s) => /Day trader/.test(s) && /Дүгнэлт/.test(s))).toBe(true);
+  it("offers no entry-filter form or presets", () => {
+    const panel = readFileSync(PANEL, "utf8");
+    expect(panel).not.toMatch(/name="g[A-Z]|name="preset"|saveGateAction|saveBotConfigAction/);
   });
 });
 
@@ -33,12 +33,11 @@ describe("one track record and one robot version", () => {
   it("carries no hardcoded tester results of its own (the record comes from BROKER_RECORD)", () => {
     expect(panel).not.toMatch(/1\.59|1\.43|146 арилжаа|2024 онд Profit Factor/);
   });
-  it("takes robot versions from the server instead of its own constant", () => {
-    expect(panel).not.toMatch(/GATE_ROBOT\s*=/);
-    expect(panel).not.toMatch(/v2\.80|v3\.10\b/);
-    expect(readFileSync(PAGE, "utf8")).toMatch(/minRobotVersion/);
+  it("takes the robot version the Setup signals need from the server", () => {
+    expect(panel).not.toMatch(/GATE_ROBOT\s*=|v2\.80|v3\.10\b/);
+    expect(readFileSync(PAGE, "utf8")).toMatch(/minRobotVersion\("ASIAN"\)/);
   });
-  it("describes the Setup signals tool from the session rules: three setups, up to three a day", () => {
+  it("describes the system from the session rules: three setups, up to three a day", () => {
     expect(readFileSync(PAGE, "utf8")).toMatch(/SESSION_RULES\.map\(\(r\) => ruleLine\(r, describe\(r, v\)\.name, v\)\)/);
     expect(texts(PANEL).some((s) => /өдөрт 3 хүртэл/.test(s))).toBe(true);
   });
