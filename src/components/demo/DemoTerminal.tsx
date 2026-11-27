@@ -7,6 +7,7 @@ import type { DemoView } from "@/lib/demo/view";
 import { journalStats, type JRow } from "@/lib/journalStats";
 import { useQuote } from "@/lib/liveClient";
 import { CandleChart, type ChartLine } from "../CandleChart";
+import type { Plan } from "../chart/DrawingLayer";
 import { JournalSummary } from "../JournalView";
 import { LiveBadge } from "../LiveQuote";
 import { useViewer } from "../PrefsProvider";
@@ -31,6 +32,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
   const [tab, setTab] = useState<Tab>("positions");
   const [opening, setOpening] = useState(false);
   const [picked, setPicked] = useState<{ price: number; n: number } | null>(null);
+  const [plan, setPlan] = useState<{ side: "BUY" | "SELL"; entry: number; sl: number; tp: number; n: number } | null>(null);
   const [toasts, setToasts] = useState<{ id: number; text: string; tone: number }[]>([]);
   const seen = useRef<Set<string> | null>(null);
   const quote = useQuote();
@@ -76,6 +78,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
   ]), [view]);
   const rows: JRow[] = useMemo(() => (view?.history ?? []).map((h) => ({ symbol: "XAUUSD", side: h.side, lots: h.lots, openPrice: h.openPrice!, closePrice: h.closePrice!, openTime: new Date(h.openedAt ?? h.closedAt!), closeTime: new Date(h.closedAt!), profit: h.profit ?? 0, magic: "0" })), [view]);
   const onPick = useCallback((p: number) => setPicked((x) => ({ price: p, n: (x?.n ?? 0) + 1 })), []);
+  const onPlan = useCallback((p: Plan) => { setPlan((x) => ({ ...p, n: (x?.n ?? 0) + 1 })); toast(t("Төлөвлөгөө захиалгын хэсэгт орлоо. Lot-оо шалгаад илгээнэ үү.", "The plan is in the order ticket. Check the lots and send it.")); }, [t, toast]);
 
   if (opening) return <DemoOpenForm count={accounts.length} onCancel={() => setOpening(false)} onOpened={(id) => { setOpening(false); router.push(`/demo?a=${id}`); router.refresh(); setAccountId(id); }} />;
   if (!view || !st) return <div className="card text-sm text-zinc-500">{t("Ачаалж байна…", "Loading…")}</div>;
@@ -122,7 +125,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
 
       <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-4 sm:space-y-5">
-          <CandleChart levels={levels} bot={bot} owner="demo" lines={lines} onPickPrice={onPick} />
+          <CandleChart levels={levels} bot={bot} owner="demo" lines={lines} onPickPrice={onPick} onPlan={onPlan} />
           {(context.next || context.bias) && (
             <section className="card flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t("Зах зээлийн нөхцөл", "Market context")}>
               {context.bias && <p className="text-zinc-300">{t("Site-ын үнэлгээ", "The site's reading")}: <b className="text-zinc-100">{context.bias.label}</b> <span className="text-zinc-500 tabular-nums">· {t("авагч", "buyers")} {context.bias.buyerPct}%</span></p>}
@@ -131,7 +134,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
           )}
         </div>
         <div className="space-y-4 sm:space-y-5">
-          <OrderTicket view={{ ...view, state: st }} price={price} now={quote?.at ?? view.price?.at ?? 0} nextHigh={context.next?.at ?? null} picked={picked} onDone={onDone} />
+          <OrderTicket view={{ ...view, state: st }} price={price} now={quote?.at ?? view.price?.at ?? 0} nextHigh={context.next?.at ?? null} picked={picked} plan={plan} onDone={onDone} />
           {a.beginner && <DemoMissions missions={view.missions} />}
         </div>
       </div>

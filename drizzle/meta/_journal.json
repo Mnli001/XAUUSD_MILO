@@ -215,8 +215,15 @@
     {
       "idx": 30,
       "version": "7",
-      "when": 1795771895662,
-      "tag": "0030_journal_manual",
+      "when": 1795771735437,
+      "tag": "0030_chart_drawings",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795774451667,
+      "tag": "0031_journal_manual",
       "breakpoints": true
     }
   ]

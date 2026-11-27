@@ -65,3 +65,11 @@ test("switching side clears a stop and target set for the other side; a wrong-si
   expect(screen.getByRole("list", { name: "Анхааруулга" })).toHaveTextContent("TP буруу талд");
   expect(screen.queryByText(/^1:-/)).toBeNull();
 });
+
+test("a long plan drawn on the chart below the price becomes a Buy Limit with its stop and target", () => {
+  const { rerender } = ticket();
+  rerender(<OrderTicket view={view()} price={price} now={0} nextHigh={null} picked={null} plan={{ side: "BUY", entry: 3995, sl: 3990, tp: 4005, n: 1 }} onDone={vi.fn()} />);
+  expect(screen.getByLabelText("BUY Limit үнэ")).toHaveValue("3995.00");
+  expect(screen.getByRole("textbox", { name: /^Stop loss/ })).toHaveValue("3990.00");
+  expect(screen.getByRole("textbox", { name: /^Take profit/ })).toHaveValue("4005.00");
+});

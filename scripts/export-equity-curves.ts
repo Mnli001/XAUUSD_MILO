@@ -248,7 +248,7 @@ async function main() {
   const year2023R = years.find((y) => y.year === 2023)?.r ?? 0;
   const out = {
     generatedAt: new Date().toISOString().slice(0, 10),
-    source: `JustMarkets XAUUSD M15, ${monthKey(T0)} → ${monthKey(T1)}`,
+    source: `MT5 broker XAUUSD M15, ${monthKey(T0)} → ${monthKey(T1)}`,
     spread: SPREAD,
     start: START,
     stats: { trades: st.n, perWeek: r2(st.n / coveredWeeks), winRate: r2((100 * st.wins) / st.n), avgR: r3(sumR(ts) / st.n), profitFactor: r2(st.g / st.l), bestYearR: Math.max(...yr), worstYearR: Math.min(...yr) },

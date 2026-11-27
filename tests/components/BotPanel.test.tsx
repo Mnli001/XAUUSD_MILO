@@ -18,7 +18,7 @@ const view = (o: Record<string, unknown> = {}, config: Partial<LiveConfig> = {})
   robotVersion: null, plannedSeconds: null, elapsedSeconds: null, positions: [], gateOn: null, block: null, blockDetail: null, tradesToday: null, dayPnl: null, dailyLossHit: null, guard: null, guardDetail: null,
   deals: [], dealCount: 0, pnl24h: 0, ...o,
 }) as Props["initial"];
-const setup = { lines: ["Ази: хүрээ 07:00–15:00", "Нью-Йорк нээлт", "Нью-Йорк орой"], record: { n: 209, winPct: 48, profitFactor: 1.44, from: "2019-01", source: "JustMarkets XAUUSD", checkedOn: "2026-11-26" } }; // i18n-ok: sample rule lines
+const setup = { lines: ["Ази: хүрээ 07:00–15:00", "Нью-Йорк нээлт", "Нью-Йорк орой"], record: { n: 209, winPct: 48, profitFactor: 1.44, from: "2019-01", source: "MT5 broker XAUUSD", checkedOn: "2026-11-26" } }; // i18n-ok: sample rule lines
 const panel = (initial: Props["initial"]) => render(<BotPanel initial={initial} origin="https://example.mn" syncUrl="https://example.mn/api/bot/sync" robot={{ need: 13 }} setup={setup} />);
 const connected = { hasToken: true, online: true, lastSeenAt: "2026-11-27T10:00:00Z", accountMode: "DEMO", accountLogin: "••••4567", balance: 2000, equity: 2010, robotVersion: 14, account: "51234567" };
 
