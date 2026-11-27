@@ -37,8 +37,8 @@ export function modelClauses(m: unknown, t: T): string[] {
     typeof o.swapPerOzNight === "number" ? t(`swap $${o.swapPerOzNight}/унц/шөнө`, `swap $${o.swapPerOzNight}/oz a night`) : "",
   ].filter(Boolean);
   if (incl.length) out.push(t(`тооцсон: ${incl.join(", ")}`, `modelled: ${incl.join(", ")}`));
-  if (o.newsFilterFrom) out.push(t(`мэдээний шүүлтүүр зөвхөн ${o.newsFilterFrom}-өөс (түүнээс өмнөх мэдээний түүх алга)`, `news filter only from ${o.newsFilterFrom} (no news history before)`));
-  if (Array.isArray(o.dataGap) && o.dataGap.length === 2) out.push(t(`${o.dataGap[0]} → ${o.dataGap[1]} (2020 оны COVID-ийн хэсэг) дата алга`, `no data ${o.dataGap[0]} → ${o.dataGap[1]} (the 2020 COVID stretch)`));
+  if (o.newsFilterFrom) out.push(t(`мэдээний шүүлтүүр зөвхөн ${o.newsFilterFrom}-өөс`, `news filter only from ${o.newsFilterFrom}`));
+  if (Array.isArray(o.dataGap) && o.dataGap.length === 2) out.push(t(`COVID-ийн хэсэг (${o.dataGap[0]} → ${o.dataGap[1]}) дата алга`, `no data for the COVID stretch (${o.dataGap[0]} → ${o.dataGap[1]})`));
   if (Array.isArray(o.excluded) && o.excluded.length) { const ex = o.excluded.map((x) => excludedName(String(x), t)).join(", "); out.push(t(`тооцоогүй: ${ex}`, `not modelled: ${ex}`)); }
   for (const [k, v] of Object.entries(o)) if (!known.has(k)) out.push(`${k}: ${metaText(v, t)}`);
   return out;

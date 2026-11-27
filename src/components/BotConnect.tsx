@@ -153,13 +153,15 @@ export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot, ins
                 {state(i) !== "todo" && <span className={`ml-2 text-xs font-medium ${state(i) === "done" ? "text-emerald-400" : "text-amber-300"}`}>· {stateText[state(i)]}</span>}
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-zinc-300">{s.body}</p>
-              {i === 1 && <CopyField value={origin} label={t("Site-ын хаяг", "Site address")} />}
+              {i === 1 && origin && <CopyField value={origin} label={t("Site-ын хаяг", "Site address")} />}
               {i === 2 && (
                 <>
                   {tokenSlot}
                   <p className="mt-3 text-sm leading-relaxed text-zinc-300">{s.after}</p>
-                  <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Robot-ын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
-                  <CopyField value={syncUrl} label="ServerUrl" />
+                  {syncUrl && <>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">{t("Robot-ын ServerUrl мөрөнд энэ хаяг байх ёстой (ихэнхдээ аль хэдийн бичигдсэн байдаг):", "The robot's ServerUrl row must hold this address (it usually already does):")}</p>
+                    <CopyField value={syncUrl} label="ServerUrl" />
+                  </>}
                 </>
               )}
             </div>
