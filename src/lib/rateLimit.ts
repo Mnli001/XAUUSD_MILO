@@ -16,6 +16,8 @@ export const LIMITS = {
   telegramLink: { max: 5, windowMs: 60 * 60e3 },
   telegramReset: { max: 3, windowMs: 60 * 60e3 },
   resetSubmit: { max: 10, windowMs: 15 * 60e3 },
+  pushTest: { max: 5, windowMs: 60 * 60e3 },
+  priceAlert: { max: 30, windowMs: 60 * 60e3 },
 } satisfies Record<string, Limit>;
 
 const keyOf = (scope: string, id: string) => `${scope}:${createHash("sha256").update(id).digest("hex").slice(0, 32)}`;

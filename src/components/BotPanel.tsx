@@ -25,12 +25,13 @@ const stopReasons = (t: T, file: string | null): Record<string, string> => ({
   MANUAL: t("гараар зогсоосон", "stopped by hand"), TARGET: t("ашгийн зорилтод хүрсэн", "profit target reached"), MAX_LOSS: t("алдагдлын хязгаарт хүрсэн", "loss limit reached"),
   TIME: t("төлөвлөсөн хугацаа дууссан", "the planned time ran out"), REVERSAL: t("чиглэл эргэсэн", "direction reversed"), NO_SIGNAL: t("удаан хугацаанд дохио гараагүй", "no signal for a long time"),
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
+  RISK_DAILY: t("эрсдэлийн менежер: өдрийн алдагдлын хязгаарт хүрсэн", "risk manager: today's loss limit reached"), RISK_MAX: t("эрсдэлийн менежер: нийт алдагдлын хязгаарт хүрсэн", "risk manager: overall loss limit reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"), TOO_MANY_ACCOUNTS: t("нэг багцад 3 хүртэл MT5 данс холбоно", "a plan links up to 3 MT5 accounts"),
   OLD_ROBOT: t(`роботын файл хуучин: шинэ XauBot.ex5${file ? ` (${file})` : ""} татаж солино уу`, `the robot file is old: download the new XauBot.ex5${file ? ` (${file})` : ""} and replace it`),
 });
 /** The few reasons the robot holds back a Setup-signal entry that a user can act on, in plain words. */
 const plainBlocks = (t: T): Record<string, string> => ({
-  RISK_SMALL: t("тавьсан эрсдэлд хамгийн бага лот ч багтахгүй байна: эрсдэлээ өсгөнө үү", "even the smallest lot does not fit your risk: raise the risk"),
+  RISK_SMALL: t("тавьсан эрсдэлд хамгийн бага lot ч багтахгүй байна: эрсдэлээ өсгөнө үү", "even the smallest lot does not fit your risk: raise the risk"),
   MARGIN: t("дансанд хангалттай чөлөөт мөнгө (margin) алга", "not enough free money (margin) in the account"),
 });
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
@@ -105,22 +106,22 @@ function PositionBar({ p, price }: { p: View["positions"][number]; price: number
 function TokenControl({ hasToken, token, pending, action, compact = false, disabled = false }: { hasToken: boolean; token?: string; pending: boolean; action: (f: FormData) => void; compact?: boolean; disabled?: boolean }) {
   const { t } = useViewer();
   const ask = (e: MouseEvent<HTMLButtonElement>) => {
-    if (hasToken && !window.confirm(t("Шинэ токен үүсгэвэл хуучин токен ажиллахаа больж, роботод шинийг буулгах хэрэгтэй болно. Үргэлжлүүлэх үү?", "A new token stops the old one, and the new one must be pasted into the robot. Continue?"))) e.preventDefault();
+    if (hasToken && !window.confirm(t("Шинэ token үүсгэвэл хуучин token ажиллахаа больж, роботод шинийг буулгах хэрэгтэй болно. Үргэлжлүүлэх үү?", "A new token stops the old one, and the new one must be pasted into the robot. Continue?"))) e.preventDefault();
   };
   return (
     <div className={compact ? "" : "mt-3"}>
       {token ? (
         <div className="rounded-xl border border-amber-400/40 bg-amber-400/5 p-3">
-          <p className="text-sm font-semibold text-amber-300">{t("Таны токен. Одоо хуулж ав: дахин харагдахгүй.", "Your token. Copy it now: it will not be shown again.")}</p>
-          <CopyField value={token} label={t("Токен", "Token")} tone="secret" />
-          <p className="mt-2 text-xs leading-relaxed text-zinc-400">{t("Токеноо хэнд ч бүү өг: түүгээр таны данс энэ хуудастай холбогдоно.", "Never share your token: it ties your account to this page.")}</p>
+          <p className="text-sm font-semibold text-amber-300">{t("Таны token. Одоо хуулж ав: дахин харагдахгүй.", "Your token. Copy it now: it will not be shown again.")}</p>
+          <CopyField value={token} label={t("Token", "Token")} tone="secret" />
+          <p className="mt-2 text-xs leading-relaxed text-zinc-400">{t("Token-оо хэнд ч бүү өг: түүгээр таны данс энэ хуудастай холбогдоно.", "Never share your token: it ties your account to this page.")}</p>
         </div>
       ) : (
         <form action={action} className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <button className={compact ? "btn-ghost min-h-9 px-3 text-xs" : "btn"} disabled={pending || disabled} onClick={ask}>
-            {pending ? t("Үүсгэж байна…", "Creating…") : hasToken ? t("Шинэ токен үүсгэх", "Create a new token") : t("Токен үүсгэх", "Create token")}
+            {pending ? t("Үүсгэж байна…", "Creating…") : hasToken ? t("Шинэ token үүсгэх", "Create a new token") : t("Token үүсгэх", "Create token")}
           </button>
-          {!compact && hasToken && <span className="text-xs text-emerald-400">{t("Токен үүссэн ✓", "Token created ✓")}</span>}
+          {!compact && hasToken && <span className="text-xs text-emerald-400">{t("Token үүссэн ✓", "Token created ✓")}</span>}
         </form>
       )}
     </div>
@@ -271,7 +272,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
         <fieldset>
           <legend className="label">{t("Арилжааны хэмжээ", "Trade size")}</legend>
           <div className="inline-flex max-w-full flex-wrap gap-1 rounded-xl border border-zinc-700 bg-zinc-950 p-1">
-            {([["PCT", t("Балансын %", "% of balance")], ["LOTS", t("Тогтмол лот", "Fixed lot")]] as const).map(([val, text]) => (
+            {([["PCT", t("Балансын %", "% of balance")], ["LOTS", t("Тогтмол lot", "Fixed lot")]] as const).map(([val, text]) => (
               <label key={val} className="cursor-pointer">
                 <input type="radio" name="sizing" value={val} checked={sizing === val} onChange={() => setSizing(val)} className="peer sr-only" />
                 <span className="flex min-h-10 items-center rounded-lg px-3.5 text-sm text-zinc-300 transition-colors peer-checked:bg-[var(--accent-bg)] peer-checked:font-semibold peer-checked:text-[var(--accent-fg)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-amber-400 sm:min-h-9">{text}</span>
@@ -290,7 +291,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
             </>
           ) : (
             <>
-              <label className="label" htmlFor="risk-lots">{t("Нэг арилжааны лот", "Lots per trade")}</label>
+              <label className="label" htmlFor="risk-lots">{t("Нэг арилжааны lot", "Lots per trade")}</label>
               <input className="input tabular-nums" id="risk-lots" name="lots" type="number" inputMode="decimal" step="0.01" min="0.01" max="100" required value={lots} onChange={(e) => setLots(e.target.value)} />
             </>
           )}
@@ -334,7 +335,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
         <h2 id="hist-h" className="flex flex-wrap items-center gap-2 px-4 pt-4 pb-2 text-base font-semibold text-zinc-100 sm:px-5 sm:pt-5"><Icon name="history" className="h-[18px] w-[18px] text-amber-400" />{t("Арилжааны түүх", "Trade history")} <span className="text-sm font-normal text-zinc-500">{t(`(сүүлийн 50, нийт ${v.dealCount})`, `(last 50, total ${v.dealCount})`)}</span></h2>
         {v.deals.length === 0 ? <p className="px-4 pb-4 text-sm text-zinc-500 sm:px-5 sm:pb-5">{t("Хаагдсан арилжаа одоогоор алга.", "No closed trades yet.")}</p> : (
           <table className="w-full border-collapse">
-            <thead><tr className="border-b border-zinc-800">{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], [t("Чиглэл", "Side"), ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "hidden sm:table-cell text-right"], [t("Гарсан", "Exit"), "hidden sm:table-cell text-right"], [t("Үр дүн", "P/L"), "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
+            <thead><tr className="border-b border-zinc-800">{([[`${t("Хаагдсан", "Closed")} (${zone})`, ""], [t("Чиглэл", "Side"), ""], [t("Lot", "Lots"), "text-right"], [t("Орсон", "Entry"), "hidden sm:table-cell text-right"], [t("Гарсан", "Exit"), "hidden sm:table-cell text-right"], [t("Үр дүн", "P/L"), "text-right"]] as const).map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
             <tbody>{v.deals.map((d) => (
               <tr key={d.ticket} className="border-t border-zinc-800/70 first:border-t-0">
                 <td className="td font-semibold whitespace-nowrap text-zinc-50 tabular-nums">{stamp(who, new Date(d.closeTime))}</td>

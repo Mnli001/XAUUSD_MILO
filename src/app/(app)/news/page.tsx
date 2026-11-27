@@ -1,6 +1,7 @@
-import { getEvents, getReactions } from "@/lib/events";
+import { getEvents, getReactions, getSurprises } from "@/lib/events";
 import { zonedToUtc } from "@/lib/time";
-import { NewsList } from "@/components/NewsList";
+import { NewsList, type SurpriseStats } from "@/components/NewsList";
+
 import { getT, getViewer } from "@/lib/prefs.server";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function NewsPage() {
   const now = new Date();
   const from = zonedToUtc(v.date(now), "00:00", v.timeZone);
   const [events, reactions] = await Promise.all([getEvents(from, new Date(from.getTime() + 14 * 864e5)), getReactions()]);
+  const surprises: Map<string, SurpriseStats> = await getSurprises([...new Set(events.map((x) => x.type))], now);
   const key: [string, string][] = [["bg-red-500", t("Өндөр нөлөө", "High impact")], ["bg-amber-400", t("Дунд нөлөө", "Medium impact")], ["bg-zinc-500", t("Бага нөлөө", "Low impact")]];
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -25,7 +27,7 @@ export default async function NewsPage() {
           {key.map(([c, label]) => <li key={c} className="flex items-center gap-2"><span aria-hidden className={`line-badge ${c}`} />{label}</li>)}
         </ul>
       </div>
-      <NewsList events={events} reactions={reactions} now={now} v={v} />
+      <NewsList events={events} reactions={reactions} now={now} v={v} surprises={surprises} />
     </div>
   );
 }

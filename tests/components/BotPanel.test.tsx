@@ -28,7 +28,7 @@ test("before the robot connects, the 3 connect steps lead the page with the site
   expect(within(card).getByRole("link", { name: /XauBot\.ex5/ })).toHaveAttribute("href", "/api/bot/download?file=ex5");
   expect(within(card).getByText("https://example.mn")).toBeInTheDocument();
   expect(within(card).getAllByText(/Allow WebRequest/).length).toBeGreaterThan(0);
-  expect(within(card).getByRole("button", { name: "Токен үүсгэх" })).toBeInTheDocument();
+  expect(within(card).getByRole("button", { name: "Token үүсгэх" })).toBeInTheDocument();
   expect(within(card).getByText("Холболтыг хүлээж байна…")).toBeInTheDocument();
   expect(within(card).getByText("Асуудал гарвал")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Эхлүүлэх/ })).toBeDisabled();
@@ -36,9 +36,9 @@ test("before the robot connects, the 3 connect steps lead the page with the site
 
 test("creating a token shows it once with a Copy button and a warning", async () => {
   panel(view());
-  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Токен үүсгэх" })); });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Token үүсгэх" })); });
   expect(await screen.findByText("tok-123")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /Хуулах: Токен/ })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /Хуулах: Token/ })).toBeInTheDocument();
   expect(screen.getByText(/хэнд ч бүү өг/)).toBeInTheDocument();
 });
 
@@ -52,7 +52,7 @@ test("a copy button falls back to selecting the text when the clipboard is not a
 test("with a token but no robot yet, step 3 shows as half done", () => {
   panel(view({ hasToken: true }));
   expect(screen.getByText(/хагас хийгдсэн/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Шинэ токен үүсгэх" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Шинэ token үүсгэх" })).toBeInTheDocument();
 });
 
 test("once connected the connect card is one line, and the status card shows the account", () => {
@@ -60,7 +60,7 @@ test("once connected the connect card is one line, and the status card shows the
   expect(screen.queryByRole("heading", { name: /Холбох — 3 алхам/ })).toBeNull();
   const row = screen.getByRole("region", { name: "MT5 холболт" });
   expect(row).toHaveTextContent(/MT5 холбогдсон.*данс ••••4567/);
-  expect(within(row).getByRole("button", { name: "Шинэ токен үүсгэх" })).toBeInTheDocument();
+  expect(within(row).getByRole("button", { name: "Шинэ token үүсгэх" })).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Бот зогссон" })).toBeInTheDocument();
   expect(screen.getByText("$2,000.00")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Эхлүүлэх/ })).toBeEnabled();
@@ -80,8 +80,8 @@ test("the risk card offers % of balance or a fixed lot, with the dollar risk wor
   expect(screen.getByText(/≈ \$20\.00 эрсдэл нэг арилжаанд/)).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText(/балансын хэдэн хувийг/), { target: { value: "2.5" } });
   expect(screen.getByText(/≈ \$50\.00 эрсдэл нэг арилжаанд/)).toBeInTheDocument();
-  fireEvent.click(screen.getByLabelText("Тогтмол лот"));
-  expect(screen.getByLabelText("Нэг арилжааны лот")).toHaveValue(0.01);
+  fireEvent.click(screen.getByLabelText("Тогтмол lot"));
+  expect(screen.getByLabelText("Нэг арилжааны lot")).toHaveValue(0.01);
   expect(screen.getByLabelText(/Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөх/)).not.toBeChecked();
 });
 

@@ -18,6 +18,10 @@ import { botTrades } from "@/lib/botPerformance";
 import { getSetups } from "@/lib/setup/build";
 import { orderSetups } from "@/lib/setup/order";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
+import { PriceAlertsCard, PriceAlertsLocked, type AlertRow } from "@/components/PriceAlertsCard";
+import { MAX_ACTIVE_ALERTS, listPriceAlerts } from "@/lib/priceAlerts";
+import { pushDeviceCount } from "@/lib/push";
+import { MAX_CONDITION_ALERTS, conditionLabel, listConditionAlerts } from "@/lib/conditionAlerts";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -52,6 +56,9 @@ export default async function TodayPage() {
   const dashSetups: DashSetup[] | null = setupView
     ? orderSetups(setupView.setups).map((s) => ({ id: s.id, name: s.name, status: s.status, side: s.side, headline: s.headline, entry: s.entry, stop: s.stop, target: s.target }))
     : null;
+  const [alertRows, devices, condRows] = paid ? await Promise.all([listPriceAlerts(user.id), pushDeviceCount(user.id), listConditionAlerts(user.id)]) : [[], 0, []];
+  const conditions = { rows: condRows.map((c) => ({ id: c.id, label: conditionLabel(c, v), lastFired: c.lastFiredAt ? v.dateTime(c.lastFiredAt) : null })), max: MAX_CONDITION_ALERTS };
+  const alerts: AlertRow[] = alertRows.map((a) => ({ id: a.id, level: a.level, direction: a.direction === "above" ? "above" : "below", set: v.dateTime(a.createdAt), fired: a.triggeredAt ? v.dateTime(a.triggeredAt) : null, firedPrice: a.triggeredPrice }));
   const highSoon = upcoming.filter((e) => e.impact === "HIGH").map((e) => ({ time: e.time, title: e.title, type: e.type }));
   const cells = hourCells(paid && snap.hourly ? snap.hourly : lockedHourRows(), ubHour(now), highSoon, v);
 
@@ -89,6 +96,10 @@ export default async function TodayPage() {
         {paid ? <KeyLevels levels={snap.levels} price={snap.price?.last} v={v} /> : <KeyLevelsLocked v={v} />}
         {paid ? <ReasoningPanel initial={reasoning} compact narrow /> : <ReasoningLocked narrow />}
       </div>
+
+      {paid
+        ? <PriceAlertsCard alerts={alerts} price={snap.price?.last ?? null} channels={{ telegram: !!user.telegramChatId, push: devices > 0 }} max={MAX_ACTIVE_ALERTS} conditions={conditions} />
+        : <PriceAlertsLocked />}
     </div>
   );
 }

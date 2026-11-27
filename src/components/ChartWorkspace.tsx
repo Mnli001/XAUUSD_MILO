@@ -40,7 +40,7 @@ export function ChartWorkspace({ levels, poll = true }: { levels: Levels | null;
               className={`flex min-h-10 items-center gap-2 rounded-lg border px-3 text-sm ${a.login === data.account ? "border-amber-400 bg-zinc-800 font-semibold text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
               <span className="tabular-nums">{a.label}</span>
               {a.mode === "REAL" && <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-xs font-semibold text-red-400">{t("Жинхэнэ", "Real")}</span>}
-              {a.mode === "DEMO" && <span className="rounded-md bg-zinc-700/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">{t("Демо", "Demo")}</span>}
+              {a.mode === "DEMO" && <span className="rounded-md bg-zinc-700/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">{t("Demo", "Demo")}</span>}
             </button>
           ))}
         </nav>

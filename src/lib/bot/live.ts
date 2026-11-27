@@ -73,7 +73,7 @@ const optionalPositive = (msg: string) => z.preprocess(blank, positive(msg).null
 export const MAX_BASKET_COUNT = 100;
 const allowReal = z.preprocess((v) => v === true || v === "on" || v === "1" || v === "true", z.boolean());
 const configSchema = (t: T) => z.object({
-  lots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
+  lots: positive(t("Lot 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
   maxPositions: z.coerce.number().int(t("Арилжааны тоо бүхэл тоо байх ёстой", "Number of trades must be a whole number")).min(1, t("Дор хаяж 1 арилжаа", "At least 1 trade")).max(200, t("Ихдээ 200 арилжаа", "At most 200 trades")),
   slAtr: positive(t("Stop 0-ээс их байх ёстой", "Stop must be above 0")).max(50),
   tpAtr: positive(t("Target 0-ээс их байх ёстой", "Target must be above 0")).max(50),
@@ -83,14 +83,14 @@ const configSchema = (t: T) => z.object({
 });
 
 const basketSchema = (t: T) => z.object({
-  bLots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
+  bLots: positive(t("Lot 0-ээс их тоо байх ёстой", "Lots must be a number above 0")),
   bCount: z.coerce.number().int(t("Арилжааны тоо бүхэл тоо байх ёстой", "Number of trades must be a whole number")).min(1, t("Дор хаяж 1 арилжаа", "At least 1 trade")).max(MAX_BASKET_COUNT, t(`Ихдээ ${MAX_BASKET_COUNT} арилжаа`, `At most ${MAX_BASKET_COUNT} trades`)),
   bProfit: z.preprocess(blank, positive(t("Хаах ашгийн дүн ($) 0-ээс их байх ёстой", "The closing profit ($) must be above 0")).nullable()).refine((v) => v !== null, t("Хаах ашгийн дүнг ($) оруулна уу", "Enter the closing profit ($)")),
   bLoss: z.preprocess(blank, positive(t("Хаах алдагдлын дүн ($) 0-ээс их байх ёстой", "The closing loss ($) must be above 0")).nullable()).refine((v) => v !== null, t("Хаах алдагдлын дүнг ($) оруулна уу", "Enter the closing loss ($)")),
   allowReal,
 });
 
-const ruleSchema = (t: T) => z.object({ rLots: positive(t("Лот 0-ээс их тоо байх ёстой", "Lots must be a number above 0")), allowReal });
+const ruleSchema = (t: T) => z.object({ rLots: positive(t("Lot 0-ээс их тоо байх ёстой", "Lots must be a number above 0")), allowReal });
 
 /** Each tool has its own form; saving one keeps the other's settings from `current`. */
 export function parseConfig(input: unknown, current: LiveConfig = DEFAULT_LIVE_CONFIG, t: T = mnT): { config?: LiveConfig; error?: string } {
@@ -124,9 +124,9 @@ const simpleSchema = (t: T) => z.discriminatedUnion("sizing", [
   }),
   z.object({
     sizing: z.literal("LOTS"),
-    lots: z.preprocess(blank, z.coerce.number({ message: t("Лотын хэмжээг оруулна уу", "Enter the lot size") }).finite()
-      .min(0.01, t(`Лот 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))
-      .max(SIMPLE_MAX_LOTS, t(`Лот 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))),
+    lots: z.preprocess(blank, z.coerce.number({ message: t("Lot-ын хэмжээг оруулна уу", "Enter the lot size") }).finite()
+      .min(0.01, t(`Lot 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))
+      .max(SIMPLE_MAX_LOTS, t(`Lot 0.01–${SIMPLE_MAX_LOTS} байна`, `Lots must be 0.01–${SIMPLE_MAX_LOTS}`))),
     allowReal,
   }),
 ], { error: () => t("Эрсдэлийн төрлөө сонгоно уу", "Choose how to size a trade") });

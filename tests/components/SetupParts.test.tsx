@@ -12,7 +12,7 @@ const base: Setup = {
   id: "ny-open-breakout", name: "Нью-Йоркийн нээлтийн breakout", rule: "Дүрмийн бүтэн текст.", history: { n: 118, winPct: 51, avgR: 0.24, profitFactor: 1.45 }, recent: hist,
   status: "ACTIVE", side: "BUY", headline: "Худалдан авах: хүрээний дээд талыг эвдэв", detail: "Хүрээнээс дээш хаагдсан.",
   entry: 3601.2, stop: 3594.8, target: 3614, band: { high: 3601.2, low: 3594.8 },
-  checks: [{ label: "Өдрийн тренд өсөх", ok: true }, { label: "Мэдээний цонхноос гадна", ok: false }],
+  checks: [{ label: "Өдрийн trend өсөх", ok: true }, { label: "Мэдээний цонхноос гадна", ok: false }],
 };
 const candles = Array.from({ length: 8 }, (_, i) => ({ time: new Date(Date.UTC(2026, 10, 26, 12, i * 15)).toISOString(), open: 3590 + i, high: 3592 + i, low: 3589 + i, close: 3591 + i }));
 

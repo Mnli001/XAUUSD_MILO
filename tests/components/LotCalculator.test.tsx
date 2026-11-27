@@ -23,7 +23,7 @@ test("from the live setup's stop, a balance and a risk give the lot, the risk an
 test("warns when even the smallest lot risks more than chosen", () => {
   render(<LotCalculator stop={33.75} target={null} />);
   fireEvent.change(screen.getByLabelText(/Дансны үлдэгдэл/), { target: { value: "200" } });
-  expect(screen.getByRole("alert")).toHaveTextContent(/0\.01 лот.*16\.88%/);
+  expect(screen.getByRole("alert")).toHaveTextContent(/0\.01 lot.*16\.88%/);
 });
 
 test("without a live setup the stop distance is typed in, and the balance is remembered on this device", () => {

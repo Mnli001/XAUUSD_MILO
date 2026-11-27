@@ -15,11 +15,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["pg", "@resvg/resvg-js"],
+  serverExternalPackages: ["pg", "@resvg/resvg-js", "web-push"],
   // Server Actions keep Next's default 1 MB body limit: no action takes a file upload any more.
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // the service worker must always be fetched fresh, so a fix reaches every installed app at once
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Content-Type", value: "application/javascript; charset=utf-8" }] },
+    ];
   },
   turbopack: {
     rules: {

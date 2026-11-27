@@ -112,7 +112,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
                   <section className="table-card" aria-labelledby="last-h">
                     <h2 id="last-h" className="px-4 pt-4 pb-2 text-[15px] font-semibold text-zinc-100 sm:px-5 sm:pt-5">{t("Сүүлийн 50 арилжаа", "Last 50 trades")}</h2>
                     <table className="w-full border-collapse">
-                      <thead><tr className="border-b border-zinc-800">{[[t("Нээсэн (УБ)", "Opened (UB)"), ""], [t("Чиглэл", "Side"), ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "text-right"], ["Stop", "text-right"], [t("Гарсан", "Exit"), "text-right"], [t("Шалтгаан", "Reason"), ""], ["P&L", "text-right"], ["R", "text-right"]].map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
+                      <thead><tr className="border-b border-zinc-800">{[[t("Нээсэн (УБ)", "Opened (UB)"), ""], [t("Чиглэл", "Side"), ""], [t("Lot", "Lots"), "text-right"], [t("Орсон", "Entry"), "text-right"], ["Stop", "text-right"], [t("Гарсан", "Exit"), "text-right"], [t("Шалтгаан", "Reason"), ""], ["P&L", "text-right"], ["R", "text-right"]].map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
                       <tbody>
                         {r.trades.slice(-50).reverse().map((tr, i) => (
                           <tr key={i} className="border-t border-zinc-800/70 first:border-t-0">
@@ -139,7 +139,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
             <p id="limits-h" className="mb-1.5 flex items-center gap-2 text-[13px] font-semibold text-amber-300"><Station tone="warn" />{t("Энэ шалгалтын хязгаар", "Limits of this test")}</p>
             <ul className="list-disc space-y-1 pl-5">
               <li>{t("Шийдвэр гаргах мөчид зөвхөн бүрэн хаагдсан лааг ашигласан; нэг лаанд stop, target хоёулаа хүрвэл stop гэж тооцсон.", "Decisions used only fully closed candles; when one candle reached both stop and target, it was counted as the stop.")}</li>
-              <li>{t("Spread-ийг орох үнэд нэмсэн. Slippage, swap, брокерын шимтгэл тооцоогүй тул бодит үр дүн үүнээс муу байх магадлалтай.", "The spread was added to the entry price. Slippage, swap and broker commission are not included, so real results are likely to be worse.")}</li>
+              <li>{t("Spread-ийг орох үнэд нэмсэн. Slippage, swap, broker-ын шимтгэл тооцоогүй тул бодит үр дүн үүнээс муу байх магадлалтай.", "The spread was added to the entry price. Slippage, swap and broker commission are not included, so real results are likely to be worse.")}</li>
               <li>{t("Баазад байхгүй өнгөрсөн мэдээ (жишээ нь өмнөх FOMC) шүүгдээгүй.", "Past releases that are not in the database (for example earlier FOMC meetings) were not filtered.")}</li>
               <li>{t("Өнгөрсөн үр дүн ирээдүйн ашгийг батлахгүй. Санхүүгийн зөвлөгөө биш.", "Past results do not guarantee future profit. Not financial advice.")}</li>
             </ul>

@@ -7,6 +7,12 @@ import { recomputeSnapshot, SYMBOL } from "./ingest/prices";
 import { ensureAdmin } from "./users";
 import { runTelegramJobs } from "./signals";
 import { sendWeeklyReport, watchFeed } from "./watch";
+import { checkPriceAlerts } from "./priceAlerts";
+import { checkConditionAlerts } from "./conditionAlerts";
+import { ingestMacro } from "./ingest/macro";
+import { hasMacroData } from "./drivers";
+import { fillActuals, recordMoves } from "./ingest/actuals";
+import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
 
@@ -42,15 +48,28 @@ async function run(job: Job, now: Date): Promise<void> {
   const fredKey = process.env.FRED_API_KEY;
   if (job === "calendar") {
     if (fredKey) console.log("[scheduler] calendar", JSON.stringify(await ingestCalendar(new FredCalendar(fredKey), now)));
+    // the dollar, real yields and gold futures positioning, for the drivers page (a short window once history is in)
+    try { console.log("[scheduler] macro", JSON.stringify(await ingestMacro(fredKey, now, (await hasMacroData()) ? 30 : 400))); } catch (e) { console.error("[scheduler] macro failed", e); }
     return;
   }
   if (!priceKey) return;
   const result = await ingestPrices(new TwelveData(priceKey), { tfs: job === "fast" ? ["15min"] : ["1h", "4h", "1day"], now });
   if (!result.ok) console.warn(`[scheduler] ${job} failed: ${result.error}`);
+  if (job === "hourly") {
+    // release figures from FRED once they are out, and gold's move after each release
+    try { const n = await fillActuals(fredKey, now); if (n) console.log(`[scheduler] ${n} release figure(s) filled`); } catch (e) { console.error("[scheduler] actuals failed", e); }
+    try { await recordMoves(now); } catch (e) { console.error("[scheduler] release moves failed", e); }
+  }
   // fresh 15-minute candles may have completed a setup, and a release may be coming: tell the people who asked to be told
   if (job === "fast") {
     const { signals, news } = await runTelegramJobs(now, result.ok);
     if (signals || news) console.log(`[scheduler] signals: ${signals} new, news alerts: ${news}`);
+    // price alerts on the bar that just closed, so they still fire when no robot is sending live prices
+    try {
+      const [bar] = await loadStored(SYMBOL, "15min", 1);
+      if (bar) { const n = await checkPriceAlerts({ high: bar.high, low: bar.low, price: bar.close, at: new Date(bar.time.getTime() + 15 * 6e4), from: bar.time }); if (n) console.log(`[scheduler] ${n} price alert(s) fired`); }
+    } catch (e) { console.error("[scheduler] price alerts failed", e); }
+    try { const n = await checkConditionAlerts(now); if (n) console.log(`[scheduler] ${n} condition alert(s) fired`); } catch (e) { console.error("[scheduler] condition alerts failed", e); }
     try { const f = await watchFeed(now); if (f) console.log(`[scheduler] price feed ${f}`); } catch (e) { console.error("[scheduler] feed watch failed", e); }
     try { const n = await sendWeeklyReport(now); if (n) console.log(`[scheduler] weekly report sent to ${n}`); } catch (e) { console.error("[scheduler] weekly report failed", e); }
   }

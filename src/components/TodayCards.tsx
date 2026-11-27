@@ -168,7 +168,7 @@ export function DirectionCard({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias
       </dl>
       <details className="text-xs text-zinc-500 max-sm:hidden">
         <summary className="cursor-pointer hover:text-zinc-300">{t(`Оноо хэрхэн тооцогддог вэ · ${v.time(bias.computedAt)} ${v.zone}`, `How the score is built · ${v.time(bias.computedAt)} ${v.zone}`)}</summary>
-        <p className="mt-2 leading-relaxed">{t("Оноо −100…+100: тренд (EMA20/50/200), моментум (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%. ±20-оос дотогш бол тодорхой тал алга.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%. Inside ±20 neither side leads.")}</p>
+        <p className="mt-2 leading-relaxed">{t("Оноо −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), бүтэц (оргил/ёроол). Жин: өдөр 35%, 4ц 30%, 1ц 20%, 15м 15%. ±20-оос дотогш бол тодорхой тал алга.", "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%. Inside ±20 neither side leads.")}</p>
       </details>
     </section>
   );

@@ -2,6 +2,7 @@ import "../i18n.server";
 import { and, asc, desc, eq, gte, lte, ne, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
+import { applyRisk, type RiskVerdict } from "../risk";
 import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
@@ -231,6 +232,10 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
 
   let { state, closeAll, stopReason } = live;
   let stoppedAt = live.stoppedAt;
+  // The member's own loss limits (risk manager): past one the bot stops, and closes its trades if they asked.
+  const risk = await applyRisk(owner.id, live.login, { equity: r.account.equity }, now).catch((e) => { console.error("[risk] check failed", e); return { stop: false, closeAll: false } as RiskVerdict; });
+  if (risk.stop && state === "RUNNING") { state = "STOPPED"; stopReason = risk.reason ?? "RISK"; stoppedAt = now; }
+  if (risk.closeAll) closeAll = true;
   if (r.positions.length === 0) closeAll = false; // nothing left to close
   if (state === "RUNNING" && r.finished) { state = "STOPPED"; stopReason = r.finished; stoppedAt = now; }
   const orders = await ordersFor(live.config, now);

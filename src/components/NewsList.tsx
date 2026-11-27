@@ -1,5 +1,6 @@
 import type { EconomicEvent } from "@/lib/db/schema";
 import type { Reaction } from "@/lib/analysis/reaction";
+import { surprise } from "@/lib/surprise";
 import { weekdayName, zoneWeekday } from "@/lib/time";
 import { eventTitle, countryName } from "@/lib/data/calendarProvider";
 import type { T } from "@/lib/i18n";
@@ -101,7 +102,34 @@ function DayAxis({ list, now, isToday, v }: { list: EconomicEvent[]; now: Date; 
   );
 }
 
-export function NewsList({ events, reactions, now, v = MN_VIEWER }: { events: EconomicEvent[]; reactions: Map<string, Reaction[]>; now: Date; v?: Viewer }) {
+export type SurpriseStats = { above: { n: number; avg: number | null; upPct: number | null }; below: { n: number; avg: number | null; upPct: number | null } };
+export const SURPRISE_MIN = 3;
+
+/** How gold moved 60 minutes after this release came in above and below the forecast, once there are a few of each. */
+export function SurpriseRows({ stats, v = MN_VIEWER }: { stats: SurpriseStats | undefined; v?: Viewer }) {
+  const { t } = v;
+  if (!stats || (stats.above.n < SURPRISE_MIN && stats.below.n < SURPRISE_MIN)) return <p className="text-sm text-zinc-500">{t("Таамагтай харьцуулах мэдээ хараахан цөөн байна.", "Too few releases with a forecast to compare yet.")}</p>;
+  const row = (label: string, g: SurpriseStats["above"]) => (
+    <tr className="border-t border-zinc-800/70">
+      <td className="py-1.5 pr-3 text-zinc-400">{label}</td>
+      {g.n < SURPRISE_MIN || g.avg === null ? <td colSpan={2} className="py-1.5 pr-3 text-zinc-500">{t("Түүхэн дата хангалтгүй", "Not enough history")}</td> : (
+        <>
+          <td className="py-1.5 pr-3 text-right font-semibold text-zinc-100 tabular-nums">{g.avg > 0 ? "+" : g.avg < 0 ? "−" : ""}${Math.abs(g.avg).toFixed(1)}</td>
+          <td className="py-1.5 pr-3 text-zinc-300 tabular-nums">{t(`${g.upPct}% өссөн`, `rose ${g.upPct}%`)}</td>
+        </>
+      )}
+      <td className="py-1.5 text-right text-zinc-500 tabular-nums">{g.n}</td>
+    </tr>
+  );
+  return (
+    <table className="w-full max-w-sm border-collapse text-sm">
+      <thead><tr className="text-left text-[11px] text-zinc-500"><th className="pr-3 pb-1.5 font-medium">{t("Бодит нь", "Actual came in")}</th><th className="pr-3 pb-1.5 text-right font-medium">{t("60 мин дараа", "After 60 min")}</th><th className="pr-3 pb-1.5 font-medium" /><th className="pb-1.5 text-right font-medium">n</th></tr></thead>
+      <tbody>{row(t("Таамгаас дээш", "Above forecast"), stats.above)}{row(t("Таамгаас доош", "Below forecast"), stats.below)}</tbody>
+    </table>
+  );
+}
+
+export function NewsList({ events, reactions, now, v = MN_VIEWER, surprises = new Map() }: { events: EconomicEvent[]; reactions: Map<string, Reaction[]>; now: Date; v?: Viewer; surprises?: Map<string, SurpriseStats> }) {
   const { t } = v;
   const IMPACT = impactOf(t);
   if (events.length === 0) return <div className="card text-sm text-zinc-500">{t("Энэ хугацаанд бүртгэгдсэн мэдээ алга. Календарь өдөрт нэг удаа шинэчлэгдэнэ.", "No releases on record for this period. The calendar updates once a day.")}</div>;
@@ -156,6 +184,10 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER }: { events: Ec
                           <span key={k} className="min-w-0 sm:min-w-14 sm:text-right">
                             <span className="block text-[11px] text-zinc-500">{k}</span>
                             <span className="block truncate font-medium text-zinc-200 tabular-nums">{val ?? "—"}</span>
+                            {k === t("Бодит", "Actual") && (() => {
+                              const s = surprise(e.actual, e.forecast);
+                              return s ? <span className={`block text-[11px] ${s === "above" ? "text-emerald-400" : s === "below" ? "text-red-300" : "text-zinc-400"}`}>{s === "above" ? t("таамгаас дээш", "above forecast") : s === "below" ? t("таамгаас доош", "below forecast") : t("таамагтай тэнцүү", "as forecast")}</span> : null;
+                            })()}
                           </span>
                         ))}
                       </span>
@@ -163,6 +195,8 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER }: { events: Ec
                     <div className="px-4 pb-4 sm:px-5 sm:pl-[5.5rem]">
                       <p className="mb-2 text-xs text-zinc-500">{t("Өмнөх ийм мэдээний дараа алт хэрхэн хөдөлсөн бэ (сүүлийн 12 сар):", "How gold moved after this kind of release before (last 12 months):")}</p>
                       <ReactionRows stats={reactions.get(e.type)} v={v} />
+                      <p className="mt-4 mb-2 text-xs text-zinc-500">{t("Бодит тоо таамгаас дээш эсвэл доош гарсан үед (сүүлийн 3 жил):", "When the actual came in above or below the forecast (last 3 years):")}</p>
+                      <SurpriseRows stats={surprises.get(e.type)} v={v} />
                     </div>
                   </details>
                 </li>

@@ -30,7 +30,7 @@ test("a finished day points to the next weekday's range, skipping the weekend", 
 test("trends apart while the entry window is open: still waiting, not 'no trade today'", () => {
   const w = nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 10, 50), null, MN_VIEWER);
   expect(w.state).toBe("WAIT");
-  expect(w.waitingFor).toContain("4 цагийн тренд доош эргэх");
+  expect(w.waitingFor).toContain("4 цагийн trend доош эргэх");
   expect(w.next?.at.toISOString()).toBe(at(24, 12).toISOString()); // the Asian window now ends at 12:00 UTC
   expect(nowWindow({ ...base, trends: { daily: "SELL", h4: "BUY" } }, at(24, 13), null, MN_VIEWER).state).toBe("NONE"); // window shut
 });

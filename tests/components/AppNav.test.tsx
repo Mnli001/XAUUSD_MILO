@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => path }));
 vi.mock("@/lib/actions/session", () => ({ logoutAction: async () => {} }));
 import { AppNav, currentHref } from "@/components/AppNav";
 
-const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот", "Дохионы түүх", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Профайл"];
+const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот", "Дохионы түүх", "Макро", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Профайл"];
 
 test("the section you are in is marked as current, in both the rail and the phone tab bar", () => {
   path = "/news";

@@ -100,3 +100,31 @@ describe("getRevenue", () => {
 
 import { eq as eqOp } from "drizzle-orm";
 function eq(id: string) { return eqOp(schema.users.id, id); }
+
+describe("user flow", () => {
+  const u = (id: string, created: string, accessUntil: string | null = null): UserRow => ({ id, email: `${id}@x.mn`, role: "USER", accessUntil: accessUntil ? d(accessUntil) : null, createdAt: d(created) });
+  const users = [
+    u("a", "2026-10-01T03:00:00Z", "2027-05-01T00:00:00Z"), // October signup, paid twice, active
+    u("b", "2026-11-02T03:00:00Z", "2026-11-29T00:00:00Z"), // November signup, paid once, active
+    u("c", "2026-11-05T03:00:00Z"), // November signup, never paid
+    u("e", "2026-11-20T03:00:00Z"), // November signup, never paid
+    u("f", "2026-11-30T16:30:00Z"), // already December in Ulaanbaatar: after `now`, so not counted in a month shown
+    { id: "adm", email: "adm@x.mn", role: "ADMIN" as const, accessUntil: null, createdAt: d("2026-11-01T00:00:00Z") },
+  ];
+  const paid = [
+    pay("a", "PLUS", 50000, "2026-10-05T03:00:00Z", "2026-11-04T03:00:00Z"),
+    pay("a", "PRO", 150000, "2026-11-03T03:00:00Z", "2027-05-01T00:00:00Z"),
+    pay("b", "PLUS", 50000, "2026-11-03T03:00:00Z", "2026-11-29T00:00:00Z"),
+  ];
+  const r = revenueReport(paid, users, now);
+
+  it("counts signups per month and how many of them have paid since", () => {
+    expect(r.signups.map((m) => m.key)).toEqual(["2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11"]);
+    expect(r.signups.at(-1)).toEqual({ key: "2026-11", signups: 3, paid: 1, paidPct: 33 });
+    expect(r.signups.at(-2)).toEqual({ key: "2026-10", signups: 1, paid: 1, paidPct: 100 });
+    expect(r.signups[0]).toEqual({ key: "2026-06", signups: 0, paid: 0, paidPct: null });
+  });
+  it("walks the funnel from registered to paid to paid again to active now", () => {
+    expect(r.funnel).toEqual({ registered: 5, paid: 2, repeat: 1, active: 2 });
+  });
+});

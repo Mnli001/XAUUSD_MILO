@@ -80,6 +80,9 @@ export const economicEvents = pgTable("economic_events", {
   actual: text("actual"),
   source: text("source").notNull(),
   alertedAt: ts("alerted_at"), // when the Telegram "news soon" heads-up went out, so it goes out once
+  actualPeriod: text("actual_period"), // the FRED observation date `actual` was read from, so the same month is never used twice
+  move15: doublePrecision("move15"), // gold's move ($) 15 and 60 minutes after the release
+  move60: doublePrecision("move60"),
 }, (t) => [uniqueIndex("event_type_time").on(t.type, t.time), index("event_time").on(t.time)]);
 
 export const eventReactions = pgTable("event_reactions", {
@@ -242,3 +245,76 @@ export const passwordResets = pgTable("password_resets", {
   usedAt: ts("used_at"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
+
+/**
+ * A browser or installed app that agreed to receive push notifications. One user can have several (phone, laptop).
+ * A subscription the push service reports gone (404/410) is deleted on the next send.
+ */
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [index("push_subscriptions_user").on(t.userId)]);
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
+
+/**
+ * "Tell me when gold reaches this price". `direction` is fixed when it is set: "above" when the level was above the
+ * price at that moment (it fires once price reaches it from below), "below" otherwise. It fires once, then stays as history.
+ */
+export const priceAlerts = pgTable("price_alerts", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  level: doublePrecision("level").notNull(),
+  direction: text("direction").notNull(), // "above" | "below"
+  createdAt: ts("created_at").notNull().defaultNow(),
+  triggeredAt: ts("triggered_at"),
+  triggeredPrice: doublePrecision("triggered_price"),
+}, (t) => [index("price_alerts_open").on(t.triggeredAt, t.direction, t.level), index("price_alerts_user").on(t.userId, t.createdAt)]);
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+
+/**
+ * "Tell me when …" on a chart condition rather than a price: RSI crossing a level, EMA 50/200 crossing, yesterday's
+ * high or low broken or swept. Checked on each closed bar of its timeframe; it fires each time the condition newly
+ * happens (at most once per bar) until it is deleted.
+ */
+export const conditionAlerts = pgTable("condition_alerts", {
+  id: id(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull().default("XAUUSD"),
+  kind: text("kind").notNull(),
+  timeframe: text("timeframe").notNull(), // "15min" | "1h" | "4h"
+  value: doublePrecision("value"), // the RSI level, for the RSI kinds
+  createdAt: ts("created_at").notNull().defaultNow(),
+  lastBarAt: ts("last_bar_at"), // the bar it last fired on, so no bar fires twice
+  lastFiredAt: ts("last_fired_at"),
+}, (t) => [index("condition_alerts_user").on(t.userId)]);
+export type ConditionAlert = typeof conditionAlerts.$inferSelect;
+
+/**
+ * A member's own limits for one MT5 account, the way prop firms set them: a daily loss limit and an overall loss
+ * limit as % of the account size, and an optional profit target. Checked on every robot report against equity.
+ */
+export const riskRules = pgTable("risk_rules", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull(),
+  accountSize: doublePrecision("account_size").notNull(),
+  dailyLossPct: doublePrecision("daily_loss_pct").notNull(),
+  maxLossPct: doublePrecision("max_loss_pct").notNull(),
+  profitTargetPct: doublePrecision("profit_target_pct"),
+  closeOnBreach: boolean("close_on_breach").notNull().default(true),
+  dayKey: text("day_key").notNull().default(""), // the UTC day dayStartEquity belongs to
+  dayStartEquity: doublePrecision("day_start_equity").notNull().default(0),
+  warned: text("warned").notNull().default(""), // notices already sent: "<day>:daily", "max", "target"
+  breach: text("breach"), // "RISK_MAX", or "RISK_DAILY:<day>"
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.userId, t.login] })]);
+
+/** Daily or weekly values of the things that move gold: the dollar, real yields, futures positioning. One row per series and date. */
+export const macroSeries = pgTable("macro_series", {
+  series: text("series").notNull(), // "DTWEXBGS", "DFII10", "DGS10", "COT_NC_NET", "COT_OI"
+  date: text("date").notNull(), // YYYY-MM-DD
+  value: doublePrecision("value").notNull(),
+}, (t) => [primaryKey({ columns: [t.series, t.date] })]);

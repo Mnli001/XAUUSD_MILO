@@ -94,7 +94,7 @@ describe("journal export", () => {
     const csv = tradesCsv([{ ...trade, exitPrice: null, closedAt: null, note: null }], viewer({ locale: "mn", timeZone: "Asia/Ulaanbaatar" }));
     expect(csv.startsWith("﻿")).toBe(true);
     const [head, row] = csv.slice(1).trim().split("\r\n");
-    expect(head).toBe("Нээсэн (УБ),Хаасан (УБ),Хэрэгсэл,Чиглэл,Лот,Орсон үнэ,Гарсан үнэ,Stop loss,Take profit,Ашиг $,R,Тэмдэглэл");
+    expect(head).toBe("Нээсэн (УБ),Хаасан (УБ),Хэрэгсэл,Чиглэл,Lot,Орсон үнэ,Гарсан үнэ,Stop loss,Take profit,Ашиг $,R,Тэмдэглэл");
     expect(row).toBe("2026-11-20 10:00,,XAUUSD,BUY,0.1,4000,,3995,4010,,,");
   });
   it("keeps a note that starts like a formula from running in a spreadsheet", () => {

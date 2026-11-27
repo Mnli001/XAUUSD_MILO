@@ -48,7 +48,7 @@ export function BotTradeHistory({ trades, onPick, now }: { trades: BotChartTrade
           <div className="table-card">
             <table className="w-full border-collapse">
               <thead><tr className="border-b border-zinc-800">
-                {([[`${t("Хаасан", "Closed")} (${v.zone})`, ""], ["", ""], [t("Лот", "Lots"), "hidden sm:table-cell text-right"], [t("Нээсэн → хаасан", "Open → close"), "hidden md:table-cell text-right"], [t("Ашиг/алдагдал", "Profit/loss"), "text-right"], ["", "w-0"]] as const).map(([h, cls], i) => <th key={i} className={`th ${cls}`}>{h}</th>)}
+                {([[`${t("Хаасан", "Closed")} (${v.zone})`, ""], ["", ""], [t("Lot", "Lots"), "hidden sm:table-cell text-right"], [t("Нээсэн → хаасан", "Open → close"), "hidden md:table-cell text-right"], [t("Ашиг/алдагдал", "Profit/loss"), "text-right"], ["", "w-0"]] as const).map(([h, cls], i) => <th key={i} className={`th ${cls}`}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {trades.slice(0, count).map((x) => {

@@ -30,7 +30,7 @@ export default async function AdminEventsPage() {
     <div className="space-y-4 sm:space-y-5">
       <div>
         <h1 className="page-title">{t("Мэдээний календарь", "News calendar")}</h1>
-        <p className="page-lede">{t("CPI, NFP, ДНБ, PCE, PPI, жижиглэн худалдааны огноо FRED-ээс автоматаар орно. FOMC болон таамаг/бодит тоог энд гараар оруулна.", "CPI, NFP, GDP, PCE, PPI and retail sales dates come in automatically from FRED. FOMC and the forecast/actual figures are entered here by hand.")}</p>
+        <p className="page-lede">{t("CPI, NFP, ДНБ, PCE, PPI, жижиглэн худалдааны огноо, мөн гарсны дараа бодит ба өмнөх тоо нь FRED-ээс автоматаар орно (цаг тутам шалгана). Таамгийг энд гараар оруулна: тэгвэл сайт бодит тоо таамгаас дээш/доош гарсан үед алт хэрхэн хөдөлснийг тооцно.", "CPI, NFP, GDP, PCE, PPI and retail sales dates, and their actual and previous figures once released, come in automatically from FRED (checked hourly). Enter the forecast here by hand: the site then measures how gold moved when the actual came in above or below it.")}</p>
       </div>
       <section className="card" aria-labelledby="add-h">
         <h2 id="add-h" className="mb-3 text-[15px] font-semibold text-zinc-100">{t("Шинэ мэдээ нэмэх", "Add a release")}</h2>

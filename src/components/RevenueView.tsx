@@ -65,6 +65,50 @@ function People({ id, title, empty, rows, v, note }: { id: string; title: string
   );
 }
 
+/**
+ * The user flow: how many registered, how many of them paid, paid again and are active now (each bar a share of
+ * the registered), and month by month how many signed up and how many of those went on to pay.
+ */
+function UserFlow({ r, v }: { r: RevenueReport; v: Viewer }) {
+  const { t } = v;
+  const f = r.funnel;
+  const pct = (n: number, of: number) => (of ? Math.round((n / of) * 100) : 0);
+  const steps = [
+    { label: t("Бүртгүүлсэн", "Registered"), n: f.registered, note: "" },
+    { label: t("Төлбөр хийсэн", "Paid"), n: f.paid, note: t(`бүртгүүлсний ${pct(f.paid, f.registered)}%`, `${pct(f.paid, f.registered)}% of registered`) },
+    { label: t("Дахин төлсөн", "Paid again"), n: f.repeat, note: t(`төлсний ${pct(f.repeat, f.paid)}%`, `${pct(f.repeat, f.paid)}% of payers`) },
+    { label: t("Одоо идэвхтэй", "Active now"), n: f.active, note: t(`бүртгүүлсний ${pct(f.active, f.registered)}%`, `${pct(f.active, f.registered)}% of registered`) },
+  ];
+  const thisM = r.signups.at(-1)!, lastM = r.signups.at(-2)!;
+  return (
+    <section className={tile} aria-labelledby="rev-flow-h">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="rev-flow-h" className="text-sm font-semibold text-zinc-200">{t("Хэрэглэгчийн урсгал", "User flow")}</h2>
+        <p className="text-xs text-zinc-500 tabular-nums">{t(`Энэ сард ${thisM.signups} бүртгүүлсэн · өмнөх сард ${lastM.signups}`, `${thisM.signups} signed up this month · ${lastM.signups} last month`)}</p>
+      </div>
+      <div className="mt-4 grid gap-6 lg:grid-cols-2">
+        <ol className="space-y-3" aria-label={t("Бүртгүүлснээс идэвхтэй хүртэл", "From registered to active")}>
+          {steps.map((s) => (
+            <li key={s.label}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-zinc-300">{s.label}</span>
+                <span className="tabular-nums"><b className="font-semibold text-zinc-50">{s.n}</b>{s.note && <span className="ms-2 text-xs text-zinc-500">{s.note}</span>}</span>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-zinc-800" aria-hidden><div className="h-2 rounded-full bg-amber-400/80" style={{ width: `${pct(s.n, f.registered)}%` }} /></div>
+            </li>
+          ))}
+        </ol>
+        <table aria-label={t("Сар бүр бүртгүүлсэн", "Signups by month")} className="w-full self-start text-sm tabular-nums">
+          <thead><tr className="text-left text-xs text-zinc-500"><th className="py-1 font-medium">{t("Сар", "Month")}</th><th className="py-1 text-right font-medium">{t("Бүртгүүлсэн", "Registered")}</th><th className="py-1 text-right font-medium">{t("Төлсөн", "Paid")}</th><th className="py-1 text-right font-medium">%</th></tr></thead>
+          <tbody>{r.signups.map((m) => (
+            <tr key={m.key} className="border-t border-zinc-800"><td className="py-1.5 text-zinc-300">{m.key}</td><td className="py-1.5 text-right text-zinc-100">{m.signups}</td><td className="py-1.5 text-right text-zinc-300">{m.paid}</td><td className="py-1.5 text-right text-zinc-400">{m.paidPct === null ? "—" : `${m.paidPct}%`}</td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export function RevenueView({ r, v }: { r: RevenueReport; v: Viewer }) {
   const { t } = v;
   const change = r.lastMonth.revenue > 0 ? Math.round(((r.thisMonth.revenue - r.lastMonth.revenue) / r.lastMonth.revenue) * 100) : null;
@@ -90,6 +134,8 @@ export function RevenueView({ r, v }: { r: RevenueReport; v: Viewer }) {
           </table>
         </section>
       </div>
+
+      <UserFlow r={r} v={v} />
 
       <div className="grid gap-4 md:grid-cols-2">
         <People id="rev-soon-h" title={t("7 хоногт дуусах", "Ending within 7 days")} empty={t("Энэ долоо хоногт дуусах багц алга.", "No plans end this week.")} rows={r.endingSoon} v={v} note={t("дуусна", "ends")} />

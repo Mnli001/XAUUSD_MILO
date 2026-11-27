@@ -12,6 +12,8 @@ import { BROKER_RECORD, describe } from "@/lib/setup/build";
 import { SESSION_RULES } from "@/lib/setup/sessionRules";
 import { ruleLine, type BrokerRecord } from "@/lib/siteCopy";
 import type { Viewer } from "@/lib/viewer";
+import { RiskCard, type RiskView } from "@/components/RiskCard";
+import { PRESETS, getRiskRule, riskReading } from "@/lib/risk";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -32,7 +34,15 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
   const { account } = await searchParams;
   const { paid, payOn, contact } = paywallFor(user);
   // Without a plan nothing about a robot (token, accounts, history) is loaded or shown.
-  const view = paid ? await getLiveView(user.id, new Date(), typeof account === "string" ? account : undefined) : null;
+  const now = new Date();
+  const view = paid ? await getLiveView(user.id, now, typeof account === "string" ? account : undefined) : null;
+  const rule = view?.account ? await getRiskRule(user.id, view.account) : null;
+  const risk: RiskView | null = view?.account ? {
+    login: view.account,
+    rule: rule && { accountSize: rule.accountSize, dailyLossPct: rule.dailyLossPct, maxLossPct: rule.maxLossPct, profitTargetPct: rule.profitTargetPct, closeOnBreach: rule.closeOnBreach },
+    reading: rule && view.equity ? (({ daily, max, target }) => ({ daily, max, target }))(riskReading(rule, view.equity, now)) : null,
+    breach: rule?.breach === "RISK_MAX" ? "RISK_MAX" : rule?.breach === `RISK_DAILY:${now.toISOString().slice(0, 10)}` ? "RISK_DAILY" : null,
+  } : null;
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
@@ -51,6 +61,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
         <>
           {/* One flow: connect (until the robot has reported), status and Start/Stop, risk, trades, then what the system does. */}
           <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} origin={origin} syncUrl={`${origin}/api/bot/sync`} robot={{ need: minRobotVersion("ASIAN") }} setup={setupText(v)} />
+          {risk && <RiskCard view={risk} presets={PRESETS} />}
         </>
       ) : (
         <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} />

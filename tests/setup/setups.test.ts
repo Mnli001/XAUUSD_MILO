@@ -27,7 +27,7 @@ describe("Asian range breakout", () => {
   test("the 4-hour trend must agree with the daily; while the window is open the rule keeps watching for it", () => {
     const s = asianSetup(day({}, 32), { daily: 30, h4: -20, atrD: 20 }, [], at(8));
     expect(s).toMatchObject({ status: "WATCH", side: null, entry: null, trends: { daily: "BUY", h4: "SELL" } });
-    expect(s.checks.find((c) => !c.ok)?.label).toBe("4 цагийн тренд: доош · өдрийнх дээш тул зөрж байна");
+    expect(s.checks.find((c) => !c.ok)?.label).toBe("4 цагийн trend: доош · өдрийнх дээш тул зөрж байна");
     expect(asianSetup(day({}, 32), { daily: 30, h4: null, atrD: 20 }, [], at(8))).toMatchObject({ status: "WATCH", side: null });
     expect(asianSetup(day({}, 70), { daily: 30, h4: -20, atrD: 20 }, [], at(17)).status).toBe("OFF"); // window shut
   });

@@ -30,8 +30,8 @@
   "file": "src/app/(app)/bot/page.tsx"
  },
  {
-  "h": "0c4348ad",
-  "en": "Start, stop, configure and watch the robot on your own MT5. Your token, settings and history are yours alone.",
+  "h": "7bdea6c0",
+  "en": "The robot trades the site's Setup signals automatically on your own MT5: the same entries, stops and targets as the Telegram signals.",
   "file": "src/app/(app)/bot/page.tsx"
  },
  {
@@ -63,6 +63,16 @@
   "h": "9a87fe2a",
   "en": "Today's R1, pivot and S1 lines show with a plan.",
   "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "1347bc88",
+  "en": "Gold drivers",
+  "file": "src/app/(app)/drivers/page.tsx"
+ },
+ {
+  "h": "3112b370",
+  "en": "The dollar, real yields and futures positioning: they usually set gold's longer direction. Updated once a day.",
+  "file": "src/app/(app)/drivers/page.tsx"
  },
  {
   "h": "1ed154dc",
@@ -715,8 +725,13 @@
   "file": "src/app/(app)/settings/page.tsx"
  },
  {
-  "h": "41a58676",
-  "en": "Telegram notifications",
+  "h": "2ad89d23",
+  "en": "What to notify you about",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "8a075d2f",
+  "en": "Applies to both Telegram and phone notifications.",
   "file": "src/app/(app)/settings/page.tsx"
  },
  {
@@ -1585,8 +1600,8 @@
   "file": "src/app/admin/events/page.tsx"
  },
  {
-  "h": "1afe20fa",
-  "en": "CPI, NFP, GDP, PCE, PPI and retail sales dates come in automatically from FRED. FOMC and the forecast/actual figures are entered here by hand.",
+  "h": "e86de7bd",
+  "en": "CPI, NFP, GDP, PCE, PPI and retail sales dates, and their actual and previous figures once released, come in automatically from FRED (checked hourly). Enter the forecast here by hand: the site then measures how gold moved when the actual came in above or below it.",
   "file": "src/app/admin/events/page.tsx"
  },
  {
@@ -1845,6 +1860,11 @@
   "file": "src/app/not-found.tsx"
  },
  {
+  "h": "089e4d73",
+  "en": "Macro",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
   "h": "e0ccc31f",
   "en": "Main menu",
   "file": "src/components/AppNav.tsx"
@@ -1975,6 +1995,71 @@
   "file": "src/components/AvatarUploader.tsx"
  },
  {
+  "h": "658f3664",
+  "en": "Copy",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "32d29144",
+  "en": "Copied ✓",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "8dc21305",
+  "en": "Copied",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "4ded0446",
+  "en": "Selected: press Ctrl+C to copy",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "f0958d8c",
+  "en": "Selected: press Ctrl+C",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "f0d70d05",
+  "en": "partly done",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "26f38071",
+  "en": "done",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "0e61ba21",
+  "en": "Step {0}",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "bfcace62",
+  "en": "Site address",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "f831036e",
+  "en": "The robot's ServerUrl row must hold this address (it usually already does):",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "53bc3859",
+  "en": "Connected ✓",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "f509b5e7",
+  "en": "Waiting for the robot to connect…",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
+  "h": "2ed53d6d",
+  "en": "If something goes wrong",
+  "file": "src/components/BotConnect.tsx"
+ },
+ {
   "h": "a5a28604",
   "en": "stopped by hand",
   "file": "src/components/BotPanel.tsx"
@@ -1990,8 +2075,8 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "b45fac8c",
-  "en": "the time the bot planned has run out",
+  "h": "d475c186",
+  "en": "the planned time ran out",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2000,13 +2085,23 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "43772c68",
-  "en": "no entry for 30 minutes (no signal, or the entry filter held it back)",
+  "h": "aee89645",
+  "en": "no signal for a long time",
   "file": "src/components/BotPanel.tsx"
  },
  {
   "h": "a0589951",
   "en": "daily loss stop reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a4fc17f8",
+  "en": "risk manager: today's loss limit reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "00adc87a",
+  "en": "risk manager: overall loss limit reached",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2025,133 +2120,18 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "439c64e8",
-  "en": "the robot file on MT5 is old: download the new XauBot.ex5{0} and replace it",
+  "h": "6497ffd9",
+  "en": "the robot file is old: download the new XauBot.ex5{0} and replace it",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "44198924",
-  "en": "the daily loss stop was reached: trades closed, entries resume at {0}",
+  "h": "695c1815",
+  "en": "even the smallest lot does not fit your risk: raise the risk",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "87fcaed0",
-  "en": "today's entries are used up",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ae84686d",
-  "en": "this trade's risk is larger than what is left of the daily loss limit: lower the risk or raise the daily limit",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "d8f3c955",
-  "en": "even the broker's minimum lot does not fit the chosen risk: raise the risk amount",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "04eb1419",
-  "en": "not enough free margin in the account",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "2eda7041",
-  "en": "no stop distance from the site reading yet",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ed651ed9",
-  "en": "the site's many-method reading does not back the entry side strongly enough",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "afc2d915",
-  "en": "outside the trading hours",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ccc4be94",
-  "en": "the broker's daily rollover, when spreads widen",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "501a93f7",
-  "en": "around a high-impact release",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ebefd73a",
-  "en": "loading indicator data",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ed711440",
-  "en": "the market is too quiet (low ATR)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "c9ba259c",
-  "en": "the market is moving too violently (high ATR)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "74f5814e",
-  "en": "the spread is too wide",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "166f34ef",
-  "en": "the H1 and M15 trend disagree with the entry",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "3f5ea1c3",
-  "en": "RSI is overstretched: it will not chase the move",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "04e1d44c",
-  "en": "price is too far from EMA20",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "c9e4f0db",
-  "en": "Day trader",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "10dfd17c",
-  "en": "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5ee7339b",
-  "en": "Reading",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ec8a23bd",
-  "en": "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "320260b3",
-  "en": "Basket",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "05bfa9ac",
-  "en": "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "8691e533",
-  "en": "Setup signals",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "13c00f7b",
-  "en": "The 3 setups on the Setup page (Asia, two New York openings): enters when price leaves a range in the trend's direction. One trade per setup a day, up to three a day in all. The rule sets the stop, the target (Asia 3R, New York 2R) and the closing time; no extra filters.",
+  "h": "4a7bfad8",
+  "en": "not enough free money (margin) in the account",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2160,38 +2140,123 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "04d26dcc",
-  "en": "Add another account",
+  "h": "e88a9e4c",
+  "en": "A new token stops the old one, and the new one must be pasted into the robot. Continue?",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "094de9f0",
-  "en": "To add another account, sign in to it in MT5 (File → Login to Trade Account). It appears here as soon as the robot reaches the web, and starts out stopped. One MT5 is signed in to one account at a time, so running two accounts at once needs two separate MT5 installations.",
+  "h": "d8643341",
+  "en": "Your token. Copy it now: it will not be shown again.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "47c7036e",
-  "en": "Last {0} trades",
+  "h": "3a355bd2",
+  "en": "Token",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "2609a95c",
-  "en": "A REAL ACCOUNT is connected.",
+  "h": "b678313e",
+  "en": "Never share your token: it ties your account to this page.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "47a15e7b",
-  "en": "The bot will trade real money on this account",
+  "h": "1aa1a030",
+  "en": "Creating…",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "424d0aed",
-  "en": " — but the “Real account” option is off, so it will not run even if you press Start",
+  "h": "f45dca35",
+  "en": "Create a new token",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "81ad0e44",
-  "en": "Bot status",
+  "h": "a23e449c",
+  "en": "Create token",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "840bbfcf",
+  "en": "Token created ✓",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6b2c475a",
+  "en": "≈ {0} at risk per trade (balance {1})",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8edf9650",
+  "en": "Once the robot connects, this shows the risk in dollars.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "af8e6230",
+  "en": "≈ {0} profit or loss for every $1 gold moves",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b2cf7aab",
+  "en": "Today's P/L",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4103c5d6",
+  "en": "Last 24 hours",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4b7a788b",
+  "en": "Balance",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a1958972",
+  "en": "Equity",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "24c79124",
+  "en": "Open trades",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "7bbcbaef",
+  "en": "Connect — 3 steps",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f73534cc",
+  "en": "Open MT5 on your Windows computer or VPS and sign in to your account. Then:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8dd31791",
+  "en": "Done",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "315a9d15",
+  "en": "MT5 connection",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2a6be474",
+  "en": "MT5 connected",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ffe15895",
+  "en": "MT5 connection lost",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "294fc75c",
+  "en": "account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "96c41bb4",
+  "en": "How to connect",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2215,53 +2280,18 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "ff1a8f7f",
-  "en": "No account yet",
+  "h": "973a8d6f",
+  "en": "Why it stopped",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "4b7a788b",
-  "en": "Balance",
+  "h": "4b7f7705",
+  "en": "Stop",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "a1958972",
-  "en": "Equity",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "1bf1f547",
-  "en": "{0} open",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4103c5d6",
-  "en": "Last 24 hours",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0b498154",
-  "en": "This run",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "64645522",
-  "en": "Entries today",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "6606fde3",
-  "en": "loss stop {0}%",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "6e1cc53f",
-  "en": "Stop the bot",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "9e902546",
-  "en": "Start bot",
+  "h": "0ae8097f",
+  "en": "Start",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2275,203 +2305,83 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "43c35d88",
-  "en": "The bot places real trades in your MT5 account. Past results do not guarantee future profit: try it on a demo account first. Not financial advice.",
+  "h": "4bb6a1f2",
+  "en": "Connect your MT5 with the 3 steps above before you start.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "ae8e3991",
-  "en": "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.",
+  "h": "27519e51",
+  "en": "This is a real account. Real trading is not allowed, so the bot will not trade. Allow it in the Risk section below.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "8b3dc597",
-  "en": "Now",
+  "h": "86c796ef",
+  "en": "Real account: the bot trades real money.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "c9450e48",
-  "en": "Waiting",
+  "h": "2c53c1a5",
+  "en": "Download the new robot file and replace the old one",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "3dbf0aaf",
-  "en": "No data from the robot yet",
+  "h": "345a8ae3",
+  "en": "While MT5 is not connected the bot places no trades. The robot picks up the command as soon as it connects.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "74218a7c",
-  "en": "The entry filter is off: the bot enters on every signal.",
+  "h": "ab5f9c08",
+  "en": "A trade is open. It closes at its stop, its target or the rule's closing time.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "078af923",
-  "en": "Why it is not entering:",
+  "h": "8ee389cb",
+  "en": "It enters as soon as a Setup signal appears. The rule sets the stop, the target and the closing time.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "613457ae",
-  "en": "The filter passes: it enters when a signal meets every condition.",
+  "h": "a799b723",
+  "en": "Why it is not entering now",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "34220969",
-  "en": "Today (since {0})",
+  "h": "7357e30a",
+  "en": "Risk",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "6f5882f3",
-  "en": "entries",
+  "h": "57224a32",
+  "en": "Choose how big each trade is. It applies from the next trade after saving.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "2bccfda4",
-  "en": "loss stop ({0}%) reached",
+  "h": "f5dc05ba",
+  "en": "Trade size",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "136f5294",
-  "en": "loss stop at {0}%",
+  "h": "b5a7cf91",
+  "en": "% of balance",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "1dc9d9eb",
-  "en": "This run's result:",
+  "h": "037bbdee",
+  "en": "Fixed lot",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "db77b55f",
-  "en": "Basket open. All trades close together at {0} profit or {1} loss.",
+  "h": "d69d2854",
+  "en": "Share of balance to risk per trade (0.1–5)",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "6640d642",
-  "en": "Waiting for a signal. The whole basket opens as soon as one appears.",
+  "h": "ea00b2d4",
+  "en": "Lots per trade",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "7e03a907",
-  "en": "Trade open. It closes at its stop, its target or after 24 hours.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "67bfbe25",
-  "en": "Looking for a setup at every 15-minute close. It enters when sweep → shift → FVG → reaction lines up and the reading agrees.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "213a73da",
-  "en": "Trade open. It closes at its stop or its target.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "b21ff495",
-  "en": "Checking the reading every 15 minutes. It enters when enough methods point one way.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "b5225dad",
-  "en": "Trade open. It closes at its stop, its target or its setup's closing time (times below).",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5244167c",
-  "en": "The rule is running: it waits for each of the 3 setups' ranges to form and break. It does not stop until you press Stop.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "24b1f0a5",
-  "en": "Time planned by the bot: {0} s · elapsed {1} s",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "50e5bea6",
-  "en": "Waiting for the first trade — the time is worked out after entry",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "585b2521",
-  "en": "Open positions",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "69c5cbb4",
-  "en": "No open positions. When the bot enters, this shows where the price stands between the stop, the entry and the target.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "3270cad7",
-  "en": "Tool and settings",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "8a6979e4",
-  "en": "Saved",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "1b0ee674",
-  "en": "Bot tool",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ca55073f",
-  "en": "experimental",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0d98e4ca",
-  "en": "The robot file on MT5 is too old for this tool (older than {0}), so the bot will not start.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "399e6e46",
-  "en": "The robot file on MT5 is too old for this tool, so the bot will not start.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f8bfa5d9",
-  "en": "Download the new XauBot.ex5",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0a2d95f0",
-  "en": ", copy it over the old one in the Experts folder and reopen MT5.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4b276095",
-  "en": "Lots (per trade)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "796a4c7d",
-  "en": "Number of trades (at once)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5030f38c",
-  "en": "Close at $… profit",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "88f609d1",
-  "en": "Close at $… loss",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "6eb0c900",
-  "en": "Trades open at once",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "1e86c372",
-  "en": "Stop at $… profit",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "a9407eb7",
-  "en": "Stop at $… loss",
+  "h": "54e27158",
+  "en": "Current setting: {0} per trade. Saving replaces it with the choice above.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2480,343 +2390,23 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "801be8cc",
-  "en": "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.",
+  "h": "5451427f",
+  "en": "When off, the bot trades only on a demo account. If you switch it on, also set AllowRealAccount = true in the robot's Inputs in MT5.",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "ab4dda16",
-  "en": "The sequence: (1) price sweeps the last swing high or low and closes back, (2) it closes beyond the opposite swing (MSS), (3) it returns to the fair value gap that move left, or the order block if there is none, (4) a candle closes back out of it, (5) at least {0} more of the site's methods read that side than the other. The stop is usually $5–20 away: on a small account set your risk under \"Trade size and stop\" below; when the minimum lot does not fit, it does not enter. One or two trades a week on average: few, with a high bar.",
+  "h": "4d2d5d68",
+  "en": "Save",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "ceeb28b8",
-  "en": "Checked on three years of 15-minute candles (with $0.30 cost). On its own the pattern showed no edge (Profit Factor 0.85–1.08). Only when the reading agreed: 161 trades in the first 70%, 45% won, PF 1.37; 55 trades in the last 30%, 45%, PF 1.49. Entries against the reading lost (PF 0.51–0.95). Limits: a calculation on candle data, not real trading; it was picked from several variants, so real results are likely to be lower. Demo account first.",
+  "h": "585b2521",
+  "en": "Open positions",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "2ac28783",
-  "en": "It enters when at least {0} methods back the side and outnumber the other (change the number in \"Methods that must agree\" below). The stop comes from the 1-hour ATR, so it is usually $10–25 away: at 0.01 lots a losing trade costs about that many dollars. That is a lot for a small account, so set your risk in $ or % under \"Trade size and stop\"; when the minimum lot does not fit, the robot does not enter.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "18293cf7",
-  "en": "More than half the trades closing at a loss is normal here: the profit comes from wins being twice the size of losses. It never trades against the reading. Calculations on past data are no guarantee they repeat; demo account first.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "a73aea76",
-  "en": "Up to 3 trades a day (one per setup), each at {0} lots: ±{1} per trade for every $1 gold moves. The stop is the middle of the range. Times in {2}:",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "d5054994",
-  "en": "It works only while MT5 and the Windows computer or VPS are on.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "c95ca661",
-  "en": "With the saved settings {0} trades open at once, {1} lots in total: ±{2} for every $1 gold moves.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "c7e0000b",
-  "en": "To reach the profit, gold has to move about ${0} in your favour; to reach the loss limit, ${1} against you",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "52f3185c",
-  "en": " (the current spread of ${0} is included; the basket starts at {1} the moment it opens).",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "7564adec",
-  "en": " (not counting the spread).",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "6d16afb2",
-  "en": "There is no time limit: it stays open until one of the amounts is reached. Each trade also carries an emergency stop twice as far as the loss limit (for when the computer goes off).",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0b604922",
-  "en": "With the saved settings at most {0} lots are open: ±{1} for every $1 gold moves, ±{2} for $10. A stop condition left empty does not apply. The bot works out how long to run.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f5c49db9",
-  "en": "Cannot be changed while running",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5f69a665",
-  "en": "Save settings",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0474b8db",
-  "en": "Entry filter",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "358b1016",
-  "en": "The Day trader, Reading and Basket tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Setup signals follows the Setup page's rules exactly, so this filter does not apply to it. Set a number to 0 to switch that check off. Changes apply from the next entry.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "daf21857",
-  "en": "Ready-made settings",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "2753cbe2",
-  "en": "One press fills and saves every field below; change any of them afterwards. All three size by percent of balance and protect a winning trade.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "813659c7",
-  "en": "Careful",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "8cf85aaa",
-  "en": "10+ methods · 3 a day · 1% risk",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "c0cc603d",
-  "en": "Balanced",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "95ea7d05",
-  "en": "9+ methods · 5 a day · 2% risk",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f9bc18b4",
-  "en": "8+ methods · 8 a day · 3% risk",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "26e03720",
-  "en": "Filter on",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "43fa3c31",
-  "en": "Off switches every check below off, the daily limits too.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4f0de8cb",
-  "en": "Higher-timeframe trend must agree",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "fbbb0b71",
-  "en": "BUY: EMA20 above EMA50 on both H1 and M15. SELL: the reverse.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "fa216f95",
-  "en": "Trade size and stop",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "3fdd8c71",
-  "en": "Fits an account of any size: say how much one trade may lose and the robot works out the lots from the stop distance. On a small account, when the lots come out below the broker's minimum (usually 0.01), the robot moves the stop closer and enters with the minimum; if the stop would be too close it skips that trade.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "64bcfee2",
-  "en": "How to size a trade",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ef8b4203",
-  "en": "Fixed lots (from the tool's field)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "7f07370d",
-  "en": "Dollars per trade",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "52ab0473",
-  "en": "Percent of balance",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "70a2094f",
-  "en": "Risk ($ or %)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ca5404a0",
-  "en": "e.g. 10",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "a896aa1d",
-  "en": "Protect a winning trade",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "d76c9127",
-  "en": "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Setup signals and Basket close by their own rules.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5ceaa154",
-  "en": "Minutes before news",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "8af21d87",
-  "en": "Minutes after news",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "b365bf7f",
-  "en": "M15 ATR at least, $",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4b606ba1",
-  "en": "M15 ATR at most, $",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "386325bf",
-  "en": "Spread ≤ % of ATR",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ce05566d",
-  "en": "RSI(14) cap",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "2e211426",
-  "en": "From EMA20 ≤ ATR ×",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f9f7ff26",
-  "en": "Methods that must agree (of 14)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "ae25d44b",
-  "en": "Day trader: reading margin",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f7251586",
-  "en": "Entries a day, at most",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "46b14593",
-  "en": "Daily loss stop, % of balance",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "31101639",
-  "en": "With the saved settings it trades {0}–{1} ({2}). It opens nothing new from {3} minutes before a HIGH-impact release to {4} minutes after it, nor during the broker's daily rollover (23:45–00:30 server time). An RSI cap of 70 means no BUY above RSI 70 and no SELL below 30. The daily count restarts at {5}.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "365f6120",
-  "en": "The filter is meant to keep the bot out of poor conditions; it does not make the bot profitable. Check any setting in the MT5 Strategy Tester (the TesterGate… inputs) and on a demo account before putting real money on it.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "546a5eea",
-  "en": "Save filter",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4ee079a2",
-  "en": "The day trader's latest setups, and why",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "fc5a23de",
-  "en": "Each time the pattern completes it appears here. \"Sent\" means the reading agreed and the robot was told; \"skipped\" means the methods did not back it enough.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "dd60e539",
-  "en": "No setup has completed in the last four days.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "d7a15fd6",
-  "en": "reading not recorded",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "6261af7f",
-  "en": "sent",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "022ec9b7",
-  "en": "skipped",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "10faa342",
-  "en": "Swept the liquidity at {0} at {1} → shifted structure (MSS) at {2} → returned to the {3} {4}–{5} and reacted.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "e2f69b7b",
-  "en": "At that moment {0} of {1} methods read up and {2} down (margin {3}{4}).",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "94f0e861",
-  "en": "How trades ended, by the conditions at entry",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "bd30fe37",
-  "en": "Each time the robot opens a trade, the site keeps how many of its 16 methods backed that side. Closed trades are grouped by that number. Few trades prove nothing: do not read a pattern into fewer than 30.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "dcc4beda",
-  "en": "No closed trades recorded yet. They appear here once the robot has traded.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "e169ed0b",
-  "en": "By methods backing the side",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "5039a46a",
-  "en": "no reading",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "460de14b",
-  "en": "{0} methods",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "0574902c",
-  "en": "Group",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "8e738acf",
-  "en": "Won",
+  "h": "965b40db",
+  "en": "No open trades right now.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2825,13 +2415,13 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "48ea629e",
-  "en": "(last 50, total",
+  "h": "15fd323f",
+  "en": "(last 50, total {0})",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "d593f77d",
-  "en": "No closed trades",
+  "h": "a2c08d4f",
+  "en": "No closed trades yet.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -2840,68 +2430,23 @@
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "21a5f1d6",
-  "en": "Connect the MT5 robot · token",
+  "h": "d19928c4",
+  "en": "P/L",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "6a6d841c",
-  "en": "Download the robot:",
+  "h": "721d07fa",
+  "en": "What the system does",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "5f1cdd71",
-  "en": "(source)",
+  "h": "e15eab38",
+  "en": "The bot follows 3 setups every day. Each setup trades at most once a day, up to 3 trades a day in all. Times in {0}:",
   "file": "src/components/BotPanel.tsx"
  },
  {
-  "h": "d7ca57e4",
-  "en": "Copy XauBot.ex5 into MT5's File → Open Data Folder → MQL5 → Experts, then press Refresh in the Navigator. Drag the robot onto a chart and enter the address and token below.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "2b07ac1a",
-  "en": "Connect the MT5 robot",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "018b192e",
-  "en": "Enter this address in the robot's settings:",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f2050653",
-  "en": "New token (shown only once, copy it now):",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "4568e480",
-  "en": "Download settings file (XauBot.set)",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "83328c51",
-  "en": "In MT5 drag the robot onto the chart, open the Inputs tab → Load → pick this file. The address and your token fill in by themselves. Do not share the file: this token belongs to your account only.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "339092cd",
-  "en": "A token exists. Creating a new one cancels the old one, and the new one must be entered in the robot.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "3096c6c5",
-  "en": "No token yet. Create one first.",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "f45dca35",
-  "en": "Create a new token",
-  "file": "src/components/BotPanel.tsx"
- },
- {
-  "h": "a23e449c",
-  "en": "Create token",
+  "h": "7b999042",
+  "en": "Try it on a demo account first. The bot works only while MT5 and the computer are on. Not financial advice.",
   "file": "src/components/BotPanel.tsx"
  },
  {
@@ -3005,6 +2550,91 @@
   "file": "src/components/ChartWorkspace.tsx"
  },
  {
+  "h": "ec0ebda6",
+  "en": "RSI falls below",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "5d6e1402",
+  "en": "RSI rises above",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "1322c2db",
+  "en": "EMA50 crosses above EMA200",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "1e0e02fb",
+  "en": "EMA50 crosses below EMA200",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "c8dff031",
+  "en": "A close above yesterday's high",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "59a88aa9",
+  "en": "A close below yesterday's low",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "4f286968",
+  "en": "Yesterday's high is swept",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "8b3bfa9c",
+  "en": "Yesterday's low is swept",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "f0b50da8",
+  "en": "Alert on a chart condition",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "41875087",
+  "en": "Checked on every closed bar. It notifies you each time the condition newly happens, until you delete it.",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "cca3205e",
+  "en": "Condition",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "4155597d",
+  "en": "Level",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "28b19ea3",
+  "en": "Set",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "f9116921",
+  "en": "Condition alerts",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "63e1d819",
+  "en": "last",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "d0c2273f",
+  "en": "Delete “{0}”",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
+  "h": "5797ea6a",
+  "en": "Delete",
+  "file": "src/components/ConditionAlerts.tsx"
+ },
+ {
   "h": "5e52b851",
   "en": "Privacy and terms",
   "file": "src/components/ConsentBanner.tsx"
@@ -3050,6 +2680,146 @@
   "file": "src/components/Disclaimer.tsx"
  },
  {
+  "h": "0d7fcdc9",
+  "en": "Not enough data to measure its link with gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "c24f9bfa",
+  "en": "Over the last 60 days it moved against gold ({0}): when it rose, gold mostly fell.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "dd886924",
+  "en": "Over the last 60 days it moved with gold ({0}).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "db932292",
+  "en": "Over the last 60 days it moved almost independently of gold ({0}).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "d0d53158",
+  "en": "1 week",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "36a5378a",
+  "en": "1 month",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0e6a2562",
+  "en": "{0}: the last 90 business days",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b3381c9b",
+  "en": "No data yet. It updates once a day.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0e3d941c",
+  "en": "The dollar weakened over the last month: usually supportive for gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "1a96c53f",
+  "en": "The dollar strengthened over the last month: usually a headwind for gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "fdcd32dc",
+  "en": "Real yields fell: holding gold, which pays no interest, got cheaper.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "d1905101",
+  "en": "Real yields rose: holding gold got more expensive.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "e8f995fb",
+  "en": "Speculators' net long is near its 1-year high: a crowded side, sharp pullbacks are possible.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "1e2ba7a2",
+  "en": "Speculators' net long is near its 1-year low: plenty of room for buying.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "799c628c",
+  "en": "In short",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "658c6578",
+  "en": "Dollar index (broad)",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "7be5d266",
+  "en": "The dollar against other currencies. Gold is priced in dollars, so a weaker dollar usually lifts gold.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "a6ac7bbb",
+  "en": "10-year real yield",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0f0a9efb",
+  "en": "The yield above inflation (TIPS). When it is high, holding gold, which pays nothing, costs more.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b5abeac7",
+  "en": "10-year nominal yield",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "b7fd9fa0",
+  "en": "The yield on 10-year US government bonds.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "20a1c3f2",
+  "en": "COT: speculators' position",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "cf8ef239",
+  "en": "net long contracts",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "6b252bdd",
+  "en": "Net long: the last 52 weeks",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "0c41d2ea",
+  "en": "Non-commercial traders' long minus short in COMEX gold futures, from the CFTC's weekly report.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "3910445f",
+  "en": "{0}% of open interest. {1}th percentile of the past year (100 = the most).",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "41dc8d26",
+  "en": "No data yet. It updates weekly.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
+  "h": "4d1eb9ed",
+  "en": "Sources: FRED (St. Louis Fed), CFTC Commitments of Traders. Not financial advice.",
+  "file": "src/components/DriversView.tsx"
+ },
+ {
   "h": "cda0a251",
   "en": "Cumulative P&L curve, final value {0} dollars",
   "file": "src/components/EquityCurve.tsx"
@@ -3077,11 +2847,6 @@
  {
   "h": "93cdf7e3",
   "en": "Time (UB time)",
-  "file": "src/components/EventForm.tsx"
- },
- {
-  "h": "4d2d5d68",
-  "en": "Save",
   "file": "src/components/EventForm.tsx"
  },
  {
@@ -3152,16 +2917,6 @@
  {
   "h": "fb4d80e0",
   "en": "Invite link",
-  "file": "src/components/InviteCard.tsx"
- },
- {
-  "h": "8dc21305",
-  "en": "Copied",
-  "file": "src/components/InviteCard.tsx"
- },
- {
-  "h": "658f3664",
-  "en": "Copy",
   "file": "src/components/InviteCard.tsx"
  },
  {
@@ -3310,6 +3065,11 @@
   "file": "src/components/MyDashboard.tsx"
  },
  {
+  "h": "1bf1f547",
+  "en": "{0} open",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
   "h": "83ddf841",
   "en": "24h",
   "file": "src/components/MyDashboard.tsx"
@@ -3380,6 +3140,36 @@
   "file": "src/components/NewsList.tsx"
  },
  {
+  "h": "005c37e5",
+  "en": "Too few releases with a forecast to compare yet.",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "ae55a2a3",
+  "en": "rose {0}%",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "87169922",
+  "en": "Actual came in",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "a6de4729",
+  "en": "After 60 min",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "0917fc9f",
+  "en": "Above forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "9d612a47",
+  "en": "Below forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
   "h": "c8e431b1",
   "en": "No releases on record for this period. The calendar updates once a day.",
   "file": "src/components/NewsList.tsx"
@@ -3410,8 +3200,28 @@
   "file": "src/components/NewsList.tsx"
  },
  {
+  "h": "b562667f",
+  "en": "above forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "e38ef6a7",
+  "en": "below forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "cd39fd0e",
+  "en": "as forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
   "h": "0e1b4a20",
   "en": "How gold moved after this kind of release before (last 12 months):",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "89abb8c0",
+  "en": "When the actual came in above or below the forecast (last 3 years):",
   "file": "src/components/NewsList.tsx"
  },
  {
@@ -3427,11 +3237,6 @@
  {
   "h": "7c7eea59",
   "en": "Choose a plan to open",
-  "file": "src/components/Paywall.tsx"
- },
- {
-  "h": "36a5378a",
-  "en": "1 month",
   "file": "src/components/Paywall.tsx"
  },
  {
@@ -3488,6 +3293,211 @@
   "h": "758f8503",
   "en": "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.",
   "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "509917e8",
+  "en": "Arrives on Telegram and on your phone.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "7f20ef87",
+  "en": "Arrives on Telegram.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "e121554d",
+  "en": "Arrives as a phone notification.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "f871da0d",
+  "en": "Price alerts",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "8b3dc597",
+  "en": "Now",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "b564e9d1",
+  "en": "Tell me when gold reaches",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "1367fe55",
+  "en": "You have not chosen where alerts go. ",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "aa5be97b",
+  "en": "Turn on phone notifications or Telegram in Settings.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "a12dc174",
+  "en": "Get it on your phone",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "b550bdbc",
+  "en": "No alerts yet. Enter a price and press “Set”.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "a1ec191f",
+  "en": "Waiting alerts",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "047f66bd",
+  "en": "on the way up",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "946db2fc",
+  "en": "on the way down",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "54ea875b",
+  "en": "away",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "938dd235",
+  "en": "Delete the {0} alert",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "564dd9f9",
+  "en": "reached",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "7d1416e7",
+  "en": "Clear the {0} entry",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "04a57fc2",
+  "en": "Clear",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "7756513d",
+  "en": "Set a level like “tell me when gold reaches 3,620” and get a Telegram or phone notification. Comes with a plan.",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "fc5fdbb4",
+  "en": "Could not turn notifications on. Reload the page and try again.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "705a8747",
+  "en": "Notifications are off on this device.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "04f029a3",
+  "en": "Notifications on your phone",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "4eb19e41",
+  "en": "On for this device",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "0dc6b4aa",
+  "en": "Off",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "d64a3a30",
+  "en": "Setup signals, heads-ups before key releases, price alerts and the weekly report arrive on this device, no Telegram needed. Turn it on for each phone or computer.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "786e563f",
+  "en": "Signals and alerts come with a plan. You can turn this on now: they start as soon as you have one.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "9e072f2f",
+  "en": "Turn on notifications",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "ced08917",
+  "en": "Send a test notification",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "cd03e04b",
+  "en": "Turn off",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "fcdf77b3",
+  "en": "Notifications for this site are blocked in the browser. Use the lock icon in the address bar → Notifications → Allow, then reload the page.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "afb5fbb0",
+  "en": "This browser does not support push notifications. Use a recent Chrome, Edge, Firefox or Safari.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "f233225f",
+  "en": "On iPhone, install it as an app first (steps below) to get notifications.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "d201a5ec",
+  "en": "Install as an app",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "c10fe625",
+  "en": "Installed as an app.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "71f2cb3c",
+  "en": "It gets an icon on your home screen and opens in its own window like an app.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "b50cbd40",
+  "en": "Install",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "b286a7f7",
+  "en": "Open this page in Safari.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "a53f9995",
+  "en": "Tap the Share button (the square with an arrow).",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "c53d9c6a",
+  "en": "Choose “Add to Home Screen”.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "5d6f8e9a",
+  "en": "Open XAU from the home screen and turn notifications on here.",
+  "file": "src/components/PushCard.tsx"
+ },
+ {
+  "h": "aa4445b0",
+  "en": "Choose “Install app” or “Add to Home screen” from the browser menu.",
+  "file": "src/components/PushCard.tsx"
  },
  {
   "h": "837d7fc3",
@@ -3610,6 +3620,46 @@
   "file": "src/components/RevenueView.tsx"
  },
  {
+  "h": "218bfa1b",
+  "en": "{0}% of registered",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "b283998f",
+  "en": "Paid again",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "a358cf65",
+  "en": "{0}% of payers",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "a411ff9f",
+  "en": "Active now",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "794a64e2",
+  "en": "User flow",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "a268acf6",
+  "en": "{0} signed up this month · {1} last month",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "eef67e42",
+  "en": "From registered to active",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "a0e48121",
+  "en": "Signups by month",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
   "h": "e28b5db7",
   "en": "This month",
   "file": "src/components/RevenueView.tsx"
@@ -3688,6 +3738,81 @@
   "h": "1a30bf3b",
   "en": "ended",
   "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "e26f152d",
+  "en": "Risk manager",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "24ab446b",
+  "en": "Set a daily and an overall loss limit like a prop firm. At 80% you are warned, at 100% the bot stops. Measured on the account's equity (open trades included).",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "b1f9d2fd",
+  "en": "Today's loss limit was reached: the bot stays off until tomorrow.",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "e4306ac5",
+  "en": "The overall loss limit was reached: the bot stays off until you update the rules.",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "97e60a97",
+  "en": "Today's loss",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "18228c41",
+  "en": "Overall loss",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "bd836d48",
+  "en": "Profit target",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "e8511c37",
+  "en": "Presets",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "fe228a66",
+  "en": "Account size ($)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "94419c07",
+  "en": "Daily limit (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "f593dd53",
+  "en": "Overall limit (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "7c381352",
+  "en": "Profit target (%)",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "49c5d8f9",
+  "en": "optional",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "7cdef1af",
+  "en": "Close the robot's open trades when a limit is reached",
+  "file": "src/components/RiskCard.tsx"
+ },
+ {
+  "h": "5dc9b183",
+  "en": "Remove limits",
+  "file": "src/components/RiskCard.tsx"
  },
  {
   "h": "716db864",
@@ -3960,6 +4085,11 @@
   "file": "src/components/SetupParts.tsx"
  },
  {
+  "h": "8e738acf",
+  "en": "Won",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
   "h": "ad066d9d",
   "en": "Total",
   "file": "src/components/SetupParts.tsx"
@@ -3972,11 +4102,6 @@
  {
   "h": "8b67f168",
   "en": "Target",
-  "file": "src/components/SignalHistory.tsx"
- },
- {
-  "h": "4b7f7705",
-  "en": "Stop",
   "file": "src/components/SignalHistory.tsx"
  },
  {
@@ -4300,6 +4425,11 @@
   "file": "src/components/TodayCards.tsx"
  },
  {
+  "h": "8a6979e4",
+  "en": "Saved",
+  "file": "src/lib/actions/admin.ts"
+ },
+ {
   "h": "c122087d",
   "en": "Name updated",
   "file": "src/lib/actions/admin.ts"
@@ -4313,6 +4443,56 @@
   "h": "7d03da0e",
   "en": "{0}: temporary password. Give it to the user and ask them to change it on the Settings page after signing in.",
   "file": "src/lib/actions/admin.ts"
+ },
+ {
+  "h": "ea1a95e1",
+  "en": "Price alerts come with a plan.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "0859ad4e",
+  "en": "Too many tries. Try again in an hour.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "3366decc",
+  "en": "There is no current price yet. Try again a little later.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "02df5dbb",
+  "en": "Enter a price different from the current one and within 20% of it.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "13d5bc05",
+  "en": "You can have up to {0} alerts waiting. Delete one and try again.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "cd72d865",
+  "en": "Alert set.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "228b2e92",
+  "en": "Alerts come with a plan.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "1d4966fe",
+  "en": "Enter an RSI level between 5 and 95.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "7965b8bd",
+  "en": "You can have up to {0} condition alerts. Delete one and try again.",
+  "file": "src/lib/actions/alerts.ts"
+ },
+ {
+  "h": "6dff666c",
+  "en": "Choose a condition.",
+  "file": "src/lib/actions/alerts.ts"
  },
  {
   "h": "7dbf917d",
@@ -4340,16 +4520,6 @@
   "file": "src/lib/actions/avatar.ts"
  },
  {
-  "h": "0cf7e9c3",
-  "en": "Settings saved",
-  "file": "src/lib/actions/bot.ts"
- },
- {
-  "h": "01de93b4",
-  "en": "Filter saved",
-  "file": "src/lib/actions/bot.ts"
- },
- {
   "h": "83f7f8e3",
   "en": "Too many attempts. Try again in 15 minutes.",
   "file": "src/lib/actions/passwordReset.ts"
@@ -4370,6 +4540,31 @@
   "file": "src/lib/actions/passwordReset.ts"
  },
  {
+  "h": "bb31cdc8",
+  "en": "Could not register this device.",
+  "file": "src/lib/actions/push.ts"
+ },
+ {
+  "h": "e5c5258c",
+  "en": "Notifications are on.",
+  "file": "src/lib/actions/push.ts"
+ },
+ {
+  "h": "4d6e771b",
+  "en": "Test notification. Signals, news and price alerts arrive like this.",
+  "file": "src/lib/actions/push.ts"
+ },
+ {
+  "h": "0c10c861",
+  "en": "Sent. It should arrive in a few seconds.",
+  "file": "src/lib/actions/push.ts"
+ },
+ {
+  "h": "10d39c80",
+  "en": "Could not send. Turn notifications off and on again, then retry.",
+  "file": "src/lib/actions/push.ts"
+ },
+ {
   "h": "ba13d7ce",
   "en": "Please read and accept the privacy policy and the terms",
   "file": "src/lib/actions/register.ts"
@@ -4378,6 +4573,46 @@
   "h": "b3246bdf",
   "en": "Too many attempts. Try again in an hour.",
   "file": "src/lib/actions/register.ts"
+ },
+ {
+  "h": "39387bcb",
+  "en": "The risk manager comes with a plan.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "ac83ec3c",
+  "en": "Connect your MT5 first.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "0eef7971",
+  "en": "Limits removed.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "6c9300ef",
+  "en": "Enter the account size as a number above 0.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "54c91a13",
+  "en": "The daily limit must be 0–50%.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "213fbe9f",
+  "en": "The overall limit must be 0–100% and not below the daily limit.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "6f1c8f34",
+  "en": "The profit target must be a percent above 0.",
+  "file": "src/lib/actions/risk.ts"
+ },
+ {
+  "h": "9df69201",
+  "en": "Saved. It applies from the robot's next report.",
+  "file": "src/lib/actions/risk.ts"
  },
  {
   "h": "a3227488",
@@ -5070,6 +5305,31 @@
   "file": "src/lib/bot/live.ts"
  },
  {
+  "h": "03e78c5c",
+  "en": "Enter the risk percent",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "963155fe",
+  "en": "Risk must be {0}–{1}% of balance",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "7aad94f6",
+  "en": "Enter the lot size",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "f817bfd9",
+  "en": "Lots must be 0.01–{0}",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "6ea0a9a1",
+  "en": "Choose how to size a trade",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
   "h": "2e3deb06",
   "en": "The start hour must be 0–23",
   "file": "src/lib/bot/live.ts"
@@ -5168,6 +5428,71 @@
   "h": "eb1eced9",
   "en": "The robot closed a trade",
   "file": "src/lib/bot/liveDb.ts"
+ },
+ {
+  "h": "39355af9",
+  "en": "RSI (14) {0} falls below {1}",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "d9bf77fd",
+  "en": "RSI (14) {0} rises above {1}",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "1dffd803",
+  "en": "{0}: EMA50 crosses above EMA200 (golden cross)",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "064006a8",
+  "en": "{0}: EMA50 crosses below EMA200 (death cross)",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "ba8a30e6",
+  "en": "🔔 <b>RSI (14) {0} fell below {1}: {2}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "3c46acd4",
+  "en": "🔔 <b>RSI (14) {0} rose above {1}: {2}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "3e162302",
+  "en": "🔔 <b>{0}: EMA50 crossed above EMA200 (golden cross)</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "c0dfb941",
+  "en": "🔔 <b>{0}: EMA50 crossed below EMA200 (death cross)</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "222ce3cb",
+  "en": "🔔 <b>Price closed above yesterday's high {0}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "6b65fcf1",
+  "en": "🔔 <b>Price closed below yesterday's low {0}</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "760af7dd",
+  "en": "🔔 <b>Yesterday's high {0} was swept</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "824cbc13",
+  "en": "🔔 <b>Yesterday's low {0} was swept</b>",
+  "file": "src/lib/conditionAlerts.ts"
+ },
+ {
+  "h": "7f1bbe2b",
+  "en": "XAUUSD {0} · bar closed {1} ({2})",
+  "file": "src/lib/conditionAlerts.ts"
  },
  {
   "h": "65f39059",
@@ -5540,6 +5865,31 @@
   "file": "src/lib/glossary.ts"
  },
  {
+  "h": "8cc88cb7",
+  "en": "🔔 <b>XAUUSD reached {0}</b>",
+  "file": "src/lib/priceAlerts.ts"
+ },
+ {
+  "h": "a1add177",
+  "en": "Price: {0} · {1} ({2})",
+  "file": "src/lib/priceAlerts.ts"
+ },
+ {
+  "h": "3aaef44e",
+  "en": "The alert you set on {0}.",
+  "file": "src/lib/priceAlerts.ts"
+ },
+ {
+  "h": "c3fd6ce2",
+  "en": "🔔 XAUUSD reached {0}",
+  "file": "src/lib/priceAlerts.ts"
+ },
+ {
+  "h": "cd6d95fc",
+  "en": "Price now {0}",
+  "file": "src/lib/priceAlerts.ts"
+ },
+ {
   "h": "19b00b6d",
   "en": "🎁 <b>A friend you invited bought a plan.</b> You got +{0} days{1}.",
   "file": "src/lib/referralNotify.ts"
@@ -5568,6 +5918,56 @@
   "h": "0584cb08",
   "en": "Renewing now adds to the time you have left, so no day is lost.",
   "file": "src/lib/renewal.ts"
+ },
+ {
+  "h": "037f1e88",
+  "en": "⚠️ <b>Past 80% of today's loss limit</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "81879430",
+  "en": "Today −{0} of {1}. At the limit the bot stops for the day.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "4d73a433",
+  "en": "⚠️ <b>Past 80% of the overall loss limit</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "84593b0a",
+  "en": "Overall −{0} of {1}.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "f3d4df21",
+  "en": "⛔ <b>Today's loss limit reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "6c587847",
+  "en": "Today −{0}. The bot has stopped for the day{1}. It can run again tomorrow.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "3081ed9f",
+  "en": "⛔ <b>Overall loss limit reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "3702b15c",
+  "en": "Overall −{0}. The bot has stopped{1}. It stays off until you update the rules.",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "4fb93df0",
+  "en": "🎯 <b>Profit target reached</b>",
+  "file": "src/lib/risk.ts"
+ },
+ {
+  "h": "465d5c40",
+  "en": "+{0} of {1}.",
+  "file": "src/lib/risk.ts"
  },
  {
   "h": "d9b530e3",
@@ -5942,6 +6342,11 @@
  {
   "h": "f0510963",
   "en": "🕒 {0} ({1}) candle, {2} minutes ago. Check the price on MT5 before entering.",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "f9b191b0",
+  "en": "Entry around {0} · Stop {1} · Target {2}",
   "file": "src/lib/signals.ts"
  },
  {
@@ -6392,6 +6797,21 @@
  {
   "h": "37a376b8",
   "en": "Since the start: {0} trades · {1}% profitable · total <b>{2}</b>",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "044a01d5",
+  "en": "🤖 Your bot (7 days): {0} trades · won {1} · <b>{2}</b>",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "6a0d82d8",
+  "en": "📅 <b>Key releases in the week ahead</b>",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "56ed655e",
+  "en": "📅 No key releases in the week ahead.",
   "file": "src/lib/watch.ts"
  }
 ]

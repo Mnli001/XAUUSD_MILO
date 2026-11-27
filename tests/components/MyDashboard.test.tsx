@@ -12,7 +12,7 @@ const month: TradeSummary = { month: { closed: 4, wins: 3, losses: 1, pnl: 320.5
 const bot: BotSummary = { connected: true, running: true, online: true, positions: 2, pnl24h: -12.4, account: "222" };
 const setups: DashSetup[] = [
   { id: "asian-breakout", name: "Азийн хүрээний задрал", status: "ACTIVE", side: "BUY", headline: "Худалдан авах дохио", entry: 2650.5, stop: 2640, target: 2671.5 },
-  { id: "trend-dip", name: "Трендийн уналтаас орох", status: "OFF", side: null, headline: "Өнөөдөр нөхцөл бүрдээгүй", entry: null, stop: null, target: null },
+  { id: "trend-dip", name: "Trend-ийн уналтаас орох", status: "OFF", side: null, headline: "Өнөөдөр нөхцөл бүрдээгүй", entry: null, stop: null, target: null },
 ];
 const chip = (name: RegExp) => screen.getAllByRole("link").find((a) => a.hasAttribute("data-chip") && name.test(a.textContent ?? "")) as HTMLElement;
 
@@ -26,7 +26,7 @@ test("a paid user's chips show the plan with days left, the running bot and the 
   const b = chip(/^Бот/);
   expect(b).toHaveAttribute("href", "/bot");
   expect(b).toHaveTextContent(/Ажиллаж байна/);
-  expect(b).toHaveTextContent(/2 позиц/);
+  expect(b).toHaveTextContent(/2 position/);
   expect(within(b).getByText("−$12.40")).toBeInTheDocument();
 
   const m = chip(/Ботын 30 хоног/);
@@ -41,7 +41,7 @@ test("without a plan the bot chip is masked and points to the plans; the robot's
   const b = chip(/^Бот/);
   expect(b).toHaveAttribute("href", "/plans");
   expect(within(b).getByText("*****")).toBeInTheDocument();
-  expect(b.textContent).not.toMatch(/\$|позиц/);
+  expect(b.textContent).not.toMatch(/\$|position/);
   expect(within(chip(/Ботын 30 хоног/)).getByText("+$320.50")).toBeInTheDocument();
 });
 
@@ -78,7 +78,7 @@ test("the setups card shows a live setup's side and levels, and an idle one's he
   const active = within(card).getByText("Азийн хүрээний задрал").closest("li")!;
   expect(within(active).getByText("Идэвхтэй")).toBeInTheDocument();
   for (const p of ["2,650.50", "2,640.00", "2,671.50"]) expect(within(active).getByText(p)).toBeInTheDocument();
-  const off = within(card).getByText("Трендийн уналтаас орох").closest("li")!;
+  const off = within(card).getByText("Trend-ийн уналтаас орох").closest("li")!;
   expect(within(off).getByText("Өнөөдөр нөхцөл бүрдээгүй")).toBeInTheDocument();
   expect(within(card).getByRole("link", { name: /Setup хуудас/ })).toHaveAttribute("href", "/setup");
 });

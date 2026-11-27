@@ -150,7 +150,7 @@ export function DeleteAccountForm({ isAdmin, activeUntil = null }: { isAdmin: bo
   return (
     <section className="card border-red-500/50">
       <h2 className="card-title text-red-300">{t("Бүртгэл устгах", "Delete account")}</h2>
-      <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, токен, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
+      <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, token, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
       {isAdmin ? (
         <p className="mt-3 text-sm text-zinc-500">{t("Админ бүртгэлийг устгах боломжгүй.", "An admin account cannot be deleted.")}</p>
       ) : activeUntil ? (

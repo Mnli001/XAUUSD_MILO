@@ -17,11 +17,11 @@ export async function linkTelegramAction(_prev: TelegramState, _form: FormData):
   if (!siteUrl()) return { error: t("Сайтын хаяг (APP_URL) тохируулагдаагүй тул Telegram холбох боломжгүй байна.", "The site address (APP_URL) is not set, so Telegram cannot be linked.") };
   try {
     const name = await botUsername();
-    if (!name) return { error: t("Telegram ботын нэрийг авч чадсангүй. Токеноо шалгана уу.", "Could not get the Telegram bot's name. Check the token.") };
+    if (!name) return { error: t("Telegram ботын нэрийг авч чадсангүй. Token-оо шалгана уу.", "Could not get the Telegram bot's name. Check the token.") };
     return { link: `https://t.me/${name}?start=${await newLinkCode(user.id)}` };
   } catch (e) {
     console.error("[telegram] link failed", e);
-    return { error: t("Telegram-тай холбогдож чадсангүй. Токен зөв эсэхийг шалгаад дахин оролдоно уу.", "Could not reach Telegram. Check that the token is correct and try again.") };
+    return { error: t("Telegram-тай холбогдож чадсангүй. Token зөв эсэхийг шалгаад дахин оролдоно уу.", "Could not reach Telegram. Check that the token is correct and try again.") };
   }
 }
 

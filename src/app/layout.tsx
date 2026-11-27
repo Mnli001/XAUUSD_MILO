@@ -30,6 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: title, template: "%s — XAU Analytics" },
     description,
     applicationName: "XAU Analytics",
+    // on iPhone, "Add to Home Screen" opens it as an app, which is also what allows push there
+    appleWebApp: { capable: true, title: "XAU Analytics", statusBarStyle: "black-translucent" },
     ...(origin ? { metadataBase: new URL(origin) } : {}),
     openGraph: { type: "website", siteName: "XAU Analytics", title, description, locale: OG[locale], ...(origin ? { url: "/" } : {}) },
     twitter: { card: "summary", title, description },

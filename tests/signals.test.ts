@@ -8,12 +8,18 @@ import { viewer } from "@/lib/viewer";
 import type { Setup, SetupsView } from "@/lib/setup/build";
 import { resetDb } from "./helpers/db";
 import { makeUser } from "./helpers/users";
+import type { PushMessage } from "@/lib/push";
+
+let pushed: { userId: string; msg: PushMessage }[];
+const push = async (userId: string, msg: PushMessage) => { pushed.push({ userId, msg }); return 1; };
+const subscribe = (email: string) => db.execute(sql`INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth) SELECT gen_random_uuid()::text, id, 'https://push.test/' || id, 'k', 'a' FROM users WHERE email = ${email}`);
+const idOf = async (email: string) => ((await db.execute(sql`SELECT id FROM users WHERE email = ${email}`)).rows[0] as { id: string }).id;
 
 const now = new Date(Date.UTC(2026, 10, 24, 9, 0));
 const history = { n: 152, winPct: 34.1, avgR: -0.01, profitFactor: 0.99 };
 const setup = (o: Partial<Setup> = {}): Setup => ({
   id: "asian-breakout", name: "Азийн хүрээний breakout", rule: "…", status: "ACTIVE", side: "BUY", headline: "BUY: хүрээнээс дээш гарлаа", detail: "…",
-  entry: 4006, stop: 4000, target: 4018, band: { high: 4002, low: 3998 }, checks: [{ label: "Азийн хүрээ бүрдсэн (15:00 УБ)", ok: true }, { label: "Тренд breakout-тай нэг чиглэлд", ok: true }],
+  entry: 4006, stop: 4000, target: 4018, band: { high: 4002, low: 3998 }, checks: [{ label: "Азийн хүрээ бүрдсэн (15:00 УБ)", ok: true }, { label: "Trend breakout-тай нэг чиглэлд", ok: true }],
   history, recent: history, ...o,
 });
 const view = (setups: Setup[]): SetupsView => ({ setups, candles: [], lastCandleAt: new Date(now.getTime() - 15 * 6e4), historyFrom: null });
@@ -28,6 +34,7 @@ beforeEach(async () => {
   await resetDb();
   await db.execute(sql`TRUNCATE signals`);
   sent = [];
+  pushed = [];
   const linked = await makeUser("a@x.mn");
   const expired = await makeUser("b@x.mn");
   await makeUser("c@x.mn"); // has access, never linked Telegram
@@ -40,7 +47,7 @@ beforeEach(async () => {
 
 test("the message says what to do, where, how much is at risk, and how the rule has done", () => {
   const text = signalText(setup(), new Date(now.getTime() - 15 * 6e4), now, undefined, "https://xau.example");
-  for (const part of ["BUY · АВАХ", "XAUUSD", "<b>Азийн хүрээний breakout</b>", "4006.00", "4000.00", "4018.00", "0.01 лот: эрсдэл $6.00, ашиг $12.00", "R:R 1 : 2.0", "Тренд breakout-тай нэг чиглэлд", "152", "34.1%", "16:45 (УБ)", "15 минут", '<a href="https://xau.example/setup">', "зөвлөгөө биш"]) expect(text).toContain(part);
+  for (const part of ["BUY · АВАХ", "XAUUSD", "<b>Азийн хүрээний breakout</b>", "4006.00", "4000.00", "4018.00", "0.01 lot: эрсдэл $6.00, ашиг $12.00", "R:R 1 : 2.0", "Trend breakout-тай нэг чиглэлд", "152", "34.1%", "16:45 (УБ)", "15 минут", '<a href="https://xau.example/setup">', "зөвлөгөө биш"]) expect(text).toContain(part);
   expect(signalText(setup({ side: "SELL", entry: 3994, stop: 4000, target: 3982 }), null, now)).toContain("SELL · ЗАРАХ");
   expect(signalText(setup({ history: { n: 4, winPct: null, avgR: null, profitFactor: null } }), null, now)).toContain("дата хангалтгүй");
   // no site address known: no link, nothing broken
@@ -137,6 +144,43 @@ test("a chat that blocked the bot does not count as sent", async () => {
   const blocked = async (chatId: string, text: string) => (chatId === "111" ? false : send(chatId, text));
   await emitSignals(now, { view: view([setup()]), send: blocked });
   expect((await listSignals(10))[0].sentTo).toBe(1);
+});
+
+describe("push notifications", () => {
+  test("a signal also goes by push to subscribed users with access, with or without Telegram", async () => {
+    await subscribe("c@x.mn"); // access, no Telegram
+    await subscribe("b@x.mn"); // Telegram linked but access expired
+    expect(await emitSignals(now, { view: view([setup()]), send, push })).toBe(1);
+    expect(pushed.map((p) => p.userId)).toEqual([await idOf("c@x.mn")]);
+    const m = pushed[0].msg;
+    expect(m.title).toContain("BUY");
+    expect(m.title).toContain("Азийн хүрээний breakout");
+    for (const part of ["4006.00", "4000.00", "4018.00"]) expect(m.body).toContain(part);
+    expect(m.body).not.toMatch(/<[a-z]/);
+    expect(m.url).toBe("/setup");
+  });
+  test("muted or paused signals are not pushed either", async () => {
+    await subscribe("c@x.mn");
+    await db.execute(sql`UPDATE users SET signals_muted = 'asian-breakout' WHERE email = 'c@x.mn'`);
+    await emitSignals(now, { view: view([setup()]), send, push });
+    expect(pushed).toHaveLength(0);
+  });
+  test("a signal that reached someone by push counts as sent even if Telegram failed for everyone", async () => {
+    await subscribe("c@x.mn");
+    expect(await emitSignals(now, { view: view([setup()]), send: async () => { throw new Error("down"); }, push })).toBe(1);
+    expect((await listSignals(5)).length).toBe(1);
+  });
+  test("the news heads-up is pushed to subscribed users who asked for it", async () => {
+    await subscribe("c@x.mn");
+    await database.insert(schema.economicEvents).values({ type: "NFP", title: "Ажил эрхлэлтийн тайлан (NFP)", country: "АНУ", impact: "HIGH", time: new Date(now.getTime() + 20 * 6e4), source: "test" });
+    await subscribe("a@x.mn"); // subscribed but never asked for news
+    await db.execute(sql`UPDATE users SET signals_news = true WHERE email = 'c@x.mn'`);
+    expect(await emitNewsAlerts(now, { send, push })).toBe(1);
+    expect(pushed).toHaveLength(1);
+    expect(pushed[0].msg.title).toContain("20 минутын дараа");
+    expect(pushed[0].msg.body).toContain("Ажил эрхлэлтийн тайлан (NFP)");
+    expect(pushed[0].msg.url).toBe("/news");
+  });
 });
 
 describe("news heads-up", () => {

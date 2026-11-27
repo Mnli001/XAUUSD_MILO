@@ -83,7 +83,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
           className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm ${a.login === login ? "border-amber-400 bg-zinc-800 font-semibold text-zinc-50" : "border-zinc-700 text-zinc-300 hover:border-zinc-500"}`}>
           <span className="tabular-nums">{a.label}</span>
           {a.mode === "REAL" && <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-xs font-semibold text-red-400">{t("Жинхэнэ", "Real")}</span>}
-          {a.mode === "DEMO" && <span className="rounded-md bg-zinc-700/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">{t("Демо", "Demo")}</span>}
+          {a.mode === "DEMO" && <span className="rounded-md bg-zinc-700/60 px-1.5 py-0.5 text-xs font-semibold text-zinc-300">{t("Demo", "Demo")}</span>}
         </Link>
       ))}
     </nav>
@@ -108,7 +108,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
     <div className="space-y-4 sm:space-y-5">
       {head}
       {picker}
-      {current?.mode === "DEMO" && <p className="text-sm text-zinc-400">{t("Демо данс: бодит мөнгө биш. Жинхэнэ дансны үр дүн өөр байж болно.", "Demo account: not real money. A real account can do differently.")}</p>}
+      {current?.mode === "DEMO" && <p className="text-sm text-zinc-400">{t("Demo данс: бодит мөнгө биш. Жинхэнэ дансны үр дүн өөр байж болно.", "Demo account: not real money. A real account can do differently.")}</p>}
       <Figures label={t("Гол үзүүлэлт", "Key figures")} items={[
         { label: t("Нийт P&L", "Total P&L"), value: <>{arrow(p.totalPnl)}{signedUsd(p.totalPnl)}</>, tone: tone(p.totalPnl), hint: <TermHint id="pnl" />,
           note: t("Роботын хаасан бүх арилжааны нийт ашиг, алдагдал", "Every trade the robot closed, profit and loss added up") },
@@ -128,7 +128,7 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
         <EquityCurve points={p.equity} v={v} />
       </section>
       <div className="grid items-start gap-4 sm:gap-5 md:grid-cols-3">
-        <Breakdown id="by-session" t={t} title={t("Сессээр", "By session")} rows={Object.entries(p.bySession).map(([k, b]) => ({ key: k, label: sessionLabel(k, t), color: sessionColor(k), ...b }))} />
+        <Breakdown id="by-session" t={t} title={t("Session-ээр", "By session")} rows={Object.entries(p.bySession).map(([k, b]) => ({ key: k, label: sessionLabel(k, t), color: sessionColor(k), ...b }))} />
         <Breakdown id="by-weekday" t={t} title={t("Гарагаар", "By weekday")} rows={rows(p.byWeekday, (k) => weekdayName(Number(k), t))} />
         <Breakdown id="by-hour" t={t} title={`${t("Нээсэн цагаар", "By opening hour")} · ${v.zone}`} rows={rows(p.byHour, (k) => v.ub(`${k.padStart(2, "0")}:00`), (k) => sessionColor(sessionOfUbHour(Number(k))))} />
       </div>

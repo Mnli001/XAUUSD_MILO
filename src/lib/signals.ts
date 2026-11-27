@@ -15,6 +15,7 @@ import { prefsOf } from "./prefsDb";
 import { eventTitle } from "./data/calendarProvider";
 import type { T } from "./i18n";
 import { MN_VIEWER, viewer, type Viewer } from "./viewer";
+import { plain, pushUserIds, sendPush, type PushMessage } from "./push";
 
 const px = (v: number) => v.toFixed(2);
 const usd = (v: number) => `$${v.toFixed(2)}`;
@@ -58,10 +59,10 @@ export function signalText(s: Setup, candleAt: Date | null, now: Date, v: Viewer
     t(`Орох: <b>${px(entry)}</b> орчим`, `Entry: around <b>${px(entry)}</b>`),
     `Stop: <b>${px(stop)}</b>`,
     `Target: <b>${px(target)}</b>`,
-    t(`0.01 лот: эрсдэл ${usd(risk)}, ашиг ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`, `0.01 lot: risk ${usd(risk)}, reward ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`),
+    t(`0.01 lot: эрсдэл ${usd(risk)}, ашиг ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`, `0.01 lot: risk ${usd(risk)}, reward ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`),
     ...(s.size && s.size !== 1 ? [s.size > 1
-      ? t(`Тренд хүчтэй: лотоо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Strong trend: size this trade ${s.size}× your usual (the robot does it)`)
-      : t(`Тренд сул: лотоо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Weak trend: size this trade ${s.size}× your usual (the robot does it)`)] : []),
+      ? t(`Тренд хүчтэй: lot-оо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Strong trend: size this trade ${s.size}× your usual (the robot does it)`)
+      : t(`Тренд сул: lot-оо ердийнхөөс ${s.size}× болгоно (робот өөрөө тооцно)`, `Weak trend: size this trade ${s.size}× your usual (the robot does it)`)] : []),
     "",
     ...s.checks.filter((c) => c.ok).map((c) => `✓ ${esc(c.label)}`),
     "",
@@ -77,6 +78,25 @@ export function signalText(s: Setup, candleAt: Date | null, now: Date, v: Viewer
 }
 
 type Send = (chatId: string, text: string) => Promise<boolean>;
+type Push = (userId: string, msg: PushMessage) => Promise<number>;
+
+/** The short notification for a new signal: the side and setup, then the three prices. */
+export function signalPush(s: Pick<Setup, "side" | "name" | "entry" | "stop" | "target">, v: Viewer = MN_VIEWER): PushMessage {
+  const { t } = v;
+  return {
+    title: `${s.side === "BUY" ? "🟢 BUY" : "🔴 SELL"} XAUUSD · ${s.name}`,
+    body: t(`Орох ${px(s.entry!)} орчим · Stop ${px(s.stop!)} · Target ${px(s.target!)}`, `Entry around ${px(s.entry!)} · Stop ${px(s.stop!)} · Target ${px(s.target!)}`),
+    url: "/setup",
+    tag: "signal",
+  };
+}
+
+/** Users with a device subscribed to push, for a broadcast. */
+const pushUsers = async () => {
+  const ids = await pushUserIds();
+  if (!ids.size) return [];
+  return (await db.select().from(schema.users).orderBy(asc(schema.users.createdAt))).filter((u) => ids.has(u.id));
+};
 
 /** Linked users, oldest account first, so a shared chat is always answered for the same account. */
 const linkedUsers = () => db.select().from(schema.users).where(isNotNull(schema.users.telegramChatId)).orderBy(asc(schema.users.createdAt));
@@ -86,9 +106,10 @@ const linkedUsers = () => db.select().from(schema.users).where(isNotNull(schema.
  * linked Telegram, still has access and wants it. Returns how many new signals there were.
  * When Telegram failed for every recipient, the record is dropped so the next 5-minute run tries again.
  */
-export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?: (v: Viewer) => Promise<SetupsView>; send?: Send } = {}): Promise<number> {
+export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?: (v: Viewer) => Promise<SetupsView>; send?: Send; push?: Push } = {}): Promise<number> {
   const view = opts.view ?? (await getSetups(now));
   const send = opts.send ?? deliver;
+  const push = opts.push ?? sendPush;
   // The same reading in another language or on another clock, built once per kind of reader.
   const viewFor = opts.viewFor ?? (opts.view ? null : (v: Viewer) => getSetups(now, v));
   const readings = new Map<string, Promise<SetupsView>>([[`${MN_VIEWER.locale}|${MN_VIEWER.timeZone}`, Promise.resolve(view)]]);
@@ -134,6 +155,12 @@ export async function emitSignals(now: Date, opts: { view?: SetupsView; viewFor?
       }
       await telegramTiming.sleep(SEND_GAP_MS);
     }
+    for (const u of await pushUsers()) {
+      if (!hasAccess(u, now) || !wantsSignal(u, s.id)) continue;
+      const v = viewer(prefsOf(u));
+      const theirs = (await reading(v)).setups.find((x) => x.id === s.id && x.status === "ACTIVE") ?? s;
+      try { if ((await push(u.id, signalPush(theirs, v))) > 0) sentTo++; } catch (e) { console.warn(`[signals] push failed: ${e instanceof Error ? e.message : e}`); }
+    }
     if (failed > 0 && sentTo === 0) {
       await db.delete(schema.signals).where(eq(schema.signals.id, row.id));
       created--;
@@ -163,9 +190,11 @@ export function newsText(events: NewsItem[], now: Date, v: Viewer = MN_VIEWER): 
  * Sends the heads-up once per release to users who opted in (and have not paused signals), up to
  * NEWS_LEAD_MS before it. Releases at the same moment go in one message. Returns how many releases were announced.
  */
-export async function emitNewsAlerts(now: Date, opts: { send?: Send } = {}): Promise<number> {
-  if (!opts.send && !telegramConfigured()) return 0;
+export async function emitNewsAlerts(now: Date, opts: { send?: Send; push?: Push } = {}): Promise<number> {
+  const subscribers = await pushUsers();
+  if (!opts.send && !telegramConfigured() && subscribers.length === 0) return 0;
   const send = opts.send ?? deliver;
+  const push = opts.push ?? sendPush;
   const e = schema.economicEvents;
   // claiming by update makes a second runner find nothing to send
   const claimed = await db.update(e).set({ alertedAt: now })
@@ -186,6 +215,12 @@ export async function emitNewsAlerts(now: Date, opts: { send?: Send } = {}): Pro
       console.warn(`[news] could not send to one chat: ${err instanceof Error ? err.message : err}`);
     }
     await telegramTiming.sleep(SEND_GAP_MS);
+  }
+  for (const u of subscribers) {
+    if (!u.signalsNews || u.signalsPaused || !hasAccess(u, now)) continue;
+    const [head, ...lines] = newsText(claimed, now, viewer(prefsOf(u))).split("\n");
+    const events = lines.slice(0, claimed.length).map(plain);
+    try { if ((await push(u.id, { title: plain(head).replace(/^⚠️\s*/, "⚠️ "), body: events.join("\n"), url: "/news", tag: "news" })) > 0) sent++; } catch (err) { console.warn(`[news] push failed: ${err instanceof Error ? err.message : err}`); }
   }
   if (failed > 0 && sent === 0) {
     await db.update(e).set({ alertedAt: null }).where(inArray(e.id, claimed.map((c) => c.id))); // Telegram was down: try again next run
@@ -208,7 +243,7 @@ export function resultText(s: Pick<Signal, "side" | "name" | "entry" | "stop" | 
     `${head} · ${s.side} XAUUSD`,
     `<b>${esc(s.name)}</b>`,
     "",
-    t(`Үр дүн: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 лот: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`, `Result: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`),
+    t(`Үр дүн: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`, `Result: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`),
     t(`Орсон ${px(s.entry)}${exit !== null ? ` → гарсан ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`, `Entry ${px(s.entry)}${exit !== null ? ` → exit ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`),
     ...(link ? ["", link] : []),
   ].join("\n");
