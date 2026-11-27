@@ -33,6 +33,21 @@ describe("deleting an account", () => {
     expect((await db.execute(sql`SELECT count(*)::int AS n FROM trades`)).rows[0].n).toBe(0);
     expect((await db.execute(sql`SELECT count(*)::int AS n FROM bot_live`)).rows[0].n).toBe(0);
   });
+  it("refuses while a paid plan is still active, and says so only after the right password", async () => {
+    const u = await withPassword("a@x.mn");
+    const now = new Date("2026-11-27T03:00:00Z");
+    await db.update(schema.users).set({ accessUntil: new Date("2026-12-10T00:00:00Z") }).where(sql`id = ${u.id}`);
+    expect((await deleteAccount(u.id, "wrong-password", null, now)).error).toBe("password");
+    expect((await deleteAccount(u.id, "password123", null, now)).error).toBe("active");
+    expect(await findUserByEmail("a@x.mn")).not.toBeNull();
+  });
+  it("deletes once the plan has ended", async () => {
+    const u = await withPassword("a@x.mn");
+    const now = new Date("2026-11-27T03:00:00Z");
+    await db.update(schema.users).set({ accessUntil: new Date("2026-11-27T02:59:00Z") }).where(sql`id = ${u.id}`);
+    expect(await deleteAccount(u.id, "password123", null, now)).toEqual({});
+    expect(await findUserByEmail("a@x.mn")).toBeNull();
+  });
   it("refuses to delete an admin", async () => {
     const admin = await withPassword("adm@x.mn", "ADMIN");
     expect((await deleteAccount(admin.id, "password123")).error).toBe("admin");

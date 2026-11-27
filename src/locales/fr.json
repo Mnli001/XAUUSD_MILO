@@ -131,8 +131,6 @@
  "670a776e": "Télécharger votre ancien journal",
  "f0a730d4": "Les {0} trades que vous aviez saisis à la main sont toujours conservés. Téléchargez-les en fichier CSV qui s'ouvre dans Excel. Heures en {1}.",
  "ec186815": "Télécharger le CSV",
- "8fc5c8b9": "Cet appareil",
- "4e8175bc": "Après la déconnexion, votre langue, votre thème et votre fuseau horaire sont conservés pour la prochaine connexion.",
  "0837a3d6": "Setup",
  "698f7893": "12 derniers mois",
  "47ab1f9a": "{0} → aujourd'hui",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Aucun signal la semaine dernière (les jours où les conditions ne sont pas réunies, le système reste à l'écart).",
  "17d2f0ae": "Semaine dernière : {0} signaux · gagnés {1} · perdus {2}{3} · total <b>{4}</b>",
  "37a376b8": "Depuis le début : {0} trades · {1} % gagnants · total <b>{2}</b>",
- "7685b1e4": "⏳ <b>Votre forfait se termine dans {0} jours</b> ({2})."
+ "7685b1e4": "⏳ <b>Votre forfait se termine dans {0} jours</b> ({2}).",
+ "eedee30c": "Votre forfait est actif jusqu'au {0}, le compte ne peut donc pas être supprimé maintenant. Vous pourrez le supprimer ici à la fin du forfait.",
+ "6498aa5c": "Votre forfait est encore actif, le compte ne peut donc pas être supprimé. Supprimez-le à la fin du forfait."
 }

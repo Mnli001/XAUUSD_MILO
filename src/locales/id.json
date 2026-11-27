@@ -131,8 +131,6 @@
  "670a776e": "Unduh jurnal lama Anda",
  "f0a730d4": "{0} transaksi yang dulu Anda catat manual masih tersimpan. Unduh sebagai file CSV yang bisa dibuka di Excel. Waktu dalam {1}.",
  "ec186815": "Unduh CSV",
- "8fc5c8b9": "Perangkat ini",
- "4e8175bc": "Setelah keluar, bahasa, tema, dan zona waktu Anda tetap tersimpan untuk masuk berikutnya.",
  "0837a3d6": "Setup",
  "698f7893": "12 bulan terakhir",
  "47ab1f9a": "{0} → hari ini",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Tidak ada sinyal minggu lalu (pada hari-hari ketika syarat tidak terpenuhi, sistem tidak masuk).",
  "17d2f0ae": "Minggu lalu: {0} sinyal · menang {1} · kalah {2}{3} · total <b>{4}</b>",
  "37a376b8": "Sejak awal: {0} transaksi · {1}% untung · total <b>{2}</b>",
- "7685b1e4": "⏳ <b>Paket Anda berakhir dalam {0} hari</b> ({2})."
+ "7685b1e4": "⏳ <b>Paket Anda berakhir dalam {0} hari</b> ({2}).",
+ "eedee30c": "Paket Anda aktif sampai {0}, jadi akun belum bisa dihapus sekarang. Anda bisa menghapusnya di sini setelah paket berakhir.",
+ "6498aa5c": "Paket Anda masih aktif, jadi akun tidak bisa dihapus. Hapus setelah paket berakhir."
 }

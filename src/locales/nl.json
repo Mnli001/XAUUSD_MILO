@@ -131,8 +131,6 @@
  "670a776e": "Download je oude logboek",
  "f0a730d4": "De {0} trades die je eerder met de hand noteerde, zijn nog bewaard. Download ze als CSV-bestand dat in Excel opent. Tijden in {1}.",
  "ec186815": "CSV downloaden",
- "8fc5c8b9": "Dit apparaat",
- "4e8175bc": "Na het uitloggen blijven je taal, thema en tijdzone bewaard voor de volgende keer.",
  "0837a3d6": "Setup",
  "698f7893": "Laatste 12 maanden",
  "47ab1f9a": "{0} → vandaag",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Vorige week geen signalen (op dagen dat de voorwaarden niet kloppen, blijft het systeem buiten de markt).",
  "17d2f0ae": "Vorige week: {0} signalen · gewonnen {1} · verloren {2}{3} · totaal <b>{4}</b>",
  "37a376b8": "Sinds de start: {0} trades · {1}% winstgevend · totaal <b>{2}</b>",
- "7685b1e4": "⏳ <b>Je abonnement eindigt over {0} dagen</b> ({2})."
+ "7685b1e4": "⏳ <b>Je abonnement eindigt over {0} dagen</b> ({2}).",
+ "eedee30c": "Je abonnement is actief tot {0}, dus het account kan nu niet worden verwijderd. Je kunt het hier verwijderen zodra het abonnement afloopt.",
+ "6498aa5c": "Je abonnement is nog actief, dus het account kan niet worden verwijderd. Verwijder het nadat het abonnement afloopt."
 }

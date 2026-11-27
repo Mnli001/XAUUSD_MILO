@@ -223,7 +223,10 @@ describe("account deletion keeps the payment record", () => {
     w.pay();
     await refreshPayment(paid.id, now, cfg, { force: true });
     const open = await startPayment(u.id, "PRO", now, cfg, SITE);
-    expect(await deleteAccount(u.id, "password1", cfg)).toEqual({});
+    // An active plan blocks deletion, so this is a member whose paid plan has since ended.
+    expect((await deleteAccount(u.id, "password1", cfg, now)).error).toBe("active");
+    await db.update(schema.users).set({ accessUntil: new Date(now.getTime() - 1000) }).where(eq(schema.users.id, u.id));
+    expect(await deleteAccount(u.id, "password1", cfg, now)).toEqual({});
     const rows = await db.select().from(schema.payments);
     expect(rows).toHaveLength(2);
     expect(rows.every((r) => r.userId === null)).toBe(true);

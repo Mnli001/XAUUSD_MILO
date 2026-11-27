@@ -735,16 +735,6 @@
   "file": "src/app/(app)/settings/page.tsx"
  },
  {
-  "h": "8fc5c8b9",
-  "en": "This device",
-  "file": "src/app/(app)/settings/page.tsx"
- },
- {
-  "h": "4e8175bc",
-  "en": "After signing out, your language, theme and time zone are kept for the next sign-in.",
-  "file": "src/app/(app)/settings/page.tsx"
- },
- {
   "h": "0837a3d6",
   "en": "Setup",
   "file": "src/app/(app)/setup/page.tsx"
@@ -3805,6 +3795,11 @@
   "file": "src/components/SettingsForms.tsx"
  },
  {
+  "h": "eedee30c",
+  "en": "Your plan is active until {0}, so the account cannot be deleted now. You can delete it here once the plan ends.",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
   "h": "0498d7af",
   "en": "Delete my account",
   "file": "src/components/SettingsForms.tsx"
@@ -4402,6 +4397,11 @@
  {
   "h": "fdc6ad67",
   "en": "An admin account cannot be deleted",
+  "file": "src/lib/actions/settings.ts"
+ },
+ {
+  "h": "6498aa5c",
+  "en": "Your plan is still active, so the account cannot be deleted. Delete it after the plan ends.",
   "file": "src/lib/actions/settings.ts"
  },
  {

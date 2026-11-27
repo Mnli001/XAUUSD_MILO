@@ -5,7 +5,6 @@ import { prefsOf } from "@/lib/prefsDb";
 import { pendingTelegram, telegramConfigured } from "@/lib/telegram";
 import { hasAccess } from "@/lib/access";
 import { listTrades } from "@/lib/trades";
-import { logoutAction } from "@/lib/actions/session";
 import { AppearanceForm, DeleteAccountForm, PasswordForm, SignalPrefsForm, TimeZoneForm } from "@/components/SettingsForms";
 import { TelegramCard } from "@/components/TelegramCard";
 import { SoundToggle } from "@/components/SoundToggle";
@@ -67,13 +66,9 @@ export default async function SettingsPage() {
             <a className="btn-ghost" href="/api/trades/export" download>{t("CSV файл татах", "Download CSV")}</a>
           </section>
         )}
-        <section className="card space-y-3">
-          <h2 className="card-title">{t("Энэ төхөөрөмж", "This device")}</h2>
-          <p className="text-sm leading-relaxed text-zinc-400">{t("Гарсны дараа дахин нэвтрэхэд таны хэл, өнгөний горим, цагийн бүс хэвээр байна.", "After signing out, your language, theme and time zone are kept for the next sign-in.")}</p>
-          <form action={logoutAction}><button className="btn-ghost">{t("Гарах", "Sign out")}</button></form>
-        </section>
-
-        <div className="md:col-span-2"><DeleteAccountForm isAdmin={user.role === "ADMIN"} /></div>
+        <div className="md:col-span-2">
+          <DeleteAccountForm isAdmin={user.role === "ADMIN"} activeUntil={plan === "active" ? `${v.dateTime(user.accessUntil!)} (${v.zone})` : null} />
+        </div>
       </div>
     </div>
   );

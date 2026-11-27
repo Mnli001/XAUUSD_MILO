@@ -142,7 +142,9 @@ export function SignalPrefsForm({ paused, muted, news = false }: { paused: boole
   );
 }
 
-export function DeleteAccountForm({ isAdmin }: { isAdmin: boolean }) {
+/** `activeUntil` is the end of a running paid plan, already formatted for the reader; while it is set the account
+ *  cannot be deleted, so the form is not shown. */
+export function DeleteAccountForm({ isAdmin, activeUntil = null }: { isAdmin: boolean; activeUntil?: string | null }) {
   const t = useT();
   const [state, action, pending] = useActionState<SettingsState, FormData>(deleteAccountAction, {});
   return (
@@ -151,6 +153,8 @@ export function DeleteAccountForm({ isAdmin }: { isAdmin: boolean }) {
       <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, токен, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
       {isAdmin ? (
         <p className="mt-3 text-sm text-zinc-500">{t("Админ бүртгэлийг устгах боломжгүй.", "An admin account cannot be deleted.")}</p>
+      ) : activeUntil ? (
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t(`Таны багц ${activeUntil} хүртэл идэвхтэй тул бүртгэлээ одоо устгах боломжгүй. Багцын хугацаа дууссаны дараа энд устгаж болно.`, `Your plan is active until ${activeUntil}, so the account cannot be deleted now. You can delete it here once the plan ends.`)}</p>
       ) : (
         <form action={action} className="mt-3 flex max-w-sm flex-col gap-3">
           <div><label className="label" htmlFor="deletePassword">{t("Нууц үг", "Password")}</label><input className="input" id="deletePassword" name="password" type="password" required autoComplete="current-password" /></div>

@@ -131,8 +131,6 @@
  "670a776e": "Tải nhật ký cũ của bạn",
  "f0a730d4": "{0} giao dịch bạn ghi tay trước đây vẫn được lưu. Tải xuống dưới dạng tệp CSV mở được bằng Excel. Giờ theo {1}.",
  "ec186815": "Tải CSV",
- "8fc5c8b9": "Thiết bị này",
- "4e8175bc": "Sau khi đăng xuất, ngôn ngữ, giao diện và múi giờ của bạn vẫn được giữ cho lần đăng nhập tiếp theo.",
  "0837a3d6": "Setup",
  "698f7893": "12 tháng qua",
  "47ab1f9a": "{0} → hôm nay",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Tuần trước không có tín hiệu (những ngày không đủ điều kiện, hệ thống đứng ngoài).",
  "17d2f0ae": "Tuần trước: {0} tín hiệu · thắng {1} · thua {2}{3} · tổng <b>{4}</b>",
  "37a376b8": "Từ đầu đến nay: {0} lệnh · {1}% có lời · tổng <b>{2}</b>",
- "7685b1e4": "⏳ <b>Gói của bạn sẽ kết thúc sau {0} ngày</b> ({2})."
+ "7685b1e4": "⏳ <b>Gói của bạn sẽ kết thúc sau {0} ngày</b> ({2}).",
+ "eedee30c": "Gói của bạn còn hiệu lực đến {0} nên hiện chưa thể xóa tài khoản. Bạn có thể xóa tại đây sau khi gói kết thúc.",
+ "6498aa5c": "Gói của bạn vẫn còn hiệu lực nên không thể xóa tài khoản. Hãy xóa sau khi gói kết thúc."
 }

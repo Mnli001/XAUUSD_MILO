@@ -131,8 +131,6 @@
  "670a776e": "Baixe seu diário antigo",
  "f0a730d4": "As {0} operações que você anotou à mão antes continuam guardadas. Baixe-as como arquivo CSV que abre no Excel. Horários em {1}.",
  "ec186815": "Baixar CSV",
- "8fc5c8b9": "Este dispositivo",
- "4e8175bc": "Depois de sair, seu idioma, tema e fuso horário ficam guardados para o próximo login.",
  "0837a3d6": "Setup",
  "698f7893": "Últimos 12 meses",
  "47ab1f9a": "{0} → hoje",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Nenhum sinal na semana passada (nos dias em que as condições não se cumprem, o sistema fica de fora).",
  "17d2f0ae": "Semana passada: {0} sinais · ganhos {1} · perdas {2}{3} · total <b>{4}</b>",
  "37a376b8": "Desde o início: {0} operações · {1}% lucrativas · total <b>{2}</b>",
- "7685b1e4": "⏳ <b>Seu plano termina em {0} dias</b> ({2})."
+ "7685b1e4": "⏳ <b>Seu plano termina em {0} dias</b> ({2}).",
+ "eedee30c": "Seu plano está ativo até {0}, por isso a conta não pode ser excluída agora. Você pode excluí-la aqui quando o plano terminar.",
+ "6498aa5c": "Seu plano ainda está ativo, por isso a conta não pode ser excluída. Exclua-a depois que o plano terminar."
 }

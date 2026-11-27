@@ -131,8 +131,6 @@
  "670a776e": "Altes Journal herunterladen",
  "f0a730d4": "Die {0} Trades, die du früher von Hand eingetragen hast, sind noch gespeichert. Lade sie als CSV-Datei herunter, die sich in Excel öffnen lässt. Zeiten in {1}.",
  "ec186815": "CSV herunterladen",
- "8fc5c8b9": "Dieses Gerät",
- "4e8175bc": "Nach dem Abmelden bleiben Sprache, Design und Zeitzone für die nächste Anmeldung erhalten.",
  "0837a3d6": "Setup",
  "698f7893": "Letzte 12 Monate",
  "47ab1f9a": "{0} → heute",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Letzte Woche keine Signale (an Tagen, an denen die Bedingungen nicht erfüllt sind, bleibt das System draußen).",
  "17d2f0ae": "Letzte Woche: {0} Signale · gewonnen {1} · verloren {2}{3} · gesamt <b>{4}</b>",
  "37a376b8": "Seit Beginn: {0} Trades · {1} % profitabel · gesamt <b>{2}</b>",
- "7685b1e4": "⏳ <b>Dein Plan endet in {0} Tagen</b> ({2})."
+ "7685b1e4": "⏳ <b>Dein Plan endet in {0} Tagen</b> ({2}).",
+ "eedee30c": "Dein Plan ist bis {0} aktiv, daher kann das Konto jetzt nicht gelöscht werden. Nach Ablauf des Plans kannst du es hier löschen.",
+ "6498aa5c": "Dein Plan ist noch aktiv, daher kann das Konto nicht gelöscht werden. Lösche es nach Ablauf des Plans."
 }

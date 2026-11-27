@@ -37,6 +37,7 @@ export async function deleteAccountAction(_prev: SettingsState, form: FormData):
   const t = await getT();
   const r = await deleteAccount(user.id, String(form.get("password") ?? ""));
   if (r.error === "admin") return { error: t("Админ бүртгэлийг устгах боломжгүй", "An admin account cannot be deleted") };
+  if (r.error === "active") return { error: t("Багц идэвхтэй байгаа тул бүртгэлийг устгах боломжгүй. Багцын хугацаа дууссаны дараа устгана уу.", "Your plan is still active, so the account cannot be deleted. Delete it after the plan ends.") };
   if (r.error) return { error: t("Нууц үг буруу байна", "Wrong password") };
   await signOut({ redirectTo: "/" });
   return {};
