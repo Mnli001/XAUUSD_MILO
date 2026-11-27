@@ -6710,6 +6710,16 @@
   "file": "src/components/demo/common.ts"
  },
  {
+  "h": "89a3a062",
+  "en": "Exit full screen",
+  "file": "src/components/useFullscreen.tsx"
+ },
+ {
+  "h": "4edbbee0",
+  "en": "Full screen",
+  "file": "src/components/useFullscreen.tsx"
+ },
+ {
   "h": "c122087d",
   "en": "Name updated",
   "file": "src/lib/actions/admin.ts"

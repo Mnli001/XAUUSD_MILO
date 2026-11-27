@@ -12,6 +12,7 @@ import { JournalSummary } from "../JournalView";
 import { LiveBadge } from "../LiveQuote";
 import { useViewer } from "../PrefsProvider";
 import { usePoll } from "../usePoll";
+import { useFullscreen } from "../useFullscreen";
 import { cash, reasonText, tone, usd } from "./common";
 import { DemoAccountTab } from "./DemoAccountTab";
 import { DemoGuide, DemoMissions } from "./DemoLearn";
@@ -36,6 +37,8 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
   const [toasts, setToasts] = useState<{ id: number; text: string; tone: number }[]>([]);
   const seen = useRef<Set<string> | null>(null);
   const quote = useQuote();
+  const { ref: fsRef, full, toggle: fsToggle, boxClass: fsBox } = useFullscreen<HTMLDivElement>(); // the whole terminal: chart, ticket and trades
+  const fs = useMemo(() => ({ full, toggle: fsToggle }), [full, fsToggle]);
 
   const toast = useCallback((text: string, tn = 0) => {
     const id = Date.now() + Math.random();
@@ -94,7 +97,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
   const gain = st.equity - a.startBalance;
 
   return (
-    <div className="space-y-4 sm:space-y-5">
+    <div ref={fsRef} className={`space-y-4 sm:space-y-5 ${fsBox}`}>
       <div aria-live="polite" className="pointer-events-none fixed right-4 top-20 z-50 flex w-72 flex-col gap-2">
         {toasts.map((x) => <p key={x.id} className={`pointer-events-auto rounded-xl border bg-zinc-900 px-4 py-3 text-sm shadow-lg ${x.tone > 0 ? "border-emerald-500/50 text-emerald-200" : x.tone < 0 ? "border-red-500/50 text-red-200" : "border-zinc-700 text-zinc-100"}`}>{x.text}</p>)}
       </div>
@@ -125,7 +128,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
 
       <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-4 sm:space-y-5">
-          <CandleChart levels={levels} bot={bot} owner="demo" lines={lines} onPickPrice={onPick} onPlan={onPlan} />
+          <CandleChart levels={levels} bot={bot} owner="demo" lines={lines} onPickPrice={onPick} onPlan={onPlan} fs={fs} />
           {(context.next || context.bias) && (
             <section className="card flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label={t("Зах зээлийн нөхцөл", "Market context")}>
               {context.bias && <p className="text-zinc-300">{t("Site-ын үнэлгээ", "The site's reading")}: <b className="text-zinc-100">{context.bias.label}</b> <span className="text-zinc-500 tabular-nums">· {t("авагч", "buyers")} {context.bias.buyerPct}%</span></p>}
