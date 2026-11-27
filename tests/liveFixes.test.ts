@@ -68,7 +68,17 @@ describe("robot orders", () => {
   it("the robot file is the new version and knows the order list", () => {
     const src = readFileSync("mt5/XauBot.mq5", "utf8");
     expect(src).toContain(`#define ROBOT_VERSION ${ROBOT_FILE_VERSION}`);
-    expect(src).toContain('#property version   "3.92"');
+    expect(src).toContain('#property version   "3.93"');
+    // v3.93: the file bridge. AUTO falls back to files on 4014 and retries WebRequest every 10 minutes; the same
+    // report goes out and the answer is read by the same code; replies older than the last request are not taken.
+    expect(src).toContain("if(err == 4014 && Transport == TRANSPORT_AUTO)");
+    expect(src).toContain("#define FILE_WEB_RETRY_SECONDS 600");
+    expect(src).toContain('string dir = "xaubot\\\\" + (string)AccountInfoInteger(ACCOUNT_LOGIN);');
+    expect(src).toContain('FileMove(dir + "\\\\request.tmp", FILE_COMMON, dir + "\\\\request.json", FILE_COMMON | FILE_REWRITE)');
+    expect(src).toContain(',\\"body\\":\\"" + JsonEsc(json) + "\\"}"');
+    expect(src).toContain("if(seq > 0 && seq >= gFileSeq)");
+    expect(src).toContain('L("холбогдсон (туслах)", "connected (helper)")');
+    expect(src).toContain('L("Туслах ажиллахгүй байна — XauBot-Setup.bat-ийг дахин ажиллуулна уу"');
     // v3.92: a session order whose minimum lot would risk over 2.5x the intended risk (after the size factor) is skipped
     expect(src).toContain("#define SMALL_ACCOUNT_X 2.5");
     expect(src).toContain('if(minRisk > SMALL_ACCOUNT_X * want + 1e-9) return(GateBlock("SMALL_ACCOUNT"');

@@ -5,13 +5,22 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.92"
+#property version   "3.93"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
 
 input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
 input string BotToken             = "";       // Вэб дээр үүсгэсэн токен · Token from the web
+// Вэбтэй холбогдох зам. WebRequest-д сайтын хаягийг MT5 дээр гараар зөвшөөрөх ёстой; зөвшөөрөөгүй бол (алдаа 4014)
+// XauBot-Setup.bat-ийн суулгасан туслах (bridge.ps1) Common\Files\xaubot\<данс>\ доторх файлаар дамжуулна.
+enum ENUM_XAU_TRANSPORT
+  {
+   TRANSPORT_AUTO = 0,               // Автомат: WebRequest, болохгүй бол туслах · Auto: WebRequest, else the helper
+   TRANSPORT_WEB  = 1,               // Зөвхөн WebRequest · WebRequest only
+   TRANSPORT_FILE = 2                // Зөвхөн туслах (файл) · Helper only (files)
+  };
+input ENUM_XAU_TRANSPORT Transport = TRANSPORT_AUTO; // Вэбтэй холбогдох зам · How to reach the web
 input bool   AllowRealAccount     = false;    // Жинхэнэ данс зөвшөөрөх · Allow a real account
 input long   MagicNumber          = 20261121; // Роботын арилжааг ялгах дугаар · Magic number
 input int    SyncSeconds          = 1;        // Вэбтэй холбогдох давтамж (сек) · Sync every (s)
@@ -97,6 +106,18 @@ datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэ
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
 #define ROBOT_VERSION 16             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр, 15: trend-ийн хэмжээ, 16: журнал)
+// v3.93: файлын гүүр. Transport = AUTO: WebRequest алдаа 4014 (хаяг зөвшөөрөгдөөгүй) өгвөл энэ сешнд туслахаар
+//        (Common\Files\xaubot\<login>\request.json → response.json) холбогдож, 10 минут тутамд WebRequest-ийг дахин оролдоно.
+//        Илгээх JSON болон хариуг задлах код хэвээр. Протокол хэвээр.
+#define FILE_WEB_RETRY_SECONDS 600   // AUTO: туслахаар холбогдож байхдаа WebRequest-ийг ингэж дахин оролдоно
+#define FILE_RESEND_SECONDS    10    // хариугүй хүсэлтийг шинэ дугаартай дахин бичих хугацаа
+#define FILE_HELPER_WAIT       15    // энэ хугацаанд туслахаас хариу ирэхгүй бол "туслах ажиллахгүй байна"
+bool     gUseFile = false;           // туслахаар (файлаар) холбогдож байна
+datetime gWebRetryAt = 0;            // AUTO: WebRequest-ийг дахин оролдох цаг
+long     gFileSeq = 0;               // сүүлд бичсэн хүсэлтийн дугаар (дахин эхлэхэд TimeGMT()*1000-аас: хуучин хариуг авахгүй)
+bool     gFilePending = false;       // хариу хүлээж буй хүсэлт байна
+datetime gFileSentAt = 0;            // сүүлийн хүсэлтийг бичсэн цаг
+datetime gFileSince = 0;             // файлаар холбогдож эхэлсэн цаг
 // v3.92: жижиг данс: доод лотын эрсдэл зорилтоос 2.5 дахинаас их бол сешний захиалгаар орохгүй (SMALL_ACCOUNT). Протокол хэвээр.
 // v3.90: вэбийн журнал. Сервер jFrom (UTC unix секунд) илгээнэ: тэр цагаас хойш хаагдсан арилжааг 50-иар илгээнэ.
 long     gJFrom = 0;               // 0 = сервер журнал асуугаагүй (хуучин сервер)
@@ -2593,6 +2614,150 @@ void ReadingStep()
   }
 
 //+------------------------------------------------------------------+
+//| Файлын гүүр: XauBot-Setup.bat-ийн суулгасан туслах (bridge.ps1)  |
+//| Common\Files\xaubot\<login>\request.json-ийг уншиж, вэб рүү       |
+//| илгээгээд хариуг response.json-д бичнэ.                          |
+//+------------------------------------------------------------------+
+// Мөрийг JSON мөр болгох (хашилт, ташуу зураас, мөр шилжилт escape хийгдэнэ)
+string JsonEsc(string v)
+  {
+   StringReplace(v, "\\", "\\\\");
+   StringReplace(v, "\"", "\\\"");
+   StringReplace(v, "\r", "\\r");
+   StringReplace(v, "\n", "\\n");
+   StringReplace(v, "\t", "\\t");
+   for(int i = StringLen(v) - 1; i >= 0; i--)
+      if(StringGetCharacter(v, i) < 32) StringSetCharacter(v, i, 32);
+   return(v);
+  }
+
+int HexDigit(const ushort c)
+  {
+   if(c >= '0' && c <= '9') return(c - '0');
+   if(c >= 'a' && c <= 'f') return(c - 'a' + 10);
+   if(c >= 'A' && c <= 'F') return(c - 'A' + 10);
+   return(-1);
+  }
+
+// "key":"…" мөрийн утгыг escape-ийг тайлж буцаана (туслахын response.json-ийн body)
+string JStrDecoded(const string text, const string key)
+  {
+   string k = "\"" + key + "\":\"";
+   int p = StringFind(text, k);
+   if(p < 0) return("");
+   p += StringLen(k);
+   int n = StringLen(text);
+   ushort out[];
+   ArrayResize(out, n - p + 1);
+   int m = 0;
+   for(int i = p; i < n; i++)
+     {
+      ushort c = StringGetCharacter(text, i);
+      if(c == '"') break;
+      if(c == '\\' && i + 1 < n)
+        {
+         i++;
+         ushort e = StringGetCharacter(text, i);
+         if(e == 'n') c = 10;
+         else if(e == 'r') c = 13;
+         else if(e == 't') c = 9;
+         else if(e == 'b') c = 8;
+         else if(e == 'f') c = 12;
+         else if(e == 'u' && i + 4 < n)
+           {
+            int u = 0;
+            bool ok = true;
+            for(int j = 1; j <= 4; j++)
+              {
+               int d = HexDigit(StringGetCharacter(text, i + j));
+               if(d < 0) { ok = false; break; }
+               u = u * 16 + d;
+              }
+            if(ok) { c = (ushort)u; i += 4; }
+            else c = e;
+           }
+         else c = e;                                              // \" \\ \/
+        }
+      out[m++] = c;
+     }
+   if(m == 0) return("");
+   return(ShortArrayToString(out, 0, m));
+  }
+
+string ReadCommonText(const string name)
+  {
+   if(!FileIsExist(name, FILE_COMMON)) return("");
+   int h = FileOpen(name, FILE_READ | FILE_BIN | FILE_COMMON | FILE_SHARE_READ | FILE_SHARE_WRITE);
+   if(h == INVALID_HANDLE) return("");
+   string s = "";
+   int n = (int)FileSize(h);
+   uchar buf[];
+   if(n > 0 && FileReadArray(h, buf, 0, n) == n) s = CharArrayToString(buf, 0, n, CP_UTF8);
+   FileClose(h);
+   return(s);
+  }
+
+bool WriteCommonText(const string name, const string text)
+  {
+   uchar buf[];
+   int len = StringToCharArray(text, buf, 0, WHOLE_ARRAY, CP_UTF8);
+   if(len <= 1) return(false);
+   int h = FileOpen(name, FILE_WRITE | FILE_BIN | FILE_COMMON);
+   if(h == INVALID_HANDLE) return(false);
+   uint wrote = FileWriteArray(h, buf, 0, len - 1);                 // төгсгөлийн 0-гүй, BOM-гүй UTF-8
+   FileClose(h);
+   return(wrote == (uint)(len - 1));
+  }
+
+// Туслах ажиллахгүй байгаа эсэхийг чарт дээр хэлнэ: удаан хугацаанд хариу ирээгүй бол.
+void FileWaitStatus()
+  {
+   datetime since = (gLastSyncOk > gFileSince) ? gLastSyncOk : gFileSince;
+   if(TimeLocal() - since > FILE_HELPER_WAIT)
+      gLinkStatus = L("Туслах ажиллахгүй байна — XauBot-Setup.bat-ийг дахин ажиллуулна уу", "The helper is not running — run XauBot-Setup.bat again");
+   else if(gLastSyncOk < gFileSince)
+      gLinkStatus = L("туслахаар холбогдож байна…", "connecting through the helper…");
+  }
+
+// Нэг удаад нэг хүсэлт: өмнөхийн хариу ирсэн (эсвэл FILE_RESEND_SECONDS өнгөрсөн) үед л дараагийнхыг бичнэ.
+// Хариу ирсэн бол code, body-г бөглөж true буцаана. Хариу нь зөвхөн сүүлд бичсэн дугаартай (эсвэл түүнээс их) байвал авна.
+bool FileSync(const string json, int &code, string &body)
+  {
+   if(gFileSince == 0) gFileSince = TimeLocal();
+   string dir = "xaubot\\" + (string)AccountInfoInteger(ACCOUNT_LOGIN);
+   bool got = false;
+   if(gFilePending)
+     {
+      string resp = ReadCommonText(dir + "\\response.json");
+      if(resp != "" && JRaw(resp, "seq") != "")
+        {
+         long seq = (long)JNum(resp, "seq");
+         if(seq > 0 && seq >= gFileSeq)
+           {
+            code = (int)JNum(resp, "status");
+            body = JStrDecoded(resp, "body");
+            gFilePending = false;
+            got = true;
+           }
+        }
+      if(!got && TimeLocal() - gFileSentAt < FILE_RESEND_SECONDS) { FileWaitStatus(); return(false); }
+     }
+   if(gFileSeq == 0) gFileSeq = (long)TimeGMT() * 1000;
+   gFileSeq++;
+   string req = "{\"url\":\"" + JsonEsc(ServerUrl) + "\",\"token\":\"" + JsonEsc(BotToken) + "\",\"seq\":" + (string)gFileSeq +
+                ",\"at\":" + (string)(long)TimeGMT() + ",\"body\":\"" + JsonEsc(json) + "\"}";
+   FolderCreate("xaubot", FILE_COMMON);
+   FolderCreate(dir, FILE_COMMON);
+   if(WriteCommonText(dir + "\\request.tmp", req) && FileMove(dir + "\\request.tmp", FILE_COMMON, dir + "\\request.json", FILE_COMMON | FILE_REWRITE))
+     {
+      gFilePending = true;
+      gFileSentAt = TimeLocal();
+     }
+   if(!got) FileWaitStatus();
+   return(got);
+  }
+
+//+------------------------------------------------------------------+
 //| Вэбтэй холбогдох: төлөвөө илгээж, тушаал авна                    |
 //+------------------------------------------------------------------+
 void Sync()
@@ -2615,29 +2780,61 @@ void Sync()
    if(journal != "") json += ",\"journal\":[" + journal + "]";
    json += "}";
 
-   uchar data[];
-   int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
-   if(len <= 1) return;
-   ArrayResize(data, len - 1);                                    // төгсгөлийн 0-ийг хасна
-   uchar result[];
-   string resHeaders;
-   string headers = "Content-Type: application/json\r\nX-Bot-Token: " + BotToken + "\r\n";
-
-   ResetLastError();
-   int code = WebRequest("POST", ServerUrl, headers, 5000, data, result, resHeaders);
-   if(code == -1)
+   // Зам: WEB — үргэлж WebRequest; FILE — үргэлж туслах; AUTO — WebRequest, 4014 өгвөл туслах (10 минут тутамд WebRequest-ийг дахин).
+   int code = -1;
+   string body = "";
+   bool viaHelper = false;
+   bool tryWeb = (Transport == TRANSPORT_WEB) || (Transport == TRANSPORT_AUTO && (!gUseFile || TimeLocal() >= gWebRetryAt));
+   if(tryWeb)
      {
-      int err = GetLastError();
-      gLinkStatus = (err == 4014) ? L("URL зөвшөөрөгдөөгүй: Tools > Options > Expert Advisors > Allow WebRequest", "URL not allowed: Tools > Options > Expert Advisors > Allow WebRequest") : L("холболтын алдаа ", "connection error ") + (string)err;
-      return;
+      uchar data[];
+      int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
+      if(len <= 1) return;
+      ArrayResize(data, len - 1);                                 // төгсгөлийн 0-ийг хасна
+      uchar result[];
+      string resHeaders;
+      string headers = "Content-Type: application/json\r\nX-Bot-Token: " + BotToken + "\r\n";
+      ResetLastError();
+      code = WebRequest("POST", ServerUrl, headers, 5000, data, result, resHeaders);
+      if(code == -1)
+        {
+         int err = GetLastError();
+         if(err == 4014 && Transport == TRANSPORT_AUTO)
+           {
+            gWebRetryAt = TimeLocal() + FILE_WEB_RETRY_SECONDS;
+            if(!gUseFile)
+              {
+               gUseFile = true;
+               gFileSince = TimeLocal();
+               Print(L("XauBot: WebRequest-д сайтын хаяг зөвшөөрөгдөөгүй — туслахаар (файлаар) холбогдоно", "XauBot: the site's address is not allowed for WebRequest — connecting through the helper (files)"));
+              }
+           }
+         else
+           {
+            gLinkStatus = (err == 4014) ? L("URL зөвшөөрөгдөөгүй: Tools > Options > Expert Advisors > Allow WebRequest", "URL not allowed: Tools > Options > Expert Advisors > Allow WebRequest") : L("холболтын алдаа ", "connection error ") + (string)err;
+            return;
+           }
+        }
+      else
+        {
+         if(gUseFile) Print(L("XauBot: WebRequest ажиллаж байна — туслахгүйгээр холбогдоно", "XauBot: WebRequest works — connecting without the helper"));
+         gUseFile = false;
+         gFilePending = false;                                    // туслахын хуучин хариуг дараа нь авахгүй
+         body = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
+        }
      }
+   if(code == -1)                                                 // туслахаар: хариу ирээгүй бол энэ удаа юу ч хийхгүй
+     {
+      if(!FileSync(json, code, body)) return;
+      viaHelper = true;
+     }
+   if(code == 0) { gLinkStatus = L("туслах вэбтэй холбогдож чадсангүй — интернэтээ шалгана уу", "the helper could not reach the web — check the internet"); return; }
    if(code == 401) { gLinkStatus = L("токен буруу", "wrong token"); return; }
    if(code == 400) { gLinkStatus = L("вэб роботын мэдээг хүлээж авсангүй (400) — шинэ XauBot.ex5 татна уу", "the web rejected the robot's report (400) — download the new XauBot.ex5"); return; }
    if(code != 200) { gLinkStatus = L("серверийн хариу ", "server replied ") + (string)code; return; }
 
-   string body = CharArrayToString(result, 0, WHOLE_ARRAY, CP_UTF8);
    gLastSyncOk = TimeLocal();
-   gLinkStatus = L("холбогдсон", "connected");
+   gLinkStatus = viaHelper ? L("холбогдсон (туслах)", "connected (helper)") : L("холбогдсон", "connected");
 
    string state = JStr(body, "state");
    string runId = JStr(body, "runId");

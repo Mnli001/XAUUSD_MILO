@@ -14,8 +14,9 @@ const MQ5_HREF = "/api/bot/download?file=mq5";
 export const INSTALLER_HREF = "/api/bot/installer";
 
 /**
- * The one-click way: a Windows installer that copies the robot into MT5, fills in its token and address and opens
- * MT5 with the robot on a gold chart. Downloading it makes a new token. A plain link: the route answers with the file.
+ * The one-click way: a Windows installer that copies the robot into MT5, fills in its token and address, installs the
+ * small background helper (the file bridge, so no address has to be allowed in MT5 by hand) and opens MT5 with the
+ * robot on the gold chart. Downloading it makes a new token. A plain link: the route answers with the file.
  */
 export function OneClickInstall() {
   const { t } = useViewer();
@@ -25,7 +26,7 @@ export function OneClickInstall() {
         {t("Нэг товчоор суулгах (Windows)", "One-click install (Windows)")}
         <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">{t("Зөвлөе", "Recommended")}</span>
       </h3>
-      <p className="mt-1 text-sm leading-relaxed text-zinc-300">{t("Файлыг татаад давхар товшино. Robot-ыг MT5-д хуулж, token болон site-ын хаягийг өөрөө бичээд MT5-ыг XAUUSD чарт дээр robot-тай нь нээнэ. Үлдэх ганц алхам болох site-ын хаягийг зөвшөөрөхийг яг хаана хийхийг зааж өгнө.", "Download the file and double-click it. It copies the robot into MT5, fills in the token and the site's address, and opens MT5 with the robot on an XAUUSD chart. For the one step left, allowing the site's address, it shows you exactly where to paste it.")}</p>
+      <p className="mt-1 text-sm leading-relaxed text-zinc-300">{t("Файлыг татаад давхар товшино. Бүгдийг өөрөө тохируулна: robot-ыг MT5-д хуулж, token болон site-ын хаягийг бичээд, Windows-той хамт асдаг жижиг далд туслахыг суулгаж, MT5-ыг алтны чарт дээр robot-тай нь нээнэ. Хаяг гараар нэмэх юм уу өөр алхам хийх шаардлагагүй.", "Download the file and double-click it. It sets everything up: it copies the robot into MT5, fills in the token and the site's address, installs a small background helper that starts with Windows, and opens MT5 with the robot on the gold chart. There is no address to add by hand and nothing else to do.")}</p>
       <a href={INSTALLER_HREF} className="btn mt-3 inline-flex">{t("XauBot-Setup.bat татах", "Download XauBot-Setup.bat")}</a>
       <p className="mt-3 text-xs leading-relaxed text-amber-300">{t("Татах бүрт шинэ token үүсгэнэ: өмнөх token ажиллахаа болих тул өмнө нь тохируулсан robot-д шинэ token-оо дахин оруулна.", "Each download makes a new token: the previous one stops working, so a robot set up before needs the new token entered again.")}</p>
       <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t("Файл гарын үсэггүй тул Windows SmartScreen анхааруулга гарч болно: «More info» → «Run anyway» дарна. Файлд таны token бичигдсэн тул түүнийг бусадтай хуваалцахгүй.", "The file is not signed, so Windows SmartScreen may warn you: click \"More info\" → \"Run anyway\". The file holds your token, so do not share it.")}</p>
@@ -91,6 +92,7 @@ function troubleMn(): ReactNode[] {
   return [
     <>Token буруу эсвэл хуучин: шинэ token үүсгэвэл өмнөх нь ажиллахаа больдог. Хамгийн сүүлийн token-оо <span className={MENU}>BotToken</span>-д буулгана.</>,
     <>Хаяг зөвшөөрөгдөөгүй: 2-р алхмын хаяг <span className={MENU}>Allow WebRequest</span> жагсаалтад яг адилхан бичигдсэн эсэхийг шалгана.</>,
+    <>Чарт дээр «Туслах ажиллахгүй байна» гэж гарвал XauBot-Setup.bat-ийг дахин ажиллуулна: туслахыг дахин суулгаж асаана.</>,
     <>Algo Trading унтраалттай: дээд самбарын товч ногоон, robot-ын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
     <>Бямба, ням гарагт алтны зах хаалттай: тэр үед robot холбогдсон ч арилжаа хийхгүй.</>,
     <>.ex5 файл ачаалагдахгүй бол эх кодыг <a className={LINK} href={MQ5_HREF}>XauBot.mq5</a> татаж, MetaEditor (F4) дээр нээгээд Compile (F7) дарна.</>,
@@ -101,6 +103,7 @@ function troubleEn(): ReactNode[] {
   return [
     <>Wrong or old token: creating a new token stops the previous one. Paste your latest token into <span className={MENU}>BotToken</span>.</>,
     <>Address not allowed: check that the address from step 2 is in the <span className={MENU}>Allow WebRequest</span> list exactly as shown.</>,
+    <>The chart says &quot;The helper is not running&quot;: run XauBot-Setup.bat again, it reinstalls and starts the helper.</>,
     <>Algo Trading is off: the toolbar button must be green and <span className={MENU}>Allow Algo Trading</span> ticked on the robot&apos;s <span className={MENU}>Common</span> tab.</>,
     <>The gold market is closed on Saturday and Sunday: the robot connects but places no trades then.</>,
     <>If the .ex5 file will not load, download the source <a className={LINK} href={MQ5_HREF}>XauBot.mq5</a>, open it in MetaEditor (F4) and press Compile (F7).</>,
