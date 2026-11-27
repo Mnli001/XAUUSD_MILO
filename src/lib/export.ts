@@ -14,7 +14,7 @@ function cell(v: string | number | null): string {
 export function tradesCsv(trades: TradeRow[], v: Viewer): string {
   const { t } = v;
   const head = [
-    `${t("Нээсэн", "Opened")} (${v.zone})`, `${t("Хаасан", "Closed")} (${v.zone})`, t("Хэрэгсэл", "Symbol"), t("Чиглэл", "Side"), t("Лот", "Lots"),
+    `${t("Нээсэн", "Opened")} (${v.zone})`, `${t("Хаасан", "Closed")} (${v.zone})`, t("Хэрэгсэл", "Symbol"), t("Чиглэл", "Side"), t("Lot", "Lots"),
     t("Орсон үнэ", "Entry"), t("Гарсан үнэ", "Exit"), "Stop loss", "Take profit", t("Ашиг $", "Profit $"), "R", t("Тэмдэглэл", "Note"),
   ];
   const rows = trades.map((tr) => {

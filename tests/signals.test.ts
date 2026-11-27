@@ -19,7 +19,7 @@ const now = new Date(Date.UTC(2026, 10, 24, 9, 0));
 const history = { n: 152, winPct: 34.1, avgR: -0.01, profitFactor: 0.99 };
 const setup = (o: Partial<Setup> = {}): Setup => ({
   id: "asian-breakout", name: "Азийн хүрээний breakout", rule: "…", status: "ACTIVE", side: "BUY", headline: "BUY: хүрээнээс дээш гарлаа", detail: "…",
-  entry: 4006, stop: 4000, target: 4018, band: { high: 4002, low: 3998 }, checks: [{ label: "Азийн хүрээ бүрдсэн (15:00 УБ)", ok: true }, { label: "Тренд breakout-тай нэг чиглэлд", ok: true }],
+  entry: 4006, stop: 4000, target: 4018, band: { high: 4002, low: 3998 }, checks: [{ label: "Азийн хүрээ бүрдсэн (15:00 УБ)", ok: true }, { label: "Trend breakout-тай нэг чиглэлд", ok: true }],
   history, recent: history, ...o,
 });
 const view = (setups: Setup[]): SetupsView => ({ setups, candles: [], lastCandleAt: new Date(now.getTime() - 15 * 6e4), historyFrom: null });
@@ -47,7 +47,7 @@ beforeEach(async () => {
 
 test("the message says what to do, where, how much is at risk, and how the rule has done", () => {
   const text = signalText(setup(), new Date(now.getTime() - 15 * 6e4), now, undefined, "https://xau.example");
-  for (const part of ["BUY · АВАХ", "XAUUSD", "<b>Азийн хүрээний breakout</b>", "4006.00", "4000.00", "4018.00", "0.01 лот: эрсдэл $6.00, ашиг $12.00", "R:R 1 : 2.0", "Тренд breakout-тай нэг чиглэлд", "152", "34.1%", "16:45 (УБ)", "15 минут", '<a href="https://xau.example/setup">', "зөвлөгөө биш"]) expect(text).toContain(part);
+  for (const part of ["BUY · АВАХ", "XAUUSD", "<b>Азийн хүрээний breakout</b>", "4006.00", "4000.00", "4018.00", "0.01 lot: эрсдэл $6.00, ашиг $12.00", "R:R 1 : 2.0", "Trend breakout-тай нэг чиглэлд", "152", "34.1%", "16:45 (УБ)", "15 минут", '<a href="https://xau.example/setup">', "зөвлөгөө биш"]) expect(text).toContain(part);
   expect(signalText(setup({ side: "SELL", entry: 3994, stop: 4000, target: 3982 }), null, now)).toContain("SELL · ЗАРАХ");
   expect(signalText(setup({ history: { n: 4, winPct: null, avgR: null, profitFactor: null } }), null, now)).toContain("дата хангалтгүй");
   // no site address known: no link, nothing broken

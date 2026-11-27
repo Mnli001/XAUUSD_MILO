@@ -29,7 +29,7 @@ export function HourStrip({ cells, locked = false }: { cells: HourCell[]; locked
         <Icon name="clock" className="h-[18px] w-[18px] text-amber-400" />
         <div className="min-w-0 flex-1">
           <h2 id="hours-h" className="text-base font-semibold text-zinc-100">{t("Дараагийн 24 цаг", "The next 24 hours")}</h2>
-          <p className="text-xs text-zinc-500">{t("Цаг бүр өсөх ▲ эсвэл унах ▼ магадлал · сүүлийн 6 сарын ижил трендтэй өдрөөр", "Each hour's chance to rise ▲ or fall ▼ · from the last 6 months' days with the same trend")}</p>
+          <p className="text-xs text-zinc-500">{t("Цаг бүр өсөх ▲ эсвэл унах ▼ магадлал · сүүлийн 6 сарын ижил trend-тэй өдрөөр", "Each hour's chance to rise ▲ or fall ▼ · from the last 6 months' days with the same trend")}</p>
         </div>
         <ul className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-zinc-400 max-sm:hidden">
           {SESSIONS.map((s) => <li key={s.key} className="flex items-center gap-1.5"><span aria-hidden className="h-[3px] w-3 rounded-full" style={{ background: s.color }} />{sessionLabel(s.key, t)}</li>)}

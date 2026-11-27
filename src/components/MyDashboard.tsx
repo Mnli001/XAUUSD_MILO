@@ -59,7 +59,7 @@ function BotChip({ bot, t }: { bot: BotSummary | null; t: T }) {
   if (!bot.online) return <Chip href="/bot" icon="bot" label={`${label} · ${t("Ажиллаж байна", "Running")}`} tone="text-amber-300">{t("MT5 холболт тасарсан", "MT5 has gone quiet")}</Chip>;
   return (
     <Chip href="/bot" icon="bot" label={`${label} · ${t("Ажиллаж байна", "Running")}`} tone="text-emerald-400">
-      {t(`${bot.positions} позиц`, `${bot.positions} open`)} · {t("24ц", "24h")} <Pnl value={bot.pnl24h} />
+      {t(`${bot.positions} position`, `${bot.positions} open`)} · {t("24ц", "24h")} <Pnl value={bot.pnl24h} />
     </Chip>
   );
 }

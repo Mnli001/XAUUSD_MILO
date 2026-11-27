@@ -29,8 +29,8 @@ export function TelegramCard({ configured, linked, isAdmin, paid = true, pending
       {!configured ? (
         isAdmin ? (
           <ol className="mt-4 max-w-prose list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-300 marker:font-semibold marker:text-zinc-500">
-            <li>{t("Telegram дээр ", "In Telegram open ")}<strong>@BotFather</strong>{t("-ийг нээж ", ", send ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/newbot</code>{t(" гэж бичээд бот үүсгэнэ. Төгсгөлд нь токен өгнө.", " and create a bot. At the end it gives you a token.")}</li>
-            <li>{t("Railway дээр ", "On Railway, under ")}<strong>xau-analytics → Variables</strong>{t(" хэсэгт ", ", add a variable named ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5 break-all">TELEGRAM_BOT_TOKEN</code>{t(" нэртэй хувьсагч нэмж токеноо утга болгон тавина.", " with the token as its value.")}</li>
+            <li>{t("Telegram дээр ", "In Telegram open ")}<strong>@BotFather</strong>{t("-ийг нээж ", ", send ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5">/newbot</code>{t(" гэж бичээд бот үүсгэнэ. Төгсгөлд нь token өгнө.", " and create a bot. At the end it gives you a token.")}</li>
+            <li>{t("Railway дээр ", "On Railway, under ")}<strong>xau-analytics → Variables</strong>{t(" хэсэгт ", ", add a variable named ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5 break-all">TELEGRAM_BOT_TOKEN</code>{t(" нэртэй хувьсагч нэмж token-оо утга болгон тавина.", " with the token as its value.")}</li>
             <li>{t("Railway дахин ачаалсны дараа энэ хуудсыг шинэчлэхэд “Telegram холбох” товч гарна.", "After Railway redeploys, refresh this page and the “Link Telegram” button appears.")}</li>
           </ol>
         ) : null
@@ -52,7 +52,7 @@ export function TelegramCard({ configured, linked, isAdmin, paid = true, pending
       ) : (
         <div className="mt-4 space-y-3">
           <form action={linkAction}><button className="btn" disabled={linking}>{linking ? t("Бэлдэж байна…", "Preparing…") : t("Telegram холбох", "Link Telegram")}</button></form>
-          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Эсвэл Telegram дээр манай ботыг нээж, бүртгэлтэй имэйлээ бичээд илгээ. Дараа нь энд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарахад холбогдоно. Токен, код оруулах шаардлагагүй.", "Or open our bot in Telegram and send it the email you registered with. Then press “Yes, it's mine” on the request that appears here. No token or code to type.")}</p>
+          <p className="max-w-prose text-xs leading-relaxed text-zinc-400">{t("Эсвэл Telegram дээр манай ботыг нээж, бүртгэлтэй имэйлээ бичээд илгээ. Дараа нь энд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарахад холбогдоно. Token, код оруулах шаардлагагүй.", "Or open our bot in Telegram and send it the email you registered with. Then press “Yes, it's mine” on the request that appears here. No token or code to type.")}</p>
         </div>
       )}
       {note && <p role="alert" className="mt-3 text-sm text-red-400">{note}</p>}

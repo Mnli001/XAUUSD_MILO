@@ -28,7 +28,7 @@ export const BROKER_RECORD = {
   kind: "research" as const, // a tester result, not trades the site made
   method: "MT5 Strategy Tester, 1-minute OHLC, broker spread",
   note: "MT5 tester, 2019–2026, without the news filter", // the short English label (siteCopy BrokerRecord.note)
-  noteText: { mn: "MT5 tester, 2019–2026, мэдээний шүүлтүүргүй, tester-ийн орох шүүлтүүртэй, брокерын серверийн цагийн лаагаар. Судалгааны үр дүн, бодит арилжаа биш.", en: "MT5 tester, 2019–2026, without the news filter, with the tester's entry filter on, on the broker's server-time candles. A research result, not live trades." },
+  noteText: { mn: "MT5 tester, 2019–2026, мэдээний шүүлтүүргүй, tester-ийн орох шүүлтүүртэй, broker-ын серверийн цагийн лаагаар. Судалгааны үр дүн, бодит арилжаа биш.", en: "MT5 tester, 2019–2026, without the news filter, with the tester's entry filter on, on the broker's server-time candles. A research result, not live trades." },
 } as const;
 
 export type SetupsView = { setups: Setup[]; candles: Candle[]; lastCandleAt: Date | null; historyFrom: Date | null };
@@ -121,7 +121,7 @@ export function describe(rule: SessionRule, v: Viewer = MN_VIEWER): { name: stri
   return {
     name,
     rule: t(
-      `${at(rule.rangeFrom)}–${at(rule.rangeTo)} (${zone}) цагийн хамгийн өндөр, нам үнэ хүрээг тогтооно. Өдөр, 4 цагийн тренд нэг чиглэлд байвал ${at(rule.rangeTo)}–${at(rule.entryTo)} цагт хүрээнээс тэр чиглэлд гарсан эхний 15 минутын хаалтаар орно. Чухал мэдээний өмнөх 30, дараах 60 минутад орохгүй. Хүрээ өдрийн ATR-тай харьцуулахад хэт нарийн бол тэр өдөр орохгүй. Stop хүрээний дунд, target stop-оос ${rule.rr} дахин хол, аль нь ч хүрээгүй бол ${hold}. Өдөрт нэг арилжаа.`,
+      `${at(rule.rangeFrom)}–${at(rule.rangeTo)} (${zone}) цагийн хамгийн өндөр, нам үнэ хүрээг тогтооно. Өдөр, 4 цагийн trend нэг чиглэлд байвал ${at(rule.rangeTo)}–${at(rule.entryTo)} цагт хүрээнээс тэр чиглэлд гарсан эхний 15 минутын хаалтаар орно. Чухал мэдээний өмнөх 30, дараах 60 минутад орохгүй. Хүрээ өдрийн ATR-тай харьцуулахад хэт нарийн бол тэр өдөр орохгүй. Stop хүрээний дунд, target stop-оос ${rule.rr} дахин хол, аль нь ч хүрээгүй бол ${hold}. Өдөрт нэг арилжаа.`,
       `The highest and lowest price between ${at(rule.rangeFrom)} and ${at(rule.rangeTo)} (${zone}) set the range. When the daily and 4-hour trends point the same way, the first 15-minute close outside the range in that direction between ${at(rule.rangeTo)} and ${at(rule.entryTo)} is the entry. No entry from 30 minutes before to 60 minutes after an important release. If the range is too narrow against the daily ATR, the day is passed. The stop is the middle of the range, the target is ${rule.rr} times as far as the stop; if neither is hit the trade is ${hold}. One trade a day.`),
   };
 }

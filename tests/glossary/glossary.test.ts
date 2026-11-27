@@ -27,7 +27,7 @@ describe("glossary", () => {
 
   it("explains a lot in dollars per dollar of gold move, the way a beginner sizes a trade", () => {
     expect(glossaryEntry("lot").def.mn).toMatch(/100 унц/);
-    expect(glossaryEntry("lot").def.mn).toMatch(/0\.01 лот/);
+    expect(glossaryEntry("lot").def.mn).toMatch(/0\.01 lot/);
   });
 });
 

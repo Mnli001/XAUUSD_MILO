@@ -49,8 +49,8 @@ const highest = (c: Candle[]) => Math.max(...c.map((x) => x.high));
 const lowest = (c: Candle[]) => Math.min(...c.map((x) => x.low));
 
 export const familyName = (f: Family, t: T): string => ({
-  trend: t("Тренд дагах", "Trend following"),
-  momentum: t("Моментум", "Momentum"),
+  trend: t("Trend дагах", "Trend following"),
+  momentum: t("Momentum", "Momentum"),
   reversion: t("Буцалт", "Mean reversion"),
   breakout: t("Breakout", "Breakout"),
   structure: t("Бүтэц (ICT / SMC)", "Structure (ICT / SMC)"),
@@ -85,7 +85,7 @@ const emaStack: Read = ({ h1, price }, t) => {
   const levels = [{ label: "EMA20", price: e20 }, { label: "EMA50", price: e50 }, { label: "EMA200", price: e200 }];
   if (price > e20 && e20 > e50 && e50 > e200) return make("ema-stack", "trend", "H1", name, "BUY", t(`Үнэ ${px(price)} нь EMA20 (${px(e20)}) > EMA50 (${px(e50)}) > EMA200 (${px(e200)}) эгнээний дээр. Гурван дундаж өсөх дарааллаар жагссан.`, `Price ${px(price)} is above EMA20 (${px(e20)}) > EMA50 (${px(e50)}) > EMA200 (${px(e200)}). The three averages are lined up for a rise.`), levels);
   if (price < e20 && e20 < e50 && e50 < e200) return make("ema-stack", "trend", "H1", name, "SELL", t(`Үнэ ${px(price)} нь EMA20 (${px(e20)}) < EMA50 (${px(e50)}) < EMA200 (${px(e200)}) эгнээний доор. Гурван дундаж унах дарааллаар жагссан.`, `Price ${px(price)} is below EMA20 (${px(e20)}) < EMA50 (${px(e50)}) < EMA200 (${px(e200)}). The three averages are lined up for a fall.`), levels);
-  return make("ema-stack", "trend", "H1", name, "NEUTRAL", t(`Дунджууд нэг дараалалд ороогүй: EMA20 ${px(e20)}, EMA50 ${px(e50)}, EMA200 ${px(e200)}, үнэ ${px(price)}. Тренд цэвэр биш.`, `The averages are not in one order: EMA20 ${px(e20)}, EMA50 ${px(e50)}, EMA200 ${px(e200)}, price ${px(price)}. The trend is not clean.`), levels);
+  return make("ema-stack", "trend", "H1", name, "NEUTRAL", t(`Дунджууд нэг дараалалд ороогүй: EMA20 ${px(e20)}, EMA50 ${px(e50)}, EMA200 ${px(e200)}, үнэ ${px(price)}. Trend цэвэр биш.`, `The averages are not in one order: EMA20 ${px(e20)}, EMA50 ${px(e50)}, EMA200 ${px(e200)}, price ${px(price)}. The trend is not clean.`), levels);
 };
 
 /** The 50 over the 200 on the 4-hour chart: the golden cross and the death cross. */
@@ -143,12 +143,12 @@ const rsiMomentum: Read = ({ h1 }, t) => {
   if (h1.length < 40) return null;
   const v = last(rsi(h1.map((c) => c.close)));
   if (Number.isNaN(v)) return null;
-  const name = t("RSI (14) моментум", "RSI (14) momentum");
+  const name = t("RSI (14) momentum", "RSI (14) momentum");
   const r = v.toFixed(0);
   if (v >= 55 && v < 70) return make("rsi-momentum", "momentum", "H1", name, "BUY", t(`RSI ${r}: 55-аас дээш, 70-д хүрээгүй. Худалдан авагчид давамгай, хэт халаагүй.`, `RSI ${r}: above 55 and short of 70. Buyers lead and it is not overheated.`));
   if (v <= 45 && v > 30) return make("rsi-momentum", "momentum", "H1", name, "SELL", t(`RSI ${r}: 45-аас доош, 30-д хүрээгүй. Худалдагчид давамгай, хэт унаагүй.`, `RSI ${r}: below 45 and short of 30. Sellers lead and it is not washed out.`));
   return make("rsi-momentum", "momentum", "H1", name, "NEUTRAL", v >= 70 || v <= 30
-    ? t(`RSI ${r}: туйлын бүсэд орсон тул моментум гэж уншихгүй (доорх “RSI туйл”-ыг үз).`, `RSI ${r}: at an extreme, so it is not read as momentum (see “RSI extreme” below).`)
+    ? t(`RSI ${r}: туйлын бүсэд орсон тул momentum гэж уншихгүй (доорх “RSI туйл”-ыг үз).`, `RSI ${r}: at an extreme, so it is not read as momentum (see “RSI extreme” below).`)
     : t(`RSI ${r}: 45–55 хооронд. Аль ч тал давамгайлаагүй.`, `RSI ${r}: between 45 and 55. Neither side leads.`));
 };
 
@@ -318,8 +318,8 @@ const fibonacci: Read = ({ h4, price }, t) => {
   const name = t("Fibonacci буцалт (38.2 – 61.8%)", "Fibonacci retracement (38.2 – 61.8%)");
   const levels = [{ label: "38.2%", price: f382 }, { label: "50%", price: at(0.5) }, { label: "61.8%", price: f618 }];
   if (price >= zoneLo && price <= zoneHi) return upLeg
-    ? make("fibonacci", "levels", "H4", name, "BUY", t(`Өсөх хөл ${px(bottom)} → ${px(top)}-ийн ${done.toFixed(0)}%-ийг буцсан. Үнэ алтан бүс (${px(zoneLo)} – ${px(zoneHi)}) дотор, трендийн чиглэлд орох газар гэж уншдаг.`, `The up leg ${px(bottom)} → ${px(top)} has been retraced ${done.toFixed(0)}%. Price is in the golden zone (${px(zoneLo)} – ${px(zoneHi)}), read as a place to join the trend.`), levels)
-    : make("fibonacci", "levels", "H4", name, "SELL", t(`Унах хөл ${px(top)} → ${px(bottom)}-ийн ${done.toFixed(0)}%-ийг буцсан. Үнэ алтан бүс (${px(zoneLo)} – ${px(zoneHi)}) дотор, трендийн чиглэлд орох газар гэж уншдаг.`, `The down leg ${px(top)} → ${px(bottom)} has been retraced ${done.toFixed(0)}%. Price is in the golden zone (${px(zoneLo)} – ${px(zoneHi)}), read as a place to join the trend.`), levels);
+    ? make("fibonacci", "levels", "H4", name, "BUY", t(`Өсөх хөл ${px(bottom)} → ${px(top)}-ийн ${done.toFixed(0)}%-ийг буцсан. Үнэ алтан бүс (${px(zoneLo)} – ${px(zoneHi)}) дотор, trend-ийн чиглэлд орох газар гэж уншдаг.`, `The up leg ${px(bottom)} → ${px(top)} has been retraced ${done.toFixed(0)}%. Price is in the golden zone (${px(zoneLo)} – ${px(zoneHi)}), read as a place to join the trend.`), levels)
+    : make("fibonacci", "levels", "H4", name, "SELL", t(`Унах хөл ${px(top)} → ${px(bottom)}-ийн ${done.toFixed(0)}%-ийг буцсан. Үнэ алтан бүс (${px(zoneLo)} – ${px(zoneHi)}) дотор, trend-ийн чиглэлд орох газар гэж уншдаг.`, `The down leg ${px(top)} → ${px(bottom)} has been retraced ${done.toFixed(0)}%. Price is in the golden zone (${px(zoneLo)} – ${px(zoneHi)}), read as a place to join the trend.`), levels);
   return make("fibonacci", "levels", "H4", name, "NEUTRAL", done < 38.2
     ? t(`Сүүлийн хөл (${px(bottom)} – ${px(top)})-ийн ердөө ${Math.max(0, done).toFixed(0)}%-ийг буцсан. Алтан бүс ${px(zoneLo)} – ${px(zoneHi)} хүртэл ирээгүй.`, `Only ${Math.max(0, done).toFixed(0)}% of the last leg (${px(bottom)} – ${px(top)}) has been retraced. Price has not reached the golden zone ${px(zoneLo)} – ${px(zoneHi)}.`)
     : t(`Сүүлийн хөлийн ${Math.min(100, done).toFixed(0)}%-ийг буцсан: 61.8%-иас гүн. Хөл хүчээ алдсан гэж уншдаг.`, `${Math.min(100, done).toFixed(0)}% of the last leg has been retraced: deeper than 61.8%. The leg is read as having lost its force.`), levels);

@@ -59,7 +59,7 @@ export function signalText(s: Setup, candleAt: Date | null, now: Date, v: Viewer
     t(`Орох: <b>${px(entry)}</b> орчим`, `Entry: around <b>${px(entry)}</b>`),
     `Stop: <b>${px(stop)}</b>`,
     `Target: <b>${px(target)}</b>`,
-    t(`0.01 лот: эрсдэл ${usd(risk)}, ашиг ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`, `0.01 lot: risk ${usd(risk)}, reward ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`),
+    t(`0.01 lot: эрсдэл ${usd(risk)}, ашиг ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`, `0.01 lot: risk ${usd(risk)}, reward ${usd(reward)}${rr === null ? "" : ` · R:R 1 : ${rr.toFixed(1)}`}`),
     "",
     ...s.checks.filter((c) => c.ok).map((c) => `✓ ${esc(c.label)}`),
     "",
@@ -240,7 +240,7 @@ export function resultText(s: Pick<Signal, "side" | "name" | "entry" | "stop" | 
     `${head} · ${s.side} XAUUSD`,
     `<b>${esc(s.name)}</b>`,
     "",
-    t(`Үр дүн: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 лот: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`, `Result: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`),
+    t(`Үр дүн: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`, `Result: <b>${r > 0 ? "+" : ""}${r.toFixed(2)}R</b> (0.01 lot: ${money >= 0 ? "+" : "−"}${usd(Math.abs(money))})`),
     t(`Орсон ${px(s.entry)}${exit !== null ? ` → гарсан ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`, `Entry ${px(s.entry)}${exit !== null ? ` → exit ${px(exit)}` : ""}${o.at ? ` · ${v.time(o.at)} (${esc(v.zone)})` : ""}`),
     ...(link ? ["", link] : []),
   ].join("\n");

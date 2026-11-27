@@ -54,8 +54,8 @@ export function nowWindow(s: SetupNow, now: Date, lastPrice: number | null, v: V
     const side = daily === "BUY" ? t("BUY", "BUY") : daily === "SELL" ? t("SELL", "SELL") : null;
     return {
       state: "WAIT",
-      title: side ? t(`${side} боломж: 4 цагийн тренд эргэхийг хүлээж байна`, `${side} possible: waiting for the 4-hour trend to turn`) : t("Өдрийн тренд тодорхой болохыг хүлээж байна", "Waiting for the daily trend to become clear"),
-      waitingFor: daily === null ? t("Өдрийн тренд тодорхой болох", "The daily trend to become clear") : t(`4 цагийн тренд ${daily === "BUY" ? "дээш" : "доош"} эргэх (одоо ${h4 === null ? "тодорхойгүй" : h4 === "BUY" ? "дээш" : "доош"})`, `The 4-hour trend to turn ${daily === "BUY" ? "up" : "down"} (now ${h4 === null ? "unclear" : h4 === "BUY" ? "up" : "down"})`),
+      title: side ? t(`${side} боломж: 4 цагийн trend эргэхийг хүлээж байна`, `${side} possible: waiting for the 4-hour trend to turn`) : t("Өдрийн trend тодорхой болохыг хүлээж байна", "Waiting for the daily trend to become clear"),
+      waitingFor: daily === null ? t("Өдрийн trend тодорхой болох", "The daily trend to become clear") : t(`4 цагийн trend ${daily === "BUY" ? "дээш" : "доош"} эргэх (одоо ${h4 === null ? "тодорхойгүй" : h4 === "BUY" ? "дээш" : "доош"})`, `The 4-hour trend to turn ${daily === "BUY" ? "up" : "down"} (now ${h4 === null ? "unclear" : h4 === "BUY" ? "up" : "down"})`),
       next: mk(t(`Орох цонх хаагдана (${at(win.entryTo)} ${zone})`, `Entry window closes (${at(win.entryTo)} ${zone})`), hAt(win.entryTo)),
       liveR: null,
     };

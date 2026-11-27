@@ -28,7 +28,7 @@ export function LotCalculator({ stop, target, source }: { stop: number | null; t
   const field = "input tabular-nums";
   return (
     <section className="card" aria-labelledby="lot-h">
-      <h2 id="lot-h" className="card-title">{t("Лот тооцоолуур", "Lot calculator")}</h2>
+      <h2 id="lot-h" className="card-title">{t("Lot тооцоолуур", "Lot calculator")}</h2>
       <p className="mt-1 text-sm text-zinc-400">
         {source ? t(`${source}-ийн stop-оор тооцов. `, `Using the stop of ${source}. `) : ""}
         {t("Stop цохигдвол дансныхаа хэдэн хувийг алдахыг та өөрөө сонгоно.", "You choose what share of the account a stop may cost.")}
@@ -52,7 +52,7 @@ export function LotCalculator({ stop, target, source }: { stop: number | null; t
       </div>
       <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-3" aria-live="polite">
         <div>
-          <p className="text-xs font-semibold text-zinc-400">{t("Лот", "Lots")}</p>
+          <p className="text-xs font-semibold text-zinc-400">{t("Lot", "Lots")}</p>
           <p data-testid="lots" className="text-3xl font-semibold text-amber-300 tabular-nums">{r ? r.lots.toFixed(2) : "—"}</p>
         </div>
         {r && (
@@ -64,10 +64,10 @@ export function LotCalculator({ stop, target, source }: { stop: number | null; t
       </div>
       {r?.belowMin && (
         <p role="alert" className="mt-3 text-sm text-amber-300">
-          {t(`Хамгийн бага 0.01 лот ч гэсэн stop цохигдвол ${usd(r.risk)}, дансны ${r.riskPct}%-ийг алдана. Энэ арилжааг алгасах эсвэл эрсдэлээ дахин бодоорой.`, `Even the smallest size, 0.01 lot, would lose ${usd(r.risk)}, ${r.riskPct}% of the account, if the stop is hit. Consider skipping this trade or rethinking the risk.`)}
+          {t(`Хамгийн бага 0.01 lot ч гэсэн stop цохигдвол ${usd(r.risk)}, дансны ${r.riskPct}%-ийг алдана. Энэ арилжааг алгасах эсвэл эрсдэлээ дахин бодоорой.`, `Even the smallest size, 0.01 lot, would lose ${usd(r.risk)}, ${r.riskPct}% of the account, if the stop is hit. Consider skipping this trade or rethinking the risk.`)}
         </p>
       )}
-      <p className="mt-3 text-xs text-zinc-500">{t("XAUUSD: 1 лот = 100 унц, $1 хөдөлгөөн 0.01 лотод $1. Брокерийн гэрээний хэмжээ өөр бол тохируулаарай. Spread, шимтгэл ороогүй.", "XAUUSD: 1 lot = 100 oz, so a $1 move is $1 per 0.01 lot. Adjust if your broker's contract size differs. Spread and fees not included.")}</p>
+      <p className="mt-3 text-xs text-zinc-500">{t("XAUUSD: 1 lot = 100 унц, $1 хөдөлгөөн 0.01 lot-од $1. Broker-ийн гэрээний хэмжээ өөр бол тохируулаарай. Spread, шимтгэл ороогүй.", "XAUUSD: 1 lot = 100 oz, so a $1 move is $1 per 0.01 lot. Adjust if your broker's contract size differs. Spread and fees not included.")}</p>
     </section>
   );
 }

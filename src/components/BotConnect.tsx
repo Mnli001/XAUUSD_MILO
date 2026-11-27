@@ -54,7 +54,7 @@ function connectStepsMn(): StepText[] {
   return [
     { title: "Роботын файлыг MT5-д хийх", body: <><a className={LINK} href={EX5_HREF}>XauBot.ex5 татах</a>. MT5 дээр <span className={MENU}>File → Open Data Folder</span> дарж, нээгдсэн хавтасны <span className={MENU}>MQL5 → Experts</span> дотор файлыг хуулна. Дараа нь зүүн талын <span className={MENU}>Navigator</span> дотор <span className={MENU}>Expert Advisors</span> дээр баруун товч → <span className={MENU}>Refresh</span>.</> },
     { title: "Сайтын хаягийг зөвшөөрөх", body: <>MT5 дээр <span className={MENU}>Tools → Options → Expert Advisors</span>. <span className={MENU}>Allow WebRequest for listed URL</span>-ийг чагталж, доорх хаягийг жагсаалтад нэмээд OK дарна.</> },
-    { title: "Токен үүсгээд роботыг асаах", body: <>Доорх товчоор токеноо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд токеноо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
+    { title: "Token үүсгээд роботыг асаах", body: <>Доорх товчоор token-оо үүсгэж хуулна.</>, after: <>Дараа нь <strong>XauBot</strong>-ыг XAUUSD чарт руу чирнэ. <span className={MENU}>Inputs</span> таб дээр <span className={MENU}>BotToken</span> мөрөнд token-оо буулгана. <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span>-ийг чагтлаад OK. Эцэст нь дээд самбарын <span className={MENU}>Algo Trading</span> товчийг дарж ногоон болгоно.</> },
   ];
 }
 
@@ -68,7 +68,7 @@ function connectStepsEn(): StepText[] {
 
 function troubleMn(): ReactNode[] {
   return [
-    <>Токен буруу эсвэл хуучин: шинэ токен үүсгэвэл өмнөх нь ажиллахаа больдог. Хамгийн сүүлийн токеноо <span className={MENU}>BotToken</span>-д буулгана.</>,
+    <>Token буруу эсвэл хуучин: шинэ token үүсгэвэл өмнөх нь ажиллахаа больдог. Хамгийн сүүлийн token-оо <span className={MENU}>BotToken</span>-д буулгана.</>,
     <>Хаяг зөвшөөрөгдөөгүй: 2-р алхмын хаяг <span className={MENU}>Allow WebRequest</span> жагсаалтад яг адилхан бичигдсэн эсэхийг шалгана.</>,
     <>Algo Trading унтраалттай: дээд самбарын товч ногоон, роботын <span className={MENU}>Common</span> таб дээр <span className={MENU}>Allow Algo Trading</span> чагттай байх ёстой.</>,
     <>Бямба, ням гарагт алтны зах хаалттай: тэр үед робот холбогдсон ч арилжаа хийхгүй.</>,

@@ -23,7 +23,7 @@ const verdictOf = (t: T): Record<PaperVerdict, { title: string; body: string; cl
 });
 const phaseOf = (t: T): Record<TodayStatus["phase"], string> => ({
   NO_DATA: t("Үнийн дата алга — cron ажиллаж байгаа эсэхийг шалгана уу", "No price data — check that cron is running"),
-  RANGE: t("Азийн сессийн хүрээг тэмдэглэж байна (УБ 15:00 хүртэл)", "Marking the Asian session range (until 15:00 UB)"),
+  RANGE: t("Азийн session-ийн хүрээг тэмдэглэж байна (УБ 15:00 хүртэл)", "Marking the Asian session range (until 15:00 UB)"),
   WATCHING: t("Хүрээнээс гарах хөдөлгөөнийг хүлээж байна (УБ 15:00–00:00)", "Waiting for a move out of the range (15:00–00:00 UB)"),
   DONE: t("Өнөөдрийн дохио гарсан", "Today's signal has fired"),
   CLOSED: t("Өнөөдөр шинэ арилжаа нээхгүй", "No new trade today"),
@@ -43,7 +43,7 @@ export default async function PaperPage() {
       <div>
         <BackLink href="/admin/bot">{t("Бот", "Bot")}</BackLink>
         <h1 className="page-title">{t("Бот — цаасан арилжаа", "Bot — paper trading")}</h1>
-        <p className="page-lede">{t("“Азийн хүрээний breakout + өдрийн тренд” дүрмийг шинэ дата дээр бодит цагт шалгана. Мөнгө оролцохгүй, захиалга хаашаа ч илгээгдэхгүй.", "Tests the “Asian range breakout + daily trend” rule on new data in real time. No money is involved and no order is sent anywhere.")}</p>
+        <p className="page-lede">{t("“Азийн хүрээний breakout + өдрийн trend” дүрмийг шинэ дата дээр бодит цагт шалгана. Мөнгө оролцохгүй, захиалга хаашаа ч илгээгдэхгүй.", "Tests the “Asian range breakout + daily trend” rule on new data in real time. No money is involved and no order is sent anywhere.")}</p>
       </div>
 
       {!r ? (
@@ -83,14 +83,14 @@ export default async function PaperPage() {
               <h2 id="today-h" className="card-title">{t("Өнөөдөр", "Today")}</h2>
               <p className="flex items-start gap-2.5 font-medium text-zinc-100"><Station tone={r.today.phase === "WATCHING" || r.today.phase === "DONE" ? "now" : r.today.phase === "NO_DATA" ? "warn" : "off"} className="mt-0.5" />{PHASE[r.today.phase]}</p>
               <p className="text-zinc-400">{t("Азийн хүрээ:", "Asian range:")} <span className="text-zinc-100 tabular-nums">{r.today.rangeLow === null || r.today.rangeHigh === null ? "—" : `${price(r.today.rangeLow)} – ${price(r.today.rangeHigh)}`}</span></p>
-              <p className="text-zinc-400">{t("Өдрийн тренд:", "Daily trend:")} <span className={r.today.trend === "UP" ? "text-emerald-400" : r.today.trend === "DOWN" ? "text-red-400" : "text-zinc-200"}>{r.today.trend === "UP" ? <><Dir d={1} />{" "}</> : r.today.trend === "DOWN" ? <><Dir d={-1} />{" "}</> : null}{r.today.trend === "UP" ? t("өсөх (зөвхөн дээш гарвал орно)", "up (enters only on a break upward)") : r.today.trend === "DOWN" ? t("унах (зөвхөн доош гарвал орно)", "down (enters only on a break downward)") : t("тодорхойгүй (арилжаа хийхгүй)", "unclear (no trading)")}</span></p>
+              <p className="text-zinc-400">{t("Өдрийн trend:", "Daily trend:")} <span className={r.today.trend === "UP" ? "text-emerald-400" : r.today.trend === "DOWN" ? "text-red-400" : "text-zinc-200"}>{r.today.trend === "UP" ? <><Dir d={1} />{" "}</> : r.today.trend === "DOWN" ? <><Dir d={-1} />{" "}</> : null}{r.today.trend === "UP" ? t("өсөх (зөвхөн дээш гарвал орно)", "up (enters only on a break upward)") : r.today.trend === "DOWN" ? t("унах (зөвхөн доош гарвал орно)", "down (enters only on a break downward)") : t("тодорхойгүй (арилжаа хийхгүй)", "unclear (no trading)")}</span></p>
               <p className="text-xs text-zinc-500">{t("Сүүлийн хаагдсан лаа:", "Last closed candle:")} <span className="tabular-nums">{r.lastBarAt ? `${formatUbDateTime(r.lastBarAt)} (${t("УБ", "UB")})` : "—"}</span></p>
             </section>
             <section className="card space-y-1.5 text-sm" aria-labelledby="open-h">
               <h2 id="open-h" className="card-title">{t("Нээлттэй арилжаа", "Open trade")}</h2>
               {r.open ? (
                 <>
-                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-zinc-200"><SidePill side={r.open.direction} label={r.open.direction === "BUY" ? "Buy" : "Sell"} /> <span className="tabular-nums">{r.open.lots.toFixed(2)} {t("лот · орсон", "lots · entry")} {price(r.open.entryPrice)} · stop {price(r.open.stopLoss)}</span></p>
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-zinc-200"><SidePill side={r.open.direction} label={r.open.direction === "BUY" ? "Buy" : "Sell"} /> <span className="tabular-nums">{r.open.lots.toFixed(2)} {t("lot · орсон", "lots · entry")} {price(r.open.entryPrice)} · stop {price(r.open.stopLoss)}</span></p>
                   <p className="text-zinc-400">{t("Нээсэн", "Opened")} <span className="tabular-nums">{formatUbDateTime(r.open.openedAt)}</span> {t("(УБ) · одоогийн үр дүн", "(UB) · current result")} <Pnl value={r.open.pnl} /></p>
                 </>
               ) : <p className="text-zinc-500">{t("Алга", "None")}</p>}
@@ -102,7 +102,7 @@ export default async function PaperPage() {
               <section className="card" aria-labelledby="curve-h"><h2 id="curve-h" className="mb-3 text-[15px] font-semibold text-zinc-100">{t("Цаасан дансны муруй", "Paper account curve")}</h2><EquityCurve points={r.closed.reduce<{ value: number }[]>((a, tr) => [...a, { value: (a.at(-1)?.value ?? 0) + tr.pnl }], [])} v={v} /></section>
               <div className="table-card">
                 <table className="w-full border-collapse">
-                  <thead><tr className="border-b border-zinc-800">{[[t("Нээсэн (УБ)", "Opened (UB)"), ""], [t("Чиглэл", "Side"), ""], [t("Лот", "Lots"), "text-right"], [t("Орсон", "Entry"), "text-right"], ["Stop", "text-right"], [t("Гарсан", "Exit"), "text-right"], [t("Шалтгаан", "Reason"), ""], ["P&L", "text-right"], ["R", "text-right"]].map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
+                  <thead><tr className="border-b border-zinc-800">{[[t("Нээсэн (УБ)", "Opened (UB)"), ""], [t("Чиглэл", "Side"), ""], [t("Lot", "Lots"), "text-right"], [t("Орсон", "Entry"), "text-right"], ["Stop", "text-right"], [t("Гарсан", "Exit"), "text-right"], [t("Шалтгаан", "Reason"), ""], ["P&L", "text-right"], ["R", "text-right"]].map(([h, cls]) => <th key={h} className={`th ${cls}`}>{h}</th>)}</tr></thead>
                   <tbody>
                     {[...r.closed].reverse().map((tr, i) => (
                       <tr key={i} className="border-t border-zinc-800/70 first:border-t-0">

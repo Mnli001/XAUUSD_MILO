@@ -16,7 +16,7 @@ test("a tap on the question mark opens a plain explanation that works without a 
 
 test("Escape closes it", () => {
   render(<TermHint id="lot" />);
-  fireEvent.click(screen.getByRole("button", { name: /Лот/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Lot/ }));
   expect(screen.getByRole("dialog")).toBeInTheDocument();
   fireEvent.keyDown(document, { key: "Escape" });
   expect(screen.queryByRole("dialog")).toBeNull();
@@ -24,7 +24,7 @@ test("Escape closes it", () => {
 
 test("a tap anywhere else closes it", () => {
   render(<div><TermHint id="lot" /><span>elsewhere</span></div>);
-  fireEvent.click(screen.getByRole("button", { name: /Лот/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Lot/ }));
   fireEvent.pointerDown(screen.getByText("elsewhere"));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
