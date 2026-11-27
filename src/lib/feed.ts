@@ -4,6 +4,7 @@ import type { Candle, Timeframe } from "./analysis/indicators";
 import { SYMBOL, loadCandles } from "./ingest/prices";
 import { withLive, type Quote } from "./liveBar";
 import { watchTick } from "./priceAlerts";
+import { processDemoTick } from "./demo/demo";
 
 export { TF_MS, withLive, type Quote } from "./liveBar";
 
@@ -30,7 +31,10 @@ export async function recordTick(report: { symbol: string; bid: number; ask: num
   await db.insert(schema.liveTicks).values({ symbol: SYMBOL, ...tick })
     .onConflictDoUpdate({ target: schema.liveTicks.symbol, set: { bid, ask, time: now, source: tick.source } });
   cached = { tick, readAt: Date.now() };
-  if (process.env.NODE_ENV !== "test") watchTick(bid, now); // price alerts, checked in the background
+  if (process.env.NODE_ENV !== "test") {
+    watchTick(bid, now); // price alerts, checked in the background
+    void processDemoTick({ bid, ask }, now, { throttle: true }).catch((e) => console.error("[demo] tick not processed", e)); // demo stops, targets, pending orders
+  }
   return true;
 }
 

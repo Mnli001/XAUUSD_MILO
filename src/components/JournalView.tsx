@@ -94,52 +94,14 @@ function Breakdown({ title, rows, name, v }: { title: string; rows: Bucket[]; na
   );
 }
 
-export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: JournalStats; v: Viewer; filter: JournalFilter; logins: string[] }) {
+/** The analysis of a set of closed trades: totals, lessons, the running total and the breakdowns. Also used by Demo trade. */
+export function JournalSummary({ rows, s, v }: { rows: JRow[]; s: JournalStats; v: Viewer }) {
   const { t } = v;
   const sess = (k: string) => ({ ASIA: t("Ази", "Asia"), LONDON: t("Лондон", "London"), NY: t("Нью-Йорк", "New York"), OFF: t("Завсар", "Off-hours") })[k] ?? k;
   const tot = s.totals;
-  const filters = (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-      <Chips label={t("Эх үүсвэр", "Source")} on={filter.src} items={[
-        { key: "all", label: t("Бүгд", "All"), href: href(filter, { src: "all" }) },
-        { key: "manual", label: t("Гараар", "By hand"), href: href(filter, { src: "manual" }) },
-        { key: "robot", label: t("Robot", "Robots"), href: href(filter, { src: "robot" }) },
-      ]} />
-      <Chips label={t("Хугацаа", "Period")} on={filter.days} items={[
-        { key: "30", label: t("30 өдөр", "30 days"), href: href(filter, { days: "30" }) },
-        { key: "90", label: t("90 өдөр", "90 days"), href: href(filter, { days: "90" }) },
-        { key: "all", label: t("Бүгд", "All time"), href: href(filter, { days: "all" }) },
-      ]} />
-      {logins.length > 1 && (
-        <Chips label={t("Данс", "Account")} on={filter.login} items={[
-          { key: "", label: t("Бүх данс", "All accounts"), href: href(filter, { login: "" }) },
-          ...logins.map((l) => ({ key: l, label: `…${l.slice(-4)}`, href: href(filter, { login: l }) })),
-        ]} />
-      )}
-    </div>
-  );
-
-  if (!rows.length) {
-    return (
-      <div className="space-y-4">
-        {filters}
-        <section className="card">
-          <h2 className="card-title">{t("Trade алга", "No trades yet")}</h2>
-          <p className="max-w-prose text-sm leading-relaxed text-zinc-300">
-            {t("MT5 дээр ажиллаж буй XauBot robot (v3.90 ба түүнээс шинэ) таны дансны хаасан бүх trade-ийг — гараар хийсэн ч, өөр robot-ийнх ч — сүүлийн 90 өдрөөс эхлэн энд автоматаар илгээнэ. Robot-оо шинэчлээд холбоно уу.",
-              "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.")}
-          </p>
-          <Link href="/bot" className="btn mt-4">{t("Bot руу очих", "Go to the bot")}</Link>
-        </section>
-      </div>
-    );
-  }
-
-  const recent = [...rows].sort((a, b) => b.closeTime.getTime() - a.closeTime.getTime()).slice(0, 50);
   const b = s.behaviour;
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {filters}
+    <>
       <section className="card" aria-label={t("Нийт дүн", "Totals")}>
         <h2 className="card-title">{t("Нийт дүн", "Totals")}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -192,6 +154,55 @@ export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: 
             <dd className="mt-1 text-zinc-200 tabular-nums">{t("Ашигтай", "Winners")} {b.holdWin ?? "—"} {t("мин", "min")} · {t("алдагдалтай", "losers")} {b.holdLoss ?? "—"} {t("мин", "min")}</dd></div>
         </dl>
       </section>
+
+    </>
+  );
+}
+
+export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: JournalStats; v: Viewer; filter: JournalFilter; logins: string[] }) {
+  const { t } = v;
+  const filters = (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+      <Chips label={t("Эх үүсвэр", "Source")} on={filter.src} items={[
+        { key: "all", label: t("Бүгд", "All"), href: href(filter, { src: "all" }) },
+        { key: "manual", label: t("Гараар", "By hand"), href: href(filter, { src: "manual" }) },
+        { key: "robot", label: t("Robot", "Robots"), href: href(filter, { src: "robot" }) },
+      ]} />
+      <Chips label={t("Хугацаа", "Period")} on={filter.days} items={[
+        { key: "30", label: t("30 өдөр", "30 days"), href: href(filter, { days: "30" }) },
+        { key: "90", label: t("90 өдөр", "90 days"), href: href(filter, { days: "90" }) },
+        { key: "all", label: t("Бүгд", "All time"), href: href(filter, { days: "all" }) },
+      ]} />
+      {logins.length > 1 && (
+        <Chips label={t("Данс", "Account")} on={filter.login} items={[
+          { key: "", label: t("Бүх данс", "All accounts"), href: href(filter, { login: "" }) },
+          ...logins.map((l) => ({ key: l, label: `…${l.slice(-4)}`, href: href(filter, { login: l }) })),
+        ]} />
+      )}
+    </div>
+  );
+
+  if (!rows.length) {
+    return (
+      <div className="space-y-4">
+        {filters}
+        <section className="card">
+          <h2 className="card-title">{t("Trade алга", "No trades yet")}</h2>
+          <p className="max-w-prose text-sm leading-relaxed text-zinc-300">
+            {t("MT5 дээр ажиллаж буй XauBot robot (v3.90 ба түүнээс шинэ) таны дансны хаасан бүх trade-ийг — гараар хийсэн ч, өөр robot-ийнх ч — сүүлийн 90 өдрөөс эхлэн энд автоматаар илгээнэ. Robot-оо шинэчлээд холбоно уу.",
+              "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.")}
+          </p>
+          <Link href="/bot" className="btn mt-4">{t("Bot руу очих", "Go to the bot")}</Link>
+        </section>
+      </div>
+    );
+  }
+
+  const recent = [...rows].sort((a, b) => b.closeTime.getTime() - a.closeTime.getTime()).slice(0, 50);
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      {filters}
+      <JournalSummary rows={rows} s={s} v={v} />
 
       <div className="table-card">
         <table className="w-full border-collapse" aria-label={t("Сүүлийн trade-үүд", "Recent trades")}>

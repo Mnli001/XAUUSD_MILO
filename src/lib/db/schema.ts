@@ -340,3 +340,52 @@ export const journalTrades = pgTable("journal_trades", {
   magic: text("magic").notNull().default("0"),
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] }), index("journal_user_close").on(t.userId, t.closeTime)]);
 export type JournalTrade = typeof journalTrades.$inferSelect;
+
+/** A member's demo trading account (up to three): play money on the live gold price. */
+export const demoAccounts = pgTable("demo_accounts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  leverage: integer("leverage").notNull(),
+  balance: doublePrecision("balance").notNull(),
+  startBalance: doublePrecision("start_balance").notNull(),
+  beginner: boolean("beginner").notNull().default(true), // shows the guide and the warnings
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [index("demo_accounts_user").on(t.userId)]);
+export type DemoAccount = typeof demoAccounts.$inferSelect;
+
+/**
+ * Demo orders, positions and closed trades in one table. PENDING (a limit or stop waiting for its price) → OPEN
+ * (a position) → CLOSED, or CANCELLED. A partial close writes a CLOSED row for the part and shrinks the OPEN one.
+ */
+export const demoOrders = pgTable("demo_orders", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  accountId: text("account_id").notNull().references(() => demoAccounts.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  side: text("side").notNull(), // BUY | SELL
+  type: text("type").notNull(), // MARKET | LIMIT | STOP
+  status: text("status").notNull(), // PENDING | OPEN | CLOSED | CANCELLED
+  lots: doublePrecision("lots").notNull(),
+  price: doublePrecision("price"), // a pending order's price
+  openPrice: doublePrecision("open_price"),
+  openedAt: ts("opened_at"),
+  sl: doublePrecision("sl"),
+  tp: doublePrecision("tp"),
+  closePrice: doublePrecision("close_price"),
+  closedAt: ts("closed_at"),
+  closeReason: text("close_reason"), // MANUAL | SL | TP | STOPOUT | MARGIN (a pending order that could not be paid for)
+  profit: doublePrecision("profit"),
+  note: text("note"), // why the member took it
+  createdAt: ts("created_at").notNull().defaultNow(),
+}, (t) => [index("demo_orders_account").on(t.accountId, t.status), index("demo_orders_status").on(t.status)]);
+export type DemoOrder = typeof demoOrders.$inferSelect;
+
+/** Money put in or taken out of a demo account, and restarts. */
+export const demoCash = pgTable("demo_cash", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  accountId: text("account_id").notNull().references(() => demoAccounts.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(), // OPEN | DEPOSIT | WITHDRAW | RESET
+  amount: doublePrecision("amount").notNull(),
+  balanceAfter: doublePrecision("balance_after").notNull(),
+  at: ts("at").notNull().defaultNow(),
+}, (t) => [index("demo_cash_account").on(t.accountId, t.at)]);

@@ -10,7 +10,7 @@ export const planFeatures = (t: T): { title: string; body: string; href: string 
   { title: t("Өнөөдөр", "Today"), body: t("Давамгай тал, цаг тутмын өсөх/унах магадлал, түвшингүүд.", "The leading side, hourly rise/fall odds, key levels."), href: "/today" },
   { title: t("Мэдээний календарь", "News calendar"), body: t("NFP, CPI, FOMC: хэзээ гарах, өмнө нь алт хэрхэн хөдөлсөн.", "NFP, CPI, FOMC: when they land and how gold moved after them before."), href: "/news" },
   { title: t("Журнал ба гүйцэтгэл", "Journal and performance"), body: t("MT5-ын хаасан арилжаа автоматаар орж, win rate, P&L, drawdown-ыг задлана.", "Your MT5 closed trades arrive on their own, with win rate, P&L and drawdown broken down."), href: "/journal" },
-  { title: t("Дасгал (bar replay)", "Practice (bar replay)"), body: t("Өнгөрсөн өдрийг лаа лаагаар тоглуулж, мөнгө эрсдэлгүй дадлага хийнэ.", "Replay a past day bar by bar and practise with no money at risk."), href: "/practice" },
+  { title: t("Demo trade", "Demo trade"), body: t("Demo данс нээж live үнээр арилжаа хийнэ: market ба pending захиалга, SL/TP, margin. Мөн bar replay.", "Open a demo account and trade at the live price: market and pending orders, stops and targets, margin. Plus bar replay."), href: "/demo" },
   { title: t("Сануулга", "Alerts"), body: t("Үнэ болон нөхцөлийн сануулга утас, Telegram руу.", "Price and condition alerts to your phone and Telegram."), href: "/today" },
 ];
 
