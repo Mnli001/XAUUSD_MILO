@@ -31,7 +31,11 @@ export const BROKER_RECORD = {
   noteText: { mn: "MT5 tester, 2019–2026, мэдээний шүүлтүүргүй, tester-ийн орох шүүлтүүртэй, broker-ын серверийн цагийн лаагаар. Судалгааны үр дүн, бодит арилжаа биш.", en: "MT5 tester, 2019–2026, without the news filter, with the tester's entry filter on, on the broker's server-time candles. A research result, not live trades." },
 } as const;
 
-export type SetupsView = { setups: Setup[]; candles: Candle[]; lastCandleAt: Date | null; historyFrom: Date | null };
+export type SetupsView = {
+  setups: Setup[]; candles: Candle[]; lastCandleAt: Date | null; historyFrom: Date | null;
+  /** The daily and 4-hour trend scores (−100…100) the setups read now, from the newest closed bars. */
+  trend?: { daily: number | null; h4: number | null };
+};
 
 const CHART_BARS = 128; // 32 hours of 15-minute candles
 const YEAR = 365 * 864e5;
@@ -154,5 +158,6 @@ export async function getSetups(now: Date, v: Viewer = MN_VIEWER): Promise<Setup
     candles: m15.slice(-CHART_BARS),
     lastCandleAt: m15.at(-1)?.time ?? null,
     historyFrom: rec.historyFrom,
+    trend: { daily: ctx.daily.at(-1) ?? null, h4: ctx.h4.at(-1) ?? null },
   };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { lotSize } from "@/lib/lot";
+import { lotSize, minLotRiskPct, smallAccount } from "@/lib/lot";
 
 describe("lotSize", () => {
   it("risk in dollars over the stop distance, at 100 oz a lot, rounded down to 0.01", () => {
@@ -23,5 +23,20 @@ describe("lotSize", () => {
   });
   it("handles a big balance without floating noise", () => {
     expect(lotSize({ balance: 50000, riskPct: 0.5, stop: 12.5, target: 25 })?.lots).toBe(0.2);
+  });
+});
+
+describe("smallAccount", () => {
+  it("0.01 lot with a $10–20 setup stop on a small balance, as % of it", () => {
+    expect(minLotRiskPct(200, 15)).toBe(7.5);
+    expect(smallAccount(200, 1)).toEqual({ lowPct: 5, midPct: 7.5, highPct: 10 });
+    expect(smallAccount(300, null)).toMatchObject({ lowPct: 3.33, highPct: 6.67 }); // fixed lot: still small
+  });
+  it("from $500 only when 0.01 lot at a $15 stop risks more than the chosen %", () => {
+    expect(smallAccount(1000, 1)).toMatchObject({ midPct: 1.5 });
+    expect(smallAccount(1000, 2)).toBeNull();
+    expect(smallAccount(2000, 1)).toBeNull();
+    expect(smallAccount(1000, null)).toBeNull();
+    expect(smallAccount(null, 1)).toBeNull();
   });
 });

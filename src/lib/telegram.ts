@@ -166,8 +166,8 @@ export async function botUsername(): Promise<string | null> {
 }
 
 const COMMANDS = {
-  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["reset", "Site-ын нууц үг сэргээх"], ["help", "Тусламж"]],
-  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["reset", "Reset your site password"], ["help", "Help"]],
+  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["brief", "Өнөөдрийн тойм: trend, setup, мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["reset", "Site-ын нууц үг сэргээх"], ["help", "Тусламж"]],
+  en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["brief", "Today's brief: trends, setups, news"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["reset", "Reset your site password"], ["help", "Help"]],
 } as const;
 
 /** Points Telegram at this site and lists the bot's commands. Safe to call every time someone starts linking. */
@@ -210,6 +210,7 @@ function helpText(u: User, t: T): string {
     t("/sample — жишээ дохио (зураг ба мессеж ямар харагдахыг)", "/sample — a sample signal (what the picture and message look like)"),
     t("/news — дараагийн 3 хоногийн чухал мэдээ", "/news — important releases in the next 3 days"),
     t("/status — одоогийн чиглэл, дараагийн чухал мэдээ", "/status — current bias and the next important release"),
+    t("/brief — өнөөдрийн тойм: үнэ, trend, 3 setup, мэдээ (/brief off — 08:00-ийн тоймыг зогсоох, /brief on — асаах)", "/brief — today's brief: price, trends, the 3 setups, news (/brief off — stop the 08:00 brief, /brief on — turn it back on)"),
     t("/stop — дохиог түр зогсоох", "/stop — pause signals"),
     t("/resume — дохиог дахин асаах", "/resume — turn signals back on"),
     t("/reset — site-ын нууц үгээ мартсан бол шинэчлэх холбоос", "/reset — a link to set a new site password if you forgot it"),
@@ -456,6 +457,18 @@ export async function handleUpdate(update: Update, now = new Date()): Promise<vo
     const { png, caption, text: body } = await cmds.sampleReply(now, v);
     if (png) await deliverPhoto(chat, png, caption);
     await sendMessage(chat, body);
+  } else if (command === "brief") {
+    const arg = text.split(/\s+/)[1]?.toLowerCase();
+    const brief = await import("./brief");
+    if (arg === "off" || arg === "on") {
+      await brief.setBriefOff(u.id, arg === "off");
+      await sendMessage(chat, esc(arg === "off"
+        ? t("Өглөөний тоймыг зогсоолоо. Дохио хэвээр ирнэ. Дахин авах бол /brief on.", "The morning brief is off. Signals still arrive. Send /brief on to get it again.")
+        : t(`Өглөөний тойм даваа–баасан ${v.ub("08:00")} (${v.zone})-д ирнэ. Зогсоох бол /brief off.`, `The morning brief arrives Monday to Friday at ${v.ub("08:00")} (${v.zone}). Send /brief off to stop it.`)));
+      return;
+    }
+    if (!hasAccess(u, now)) { await sendMessage(chat, await statusText(u, now, v)); return; } // says how to get a plan
+    await sendMessage(chat, brief.briefText(await brief.loadBrief(now, v), v));
   } else if (command === "stop" || command === "pause") {
     await db.update(schema.users).set({ signalsPaused: true }).where(eq(schema.users.id, u.id));
     await sendMessage(chat, esc(t("Дохиог түр зогсоолоо. Telegram холбоотой хэвээр. Дахин асаах бол /resume.", "Signals paused. Telegram stays linked. Send /resume to turn them back on.")));

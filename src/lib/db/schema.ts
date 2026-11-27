@@ -26,6 +26,7 @@ export const users = pgTable("users", {
   signalsPaused: boolean("signals_paused").notNull().default(false), // Telegram stays linked, nothing is sent
   signalsMuted: text("signals_muted").notNull().default(""), // setup ids this user does not want, comma separated
   signalsNews: boolean("signals_news").notNull().default(false), // a Telegram heads-up before HIGH-impact releases (opt-in)
+  briefOff: boolean("brief_off").notNull().default(false), // no 08:00 morning brief on Telegram (/brief off); on by default
   locale: text("locale").notNull().default("mn"),
   theme: text("theme").notNull().default("dark"),
   timeZone: text("time_zone").notNull().default("Asia/Ulaanbaatar"),

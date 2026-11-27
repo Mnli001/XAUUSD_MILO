@@ -7,6 +7,7 @@ import { recomputeSnapshot, SYMBOL } from "./ingest/prices";
 import { ensureAdmin } from "./users";
 import { runTelegramJobs } from "./signals";
 import { sendWeeklyReport, watchFeed } from "./watch";
+import { sendMorningBrief } from "./brief";
 import { checkPriceAlerts } from "./priceAlerts";
 import { checkConditionAlerts } from "./conditionAlerts";
 import { ingestMacro } from "./ingest/macro";
@@ -77,6 +78,8 @@ async function run(job: Job, now: Date): Promise<void> {
     try { const n = await checkConditionAlerts(now); if (n) console.log(`[scheduler] ${n} condition alert(s) fired`); } catch (e) { console.error("[scheduler] condition alerts failed", e); }
     try { const f = await watchFeed(now); if (f) console.log(`[scheduler] price feed ${f}`); } catch (e) { console.error("[scheduler] feed watch failed", e); }
     try { const n = await sendWeeklyReport(now); if (n) console.log(`[scheduler] weekly report sent to ${n}`); } catch (e) { console.error("[scheduler] weekly report failed", e); }
+    // 08:00 Ulaanbaatar on weekdays: the morning brief, once a day (the first 15-minute run after 00:00 UTC, after the daily bar is in)
+    try { const n = await sendMorningBrief(now); if (n) console.log(`[scheduler] morning brief sent to ${n}`); } catch (e) { console.error("[scheduler] morning brief failed", e); }
   }
 }
 

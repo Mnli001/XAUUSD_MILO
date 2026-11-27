@@ -35,11 +35,11 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
   const base = PLANS.PLUS.amount;
   return (
     <section className="card border-amber-400/25" aria-labelledby="plans-h">
-      <h2 id="plans-h" className="card-title">{until ? t("Багцаа сунгах", "Renew your plan") : t("Бүх тоог нээх багц", "A plan opens every number")}</h2>
+      <h2 id="plans-h" className="card-title">{until ? t("Багцаа сунгах", "Renew your plan") : t("Дохио, robot, бүх тоог нээх багц", "A plan opens the signals, the robot and every number")}</h2>
       <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">
         {until
           ? t(`Таны эрх ${until} хүртэл. Одоо сунгавал үлдсэн хоног тань хасагдахгүй, дээр нь нэмэгдэнэ.`, `Your access runs until ${until}. Renew now and the days left are kept, the new ones added on top.`)
-          : t("Өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, bot — төлмөгц шууд нээгдэнэ.", "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.")}
+          : t("Telegram дохио, MT5 robot, өсөх/унах магадлал, setup-ийн орох цэг — төлмөгц шууд нээгдэнэ.", "Telegram signals, the MT5 robot, rise/fall odds and setup entries open the moment you pay.")}
       </p>
       <ul className={`mt-4 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
         {PLAN_IDS.map((id) => {

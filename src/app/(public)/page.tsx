@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 import { getSessionUser } from "@/lib/auth";
 import { Disclaimer } from "@/components/Disclaimer";
 import { signalHistory, PUBLIC_DELAY_MS, type SignalRow } from "@/lib/signalHistory";
 import { SignalHistoryTable, SignalTotals } from "@/components/SignalHistory";
 import { getViewer } from "@/lib/prefs.server";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
-import { SessionLine, sessionColor } from "@/components/SessionLine";
+import { SessionLine } from "@/components/SessionLine";
 import { getEvents } from "@/lib/events";
 import { eventTitle } from "@/lib/data/calendarProvider";
-import { sessionLabel } from "@/lib/time";
 import type { T } from "@/lib/i18n";
 import { Dir } from "@/components/Timetable";
 import { BrandName } from "@/components/BrandMark";
@@ -19,20 +19,50 @@ import { getTodaySnapshot } from "@/lib/snapshot";
 import { SYMBOL, loadCandles } from "@/lib/ingest/prices";
 import { biasLabelText } from "@/lib/analysis/bias";
 import { SIGNAL_WINDOW, signalWindowLabel } from "@/lib/siteCopy";
+import { CURVES, rrRange } from "@/lib/backtestCurves";
+import { BacktestResults } from "@/components/BacktestResults";
+import { BacktestNote, KeyStats, ProofLine, YearBars } from "@/components/BacktestFacts";
+import { PlanFeatureList } from "@/components/PlanFeatures";
+import { SignalExample, exampleSignal } from "@/components/SignalExample";
+import { PLANS, PLAN_IDS, tugrik, type PlanId } from "@/lib/plans";
+import type { Candle } from "@/lib/analysis/indicators";
 
 export const dynamic = "force-dynamic";
 
-/** What the app answers, set as a departures list: the question, the answer, the page it lives on. */
-const stops = (t: T) => [
-  [t("Өнөөдөр зах зээл аль талдаа байна вэ?", "Which side commands the market today?"), t("D1, H4, H1, M15 цагийн trend, momentum, зах зээлийн бүтцийг нэгтгэн худалдан авагч эсвэл худалдагчийн бодит хүчийг цэгцтэй тооцоолж харуулна.", "Combines D1, H4, H1, and M15 trend, momentum, and market structure into one clear score showing true buyer vs seller strength."), t("Өнөөдөр", "Today"), "var(--color-asia)"],
-  [t("Алт хамгийн хүчтэй хөдөлдөг цагууд аль нь вэ?", "Which hours see the strongest gold volatility?"), t("Сүүлийн 6 сарын бодит түүхээс цаг бүрт алт өсөх эсвэл унах магадлалыг Улаанбаатарын цагаар нарийвчлан тооцно. Түүвэр хангалтгүй бол худал тоо харуулахгүй.", "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient."), t("Цагийн хуваарь", "Hour by hour"), "var(--color-london)"],
-  [t("Эдийн засгийн хүчтэй мэдээнүүд хэзээ гарах вэ?", "When do high-impact economic releases drop?"), t("NFP, CPI, FOMC зэрэг алт савлуулах гол мэдээнүүд болон өмнө нь ижил мэдээний дараа алт 15, 30, 60 минутад дунджаар хэдэн ам.доллар хөдөлснийг шууд хянана.", "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases."), t("Мэдээ", "News"), "var(--color-ny)"],
-  [t("Таны арилжааны чадвар бодитоор өсөж байна уу?", "Is your trading edge genuinely growing?"), t("MT5 robot-ын хаасан арилжаа бүрээс Win rate, P&L, Profit factor, Drawdown-ыг сешн, гариг, цагаар нь автоматаар задлан, юу ажиллаж байгааг харуулна. Гараар юу ч бичих шаардлагагүй.", "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in."), t("Гүйцэтгэл", "Performance"), "var(--color-zinc-400)"],
-  [t("MT5 robot-оо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("Windows компьютер эсвэл VPS дээр ажиллаж буй MetaTrader 5-тайгаа холбогдож, bot-ынхоо төлөв, эрсдэл, эхлүүлэх/зогсоохыг гар утаснаасаа ч удирдана. Robot арилжаа хийхийн тулд MT5 тэр компьютер дээр асаалттай байх ёстой.", "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade."), t("Bot", "Bot"), "var(--color-zinc-400)"],
+const M15 = 15 * 6e4;
+const MAX_EXAMPLE_BARS = 4000; // about six weeks of 15-minute candles
+
+/** A section's small gold label and its headline. */
+function Head({ id, eyebrow, title, lede, center = false }: { id: string; eyebrow: string; title: string; lede?: ReactNode; center?: boolean }) {
+  return (
+    <div className={center ? "mx-auto text-center" : ""}>
+      <p className="text-xs font-bold tracking-[0.14em] text-amber-400 uppercase">{eyebrow}</p>
+      <h2 id={id} className={`font-display mt-3 text-[34px] leading-[1.06] text-zinc-50 sm:text-[48px] ${center ? "mx-auto max-w-[22ch]" : "max-w-[24ch]"}`}>{title}</h2>
+      {lede && <p className={`mt-4 max-w-[60ch] text-base leading-relaxed text-zinc-400 sm:text-lg ${center ? "mx-auto" : ""}`}>{lede}</p>}
+    </div>
+  );
+}
+
+/** The three steps from a forming setup to a trade on the reader's own MT5. */
+const steps = (t: T) => [
+  [t("Дохио бүрдэнэ", "A signal forms"), t("Ази, Нью-Йоркийн нээлт, Нью-Йоркийн орой гэсэн 3 сешний хүрээг алт эвдэхэд, өдөр ба 4 цагийн trend зөвшөөрвөл setup бүрдэнэ. Дүрэм тогтмол, таамаг биш.", "When gold breaks the range of one of 3 sessions (Asia, New York open, New York late) and the daily and 4-hour trends agree, a setup forms. Fixed rules, not guesses.")],
+  [t("2 минутад Telegram-д", "On Telegram within 2 minutes"), t("15 минутын лаа хаагдсанаас ~2 минутын дотор чарттай зураг, орох үнэ, stop, target бүхий текст ирнэ. Утсаараа гараар орж болно.", "Within ~2 minutes of the 15-minute candle closing, a chart picture and a text with entry, stop and target arrive. You can enter by hand from your phone.")],
+  [t("Robot таны MT5 дээр арилжаална", "The robot trades it on your MT5"), t("XauBot таны сонгосон эрсдэлээр lot-оо тооцож, stop, target-тай нь автоматаар нээж, хаана. Та унтаж байсан ч.", "XauBot sizes the lot from the risk you chose and opens and closes the trade with its stop and target, automatically. Even while you sleep.")],
 ] as const;
 
-/** Illustration only: shaped like the real table, labelled as a sample below it. */
-const SAMPLE_HOURS = [["15:00", "Лондон", 61, true, false], ["21:00", "Нью-Йорк", 57, false, true], ["22:00", "Нью-Йорк", 54, true, true], ["23:00", "Нью-Йорк", 58, true, false]] as const; // i18n-ok: session keys, shown through sessionLabel()
+/** Short questions people ask before paying, with plain answers. */
+const faq = (t: T, perWeek: string, minYear: { year: number; r: string }) => [
+  [t("Бусад signal group-ээс юугаараа ялгаатай вэ?", "How is this different from other signal groups?"), <>{t(`Дүрэм нь тогтмол бөгөөд 2019 оноос хойших broker-ын датан дээр шалгагдсан. Гарсан дохио бүрийн үр дүн, ашигтай нь ч алдагдалтай нь ч, энэ хуудсанд нээлттэй. Robot нь дохиог автоматаар арилжаалдаг тул орох цэгээ алдахгүй.`, `The rules are fixed and were tested on broker data since 2019. Every signal's result, winners and losers alike, is open on this page. The robot trades the signals automatically, so you never miss an entry.`)}</>],
+  [t("Компьютер заавал хэрэгтэй юу?", "Do I need a computer?"), <>{t("Дохио утсан дээр Telegram-аар ирнэ, гараар арилжаалахад утас л хангалттай. Robot ажиллахын тулд MT5 Windows компьютер эсвэл Windows VPS дээр асаалттай байх ёстой (MT5-ын утасны app robot ажиллуулдаггүй). Сард ~$5–10-ийн VPS хангалттай: ", "Signals arrive on Telegram on your phone, which is enough to trade them by hand. For the robot, MT5 must stay running on a Windows PC or a Windows VPS (the MT5 phone app cannot run robots). A ~$5–10 a month VPS is enough: ")}<Link href="/guide/vps" className="font-semibold text-amber-300 underline decoration-amber-400/40 underline-offset-4 hover:text-amber-200">{t("VPS заавар", "VPS guide")}</Link>.</>],
+  [t("Хамгийн багадаа хэдэн доллараар эхлэх вэ?", "What is the minimum deposit?"), <>{t("Cent данстай бол ~$50-оос. Жижиг дансанд энгийн дансны хамгийн бага lot (0.01) хэт том эрсдэл болдог тул robot тэр арилжааг алгасна. Cent данс (жишээ нь JustMarkets Standard Cent) дээр lot 100 дахин жижиг тул сонгосон эрсдэлээрээ арилжаална.", "From ~$50 with a cent account. On a small standard account even the smallest lot (0.01) is too much risk, so the robot skips that trade. On a cent account (for example JustMarkets Standard Cent) lots are 100 times smaller, so trades keep to the risk you chose.")}</>],
+  [t("Аль broker дээр ажиллах вэ?", "Which broker does it work with?"), <>{t("JustMarkets дээр туршсан. XAUUSD арилжаалдаг MT5-тай аль ч broker дээр ажиллана. Spread бага, алтны арилжааны нөхцөл сайтай broker сонгоорой.", "Tested on JustMarkets. It works with any MT5 broker that offers XAUUSD. Pick one with a low spread and good gold conditions.")}</>],
+  [t("Мөнгө алдаж болох уу?", "Can I lose money?"), <>{t(`Тийм. Арилжааны бараг тал нь stop-д хүрдэг, алдагдалтай сар, жил ч байдаг (${minYear.year}: ${minYear.r}). Арилжаа бүр stop-той, эрсдэл нь дансны тогтсон хувь тул нэг арилжаагаар их алдахгүй. Эрсдэлээ та өөрөө сонгоно: бага эрсдэл = бага ашиг, бага уналт.`, `Yes. About half the trades hit their stop, and there are losing months and years (${minYear.year}: ${minYear.r}). Every trade has a stop and risks a fixed share of the account, so no single trade costs much. You choose the risk: lower risk means smaller profit and smaller falls.`)}</>],
+  [t("Долоо хоногт хэдэн дохио ирэх вэ?", "How many signals a week?"), <>{t(`Дунджаар ~${perWeek}. Зарим долоо хоногт нэг ч биш, заримд 3–4. Чанартай setup-ийг хүлээдэг систем.`, `About ${perWeek} on average. Some weeks none, some 3–4. The system waits for a proper setup.`)}</>],
+  [t("Төлбөрөө яаж төлөх вэ? Буцаалт бий юу?", "How do I pay? Are there refunds?"), <>{t("Төгрөгөөр, Wire-аар: QPay, банкны app, карт, Toki. Төлбөр баталгаажмагц эрх шууд нээгдэнэ. Эрх нээгдсэний дараа буцаалт хийхгүй; давхар эсвэл алдаатай гүйлгээг шалгаж буцаана. Дэлгэрэнгүй ", "In tögrög through Wire: QPay, bank apps, cards, Toki. Access opens the moment the payment is confirmed. Payments are not refunded once access has opened; a duplicate or mistaken payment is checked and returned. Details in the ")}<Link href="/terms" className="font-semibold text-amber-300 underline decoration-amber-400/40 underline-offset-4 hover:text-amber-200">{t("үйлчилгээний нөхцөлд", "terms of service")}</Link>.</>],
+  [t("Яаж эхлэх вэ?", "How do I start?"), <>{t("1) Үнэгүй бүртгүүлнэ. 2) Багцаа сонгож төлнө. 3) Тохиргоо хуудсанд Telegram-аа холбоно. 4) Bot хуудасны 3 алхмаар XauBot-оо MT5-даа холбоно. Эхлээд demo эсвэл cent дансаар туршихыг зөвлөе.", "1) Register for free. 2) Choose a plan and pay. 3) Link Telegram on the Settings page. 4) Connect XauBot to your MT5 with the 3 steps on the Bot page. We suggest trying a demo or cent account first.")}</>],
+] as const;
+
+const months: Record<PlanId, number> = { PLUS: 1, PRO: 6, MAX: 12 };
 
 export default async function LandingPage() {
   const v = await getViewer();
@@ -42,7 +72,7 @@ export default async function LandingPage() {
   const now = new Date();
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let snap: Awaited<ReturnType<typeof getTodaySnapshot>> = { price: null, bias: null, hourly: null, levels: null };
-  let day: Awaited<ReturnType<typeof loadCandles>> = [];
+  let day: Candle[] = [];
   let record: SignalRow[] = [];
   try {
     const res = await Promise.all([
@@ -58,403 +88,235 @@ export default async function LandingPage() {
   } catch (err) {
     console.warn("[landing] DB not reachable:", (err as Error).message);
   }
+  // The newest closed signal, drawn the way Telegram received it, when its candles are still stored.
+  const example = exampleSignal(record);
+  let exampleBars: Candle[] = [];
+  if (example) {
+    const need = Math.ceil((now.getTime() - example.createdAt.getTime()) / M15) + 48;
+    if (need <= MAX_EXAMPLE_BARS) {
+      try { exampleBars = await loadCandles(SYMBOL, "15min", need); } catch (err) { console.warn("[landing] example candles:", (err as Error).message); }
+    }
+  }
+
   const upcoming = events.filter((e) => e.impact === "HIGH");
   const money = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const up = (snap.price?.changePct ?? 0) >= 0;
   const dir = snap.bias?.label === "ӨСӨХ хандлага" ? 1 : snap.bias?.label === "УНАХ хандлага" ? -1 : 0; // i18n-ok: compared with the stored label
+  const closed = record.filter((r) => r.outcome.kind !== "OPEN");
+  const sinceLaunch = record.length < SIGNAL_WINDOW;
+  const perWeek = CURVES.stats.perWeek.toFixed(1);
+  const [rrLo, rrHi] = rrRange();
+  const fullYears = CURVES.years.filter((y) => y.trades >= 20);
+  const worst = fullYears.reduce((a, b) => (b.r < a.r ? b : a), fullYears[0]);
+  const minYear = { year: worst.year, r: `${worst.r < 0 ? "−" : "+"}${Math.abs(worst.r).toFixed(1)}R` };
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <main className="flex-1">
-        {/* The hero: poured gold behind the words, the live market in glass in front of it. */}
-        <section className="relative isolate overflow-hidden">
+      <main className="flex-1 overflow-x-clip">
+        {/* The hero: the promise and its proof on poured gold, the live market in glass beside it. */}
+        <section className="relative isolate overflow-hidden" aria-labelledby="hero-h">
           <GoldField className="gold-field absolute inset-0 -z-10 h-full w-full" />
-          <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(90deg, var(--color-zinc-950) 0%, color-mix(in oklab, var(--color-zinc-950) 55%, transparent) 42%, transparent 70%), linear-gradient(0deg, var(--color-zinc-950) 0%, transparent 28%)" }} />
+          <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(90deg, var(--color-zinc-950) 0%, color-mix(in oklab, var(--color-zinc-950) 62%, transparent) 46%, transparent 75%), linear-gradient(0deg, var(--color-zinc-950) 0%, transparent 30%)" }} />
 
-          <header className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-3 px-5 sm:px-8">
+          <header className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-8">
             <BrandName />
-            <span className="flex items-center gap-2"><LanguageSwitch locale={v.locale} /><Link href="/login" className="btn-ghost whitespace-nowrap backdrop-blur-md">{t("Нэвтрэх", "Sign in")}</Link></span>
+            <span className="flex items-center gap-2"><span className="sm:hidden"><LanguageSwitch locale={v.locale} iconOnly /></span><span className="max-sm:hidden"><LanguageSwitch locale={v.locale} /></span><Link href="/login" className="btn-ghost whitespace-nowrap backdrop-blur-md">{t("Нэвтрэх", "Sign in")}</Link></span>
           </header>
 
-          <div className="reveal mx-auto grid w-full max-w-7xl items-center gap-16 px-5 pt-16 pb-24 sm:px-8 sm:pt-24 sm:pb-36 lg:grid-cols-[minmax(0,1fr)_28rem] lg:gap-20 lg:pt-32 lg:pb-44">
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-3 rounded-full border border-amber-400/30 bg-amber-400/10 px-5 py-2.5 backdrop-blur-xl">
-                <span className="now-pulse h-2 w-2 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
-                <span className="text-sm font-bold tracking-wide text-amber-300">
-                  {t("Алтны зах зээл, Улаанбаатарын цагаар", "The gold market, on Ulaanbaatar time")}
-                </span>
-              </div>
-              
-              <h1 className="font-display text-[clamp(3.2rem,8vw,7rem)] leading-[0.95] text-zinc-50">
-                {t("Алтны зах зээл,", "Gold market clarity,")}
-                <br />
-                <span className="gold-text relative inline-block">
-                  {t("хором хормоор.", "hour by hour.")}
-                  <span className="absolute -inset-2 -z-10 blur-2xl opacity-40 bg-gradient-to-r from-amber-400 to-yellow-500" aria-hidden />
-                </span>
-              </h1>
-              
-              <p className="max-w-[46ch] text-xl leading-relaxed text-zinc-300 sm:text-2xl">
-                {t("Өнөөдрийн давамгай чиглэл, цаг тутмын магадлал, эдийн засгийн мэдээнүүдийн нөлөөг Улаанбаатарын цагаар, ямар ч хуурамч таамаггүй цэвэр статистик өгөгдлөөр шинжилнэ.", "Track today's direction, hourly odds, and economic news reactions on Ulaanbaatar time — driven by clean, honest statistical data without market noise.")}
+          <div className="reveal mx-auto grid w-full max-w-7xl items-center gap-12 px-4 pt-10 pb-20 sm:px-8 sm:pt-20 sm:pb-28 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:pt-16 lg:pb-32">
+            <div className="min-w-0 space-y-6">
+              <p className="inline-flex max-w-full items-center gap-2.5 rounded-full border border-amber-400/30 bg-zinc-950/60 px-4 py-2 backdrop-blur-xl">
+                <span className="now-pulse h-2 w-2 shrink-0 rounded-full bg-amber-400" />
+                <span className="truncate text-sm font-semibold text-amber-300">{t("XAUUSD · Telegram дохио · MT5 robot", "XAUUSD · Telegram signals · MT5 robot")}</span>
               </p>
-              
-              <div className="flex flex-wrap gap-4 pt-4">
-                <Link 
-                  href="/register" 
-                  className="btn sheen group relative min-h-14 px-10 text-base font-bold shadow-[0_8px_30px_rgb(217,181,102,0.3)] transition-all duration-300 hover:shadow-[0_8px_40px_rgb(217,181,102,0.5)] hover:scale-105 active:scale-95 max-sm:flex-1"
-                >
-                  <span className="relative z-10">{t("Бүртгүүлэх", "Register")}</span>
-                  <span className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 opacity-0 blur transition-opacity duration-300 group-hover:opacity-20" aria-hidden />
-                </Link>
-                <Link 
-                  href="/login" 
-                  className="btn-ghost bg-zinc-950/70 min-h-14 px-9 text-base font-semibold text-zinc-50 backdrop-blur-xl transition-all duration-300 hover:bg-zinc-950/85 hover:scale-105 active:scale-95 max-sm:flex-1"
-                >
-                  {t("Нэвтрэх", "Sign in")}
-                </Link>
+
+              <h1 id="hero-h" className="font-display text-[clamp(2.4rem,5.2vw,4rem)] leading-[1.02] text-zinc-50">
+                {t("Алтны дохио", "Gold signals")}{" "}<span className="whitespace-nowrap">{t("Telegram-д,", "on Telegram,")}</span>{" "}
+                <span className="gold-text">{t("арилжааг robot хийнэ.", "the robot places the trade.")}</span>
+              </h1>
+
+              <p className="max-w-[48ch] text-base leading-relaxed text-zinc-300 sm:text-xl">
+                {t("Тогтсон дүрмээр гарсан XAUUSD дохио чарт, орох үнэ, stop, target-тайгаа 2 минутад Telegram-д ирнэ. XauBot түүнийг таны MT5 дээр автоматаар арилжаална.", "Rule-based XAUUSD signals reach your Telegram within 2 minutes with a chart, entry, stop and target. XauBot trades them on your MT5 automatically.")}
+              </p>
+
+              <div className="glass-inset max-w-xl space-y-3 p-5 backdrop-blur-xl" style={{ background: "color-mix(in oklab, var(--color-zinc-950) 70%, transparent)" }}>
+                <ProofLine t={t} />
+                <BacktestNote t={t} />
               </div>
-              
-              <div className="flex flex-wrap items-center gap-6 pt-4 text-sm text-zinc-400">
-                <div className="flex items-center gap-2">
-                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{t("Хуурамч таамаггүй", "No fake predictions")}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{t("Бодит статистик", "Real statistics")}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{t("MT5 robot нэгтгэлтэй", "MT5 bot integrated")}</span>
-                </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link href="#plans" className="btn sheen min-h-14 px-6 text-base whitespace-nowrap sm:px-9 max-sm:flex-1">{t("Багц сонгох", "Choose a plan")}</Link>
+                <Link href="/register" className="btn-ghost min-h-14 bg-zinc-950/70 px-5 text-base whitespace-nowrap text-zinc-50 backdrop-blur-xl hover:bg-zinc-950/85 sm:px-8 max-sm:flex-1">{t("Үнэгүй бүртгүүлэх", "Register free")}</Link>
               </div>
             </div>
 
             {/* The market right now, from the same data the app reads. */}
-            <aside 
-              className="group relative overflow-hidden rounded-[32px] border p-7 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:scale-[1.02]" 
-              aria-label={t("Одоогийн зах зээл", "The market right now")}
-              style={{ 
-                borderColor: "var(--hairline)",
-                background: "var(--cell-bg)",
-                boxShadow: "var(--shadow-panel)",
-              }}
-            >
-              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl transition-all duration-700 group-hover:scale-150 group-hover:bg-amber-400/15" aria-hidden />
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="inline-flex items-center gap-2 font-bold tracking-wider text-amber-400">
-                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                    XAUUSD
-                  </span>
-                  <span className="rounded-full bg-zinc-800/50 px-3 py-1 text-xs font-medium text-zinc-400 tabular-nums backdrop-blur-sm">
-                    {v.time(now)} {v.zone}
-                  </span>
-                </div>
-                
-                {snap.price ? (
-                  <>
-                    <p className="num mt-5 text-[52px] font-bold leading-none text-zinc-50 sm:text-[64px] transition-all duration-300 group-hover:scale-105">
-                      {money(snap.price.last)}
-                    </p>
-                    
-                    <div className="mt-4 flex flex-wrap items-center gap-2.5">
-                      {snap.price.changePct !== null && (
-                        <span className={`rounded-xl px-4 py-2 font-bold tabular-nums shadow-lg transition-all duration-300 ${
-                          up 
-                            ? "bg-emerald-500/20 text-emerald-400 shadow-emerald-500/20" 
-                            : "bg-red-500/20 text-red-400 shadow-red-500/20"
-                        }`}>
-                          <Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(snap.price.changePct).toFixed(2)}%
-                        </span>
-                      )}
-                      {snap.bias && (
-                        <span className={`rounded-xl px-4 py-2 font-bold ${
-                          dir > 0 
-                            ? "bg-emerald-500/15 text-emerald-400" 
-                            : dir < 0 
-                            ? "bg-red-500/15 text-red-400" 
-                            : "bg-zinc-700/50 text-zinc-300"
-                        }`}>
-                          {biasLabelText(snap.bias.label, t)}
-                        </span>
-                      )}
-                      {snap.price.stale && (
-                        <span className="rounded-xl bg-amber-400/15 px-3 py-1.5 text-xs font-semibold text-amber-300">
-                          {t("Хоцролттой", "Delayed")}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="mt-6 rounded-2xl bg-zinc-900/30 p-4 backdrop-blur-sm">
-                      <PriceSpark closes={day.map((c) => c.close)} className="h-24" />
-                    </div>
-                  </>
-                ) : (
-                  <div className="mt-6 flex items-center gap-3 text-sm text-zinc-400">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-700 border-t-amber-400" />
-                    <span>{t("Дата ачаалж байна", "Loading data")}</span>
+            <aside className="min-w-0 rounded-[28px] border p-6 backdrop-blur-xl sm:p-7" aria-label={t("Одоогийн зах зээл", "The market right now")} style={{ borderColor: "var(--hairline)", background: "var(--cell-bg)", boxShadow: "var(--shadow-panel)" }}>
+              <div className="flex items-center justify-between text-sm">
+                <span className="inline-flex items-center gap-2 font-bold tracking-wider text-amber-400"><span className="h-2 w-2 rounded-full bg-amber-400" />XAUUSD</span>
+                <span className="glass-pill text-zinc-400 tabular-nums">{v.time(now)} {v.zone}</span>
+              </div>
+              {snap.price ? (
+                <>
+                  <p className="num mt-5 text-[52px] leading-none text-zinc-50 sm:text-[60px]">{money(snap.price.last)}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    {snap.price.changePct !== null && (
+                      <span className={`rounded-xl px-3.5 py-1.5 font-bold tabular-nums ${up ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+                        <Dir d={up ? 1 : -1} /> {up ? "+" : "−"}{Math.abs(snap.price.changePct).toFixed(2)}%
+                      </span>
+                    )}
+                    {snap.bias && (
+                      <span className={`rounded-xl px-3.5 py-1.5 font-bold ${dir > 0 ? "bg-emerald-500/15 text-emerald-400" : dir < 0 ? "bg-red-500/15 text-red-400" : "bg-zinc-700/50 text-zinc-300"}`}>
+                        {biasLabelText(snap.bias.label, t)}
+                      </span>
+                    )}
+                    {snap.price.stale && <span className="rounded-xl bg-amber-400/15 px-3 py-1.5 text-xs font-semibold text-amber-300">{t("Хоцролттой", "Delayed")}</span>}
                   </div>
-                )}
-                
-                <div className="mt-6 rounded-2xl border border-zinc-800/50 bg-zinc-900/20 p-4 backdrop-blur-sm" style={{ borderColor: "var(--hairline)" }}>
-                  <SessionLine now={now} arrivals={upcoming.map((e) => ({ time: e.time, label: eventTitle(e, t) }))} v={v} />
-                </div>
+                  <div className="mt-5 rounded-2xl p-3" style={{ background: "var(--glass-inset)" }}><PriceSpark closes={day.map((c) => c.close)} className="h-24" /></div>
+                </>
+              ) : (
+                <p className="mt-6 text-sm text-zinc-400">{t("Үнийн мэдээлэл түр ирээгүй байна.", "The price is not in yet.")}</p>
+              )}
+              <div className="mt-5 rounded-2xl border p-4" style={{ borderColor: "var(--hairline)" }}>
+                <SessionLine now={now} arrivals={upcoming.map((e) => ({ time: e.time, label: eventTitle(e, t) }))} v={v} />
               </div>
             </aside>
           </div>
         </section>
 
-        {/* A sample of the hour table, beside what it means. */}
-        <section className="mx-auto grid w-full max-w-7xl items-center gap-12 px-5 py-20 sm:px-8 sm:py-32 lg:grid-cols-[minmax(0,32rem)_1fr] lg:gap-24">
-          <div className="space-y-6">
-            <div className="inline-block rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-2">
-              <span className="text-sm font-bold tracking-wide text-amber-400">
-                {t("ЦАГИЙН ШИНЖИЛГЭЭ", "HOURLY ANALYSIS")}
-              </span>
-            </div>
-            
-            <h2 className="font-display text-[40px] leading-[1.05] text-zinc-50 sm:text-[56px]">
-              {t("Цаг тутмын чиг хандлага нүдний өмнө.", "Hour-by-hour market pulse at a glance.")}
-            </h2>
-            
-            <p className="max-w-[44ch] text-lg leading-relaxed text-zinc-400">
-              {t("Цагийн хуваарь шиг цэгцтэй: цаг, арилжааны сешн, өнгөрсөн түүхэнд алт тухайн цагт өсөх эсвэл унах магадлал, хэдэн өдрийн дата дээр суурилсан зэргийг ил тод харна. Мэдээтэй цагуудыг урьдчилан анхааруулна.", "Clean and structured: session, hour, probability of gold rising or falling historically, and the sample size. Hours with major news are clearly highlighted.")}
-            </p>
-            
-            <div className="flex flex-col gap-3 pt-2">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">
-                  <svg aria-hidden className="h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold text-zinc-200">{t("Түүхэн магадлал", "Historical probability")}</p>
-                  <p className="text-sm text-zinc-500">{t("Сүүлийн 6 сарын бодит дата", "Based on last 6 months real data")}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20">
-                  <svg aria-hidden className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold text-zinc-200">{t("Мэдээний сануулга", "News alerts")}</p>
-                  <p className="text-sm text-zinc-500">{t("Чухал мэдээтэй цагуудыг тэмдэглэнэ", "Important news hours highlighted")}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <figure className="m-0">
-            <div className="table-card overflow-hidden rounded-2xl border border-zinc-800/50 bg-gradient-to-b from-zinc-900/50 to-zinc-950/50 backdrop-blur-sm shadow-2xl" style={{ boxShadow: "0 20px 60px -20px rgb(0 0 0 / 0.8)" }}>
-              <table className="w-full text-base">
-                <tbody>
-                  {SAMPLE_HOURS.map(([h, session, pct, up, news], i) => (
-                    <tr 
-                      key={h} 
-                      className={`group border-t first:border-t-0 transition-all duration-200 hover:bg-white/[0.03] ${i === 0 ? "bg-amber-400/[0.08]" : ""}`} 
-                      style={{ borderColor: "var(--hairline)" }}
-                    >
-                      <td className="py-6 pr-3 pl-6 sm:pl-8">
-                        <span className="flex items-center gap-3.5">
-                          <span 
-                            aria-hidden 
-                            className="h-8 w-[6px] rounded-full transition-all duration-300 group-hover:scale-110" 
-                            style={{ background: sessionColor(session), boxShadow: `0 0 20px ${sessionColor(session)}40` }} 
-                          />
-                          <span className="num text-[26px] font-bold text-zinc-50 transition-colors duration-200 group-hover:text-amber-400">
-                            {v.ub(h)}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="py-6 pr-4 font-medium text-zinc-400 transition-colors duration-200 group-hover:text-zinc-300">
-                        {sessionLabel(session, t)}
-                      </td>
-                      <td className="py-6 pr-6 sm:pr-8">
-                        <span className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-                          {news && (
-                            <span className="inline-flex items-center gap-2 rounded-xl bg-amber-400/20 px-3 py-1.5 text-xs font-bold text-amber-300 shadow-lg shadow-amber-400/10 transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-400/30">
-                              <span aria-hidden className="h-1.5 w-1.5 rotate-45 rounded-[1px] bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
-                              CPI
-                            </span>
-                          )}
-                          <span className={`rounded-xl px-4 py-2 font-bold whitespace-nowrap transition-all duration-200 group-hover:scale-105 ${
-                            up 
-                              ? "bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500/25" 
-                              : "bg-red-500/15 text-red-400 group-hover:bg-red-500/25"
-                          }`}>
-                            <Dir d={up ? 1 : -1} /> {pct}% {up ? t("өсөх", "up") : t("унах", "down")}
-                          </span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <figcaption className="mt-4 flex items-center gap-2 text-sm text-zinc-500">
-              <svg aria-hidden className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              {t("Загвар харагдац. Бодит статистикийг систем дотроос харна уу.", "Sample preview. View real statistics inside the platform.")}
-            </figcaption>
-          </figure>
-        </section>
-
-        <section className="mx-auto w-full max-w-7xl px-5 sm:px-8" aria-labelledby="stops-h">
-          <div className="mb-12 text-center">
-            <div className="inline-block rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-2 mb-6">
-              <span className="text-sm font-bold tracking-wide text-amber-400">
-                {t("ҮНДСЭН БОЛОМЖУУД", "KEY FEATURES")}
-              </span>
-            </div>
-            <h2 id="stops-h" className="font-display mx-auto max-w-[20ch] text-[40px] leading-[1.05] text-zinc-50 sm:text-[56px]">
-              {t("Зах зээлд орохоос өмнө харах 5 гол хүчин зүйл.", "5 essential checks before entering the market.")}
-            </h2>
-          </div>
-          
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {stops(t).map(([q, a, page, color], i) => (
-              <div
-                key={q}
-                className="group relative overflow-hidden rounded-3xl border border-zinc-800/50 bg-gradient-to-br from-zinc-900/50 to-zinc-950/80 p-8 backdrop-blur-sm transition-all duration-500 hover:scale-[1.02] hover:border-zinc-700/50 hover:shadow-2xl"
-                style={{ boxShadow: "0 20px 60px -20px rgb(0 0 0 / 0.6)" }}
-              >
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-3xl transition-all duration-700 group-hover:opacity-20" style={{ background: color }} aria-hidden />
-                
-                <div className="relative z-10">
-                  <div className="mb-5 flex items-center justify-between">
-                    <span 
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl font-bold text-2xl transition-all duration-300 group-hover:scale-110" 
-                      style={{ background: `${color}20`, color }}
-                      aria-hidden
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span 
-                      className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-zinc-400 transition-colors duration-300 group-hover:border-zinc-600 group-hover:text-zinc-300" 
-                      style={{ borderColor: "var(--hairline)" }}
-                    >
-                      {page}
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-display mb-4 text-[22px] leading-tight text-zinc-50 transition-colors duration-300 group-hover:text-amber-400">
-                    {q}
-                  </h3>
-                  
-                  <p className="text-[15px] leading-relaxed text-zinc-400 transition-colors duration-300 group-hover:text-zinc-300">
-                    {a}
-                  </p>
-                  
-                  <Link href="/register" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:gap-3" style={{ color }}>
-                    <span>{t("Бүртгүүлээд үзэх", "Register to see it")}</span>
-                    <span className="sr-only">: {q}</span>
-                    <svg aria-hidden className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </div>
-              </div>
-            ))}
+        {/* If you had followed it since 2019: the one interactive part of the page. */}
+        <section id="results" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="results-h">
+          <Head id="results-h" eyebrow={t("Түүхэн үр дүн", "Historical results")} title={t("Хэрэв та 2019 оноос энэ системийг дагасан бол", "If you had followed this system since 2019")}
+            lede={t("Эрсдэлээ сонгоод $1,500-ийн данс хэрхэн өссөнийг, замдаа хэр их уналт туулсныг хараарай. Их ашиг хүсвэл их уналтыг ч мэдэж сонгоно.", "Pick a risk and see how a $1,500 account grew, and how deep it fell on the way. Want bigger profit? Choose it knowing the bigger falls.")} />
+          <div className="hallmark mt-10 p-5 sm:p-8">
+            <BacktestResults curves={CURVES} />
+            <BacktestNote t={t} className="mt-6 border-t pt-4" />
           </div>
         </section>
 
-        {record.some((r) => r.outcome.kind !== "OPEN") && (
-          <section className="mx-auto w-full max-w-5xl px-5 pt-20 sm:px-8 sm:pt-32" aria-labelledby="record-h">
-            <h2 id="record-h" className="font-display text-center text-[40px] leading-[1.05] text-zinc-50 sm:text-[56px]">{t("Дохионы бодит үр дүн", "How the signals actually did")}</h2>
-            <p className="mx-auto mt-4 max-w-[60ch] text-center text-lg leading-relaxed text-zinc-400">{t("Гарсан дохио бүр, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "Every signal given, the winners and the losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.")}</p>
+        {/* Year by year, and how the system trades. */}
+        <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 sm:px-8 sm:pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-14" aria-labelledby="years-h">
+          <div className="min-w-0 space-y-8">
+            <Head id="years-h" eyebrow={t("Жил бүрээр", "Year by year")} title={t("Сайн жил ч, муу жил ч бий.", "Good years and flat ones.")}
+              lede={t("R гэдэг нь нэг арилжаанд эрсдэлд оруулсан хэмжээ. +20R = эрсдэлийн 20 дахин их ашиг.", "R is the amount risked on one trade. +20R = twenty times that risk in profit.")} />
+            <KeyStats t={t} />
+          </div>
+          <div className="card min-w-0">
+            <YearBars t={t} />
+          </div>
+        </section>
+
+        {/* How it works. */}
+        <section className="border-y py-16 sm:py-24" style={{ borderColor: "var(--hairline)", background: "var(--glass-inset)" }} aria-labelledby="how-h">
+          <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center">
+            <div className="min-w-0">
+              <Head id="how-h" eyebrow={t("Яаж ажилладаг вэ", "How it works")} title={t("Дохионоос арилжаа хүртэл 3 алхам.", "From signal to trade in 3 steps.")} />
+              <ol className="mt-10 space-y-7">
+                {steps(t).map(([title, body], i) => (
+                  <li key={title} className="flex gap-4">
+                    <span aria-hidden className="font-display flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-lg text-amber-300" style={{ borderColor: "var(--hairline-gold)" }}>{i + 1}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-zinc-50">{title}</h3>
+                      <p className="mt-1 leading-relaxed text-zinc-400">{body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="min-w-0"><SignalExample row={example} bars={exampleBars} v={v} now={now} /></div>
+          </div>
+        </section>
+
+        {/* The live record, a day late. */}
+        {closed.length > 0 && (
+          <section id="record" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="record-h">
+            <Head id="record-h" eyebrow={t("Бодит үр дүн", "Live record")}
+              title={sinceLaunch ? t("Эхэлснээс хойшх бодит дохио бүр", "Every real signal since launch") : t(`Сүүлийн ${SIGNAL_WINDOW} бодит дохио`, `The last ${SIGNAL_WINDOW} real signals`)}
+              lede={t("Backtest биш: бодитоор гарсан дохио, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "Not a backtest: the signals that actually went out, winners and losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.")} />
             <div className="mt-10 space-y-5">
               <SignalTotals rows={record} t={t} caption={signalWindowLabel(t)} />
-              <div className="table-card"><SignalHistoryTable rows={record.slice(0, 8)} v={v} /></div>
-              <p className="text-center text-sm text-zinc-500">{t("Spread, шимтгэл ороогүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. Past results do not guarantee future profit.")}</p>
+              <div className="table-card"><SignalHistoryTable rows={record.slice(0, 10)} v={v} now={now} /></div>
+              <p className="text-sm text-zinc-500">{t("Spread, шимтгэл ороогүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. Past results do not guarantee future profit.")}</p>
             </div>
           </section>
         )}
 
-        <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-32">
-          <div 
-            className="sheen group relative overflow-hidden rounded-[40px] px-8 py-12 sm:px-16 sm:py-16 lg:px-20 lg:py-20 transition-all duration-500 hover:scale-[1.01]" 
-            style={{ 
-              background: "var(--accent-bg)", 
-              color: "var(--accent-fg)", 
-              boxShadow: "0 40px 100px -40px rgb(217 181 102 / 0.7), 0 0 0 1px rgb(217 181 102 / 0.1) inset" 
-            }}
-          >
-            <div className="absolute inset-0 opacity-10 transition-opacity duration-700 group-hover:opacity-20" style={{ background: "radial-gradient(circle at 30% 50%, rgb(217 181 102 / 0.4), transparent 60%)" }} aria-hidden />
-            <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-amber-500/20 blur-[100px] transition-all duration-1000 group-hover:scale-150" aria-hidden />
-            
-            <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-16">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-950/30 px-4 py-2 backdrop-blur-sm">
-                  <svg aria-hidden className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-sm font-bold">{t("100% илэн далангүй", "100% Transparent")}</span>
-                </div>
-                
-                <h2 className="font-display max-w-[22ch] text-[40px] leading-[1.02] sm:text-[56px]">
-                  {t("Тоо харуулна, зөвлөгөө өгөхгүй.", "Numbers, not advice.")}
-                </h2>
-                
-                <p className="max-w-[58ch] text-lg leading-relaxed font-medium opacity-90">
-                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Дохионы ашигтай, алдагдалтай бүх үр дүн, robot-ын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
-                </p>
-                
-                <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                    </svg>
-                    <div>
-                      <p className="font-bold">{t("Түүврийн тоо", "Sample size")}</p>
-                      <p className="text-sm opacity-80">{t("Бүх статистикт", "On every stat")}</p>
+        {/* What a plan opens, and what it costs. */}
+        <section id="plans" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="plans-h">
+          <Head id="plans-h" eyebrow={t("Багц", "Plans")} title={t("Нэг багц, бүх зүйл нээлттэй.", "One plan opens everything.")}
+            lede={t("Plus, Pro, Max гурвуулаа ижил боломжтой, зөвхөн хугацаа нь өөр. Урт хугацаагаар авбал сар бүр хямд.", "Plus, Pro and Max open the same things; only the length differs. A longer plan costs less a month.")} />
+          <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-12">
+            <div className="card min-w-0"><PlanFeatureList t={t} /></div>
+            <ul className="grid content-start gap-3 max-lg:order-first">
+              {PLAN_IDS.map((id) => {
+                const p = PLANS[id];
+                const perMonth = Math.round(p.amount / months[id]);
+                const saving = Math.round((1 - perMonth / PLANS.PLUS.amount) * 100);
+                const best = id === "PRO";
+                return (
+                  <li key={id} className={`flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] border p-5 ${best ? "border-amber-400/40 bg-amber-400/[0.06]" : ""}`} style={best ? undefined : { borderColor: "var(--hairline)", background: "var(--glass-inset)" }}>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-2xl text-zinc-50">{p.name} <span className="font-sans text-sm text-zinc-400">· {t(`${months[id]} сар`, `${months[id]} month${months[id] > 1 ? "s" : ""}`)}</span></h3>
+                      <p className="mt-1 text-xl font-semibold text-amber-300 tabular-nums">{tugrik(p.amount)}</p>
+                      <p className="text-xs text-zinc-500 tabular-nums">{months[id] > 1 ? t(`сард ${tugrik(perMonth)} · ${saving}% хэмнэлт`, `${tugrik(perMonth)} a month · ${saving}% less`) : t(`${p.days} хоног`, `${p.days} days`)}</p>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                    </svg>
-                    <div>
-                      <p className="font-bold">{t("Дохионы түүх", "Signal record")}</p>
-                      <p className="text-sm opacity-80">{t("Нүүр хуудсанд нээлттэй, 24 цагийн хоцролттой", "Public here, a day late")}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 rounded-2xl bg-zinc-950/30 p-4 backdrop-blur-sm">
-                    <svg aria-hidden className="mt-0.5 h-6 w-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <div>
-                      <p className="font-bold">{t("Эрсдэлийн мэдээлэл", "Risk disclosure")}</p>
-                      <p className="text-sm opacity-80">{t("Бүрэн ил тод", "Fully transparent")}</p>
-                    </div>
-                  </div>
-                </div>
+                    <Link href="/register" className={`${best ? "btn" : "btn-ghost"} max-sm:w-full`}>{t(`${p.name} сонгох`, `Choose ${p.name}`)}</Link>
+                  </li>
+                );
+              })}
+              <li className="px-1 text-xs leading-relaxed text-zinc-500">{t("Эхлээд үнэгүй бүртгүүлнэ, дараа нь багцаа сонгож Wire-аар (QPay, банкны app, карт, Toki) төлнө. Төлмөгц шууд нээгдэнэ.", "Register free first, then choose a plan and pay through Wire (QPay, bank apps, cards, Toki). It opens the moment you pay.")}</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* What to expect, said plainly. */}
+        <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 sm:pb-24" aria-labelledby="expect-h">
+          <div className="glass-banner p-6 sm:p-10">
+            <h2 id="expect-h" className="font-display text-[30px] leading-tight text-zinc-50 sm:text-[40px]">{t("Юу хүлээх вэ", "What to expect")}</h2>
+            <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                [t(`Долоо хоногт ~${perWeek} арилжаа`, `~${perWeek} trades a week`), t("Цөөн, гэхдээ тогтсон дүрмээр. Өдөр бүр дохио ирэхгүй.", "Few, but by fixed rules. Not a signal every day.")],
+                [t("~50% нь ашигтай", "~50% win"), t("Бараг тал нь stop-д хүрнэ. Энэ бол хэвийн.", "About half hit their stop. That is normal.")],
+                [t(`Ашиг нь алдагдлаас ${rrLo}–${rrHi} дахин их`, `Winners ${rrLo}–${rrHi}× the losers`), t("Ашиг эндээс ирдэг: цөөн ч том ашиг, жижиг алдагдал.", "That is where the profit comes from: bigger wins, small losses.")],
+                [t("Жижиг данс → cent данс", "Small account → cent account"), t("Хэдэн зуун доллартай бол cent данс нээвэл lot 100 дахин жижиг болж, эрсдэл зөв тохирно.", "With a few hundred dollars, a cent account makes lots 100 times smaller so the risk fits.")],
+              ].map(([h, p]) => (
+                <li key={h} className="min-w-0">
+                  <p className="text-lg font-semibold text-zinc-50">{h}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-400">{p}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Questions. */}
+        <section id="faq" className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-8 sm:pb-24" aria-labelledby="faq-h">
+          <Head id="faq-h" eyebrow={t("Асуулт, хариулт", "Questions")} title={t("Түгээмэл асуултууд", "Common questions")} center />
+          <div className="mt-10 divide-y rounded-[26px] border" style={{ borderColor: "var(--hairline)", background: "var(--panel-bg)" }}>
+            {faq(t, perWeek, minYear).map(([q, a]) => (
+              <details key={q} className="group px-5 sm:px-6" style={{ borderColor: "var(--hairline)" }}>
+                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold text-zinc-100 [&::-webkit-details-marker]:hidden">
+                  <span>{q}</span>
+                  <svg aria-hidden viewBox="0 0 20 20" className="h-5 w-5 shrink-0 text-amber-400 transition-transform duration-200 group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4v12M4 10h12" /></svg>
+                </summary>
+                <p className="pb-5 leading-relaxed text-zinc-400">{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* The last ask. */}
+        <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-8 sm:pb-28" aria-labelledby="cta-h">
+          <div className="sheen relative overflow-hidden rounded-[32px] px-6 py-10 sm:px-12 sm:py-14" style={{ background: "var(--accent-bg)", color: "var(--accent-fg)", boxShadow: "0 40px 100px -40px rgb(217 181 102 / 0.7)" }}>
+            <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+              <div>
+                <h2 id="cta-h" className="font-display max-w-[22ch] text-[32px] leading-[1.05] sm:text-[46px]">{t("Дараагийн дохиог Telegram-аараа ав.", "Get the next signal on your Telegram.")}</h2>
+                <p className="mt-3 max-w-[52ch] text-base font-medium opacity-85">{t("Бүртгэл үнэгүй. Багцаа сонгож төлмөгц дохио, robot, бүх хуудас шууд нээгдэнэ.", "Registration is free. Choose a plan and pay, and the signals, the robot and every page open at once.")}</p>
               </div>
-              
-              <Link 
-                href="/register" 
-                className="relative z-10 inline-flex min-h-14 items-center justify-center rounded-2xl bg-zinc-950 px-10 text-base font-bold text-zinc-50 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)] active:scale-95 lg:min-h-16 lg:px-12 lg:text-lg"
-              >
-                <span className="relative z-10">{t("Бүртгүүлэх", "Register")}</span>
-                <svg aria-hidden className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <Link href="#plans" className="inline-flex min-h-14 items-center justify-center rounded-full bg-zinc-950 px-6 text-base font-bold whitespace-nowrap text-zinc-50 sm:px-8 transition-transform duration-200 active:scale-[0.97] max-sm:flex-1">{t("Багц сонгох", "Choose a plan")}</Link>
+                <Link href="/register" className="inline-flex min-h-14 items-center justify-center rounded-full border border-current/25 px-5 text-base font-bold whitespace-nowrap sm:px-7 max-sm:flex-1">{t("Үнэгүй бүртгүүлэх", "Register free")}</Link>
+              </div>
             </div>
           </div>
         </section>

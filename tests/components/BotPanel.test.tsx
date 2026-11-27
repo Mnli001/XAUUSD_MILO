@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, fireEvent, within, act } from "@testing-library/react";
+import { render, screen, fireEvent, within, act, cleanup } from "@testing-library/react";
 import { vi } from "vitest";
 vi.mock("@/components/PrefsProvider", async () => { const { MN_VIEWER } = await import("@/lib/viewer"); return { useViewer: () => MN_VIEWER }; });
 vi.mock("@/lib/actions/bot", () => ({
@@ -91,4 +91,25 @@ test("the page shows none of the old tools, filters or research tables", () => {
   expect(text).not.toMatch(/Day trader|Дүгнэлт|Багц|Орох шүүлтүүр|EMA|RSI|ATR|FVG|MSS|Backtest|аргын/);
   expect(text).toMatch(/Систем юу хийдэг вэ/);
   expect(text).toMatch(/209 арилжаа/);
+});
+
+test("a small account gets a plain note with the smallest lot's risk and the cent-account advice, in the risk card and the connect card", () => {
+  panel(view({ ...connected, balance: 200, equity: 200 }));
+  const notes = screen.getAllByRole("note");
+  const risk = notes.find((n) => n.closest("form"))!;
+  expect(risk).toHaveTextContent("Данс жижиг байна ($200.00)");
+  expect(risk).toHaveTextContent("5%–10%-ийг эрсдэлд оруулна, таны сонгосон 1%-аас их");
+  expect(risk).toHaveTextContent("2.5 дахинаас их бол robot тэр арилжааг алгасна");
+  expect(risk).toHaveTextContent("JustMarkets Standard Cent");
+  cleanup();
+  panel(view({ hasToken: true, balance: 300 })); // still onboarding, but the robot has reported a balance
+  const card = screen.getByRole("heading", { name: /Холбох — 3 алхам/ }).closest("section")!;
+  expect(within(card).getByRole("note")).toHaveTextContent("Cent данс");
+  cleanup();
+  panel(view(connected)); // $2,000 at 1%: fine
+  expect(screen.queryByRole("note")).toBeNull();
+});
+test("the robot's small-account skip reads in plain words", () => {
+  panel(view({ ...connected, state: "RUNNING", block: "SMALL_ACCOUNT" }));
+  expect(screen.getByText(/Одоо орохгүй байгаа шалтгаан/)).toHaveTextContent("данс жижиг");
 });

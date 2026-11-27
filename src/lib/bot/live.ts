@@ -272,7 +272,7 @@ export type DayOrderFields = { id: number; dir: number; risk: number; rr: number
 export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number; size?: number };
 /** The robot file the site serves (mt5/XauBot.mq5): its version number and the label people see. */
 export const ROBOT_FILE_VERSION = 16;
-export const ROBOT_FILE_LABEL = "3.91";
+export const ROBOT_FILE_LABEL = "3.92";
 /** Order freshness and price-run limits, the same ones Telegram uses (see ENTRY_FRESH_MS in lib/setup/build). */
 export const ORDER_MAX_AGE_SEC = 30 * 60;
 export const ORDER_SLIP_R = 0.3;

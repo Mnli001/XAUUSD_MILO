@@ -44,7 +44,7 @@ async function getState(key: string): Promise<string | null> {
   return row?.value ?? null;
 }
 /** Sets a key only if it is not there yet; true when this call set it (so two runners never both act). */
-async function claim(key: string, value: string, now: Date): Promise<boolean> {
+export async function claim(key: string, value: string, now: Date): Promise<boolean> {
   const rows = await db.insert(schema.appState).values({ key, value, updatedAt: now }).onConflictDoNothing({ target: schema.appState.key }).returning({ key: schema.appState.key });
   return rows.length > 0;
 }

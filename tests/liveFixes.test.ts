@@ -68,7 +68,11 @@ describe("robot orders", () => {
   it("the robot file is the new version and knows the order list", () => {
     const src = readFileSync("mt5/XauBot.mq5", "utf8");
     expect(src).toContain(`#define ROBOT_VERSION ${ROBOT_FILE_VERSION}`);
-    expect(src).toContain('#property version   "3.91"');
+    expect(src).toContain('#property version   "3.92"');
+    // v3.92: a session order whose minimum lot would risk over 2.5x the intended risk (after the size factor) is skipped
+    expect(src).toContain("#define SMALL_ACCOUNT_X 2.5");
+    expect(src).toContain('if(minRisk > SMALL_ACCOUNT_X * want + 1e-9) return(GateBlock("SMALL_ACCOUNT"');
+    expect(src).toContain("!SizeTrade(s1, t1, lots, false, m)");
     expect(src).toContain('"jFrom"'); // the journal cursor
     expect(src).toContain('json += ",\\"journal\\":["');
     for (const part of ['JStr(body, "orders")', "OrderTaken(id)", "SendMarketAt(", "gOSlipR"]) expect(src).toContain(part);

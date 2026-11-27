@@ -9,6 +9,8 @@ import { choosePlanAction } from "@/lib/actions/payments";
 import { InviteCard } from "@/components/InviteCard";
 import { referralCodeFor, referralStats, REFERRAL_DAYS } from "@/lib/referral";
 import { siteUrl } from "@/lib/telegram";
+import { BacktestNote, ProofLine, RiskLadder } from "@/components/BacktestFacts";
+import { PlanFeatureList } from "@/components/PlanFeatures";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -37,7 +39,17 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
       {pay === "error" && <p role="alert" className="card border-red-400/40 text-sm text-red-300">{t("Төлбөрийн системтэй холбогдож чадсангүй. Түр хүлээгээд дахин оролдоно уу.", "Could not reach the payment system. Please wait a moment and try again.")}</p>}
       {pay === "off" && <p role="alert" className="card text-sm text-zinc-300">{t("Онлайн төлбөр хараахан тохируулагдаагүй байна.", "Online payments are not set up yet.")}</p>}
       {user.role === "ADMIN" && <p className="text-sm text-zinc-400">{t("Та админ тул бүх зүйл хугацаагүй нээлттэй. Туршихын тулд багц сонгож болно.", "As an admin everything is open with no end date. You can still choose a plan to test.")}</p>}
+      {/* The proof first: what the system did on the broker's history, at every risk. */}
+      <section className="hallmark space-y-4 p-5 sm:p-6" aria-label={t("Системийн түүхэн үр дүн", "The system's historical result")}>
+        <ProofLine t={t} size="sm" />
+        <RiskLadder t={t} />
+        <BacktestNote t={t} />
+      </section>
       <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} until={until} />
+      <section className="card" aria-labelledby="features-h">
+        <h2 id="features-h" className="card-title">{t("Багц бүрт багтсан зүйлс (Plus, Pro, Max ижил, хугацаа л өөр)", "In every plan (Plus, Pro and Max are the same; only the length differs)")}</h2>
+        <PlanFeatureList t={t} links={paid} />
+      </section>
       {site && <InviteCard link={`${site}/register?ref=${code}`} days={REFERRAL_DAYS} stats={stats} />}
       {mine.length > 0 && (
         <section className="table-card" aria-labelledby="mine-h">

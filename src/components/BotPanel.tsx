@@ -9,6 +9,7 @@ import { recordSentence, robotFileLabel, stamp, type BrokerRecord } from "@/lib/
 import { usePoll } from "./usePoll";
 import { Icon } from "./TodayIcons";
 import { ConnectSteps, CopyField, EX5_HREF } from "./BotConnect";
+import { SETUP_STOP, SMALL_ACCOUNT_X, smallAccount } from "@/lib/lot";
 
 /** The robot file the Setup signals need (minRobotVersion("ASIAN") on the server, which the browser cannot load). */
 export type RobotNeeds = { need: number };
@@ -31,12 +32,35 @@ const stopReasons = (t: T, file: string | null): Record<string, string> => ({
 });
 /** The few reasons the robot holds back a Setup-signal entry that a user can act on, in plain words. */
 const plainBlocks = (t: T): Record<string, string> => ({
+  SMALL_ACCOUNT: t(`данс жижиг: хамгийн бага lot-ын эрсдэл таны сонгосноос ${SMALL_ACCOUNT_X} дахинаас их тул robot арилжааг алгаслаа. Cent данс хэрэглэнэ үү`, `the account is too small: the smallest lot risks over ${SMALL_ACCOUNT_X}× your choice, so the robot skipped the trade. Use a cent account`),
   RISK_SMALL: t("тавьсан эрсдэлд хамгийн бага lot ч багтахгүй байна: эрсдэлээ өсгөнө үү", "even the smallest lot does not fit your risk: raise the risk"),
   MARGIN: t("дансанд хангалттай чөлөөт мөнгө (margin) алга", "not enough free money (margin) in the account"),
 });
 const money = (v: number | null) => (v === null ? "—" : `${v < 0 ? "-" : ""}$${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 const tone = (v: number | null) => (v === null || v === 0 ? "text-zinc-50" : v > 0 ? "text-emerald-400" : "text-red-400");
 const signedMoney = (v: number | null) => (v === null ? "—" : <>{v !== 0 && <><Dir d={v} />{" "}</>}{signedUsd(v)}</>);
+
+const pctText = (x: number) => `${Number(x.toFixed(1))}%`;
+
+/**
+ * On a small standard account the smallest XAUUSD trade (0.01 lot) already risks several % of the balance: says so
+ * with the numbers, and points to a cent account, where lots are 100 times smaller. `riskPct`: null for a fixed lot.
+ */
+export function SmallAccountNote({ balance, riskPct }: { balance: number | null; riskPct: number | null }) {
+  const { t } = useViewer();
+  const s = smallAccount(balance, riskPct);
+  if (!s || balance === null) return null;
+  const range = `${pctText(s.lowPct)}–${pctText(s.highPct)}`, stops = `${SETUP_STOP.low}–${SETUP_STOP.high}`;
+  const pct = riskPct !== null && riskPct > 0 ? pctText(riskPct) : null;
+  return (
+    <p role="note" className="rounded-xl bg-amber-400/10 px-3.5 py-2.5 text-sm leading-relaxed text-amber-200">
+      <span className="font-semibold">{t("Данс жижиг байна", "This account is small")} ({money(balance)}). </span>
+      {t(`Хамгийн бага 0.01 lot-той арилжааны stop ихэвчлэн ${stops} тул нэг арилжаа балансын ${range}-ийг эрсдэлд оруулна${pct ? `, таны сонгосон ${pct}-аас их` : ""}.`, `The smallest trade, 0.01 lot, usually has a ${stops} stop, so one trade risks ${range} of the balance${pct ? `, more than your ${pct}` : ""}.`)}
+      {pct && <> {t(`Доод lot-ын эрсдэл сонгосноос ${SMALL_ACCOUNT_X} дахинаас их бол robot тэр арилжааг алгасна.`, `The robot skips a trade when the smallest lot would risk over ${SMALL_ACCOUNT_X}× your choice.`)}</>}
+      {" "}{t("Cent данс (жишээ нь JustMarkets Standard Cent) нээвэл lot 100 дахин жижиг болж, сонгосон эрсдэлээрээ арилжаална.", "A cent account (for example JustMarkets Standard Cent) makes lots 100 times smaller, so trades keep to the risk you chose.")}
+    </p>
+  );
+}
 
 /** The user's MT5 accounts as a row of pills; each has its own settings, Start/Stop and history. Hidden with one account. */
 function AccountSwitcher({ accounts, current }: { accounts: View["accounts"]; current: string }) {
@@ -189,6 +213,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
           <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Windows компьютер эсвэл VPS дээрх MT5-аа нээгээд дансаараа нэвтэрнэ. Дараа нь:", "Open MT5 on your Windows computer or VPS and sign in to your account. Then:")}</p>
           <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online}
             tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} />} />
+          {v.balance !== null && <div className="mt-4"><SmallAccountNote balance={v.balance} riskPct={g.riskMode === "PCT" && g.riskValue > 0 ? g.riskValue : null} /></div>}
           {!needsSetup && <button type="button" className="btn mt-4" onClick={() => setDoneSeen(true)}>{t("Болсон", "Done")}</button>}
         </section>
       ) : (
@@ -297,6 +322,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
           )}
           {riskHelp && <p className="mt-2 text-sm text-zinc-300 tabular-nums" aria-live="polite">{riskHelp}</p>}
         </div>
+        <SmallAccountNote balance={v.balance} riskPct={sizing === "PCT" && pctNum > 0 ? pctNum : null} />
         {g.riskMode === "USD" && g.riskValue > 0 && <p className="text-xs text-zinc-500">{t(`Одоогийн тохиргоо: арилжаа бүрт ${money(g.riskValue)}. Хадгалбал дээрх сонголтоор солигдоно.`, `Current setting: ${money(g.riskValue)} per trade. Saving replaces it with the choice above.`)}</p>}
         <label className="flex items-start gap-3 border-t border-zinc-800 pt-4 text-sm text-zinc-200">
           <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} className="switch mt-0.5" />

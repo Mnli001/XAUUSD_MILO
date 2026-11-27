@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "brief_off" boolean DEFAULT false NOT NULL;

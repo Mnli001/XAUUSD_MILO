@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.91"
+#property version   "3.92"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -97,6 +97,7 @@ datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэ
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
 #define ROBOT_VERSION 16             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр, 15: trend-ийн хэмжээ, 16: журнал)
+// v3.92: жижиг данс: доод лотын эрсдэл зорилтоос 2.5 дахинаас их бол сешний захиалгаар орохгүй (SMALL_ACCOUNT). Протокол хэвээр.
 // v3.90: вэбийн журнал. Сервер jFrom (UTC unix секунд) илгээнэ: тэр цагаас хойш хаагдсан арилжааг 50-иар илгээнэ.
 long     gJFrom = 0;               // 0 = сервер журнал асуугаагүй (хуучин сервер)
 datetime gJournalAt = 0;           // сүүлд журнал илгээсэн цаг (компьютерийн): 30 секунд тутамд л түүх уншина
@@ -788,6 +789,7 @@ string GateText(const string code)
    if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
    if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
    if(code == "DAY_BUDGET") return(L("энэ арилжааны эрсдэл өдрийн алдагдлын үлдсэн хязгаараас их", "this trade's risk is larger than what is left of the daily loss limit"));
+   if(code == "SMALL_ACCOUNT") return(L("данс жижиг: доод лотын эрсдэл сонгосон эрсдэлээс 2.5 дахинаас их (cent данс хэрэглэнэ үү)", "account too small: the minimum lot risks over 2.5× the chosen risk (use a cent account)"));
    if(code == "RISK_SMALL") return(L("тавьсан эрсдэлд доод лот ч багтахгүй (stop хэт ойр болно)", "even the minimum lot does not fit the chosen risk (the stop would be too close)"));
    if(code == "MARGIN")     return(L("чөлөөт margin хүрэлцэхгүй", "not enough free margin"));
    if(code == "SITE_STOP")  return(L("вэбийн шинжилгээний stop-ийн зай ирээгүй", "no stop distance from the site reading yet"));
@@ -949,7 +951,19 @@ bool FitsDayBudget(const double lots, const double slDist)
 // Тооцсон лот брокерын доод лотоос бага гарвал (жижиг данс) stop-ийг ойртуулж доод лотоор орно:
 // эрсдэл хэвээр, ашгийн зай мөн адил харьцаагаар багасна. Stop нь spread, stops level-ээс ойртох
 // шаардлагатай бол орохгүй (RISK_SMALL). canShrink = false бол stop-ийг хөдөлгөхгүй (дүрмийн stop).
-bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrink)
+// v3.92, жижиг данс (canShrink = false, % эсвэл $ горим): доод лотын бодит эрсдэл (vmin × perLot × stop) хэмжээний
+// коэффициентын (mul) дараах зорилтот эрсдэлээс SMALL_ACCOUNT_X дахинаас их бол орохгүй (SMALL_ACCOUNT), чимээгүйхэн
+// доод лотоор орохгүй. Түүнээс бага бол доод лотоор орно. Тогтмол лотын горимд хамаарахгүй.
+#define SMALL_ACCOUNT_X 2.5
+string SmallAccountText(const double minRisk, const double want, const double vmin)
+  {
+   double bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   string a = (bal > 0) ? Num(minRisk / bal * 100.0, 1) + "%" : "$" + Num(minRisk, 2);
+   string b = (bal > 0) ? Num(want / bal * 100.0, 1) + "%" : "$" + Num(want, 2);
+   return(L("Данс жижиг: доод lot-ын (" + Num(vmin, 2) + ") эрсдэл " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · cent данс хэрэглэнэ үү",
+            "Account too small: the minimum lot (" + Num(vmin, 2) + ") risks " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · use a cent account"));
+  }
+bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrink, const double mul = 1.0)
   {
    if(gRiskMode == 0 || slDist <= 0)
      {
@@ -961,6 +975,15 @@ bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrin
    double perLot = PerLot();
    if(risk <= 0 || perLot <= 0) return(GateBlock("RISK_SMALL", ""));
    lots = NormLots(risk / (slDist * perLot));
+   if(!canShrink)
+     {
+      double vm = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+      if(vm <= 0) vm = 0.01;
+      double want = risk * ((mul > 0) ? MathMax(0.25, MathMin(2.0, mul)) : 1.0);   // ApplyMul-ын адил хязгаартай
+      double minRisk = vm * perLot * slDist;                     // доод лотын бодит эрсдэл
+      if(minRisk > SMALL_ACCOUNT_X * want + 1e-9) return(GateBlock("SMALL_ACCOUNT", SmallAccountText(minRisk, want, vm)));
+      if(lots <= 0) lots = NormLots(vm);                         // доод лот зорилтоос SMALL_ACCOUNT_X дотор: доод лотоор
+     }
    if(lots <= 0)
      {
       double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
@@ -1305,8 +1328,9 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    if(slDist <= StopsMin() || tpDist <= StopsMin()) return(false);   // хүрээ хэт нарийн: stop тавих боломжгүй
    if(!GateCheck(dir)) return(false);
    double lots = RuleLots(), sl = slDist, tp = tpDist;
-   if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
-   lots = ApplyMul(lots, gNextMul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0));
+   double mul = gNextMul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0);
+   if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false, mul)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
+   lots = ApplyMul(lots, mul);
    gNextMul = 1.0;
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
@@ -2207,8 +2231,9 @@ string TakeOrder(const long id, const int dir, const double entry, const double 
    datetime exitAt = OrderExitAt(exitUtc);
    if(TimeCurrent() >= exitAt) return(L("хаах цаг өнгөрсөн", "past the closing time"));
    double lots = RuleLots(), s1 = slD, t1 = tpD;
-   if(!SizeTrade(s1, t1, lots, false) || lots <= 0) return(L("хэмжээ: ", "size: ") + GateText(gBlock));
-   lots = ApplyMul(lots, mul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0));   // трендийн хүч; ижил чиглэлд нээлттэй бол хагас
+   double m = mul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0);   // трендийн хүч; ижил чиглэлд нээлттэй бол хагас
+   if(!SizeTrade(s1, t1, lots, false, m) || lots <= 0) return(gBlock == "SMALL_ACCOUNT" ? gBlockDetail : L("хэмжээ: ", "size: ") + GateText(gBlock));
+   lots = ApplyMul(lots, m);
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return(L("өмнөх захиалгын хариуг хүлээж байна", "waiting for the last order's reply"));
    gOrderTryAt = TimeCurrent();
    // Хаах цаг ба захиалгын id comment-д: дахин ачаалсан ч хаах цагаа мэдэж, нэг захиалгаар хоёр удаа орохгүй
@@ -2289,7 +2314,7 @@ void LegacyAsianStep()
    datetime exitAt = OrderExitAt(gDExit);
    if(TimeCurrent() >= exitAt) { gReason += L(" · хаах цаг өнгөрсөн", " · past the closing time"); return; }
    double lots = RuleLots(), sl = gDRisk, tp = gDRisk * gDRR;
-   if(!SizeTrade(sl, tp, lots, false) || lots <= 0) { gReason += L(" · хэмжээ: ", " · size: ") + GateText(gBlock); return; }
+   if(!SizeTrade(sl, tp, lots, false) || lots <= 0) { gReason += " · " + (gBlock == "SMALL_ACCOUNT" ? gBlockDetail : L("хэмжээ: ", "size: ") + GateText(gBlock)); return; }
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return;
    gOrderTryAt = TimeCurrent();
    if(SendMarket(gDDir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt) + ":" + IntegerToString(gDId)))
