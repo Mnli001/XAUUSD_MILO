@@ -15,7 +15,7 @@ function Forgot({ help }: { help: ForgotHelp }) {
     <details className="text-sm text-zinc-400">
       <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-zinc-200 underline decoration-amber-400/60 underline-offset-4 hover:text-zinc-50">{t("Нууц үгээ мартсан уу?", "Forgot password?")}</summary>
       <div className="mt-1 space-y-2 leading-relaxed">
-        {help.telegram && <p>{t("Бүртгэлдээ Telegram холбосон бол манай Telegram bot-од ", "If your account is linked to Telegram, send ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-100">/reset</code>{t(" гэж илгээнэ. Bot нууц үг шинэчлэх холбоос явуулна.", " to our Telegram bot. It replies with a link to set a new password.")}</p>}
+        {help.telegram && <p>{t("Бүртгэлдээ Telegram холбосон бол манай Telegram ботод ", "If your account is linked to Telegram, send ")}<code className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-100">/reset</code>{t(" гэж илгээнэ. Telegram бот нууц үг шинэчлэх холбоос явуулна.", " to our Telegram bot. It replies with a link to set a new password.")}</p>}
         <p>
           {help.telegram ? t("Telegram холбоогүй бол админд хандаж нууц үгээ сэргээлгэнэ", "If Telegram is not linked, ask the admin to reset it") : t("Админд хандаж нууц үгээ сэргээлгэнэ", "Ask the admin to reset your password")}
           {help.contact ? <>: {help.contact.url ? <a className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href={help.contact.url} target="_blank" rel="noreferrer">{help.contact.text}</a> : <strong className="text-zinc-100">{help.contact.text}</strong>}.</> : t(". Бүртгүүлсэн имэйлээ хэлээрэй.", ", giving the email you registered with.")}

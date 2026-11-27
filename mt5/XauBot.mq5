@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.93"
+#property version   "3.94"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -13,7 +13,7 @@
 input string ServerUrl            = "https://web-production-4f0081ec.up.railway.app/api/bot/sync"; // Вэб самбар дээрх хаяг · Web address
 input string BotToken             = "";       // Вэб дээр үүсгэсэн токен · Token from the web
 // Вэбтэй холбогдох зам. WebRequest-д сайтын хаягийг MT5 дээр гараар зөвшөөрөх ёстой; зөвшөөрөөгүй бол (алдаа 4014)
-// XauBot-Setup.bat-ийн суулгасан туслах (bridge.ps1) Common\Files\xaubot\<данс>\ доторх файлаар дамжуулна.
+// XauBot-Setup.bat-ийн суулгасан туслах (bridge.ps1) Common\Files\xaubot\<данс_magic_symbol>\ доторх файлаар дамжуулна.
 enum ENUM_XAU_TRANSPORT
   {
    TRANSPORT_AUTO = 0,               // Автомат: WebRequest, болохгүй бол туслах · Auto: WebRequest, else the helper
@@ -25,7 +25,7 @@ input bool   AllowRealAccount     = false;    // Жинхэнэ данс зөв�
 input long   MagicNumber          = 20261121; // Роботын арилжааг ялгах дугаар · Magic number
 input int    SyncSeconds          = 1;        // Вэбтэй холбогдох давтамж (сек) · Sync every (s)
 input int    EntryCooldownSeconds = 5;        // Хоёр арилжааны хоорондох зай (сек) · Gap between entries (s)
-input int    MaxSpreadPoints      = 600;      // Spread үүнээс их бол орохгүй (point) · No entry above this spread
+input double MaxSpreadUsd         = 0.0;      // Spread-ийн дээд $ (0 = автомат: $0.60 эсвэл stop-ийн 10%) · Max spread $ (0 = auto: $0.60 or 10% of the stop)
 input bool   ShareJournal         = true;     // Дансны хаасан бүх арилжааг вэбийн журналд илгээх · Send closed trades to the web journal
 enum ENUM_XAU_LANG
   {
@@ -34,6 +34,12 @@ enum ENUM_XAU_LANG
    LANG_EN  = 2  // English
   };
 input ENUM_XAU_LANG Language      = LANG_WEB; // Хэл · Language
+// v3.94: вэбээс үл хамаарах орон нутгийн хамгаалалт (live, бүх хэрэгсэлд). Strategy Tester-т TesterDailyLossPct-ийг хэрэглэнэ.
+input group "Алдагдлын хязгаар, вэбээс үл хамаарна · Loss limits, independent of the web"
+input double KillDailyLossPct     = 5.0;      // Өдрийн алдагдал өдрийн эхний балансын % хүрвэл бүгдийг хааж зогсох (0 = үгүй) · Daily loss stop, % of the day's opening balance (0 = off)
+input double KillDrawdownPct      = 15.0;     // Оргил equity-ээс уналт % хүрвэл бүгдийг хааж зогсох (0 = үгүй) · Drawdown stop, % from the peak equity (0 = off)
+input double MaxOpenRiskX         = 3.0;      // Нээлттэй арилжааны stop хүртэлх нийт эрсдэл ≤ арилжааны эрсдэл × (0 = үгүй) · Open risk to stops ≤ per-trade risk × (0 = off)
+input bool   ResetLossLock        = false;    // Уналтын түгжээг арилгаж, оргилыг шинээр эхлүүлэх · Clear the drawdown lock and restart the peak
 
 // Strategy Tester дотор вэбтэй холбогдох боломжгүй тул тохиргоог эндээс авна.
 // Нэг ажиллагаа дуусмагц TesterRestartSeconds-ийн дараа дахин "Start" дарсантай адил шинээр эхэлнэ.
@@ -105,9 +111,19 @@ double gOSlipR = 0.3;              // үнэ орох түвшнээс эрсд�
 datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэн цаг: брокерын хариу хоцорвол давхар илгээхгүй
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
+#define SMALL_ACCOUNT_X 1.2          // v3.94: илгээх лотын эрсдэл ≤ энэ × зорилтот эрсдэл (SizeTrade)
 #define ROBOT_VERSION 16             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр, 15: trend-ийн хэмжээ, 16: журнал)
+// v3.94: вэбээс үл хамаарах хамгаалалт, бүх хэрэгсэлд (live):
+//        · өдрийн алдагдал (KillDailyLossPct, брокерын өдрийн эхний балансаас) ба оргилоос уналт (KillDrawdownPct) хүрвэл роботын
+//          арилжааг хааж, шинээр орохгүй; төлөв GlobalVariable-д (данс+magic+symbol) хадгалагдана, дахин ачаалсан ч хэвээр.
+//        · нээлттэй арилжааны stop хүртэлх эрсдэл + шинэ арилжааных ≤ MaxOpenRiskX × сонгосон эрсдэл.
+//        · жижиг данс: илгээх лотын бодит эрсдэл ≤ SMALL_ACCOUNT_X × зорилтот эрсдэл (коэффициент, хагасласны дараа), дээш бөөрөнхийлөхгүй.
+//        · setup арилжааны хаах цаг, захиалгын id GlobalVariable-д (ticket-ээр); comment нь зөвхөн нөөц.
+//        · netting данс: арилжаа хийхгүй (hedging шаардлагатай). Spread: max($0.60, stop-ийн 10%) (MaxSpreadUsd > 0 бол тэр).
+//        · давхар захиалгын тэмдэглэл данс+magic+symbol-оор. WebRequest-ийн хугацаа 2.5 сек.
+//        Тайлан: "guard" (LOSS_DAY | LOSS_DD | NETTING | ""), "guardDetail" — хуучин сервер үл тооно. Протокол хэвээр (16).
 // v3.93: файлын гүүр. Transport = AUTO: WebRequest алдаа 4014 (хаяг зөвшөөрөгдөөгүй) өгвөл энэ сешнд туслахаар
-//        (Common\Files\xaubot\<login>\request.json → response.json) холбогдож, 10 минут тутамд WebRequest-ийг дахин оролдоно.
+//        (Common\Files\xaubot\<login>_<magic>_<symbol>\request.json → response.json) холбогдож, 10 минут тутамд WebRequest-ийг дахин оролдоно.
 //        Илгээх JSON болон хариуг задлах код хэвээр. Протокол хэвээр.
 #define FILE_WEB_RETRY_SECONDS 600   // AUTO: туслахаар холбогдож байхдаа WebRequest-ийг ингэж дахин оролдоно
 #define FILE_RESEND_SECONDS    10    // хариугүй хүсэлтийг шинэ дугаартай дахин бичих хугацаа
@@ -118,6 +134,20 @@ long     gFileSeq = 0;               // сүүлд бичсэн хүсэлтий
 bool     gFilePending = false;       // хариу хүлээж буй хүсэлт байна
 datetime gFileSentAt = 0;            // сүүлийн хүсэлтийг бичсэн цаг
 datetime gFileSince = 0;             // файлаар холбогдож эхэлсэн цаг
+// v3.94: вэбээс үл хамаарах хамгаалалт (LossGuard)
+string   gGuard = "";                // "" | LOSS_DAY | LOSS_DD | NETTING: шинэ оролтыг хаана
+string   gGuardDetail = "";          // тоон дэлгэрэнгүй
+bool     gKLoaded = false;           // GlobalVariable-аас уншсан
+datetime gKDay = 0;                  // брокерын өдрийн эхлэл (серверийн цаг)
+datetime gKScanAt = 0;               // түүх сүүлд уншсан цаг
+double   gKLastBal = 0.0;            // баланс өөрчлөгдвөл түүхийг шууд уншина
+double   gKDayBal = 0.0;             // өдрийн эхний баланс (өнөөдрийн хаасан дүн, мөнгөн гүйлгээг хассан)
+double   gKDayClosed = 0.0;          // өнөөдөр хаагдсан бүх арилжааны дүн (данс бүхэлдээ)
+double   gKPeak = 0.0;               // оргил equity (мөнгө оруулсан/авснаар засварласан)
+double   gKOps = 0.0;                // эхэлснээс хойших мөнгө оруулсан (-авсан) нийт дүн
+double   gKOpsTk = -1.0;             // ops-д тоолсон сүүлийн deal ticket
+datetime gKOpsAt = 0;                // ops-ийг сүүлд тоолсон цаг
+datetime gKSweepAt = 0;              // хаагдсан арилжааны GlobalVariable-ийг цэвэрлэсэн цаг
 // v3.92: жижиг данс: доод лотын эрсдэл зорилтоос 2.5 дахинаас их бол сешний захиалгаар орохгүй (SMALL_ACCOUNT). Протокол хэвээр.
 // v3.90: вэбийн журнал. Сервер jFrom (UTC unix секунд) илгээнэ: тэр цагаас хойш хаагдсан арилжааг 50-иар илгээнэ.
 long     gJFrom = 0;               // 0 = сервер журнал асуугаагүй (хуучин сервер)
@@ -387,8 +417,10 @@ void OnTimer()
   {
    if(IsRuleTool()) return;
    AsianTimeExit();                                              // дүрмийн арилжаа хэрэгслээс үл хамааран өөрийн цагтаа хаагдана
+   LossGuard();                                                  // v3.94: өдрийн алдагдал, уналтын хязгаар бүх хэрэгсэлд, вэбээс үл хамааран
    RetryClose();
-   if(gMode != "ASIAN") DailyGuard();                            // Азийн (setup) хэрэгсэлд шүүлтүүр, өдрийн хязгаар үйлчлэхгүй
+   TradeStateSweep();                                            // хаагдсан арилжааны тэмдэглэлийг цэвэрлэнэ
+   if(gMode != "ASIAN") DailyGuard();                            // Азийн (setup) хэрэгсэлд вэбийн шүүлтүүр, өдрийн хязгаар үйлчлэхгүй (LossGuard үйлчилнэ)
    if(gMode == "ASIAN")
       LiveAsianStep();
    else if(gMode == "READING")
@@ -402,7 +434,9 @@ void OnTimer()
      }
    if(gMode == "ASIAN") { gBlock = ""; gBlockDetail = ""; }      // сайтын дүрмийг яг тэр чигээр нь: шүүлтүүргүй
    else GateCheck(SignalDir());                                  // самбарт "яагаад орохгүй байна" гэдгийг үргэлж шинэчилнэ
-   
+   if(gGuard != "") { gBlock = gGuard; gBlockDetail = gGuardDetail; }   // хамгаалалт хаасан бол вэб дээр ч тэр шалтгаан харагдана
+
+   // Арилжааны удирдлага (хаах цаг, хамгаалалт) дээр хийгдсэн: вэбийн хүсэлт (≤ 2.5 сек) түүнийг хойшлуулахгүй.
    // Оновчлол: Ботыг зогсоосон бөгөөд арилжаагүй сул зогсох үед 3 сек тутамд, идэвхтэй үед тогтмол sync хийнэ
    static int idleCounter = 0;
    bool isIdle = (gState == "STOPPED" && CountPositions() == 0 && CountOrders() == 0);
@@ -428,6 +462,7 @@ void OnTick()
   {
    if(IsRuleTool()) { RetryClose(); DailyGuard(); RuleStep(); return; }
    AsianTimeExit();                                              // хэрэгсэл солигдсон ч дүрмийн арилжаа цагтаа хаагдана
+   LossGuard();
    if(gMode == "ASIAN") { RetryClose(); LiveAsianStep(); return; }   // зөвхөн сайтын дүрэм: шүүлтүүр, хамгаалалт, өдрийн хязгааргүй
    if(gMode == "READING") { RetryClose(); DailyGuard(); ProtectAll(); ReadingStep(); return; }
    if(gMode == "DAY") { RetryClose(); DailyGuard(); ProtectAll(); DayStep(); return; }
@@ -481,7 +516,7 @@ bool SameDirOpen(const int dir)
      {
       ulong t = PositionGetTicket(i);
       if(!IsMine(t)) continue;
-      if(StringFind(PositionGetString(POSITION_COMMENT), "xau-r:") != 0) continue;
+      if(!IsSetupTrade(t, PositionGetString(POSITION_COMMENT))) continue;   // v3.94: GlobalVariable эсвэл comment
       long type = PositionGetInteger(POSITION_TYPE);
       if((dir > 0 && type == POSITION_TYPE_BUY) || (dir < 0 && type == POSITION_TYPE_SELL)) return(true);
      }
@@ -651,6 +686,274 @@ void DeleteMyOrders()
   }
 
 //+------------------------------------------------------------------+
+//| v3.94: GlobalVariable-ийн нэр данс + magic + symbol-оор: хоёр     |
+//| чарт, хоёр данс бие биеийнхээ тэмдэглэлийг хэрэглэхгүй.           |
+//+------------------------------------------------------------------+
+uint StrHash(const string s)
+  {
+   uint h = 2166136261;
+   int n = StringLen(s);
+   for(int i = 0; i < n; i++) { h ^= (uint)StringGetCharacter(s, i); h *= 16777619; }
+   return(h);
+  }
+
+// Түлхүүрийн өмнөх хэсэг. 63 тэмдэгтийн хязгаарт ticket-тэй түлхүүр (≤ 22) багтахаар урт бол hash болгоно.
+string GvBase()
+  {
+   string base = "xb" + (string)AccountInfoInteger(ACCOUNT_LOGIN) + "_" + (string)MagicNumber + "_" + _Symbol + "_";
+   if(StringLen(base) > 40) base = "xb" + StringFormat("%08X", StrHash(base)) + "_";
+   return(base);
+  }
+string GvName(const string key) { return(GvBase() + key); }
+double GvGet(const string key, const double def) { string n = GvName(key); return(GlobalVariableCheck(n) ? GlobalVariableGet(n) : def); }
+void   GvSet(const string key, const double v) { GlobalVariableSet(GvName(key), v); }
+
+//+------------------------------------------------------------------+
+//| v3.94: setup арилжааны хаах цаг ба захиалгын id-г ticket-ээр нь   |
+//| GlobalVariable-д хадгална: брокер comment-ийг тайрах/солих үед ч  |
+//| робот мэднэ. Comment ("xau-r:<хаах цаг>:<id>") нь зөвхөн нөөц.     |
+//+------------------------------------------------------------------+
+void TradeStateSave(const ulong ticket, const datetime exitAt, const long id)
+  {
+   if(ticket == 0) return;
+   GvSet("x" + (string)ticket, (double)exitAt);
+   if(id > 0) GvSet("i" + (string)ticket, (double)id);
+  }
+
+// Дөнгөж нээсэн позицийн ticket (hedging дансанд нээсэн захиалгын ticket-тэй ижил)
+ulong OpenedTicket()
+  {
+   ulong o = trade.ResultOrder();
+   if(o > 0 && PositionSelectByTicket(o)) return(o);
+   ulong d = trade.ResultDeal();
+   if(d > 0 && HistoryDealSelect(d)) return((ulong)HistoryDealGetInteger(d, DEAL_POSITION_ID));
+   return(o);
+  }
+
+bool IsSetupTrade(const ulong ticket, const string cm)
+  {
+   return(GlobalVariableCheck(GvName("x" + (string)ticket)) || StringFind(cm, "xau-r:") == 0);
+  }
+
+// Хаах цаг (серверийн): эхлээд GlobalVariable, дараа нь comment. 0 = мэдэгдэхгүй.
+datetime TradeExitAt(const ulong ticket, const string cm)
+  {
+   string g = GvName("x" + (string)ticket);
+   if(GlobalVariableCheck(g)) return((datetime)(long)GlobalVariableGet(g));
+   if(StringFind(cm, "xau-r:") != 0) return(0);
+   string rest = StringSubstr(cm, 6);
+   int colon = StringFind(rest, ":");                                // v3.70: "xau-r:<хаах цаг>:<захиалгын id>"
+   return((datetime)StringToInteger(colon > 0 ? StringSubstr(rest, 0, colon) : rest));
+  }
+
+// Захиалгын id: эхлээд GlobalVariable, дараа нь comment-ийн сүүлийн ":"-ээс хойш. 0 = мэдэгдэхгүй.
+long TradeOrderId(const ulong ticket, const string cm)
+  {
+   string g = GvName("i" + (string)ticket);
+   if(GlobalVariableCheck(g)) return((long)GlobalVariableGet(g));
+   if(StringFind(cm, "xau-r:") != 0) return(0);
+   string rest = StringSubstr(cm, 6);
+   int colon = StringFind(rest, ":");
+   return(colon > 0 ? StringToInteger(StringSubstr(rest, colon + 1)) : 0);
+  }
+
+// Хаагдсан позицийн тэмдэглэлийг минут тутамд устгана.
+void TradeStateSweep()
+  {
+   if(gTester || TimeLocal() - gKSweepAt < 60) return;
+   gKSweepAt = TimeLocal();
+   string px = GvName("x"), pi = GvName("i");
+   for(int i = GlobalVariablesTotal() - 1; i >= 0; i--)
+     {
+      string n = GlobalVariableName(i);
+      string p = (StringFind(n, px) == 0) ? px : ((StringFind(n, pi) == 0) ? pi : "");
+      if(p == "") continue;
+      ulong t = (ulong)StringToInteger(StringSubstr(n, StringLen(p)));
+      if(t > 0 && !PositionSelectByTicket(t)) GlobalVariableDel(n);
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| v3.94: вэбээс үл хамаарах хамгаалалт (live, бүх хэрэгсэлд).        |
+//| · Өдрийн алдагдал: өнөөдөр хаагдсан + одоогийн нээлттэй дүн (данс  |
+//|   бүхэлдээ) ≤ -KillDailyLossPct% × брокерын өдрийн эхний баланс.   |
+//| · Уналт: оргил equity-ээс KillDrawdownPct%. Мөнгө оруулах/авахыг  |
+//|   хасаж тооцно. Оргил, түгжээ GlobalVariable-д: дахин ачаалсан ч   |
+//|   хэвээр. Хүрвэл роботын арилжааг хааж, шинээр орохгүй.           |
+//| · Netting данс: арилжаа хийхгүй (hedging шаардлагатай).            |
+//+------------------------------------------------------------------+
+bool IsOpsDeal(const long type) { return(type == DEAL_TYPE_BALANCE || type == DEAL_TYPE_CREDIT || type == DEAL_TYPE_BONUS); }
+
+// Өнөөдрийн хаагдсан дүн, өдрийн эхний баланс; эхэлснээс хойших мөнгөн гүйлгээ (шинэ deal-ийг ticket-ээр нь л нэмнэ).
+void GuardScan(const datetime now)
+  {
+   datetime from = gKDay;
+   if(gKOpsAt > 0 && gKOpsAt - 3600 < from) from = gKOpsAt - 3600;
+   double closed = 0.0, opsDay = 0.0, maxTk = gKOpsTk;
+   bool opsChanged = false;
+   if(HistorySelect(from, now + 60))
+     {
+      int total = HistoryDealsTotal();
+      for(int i = 0; i < total; i++)
+        {
+         ulong t = HistoryDealGetTicket(i);
+         if(t == 0) continue;
+         long type = HistoryDealGetInteger(t, DEAL_TYPE);
+         double profit = HistoryDealGetDouble(t, DEAL_PROFIT);
+         bool ops = IsOpsDeal(type);
+         if((datetime)HistoryDealGetInteger(t, DEAL_TIME) >= gKDay)
+           {
+            if(ops) opsDay += profit;
+            else closed += profit + HistoryDealGetDouble(t, DEAL_SWAP) + HistoryDealGetDouble(t, DEAL_COMMISSION) + HistoryDealGetDouble(t, DEAL_FEE);
+           }
+         if((double)t > gKOpsTk)
+           {
+            if(ops) { gKOps += profit; opsChanged = true; }
+            if((double)t > maxTk) maxTk = (double)t;
+           }
+        }
+     }
+   gKDayClosed = closed;
+   gKDayBal = AccountInfoDouble(ACCOUNT_BALANCE) - closed - opsDay;
+   gKOpsAt = now;
+   GvSet("kt", (double)now);                                       // дахин ачаалахад энэ цагаас хойших гүйлгээг уншина
+   if(maxTk > gKOpsTk || opsChanged)
+     {
+      gKOpsTk = maxTk;
+      GvSet("ko", gKOps);
+      GvSet("kk", gKOpsTk);
+     }
+  }
+
+// Эхний удаа: GlobalVariable-аас уншина. Шинэ бол одоогийн equity-ээс оргилыг эхлүүлж, өмнөх гүйлгээг тоолохгүй.
+void GuardLoad(const double eq, const datetime now)
+  {
+   gKLoaded = true;
+   gKPeak  = GvGet("kp", 0.0);
+   gKOps   = GvGet("ko", 0.0);
+   gKOpsTk = GvGet("kk", -1.0);
+   if(ResetLossLock)
+     {
+      GlobalVariableDel(GvName("kl"));
+      gKPeak = 0.0; gKOps = 0.0; gKOpsTk = -1.0;
+      Print(L("XauBot: уналтын түгжээг арилгаж, оргил equity-г шинээр эхлүүллээ (ResetLossLock)", "XauBot: drawdown lock cleared, the peak equity starts again (ResetLossLock)"));
+     }
+   if(gKOpsTk < 0)
+     {
+      gKOpsTk = 0.0;
+      if(HistorySelect(now - 90 * 86400, now + 60))
+         for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+           {
+            ulong t = HistoryDealGetTicket(i);
+            if((double)t > gKOpsTk) gKOpsTk = (double)t;
+           }
+      gKOps = 0.0;
+      GvSet("ko", gKOps);
+      GvSet("kk", gKOpsTk);
+      GvSet("kt", (double)now);
+     }
+   gKOpsAt = (datetime)(long)GvGet("kt", (double)now);              // унтарсан хооронд хийсэн гүйлгээг ч тоолно
+   if(gKPeak <= 0) { gKPeak = eq - gKOps; GvSet("kp", gKPeak); }
+  }
+
+void LossGuard()
+  {
+   if(gTester || AccountInfoInteger(ACCOUNT_LOGIN) == 0) return;
+   double eq = AccountInfoDouble(ACCOUNT_EQUITY), bal = AccountInfoDouble(ACCOUNT_BALANCE);
+   if(eq <= 0) return;                                             // данс холбогдоогүй байна
+   datetime now = TimeTradeServer();
+   if(!gKLoaded) GuardLoad(eq, now);
+   datetime day = now - (datetime)((long)now % 86400);             // брокерын өдөр (серверийн 00:00)
+   bool newDay = (day != gKDay);
+   if(newDay) gKDay = day;
+   if(newDay || now - gKScanAt >= 10 || MathAbs(bal - gKLastBal) > 1e-6)
+     {
+      gKScanAt = now;
+      gKLastBal = bal;
+      GuardScan(now);
+     }
+   // Өдрийн алдагдал: өнөөдөр хаагдсан + нээлттэй (equity - баланс) дүн
+   bool dayLock = ((long)GvGet("kd", 0.0) == (long)gKDay);
+   double dayLoss = -(gKDayClosed + eq - bal);
+   double dayLimit = KillDailyLossPct / 100.0 * gKDayBal;
+   if(!dayLock && KillDailyLossPct > 0 && gKDayBal > 0 && dayLoss >= dayLimit)
+     {
+      dayLock = true;
+      GvSet("kd", (double)gKDay);
+      Print(L("XauBot: өдрийн алдагдлын хязгаар (", "XauBot: daily loss limit ("), Num(KillDailyLossPct, 1), L("%) хүрлээ: -", "%) reached: -"), Num(dayLoss, 2),
+            L(". Роботын арилжааг хааж, маргааш хүртэл шинээр орохгүй.", ". Closing the robot's trades; no new entries until tomorrow."));
+     }
+   // Уналт: оргилоос (мөнгө оруулах/авахыг хассан equity)
+   bool ddLock = (GvGet("kl", 0.0) > 0);
+   double adj = eq - gKOps;
+   if(!ddLock && adj > gKPeak + 0.005) { gKPeak = adj; GvSet("kp", gKPeak); }
+   double ddPct = (gKPeak > 0) ? (gKPeak - adj) / gKPeak * 100.0 : 0.0;
+   if(!ddLock && KillDrawdownPct > 0 && gKPeak > 0 && ddPct >= KillDrawdownPct)
+     {
+      ddLock = true;
+      GvSet("kl", 1.0);
+      Print(L("XauBot: оргилоос уналтын хязгаар (", "XauBot: drawdown limit ("), Num(KillDrawdownPct, 1), L("%) хүрлээ: -", "%) reached: -"), Num(ddPct, 1),
+            L("%. Роботын арилжааг хааж, шинээр орохгүй. Дахин эхлүүлэх бол ResetLossLock = true.", "%. Closing the robot's trades; no new entries. To start again set ResetLossLock = true."));
+     }
+   bool netting = (AccountInfoInteger(ACCOUNT_MARGIN_MODE) != ACCOUNT_MARGIN_MODE_RETAIL_HEDGING);
+   if(ddLock)        { gGuard = "LOSS_DD";  gGuardDetail = "-" + Num(ddPct, 1) + "% / " + Num(KillDrawdownPct, 1) + "%"; }
+   else if(dayLock)  { gGuard = "LOSS_DAY"; gGuardDetail = "-" + Num(MathMax(0.0, dayLoss), 2) + " / " + Num(dayLimit, 2); }
+   else if(netting)  { gGuard = "NETTING";  gGuardDetail = ""; }
+   else              { gGuard = "";         gGuardDetail = ""; }
+   if((ddLock || dayLock) && !gClosing && CountPositions() + CountOrders() > 0)
+     {
+      gClosing = true;                                             // RetryClose дуустал нь дахин оролдоно
+      CloseAllMine();
+     }
+  }
+
+string GuardText()
+  {
+   if(gGuard == "LOSS_DAY") return(L("Өдрийн алдагдлын хязгаар хүрсэн: роботын арилжааг хаасан, дараагийн брокерын өдөр хүртэл шинээр орохгүй", "Daily loss limit reached: the robot's trades were closed, no new entries until the next broker day"));
+   if(gGuard == "LOSS_DD")  return(L("Оргилоос уналтын хязгаар хүрсэн: роботын арилжааг хаасан, шинээр орохгүй (ResetLossLock = true-ээр дахин эхэлнэ)", "Drawdown limit reached: the robot's trades were closed, no new entries (ResetLossLock = true starts again)"));
+   if(gGuard == "NETTING")  return(L("Netting данс: робот арилжаа бүрийг тусад нь удирддаг тул hedging данс шаардлагатай, арилжаа хийхгүй", "Netting account: the robot manages each trade on its own, so it needs a hedging account and places no trades"));
+   return("");
+  }
+
+//+------------------------------------------------------------------+
+//| v3.94: шинэ оролт бүрийн өмнөх эцсийн шалгалт.                   |
+//| lots: илгээх лот, slDist: орох үнээс stop хүртэлх зай.           |
+//+------------------------------------------------------------------+
+// Spread-ийн дээд хэмжээ: MaxSpreadUsd, эс бөгөөс max($0.60, stop-ийн 10%)
+double SpreadCap(const double slDist) { return(MaxSpreadUsd > 0 ? MaxSpreadUsd : MathMax(0.60, 0.10 * slDist)); }
+bool SpreadTooWide(const double slDist)
+  {
+   double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+   return(spread > SpreadCap(slDist) + 1e-9);
+  }
+
+// Нэг арилжааны сонгосон эрсдэл: $ горимд тэр дүн, % горимд балансын %, лотын горимд бүтэн лотын stop хүртэлх эрсдэл
+double PerTradeRisk(const double slDist)
+  {
+   if(gRiskMode == 1) return(gRiskVal);
+   if(gRiskMode == 2) return(gRiskVal / 100.0 * AccountInfoDouble(ACCOUNT_BALANCE));
+   return(NormLots(gLots) * slDist * PerLot());
+  }
+
+bool PreTradeOk(const double lots, const double slDist, const bool riskCap = true)
+  {
+   if(gGuard != "") return(GateBlock(gGuard, gGuardDetail));
+   if(SpreadTooWide(slDist))
+     {
+      double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      return(GateBlock("SPREAD", "spread " + Num(spread, 2) + " > " + Num(SpreadCap(slDist), 2)));
+     }
+   if(riskCap && MaxOpenRiskX > 0 && lots > 0 && slDist > 0)
+     {
+      double unit = PerTradeRisk(slDist);
+      double open = OpenRiskToStops(), add = lots * slDist * PerLot();
+      if(unit > 0 && open + add > MaxOpenRiskX * unit + 1e-6)
+         return(GateBlock("OPEN_RISK", "$" + Num(open + add, 2) + " > " + Num(MaxOpenRiskX, 1) + " × $" + Num(unit, 2)));
+     }
+   return(true);
+  }
+
+//+------------------------------------------------------------------+
 //| Орох шүүлтүүр: бүх хэрэгсэл арилжаа нээхээс өмнө давна.          |
 //| Аль нэг нөхцөл хаавал gBlock-д код, gBlockDetail-д тоо үлдэнэ.    |
 //+------------------------------------------------------------------+
@@ -810,7 +1113,9 @@ string GateText(const string code)
    if(code == "SPREAD")     return(L("spread хэт өргөн", "spread too wide"));
    if(code == "TREND")      return(L("H1, M15 тренд орох чиглэлтэй таарахгүй", "the H1 and M15 trend disagree with the entry"));
    if(code == "DAY_BUDGET") return(L("энэ арилжааны эрсдэл өдрийн алдагдлын үлдсэн хязгаараас их", "this trade's risk is larger than what is left of the daily loss limit"));
-   if(code == "SMALL_ACCOUNT") return(L("данс жижиг: доод лотын эрсдэл сонгосон эрсдэлээс 2.5 дахинаас их (cent данс хэрэглэнэ үү)", "account too small: the minimum lot risks over 2.5× the chosen risk (use a cent account)"));
+   if(code == "SMALL_ACCOUNT") return(L("данс жижиг: доод лотын эрсдэл сонгосон эрсдэлээс " + Num(SMALL_ACCOUNT_X, 1) + " дахинаас их тул алгаслаа (cent данс хэрэглэнэ үү)", "account too small: the minimum lot risks over " + Num(SMALL_ACCOUNT_X, 1) + "× the chosen risk, so the trade was skipped (use a cent account)"));
+   if(code == "LOSS_DAY" || code == "LOSS_DD" || code == "NETTING") return(GuardText());
+   if(code == "OPEN_RISK")  return(L("нээлттэй арилжааны stop хүртэлх эрсдэл шинэ арилжаатай нийлээд сонгосон эрсдэлээс ", "the open trades' risk to their stops plus this trade would exceed ") + Num(MaxOpenRiskX, 1) + L(" дахинаас их", "× the chosen risk"));
    if(code == "RISK_SMALL") return(L("тавьсан эрсдэлд доод лот ч багтахгүй (stop хэт ойр болно)", "even the minimum lot does not fit the chosen risk (the stop would be too close)"));
    if(code == "MARGIN")     return(L("чөлөөт margin хүрэлцэхгүй", "not enough free margin"));
    if(code == "SITE_STOP")  return(L("вэбийн шинжилгээний stop-ийн зай ирээгүй", "no stop distance from the site reading yet"));
@@ -972,54 +1277,76 @@ bool FitsDayBudget(const double lots, const double slDist)
 // Тооцсон лот брокерын доод лотоос бага гарвал (жижиг данс) stop-ийг ойртуулж доод лотоор орно:
 // эрсдэл хэвээр, ашгийн зай мөн адил харьцаагаар багасна. Stop нь spread, stops level-ээс ойртох
 // шаардлагатай бол орохгүй (RISK_SMALL). canShrink = false бол stop-ийг хөдөлгөхгүй (дүрмийн stop).
-// v3.92, жижиг данс (canShrink = false, % эсвэл $ горим): доод лотын бодит эрсдэл (vmin × perLot × stop) хэмжээний
-// коэффициентын (mul) дараах зорилтот эрсдэлээс SMALL_ACCOUNT_X дахинаас их бол орохгүй (SMALL_ACCOUNT), чимээгүйхэн
-// доод лотоор орохгүй. Түүнээс бага бол доод лотоор орно. Тогтмол лотын горимд хамаарахгүй.
-#define SMALL_ACCOUNT_X 2.5
+// v3.94, жижиг данс (canShrink = false): илгээх лотын бодит эрсдэл нь зорилтот эрсдэлээс (хэмжээний коэффициент, ижил
+// чиглэлийн хагаслалтын дараа) SMALL_ACCOUNT_X дахинаас ихгүй байх ёстой. Лотыг алхамд нь доош бөөрөнхийлнө; 0 болбол доод
+// лот зорилтоос SMALL_ACCOUNT_X дотор байвал доод лотоор, эс бөгөөс арилжааг алгасна (SMALL_ACCOUNT). Хэзээ ч дээш бөөрөнхийлөхгүй.
+// Тогтмол лотын горимд ч мөн адил: 0.01 × 0.5 = 0.005 бол 0.01 руу дээшлүүлэхгүй, алгасна.
+double ClampMul(const double mul) { return((mul > 0) ? MathMax(0.25, MathMin(2.0, mul)) : 1.0); }
+double VolMin() { double v = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN); return(v > 0 ? v : 0.01); }
+double FitLots(const double want)
+  {
+   double lots = NormLots(want);
+   if(lots > 0) return(lots);
+   double vmin = VolMin();
+   if(want > 0 && vmin <= SMALL_ACCOUNT_X * want + 1e-9) return(NormLots(vmin));
+   return(0.0);
+  }
 string SmallAccountText(const double minRisk, const double want, const double vmin)
   {
    double bal = AccountInfoDouble(ACCOUNT_BALANCE);
-   string a = (bal > 0) ? Num(minRisk / bal * 100.0, 1) + "%" : "$" + Num(minRisk, 2);
-   string b = (bal > 0) ? Num(want / bal * 100.0, 1) + "%" : "$" + Num(want, 2);
-   return(L("Данс жижиг: доод lot-ын (" + Num(vmin, 2) + ") эрсдэл " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · cent данс хэрэглэнэ үү",
-            "Account too small: the minimum lot (" + Num(vmin, 2) + ") risks " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · use a cent account"));
+   string a = (bal > 0) ? Num(minRisk / bal * 100.0, 2) + "%" : "$" + Num(minRisk, 2);
+   string b = (bal > 0) ? Num(want / bal * 100.0, 2) + "%" : "$" + Num(want, 2);
+   return(L("Данс жижиг: доод lot-ын (" + Num(vmin, 2) + ") эрсдэл " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · алгаслаа, cent данс хэрэглэнэ үү",
+            "Account too small: the minimum lot (" + Num(vmin, 2) + ") risks " + a + " > " + Num(SMALL_ACCOUNT_X, 1) + " × " + b + " · skipped, use a cent account"));
   }
 bool SizeTrade(double &slDist, double &tpDist, double &lots, const bool canShrink, const double mul = 1.0)
   {
+   double perLot = PerLot();
+   double m = canShrink ? 1.0 : ClampMul(mul);
    if(gRiskMode == 0 || slDist <= 0)
      {
-      lots = NormLots(gLots);
-      if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return(false); }
-      return(true);
+      if(NormLots(gLots) <= 0) { lots = 0.0; gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return(false); }
+      double wantLots = gLots * m;
+      lots = canShrink ? NormLots(wantLots) : FitLots(wantLots);
+      if(lots <= 0)
+        {
+         double vm = VolMin(), unit = (slDist > 0 && perLot > 0) ? slDist * perLot : 1.0;
+         return(GateBlock("SMALL_ACCOUNT", SmallAccountText(vm * unit, wantLots * unit, vm)));
+        }
      }
-   double risk = (gRiskMode == 1) ? gRiskVal : gRiskVal / 100.0 * AccountInfoDouble(ACCOUNT_BALANCE);
-   double perLot = PerLot();
-   if(risk <= 0 || perLot <= 0) return(GateBlock("RISK_SMALL", ""));
-   lots = NormLots(risk / (slDist * perLot));
-   if(!canShrink)
+   else
      {
-      double vm = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-      if(vm <= 0) vm = 0.01;
-      double want = risk * ((mul > 0) ? MathMax(0.25, MathMin(2.0, mul)) : 1.0);   // ApplyMul-ын адил хязгаартай
-      double minRisk = vm * perLot * slDist;                     // доод лотын бодит эрсдэл
-      if(minRisk > SMALL_ACCOUNT_X * want + 1e-9) return(GateBlock("SMALL_ACCOUNT", SmallAccountText(minRisk, want, vm)));
-      if(lots <= 0) lots = NormLots(vm);                         // доод лот зорилтоос SMALL_ACCOUNT_X дотор: доод лотоор
-     }
-   if(lots <= 0)
-     {
-      double vmin = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-      if(vmin <= 0) vmin = 0.01;
-      double need = risk / (vmin * perLot);                       // доод лотоор энэ эрсдэлд багтах stop-ийн зай
-      double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
-      double floorD = MathMax(StopsMin(), 3.0 * spread);
-      if(!canShrink || need < floorD)
-         return(GateBlock("RISK_SMALL", "$" + Num(risk, 2) + L(" эрсдэлд доод лот ", " risk, min lot ") + Num(vmin, 2) + " → stop " + Num(need, 2) + " < " + Num(floorD, 2)));
-      if(tpDist > 0) tpDist = tpDist * need / slDist;
-      slDist = need;
-      lots = NormLots(vmin);
+      double risk = (gRiskMode == 1) ? gRiskVal : gRiskVal / 100.0 * AccountInfoDouble(ACCOUNT_BALANCE);
+      if(risk <= 0 || perLot <= 0) return(GateBlock("RISK_SMALL", ""));
+      if(!canShrink)
+        {
+         double want = risk * m;                                    // зорилтот эрсдэл: коэффициент ба хагаслалтын дараа
+         lots = FitLots(want / (slDist * perLot));
+         if(lots <= 0)
+           {
+            double vm = VolMin();
+            return(GateBlock("SMALL_ACCOUNT", SmallAccountText(vm * perLot * slDist, want, vm)));
+           }
+        }
+      else
+        {
+         lots = NormLots(risk / (slDist * perLot));
+         if(lots <= 0)                                              // Scalper: stop-ийг ойртуулж доод лотоор (эрсдэл хэвээр)
+           {
+            double vmin = VolMin();
+            double need = risk / (vmin * perLot);                   // доод лотоор энэ эрсдэлд багтах stop-ийн зай
+            double spread = SymbolInfoDouble(_Symbol, SYMBOL_ASK) - SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            double floorD = MathMax(StopsMin(), 3.0 * spread);
+            if(need < floorD)
+               return(GateBlock("RISK_SMALL", "$" + Num(risk, 2) + L(" эрсдэлд доод лот ", " risk, min lot ") + Num(vmin, 2) + " → stop " + Num(need, 2) + " < " + Num(floorD, 2)));
+            if(tpDist > 0) tpDist = tpDist * need / slDist;
+            slDist = need;
+            lots = NormLots(vmin);
+           }
+        }
      }
    double margin = 0.0;
-   if(OrderCalcMargin(ORDER_TYPE_BUY, _Symbol, lots, SymbolInfoDouble(_Symbol, SYMBOL_ASK), margin) && margin > AccountInfoDouble(ACCOUNT_MARGIN_FREE))
+   if(lots > 0 && OrderCalcMargin(ORDER_TYPE_BUY, _Symbol, lots, SymbolInfoDouble(_Symbol, SYMBOL_ASK), margin) && margin > AccountInfoDouble(ACCOUNT_MARGIN_FREE))
       return(GateBlock("MARGIN", Num(margin, 2) + " > " + Num(AccountInfoDouble(ACCOUNT_MARGIN_FREE), 2)));
    return(lots > 0);
   }
@@ -1032,9 +1359,9 @@ void TryBasket()
    if(!gTester && TimeLocal() - gLastSyncOk > 30) return;
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(!TradingAllowed()) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
    int dir = (gSignal == "BUY") ? 1 : -1;
    if(!GateCheck(dir)) return;                                   // орох шүүлтүүр: шалтгаан gBlock-д
+   if(!PreTradeOk(0.0, 0.0, false)) return;                      // v3.94: алдагдлын хязгаар, netting, spread ($0.60)
 
    double lots = NormLots(gLots);
    if(lots <= 0) { gReason = L("Лот брокерын доод хэмжээнээс бага байна", "Lots are below the broker's minimum"); return; }
@@ -1077,7 +1404,7 @@ void TryEnter()
    if(TimeCurrent() - gLastEntry < EntryCooldownSeconds) return;
    if(CountPositions() >= gMaxPos) return;
    if(!TradingAllowed()) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(gGuard != "") return;                                      // v3.94: алдагдлын хязгаар, netting
 
    double atr = Buf(hAtr, 0);
    if(atr == EMPTY_VALUE || atr <= 0) return;
@@ -1096,6 +1423,7 @@ void TryEnter()
    double lots = 0.0;
    if(!SizeTrade(slD, tpD, lots, true)) return;                  // шалтгаан gBlock эсвэл gReason-д
    if(!FitsDayBudget(lots, slD)) return;
+   if(!PreTradeOk(lots, slD)) return;                            // v3.94: spread, нээлттэй эрсдэлийн дээд хэмжээ
    if(TotalVolume() + lots > lots * gMaxPos + 1e-8) return;      // netting дансанд ч нийт лот хэтрэхгүй
    bool ok = SendMarket(dir, lots, slD, tpD, "xau-bot:" + Num(slD, 2));   // stops level, tick-ийг SendMarket хангана; тайлбарт анхны эрсдэлийн зай (R)
 
@@ -1322,15 +1650,9 @@ bool TradingAllowed()
   }
 
 // dir: +1 BUY, -1 SELL. slDist, tpDist нь орох үнээс тооцсон зай. Орох шүүлтүүрийг давах ёстой.
-// Сайтын трендийн хүчний коэффициент (sizeFactor): лотыг үржүүлнэ. Доод лотоос бага болбол өмнөх лотоо үлдээнэ.
+// Сайтын трендийн хүчний коэффициент (sizeFactor): лотыг үржүүлнэ (SizeTrade). v3.94: доод лотоос бага болбол дээш
+// бөөрөнхийлөхгүй — доод лот зорилтоос SMALL_ACCOUNT_X дотор бол доод лотоор, эс бөгөөс алгасна.
 double gNextMul = 1.0;                                        // tester: дараагийн RuleOpen-ийн коэффициент
-double ApplyMul(const double lots, const double mul)
-  {
-   if(mul <= 0 || MathAbs(mul - 1.0) < 1e-9) return(lots);
-   double m = MathMax(0.25, MathMin(2.0, mul));
-   double l2 = NormLots(lots * m);
-   return(l2 > 0 ? l2 : lots);
-  }
 
 // Трендийн хүчээр лотын коэффициент (сайтын lib/setup/sessionRules.ts sizeFactor-тэй ижил)
 double SizeFactor()
@@ -1345,20 +1667,20 @@ double SizeFactor()
 
 bool RuleOpen(const int dir, const double slDist, const double tpDist, const datetime exitAt)
   {
-   if(SpreadPoints() > MaxSpreadPoints) return(false);
    if(slDist <= StopsMin() || tpDist <= StopsMin()) return(false);   // хүрээ хэт нарийн: stop тавих боломжгүй
    if(!GateCheck(dir)) return(false);
    double lots = RuleLots(), sl = slDist, tp = tpDist;
    double mul = gNextMul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0);
-   if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false, mul)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
-   lots = ApplyMul(lots, mul);
    gNextMul = 1.0;
+   if(!SizeTrade(sl, tp, lots, false, mul)) return(false);      // дүрмийн stop-ийг хөдөлгөхгүй; коэффициент, хагаслалт SizeTrade дотор
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
-   // Хаах цагийг арилжааны comment-д хадгална (серверийн цаг): робот дахин ачаалсан ч мэднэ
+   if(!PreTradeOk(lots, sl)) return(false);                      // v3.94: spread, нээлттэй эрсдэл, алдагдлын хязгаар
+   // Хаах цагийг GlobalVariable-д (ticket-ээр), нөөцөөр comment-д хадгална (серверийн цаг): робот дахин ачаалсан ч мэднэ
    bool ok = SendMarket(dir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt));
    if(ok)
      {
+      if(!gTester) TradeStateSave(OpenedTicket(), exitAt, 0);
       gRuleTraded = true;
       gRuleExitAt = exitAt;
      }
@@ -1626,7 +1948,7 @@ void IctPlace(const int kz, const int dir, double entry, double stop, double tp)
   {
    double lots = RuleLots();
    if(lots <= 0) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(SpreadTooWide(MathAbs(entry - stop))) return;              // v3.94: max($0.60, stop-ийн 10%)
    if(!GateCheck(dir)) return;                                   // орох шүүлтүүр (TesterGate)
    entry = PriceNear(entry); stop = PriceNear(stop); tp = PriceNear(tp);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -1833,7 +2155,7 @@ void SxEnter(const int dir, const double entry, const double stop, const double 
    if(bestD == 0) tp = entry + dir * 2.0 * risk;
    double lots = RuleLots();
    if(lots <= 0) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
+   if(SpreadTooWide(risk)) return;                               // v3.94: max($0.60, stop-ийн 10%)
    if(!GateCheck(dir)) return;                                   // орох шүүлтүүр (TesterGate)
    double minDist = StopsMin();
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK), bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
@@ -2144,11 +2466,9 @@ void AsianTimeExit()
       ulong ticket = PositionGetTicket(i);
       if(ticket == 0 || !IsMine(ticket)) continue;
       string cm = PositionGetString(POSITION_COMMENT);
-      if(StringFind(cm, "xau-r:") == 0)
+      if(IsSetupTrade(ticket, cm))                                       // v3.94: GlobalVariable (ticket), эс бөгөөс comment
         {
-         string rest = StringSubstr(cm, 6);
-         int colon = StringFind(rest, ":");                                // v3.70: "xau-r:<хаах цаг>:<захиалгын id>"
-         datetime own = (datetime)StringToInteger(colon > 0 ? StringSubstr(rest, 0, colon) : rest);   // нээхдээ хадгалсан хаах цаг
+         datetime own = TradeExitAt(ticket, cm);                         // нээхдээ хадгалсан хаах цаг
          if(own > 0 && TimeCurrent() >= own) trade.PositionClose(ticket);
          continue;
         }
@@ -2164,7 +2484,27 @@ void AsianTimeExit()
 
 // Захиалгын id: дүрмийн дугаар × 1e10 + лааны хаалтын unix секунд. Дүрэм бүр сүүлд орсон id-гаа санана.
 #define ORDER_RULE_STEP 10000000000
-string OrderGlobal(const long id) { return("xau_ord_" + IntegerToString(id / ORDER_RULE_STEP)); }
+// v3.94: данс + magic + symbol-оор (GvName). v3.93 хүртэлх "xau_ord_<дүрэм>"-ийг зөвхөн уншина.
+string OrderGlobal(const long id)    { return(GvName("o" + IntegerToString(id / ORDER_RULE_STEP))); }
+string OrderGlobalOld(const long id) { return("xau_ord_" + IntegerToString(id / ORDER_RULE_STEP)); }
+string AsianLastGlobal()             { return(GvName("al")); }
+string DayLastGlobal()               { return(GvName("dl")); }
+double GvOr(const string name, const string old)
+  {
+   if(GlobalVariableCheck(name)) return(GlobalVariableGet(name));
+   return(GlobalVariableCheck(old) ? GlobalVariableGet(old) : 0.0);
+  }
+
+// GlobalVariable-ийг атомаар "эзэмшинэ" (value болгоно): ижил данс, magic, symbol-той хоёр чарт зэрэг орох гэвэл нэг нь л
+// амжина. prev-д өмнөх утга: илгээлт амжилтгүй бол ReleaseGv буцаана. Аль хэдийн value бол false.
+bool ClaimGv(const string name, const double value, double &prev)
+  {
+   if(!GlobalVariableCheck(name)) GlobalVariableSet(name, 0.0);
+   prev = GlobalVariableGet(name);
+   if((long)prev == (long)value) return(false);
+   return(GlobalVariableSetOnCondition(name, value, prev));
+  }
+void ReleaseGv(const string name, const double value, const double prev) { GlobalVariableSetOnCondition(name, prev, value); }
 
 bool EndsWith(const string s, const string tail)
   {
@@ -2176,15 +2516,17 @@ bool EndsWith(const string s, const string tail)
 // сүүлийн 3 хоногийн оролтын comment-д id байвал тийм. Хариу хоцорсон (timeout) захиалгыг давхар нээхгүй.
 bool OrderTaken(const long id)
   {
-   string g = OrderGlobal(id);
+   string g = OrderGlobal(id), old = OrderGlobalOld(id);
    if(GlobalVariableCheck(g) && (long)GlobalVariableGet(g) == id) return(true);
-   if(id / ORDER_RULE_STEP == 0 && GlobalVariableCheck("xau_asian_last") && (long)GlobalVariableGet("xau_asian_last") == id % ORDER_RULE_STEP) return(true);
+   if(GlobalVariableCheck(old) && (long)GlobalVariableGet(old) == id) return(true);
+   if(id / ORDER_RULE_STEP == 0 && (long)GvOr(AsianLastGlobal(), "xau_asian_last") == id % ORDER_RULE_STEP) return(true);
    string tag = ":" + IntegerToString(id);
    for(int i = PositionsTotal() - 1; i >= 0; i--)
      {
       ulong t = PositionGetTicket(i);
       if(t == 0 || !IsMine(t)) continue;
-      if(EndsWith(PositionGetString(POSITION_COMMENT), tag)) return(true);
+      string cm = PositionGetString(POSITION_COMMENT);
+      if(TradeOrderId(t, cm) == id || EndsWith(cm, tag)) return(true);   // v3.94: GlobalVariable (ticket), эс бөгөөс comment
      }
    if(HistorySelect(TimeCurrent() - 3 * 86400, TimeCurrent() + 60))
       for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
@@ -2201,7 +2543,7 @@ bool OrderTaken(const long id)
 void MarkTaken(const long id)
   {
    GlobalVariableSet(OrderGlobal(id), (double)id);
-   if(id / ORDER_RULE_STEP == 0) { gDLast = id % ORDER_RULE_STEP; GlobalVariableSet("xau_asian_last", (double)gDLast); }
+   if(id / ORDER_RULE_STEP == 0) { gDLast = id % ORDER_RULE_STEP; GlobalVariableSet(AsianLastGlobal(), (double)gDLast); }
   }
 
 // Зах зээлийн захиалга, stop ба target нь үнээр (сайтын setup-ийн өөрийн түвшин). Stops level-ээс ойр бол түүнд хүртэл холдуулна.
@@ -2253,13 +2595,20 @@ string TakeOrder(const long id, const int dir, const double entry, const double 
    if(TimeCurrent() >= exitAt) return(L("хаах цаг өнгөрсөн", "past the closing time"));
    double lots = RuleLots(), s1 = slD, t1 = tpD;
    double m = mul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0);   // трендийн хүч; ижил чиглэлд нээлттэй бол хагас
+   // v3.94: коэффициент, хагаслалт SizeTrade дотор; илгээх лотын эрсдэл ≤ SMALL_ACCOUNT_X × зорилт, эс бөгөөс алгасна
    if(!SizeTrade(s1, t1, lots, false, m) || lots <= 0) return(gBlock == "SMALL_ACCOUNT" ? gBlockDetail : L("хэмжээ: ", "size: ") + GateText(gBlock));
-   lots = ApplyMul(lots, m);
+   if(!PreTradeOk(lots, s1)) return(GateText(gBlock) + (gBlockDetail != "" ? " (" + gBlockDetail + ")" : ""));
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return(L("өмнөх захиалгын хариуг хүлээж байна", "waiting for the last order's reply"));
    gOrderTryAt = TimeCurrent();
-   // Хаах цаг ба захиалгын id comment-д: дахин ачаалсан ч хаах цагаа мэдэж, нэг захиалгаар хоёр удаа орохгүй
+   double prev = 0.0;
+   if(!ClaimGv(OrderGlobal(id), (double)id, prev)) return(L("энэ дохиогоор орсон", "this signal was taken"));   // өөр чарт зэрэг орохгүй
+   // Хаах цаг ба захиалгын id: GlobalVariable-д (ticket-ээр), нөөцөөр comment-д
    if(!SendMarketAt(dir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt) + ":" + IntegerToString(id)))
+     {
+      ReleaseGv(OrderGlobal(id), (double)id, prev);
       return(L("захиалга амжилтгүй: ", "order failed: ") + trade.ResultRetcodeDescription());
+     }
+   TradeStateSave(OpenedTicket(), exitAt, id);
    MarkTaken(id);
    Print(L("XauBot: setup-ийн захиалга — ", "XauBot: setup order — "), (dir > 0 ? "BUY" : "SELL"), L(" лот ", " lots "), Num(lots, 2), " SL ", Num(sl, 2), " TP ", Num(tp, 2), " id ", IntegerToString(id));
    return("");
@@ -2273,16 +2622,16 @@ string EntryBlockedWhy()
    if(RealBlocked()) return(L("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"));
    if(TimeLocal() - gLastSyncOk > 30) return(L("вэбтэй холбоо тасарсан", "the web connection was lost"));
    if(!TradingAllowed()) return(L("Algo Trading унтраалттай эсвэл брокер арилжаа хаасан", "Algo Trading is off or the broker has closed trading"));
+   if(gGuard != "") return(GuardText() + (gGuardDetail != "" ? " (" + gGuardDetail + ")" : ""));   // v3.94
    if(RuleLots() <= 0 && gRiskMode == 0) return(L("лот брокерын доод хэмжээнээс бага", "lots are below the broker's minimum"));
-   if(SpreadPoints() > MaxSpreadPoints) return(L("spread хэт өргөн", "spread too wide"));
-   return("");
+   return("");                                                     // spread: захиалга бүрт stop-ийн зайгаар (PreTradeOk)
   }
 
 void LiveAsianStep()
   {
    // Сайтын Setup хуудас, Telegram дохиотой яг ижил дүрэм: вэб breakout-ыг шийдэж (тренд, мэдээ, хүрээ), сешн бүрийн
    // идэвхтэй setup-ийг үнийн түвшинтэй нь илгээнэ. Робот зөвхөн захиалгыг тавьж, setup-ийн хаах цагт хаана.
-   if(gDLast < 0) gDLast = GlobalVariableCheck("xau_asian_last") ? (long)GlobalVariableGet("xau_asian_last") : 0;
+   if(gDLast < 0) gDLast = (long)GvOr(AsianLastGlobal(), "xau_asian_last");
    if(WeekendQuiet()) { gSignal = "NONE"; gReason = L("Амралтын өдөр, зах хаалттай", "Weekend, market closed"); return; }
    if(!gHasOrders) { LegacyAsianStep(); return; }
    if(gOrders == "")
@@ -2336,16 +2685,22 @@ void LegacyAsianStep()
    if(TimeCurrent() >= exitAt) { gReason += L(" · хаах цаг өнгөрсөн", " · past the closing time"); return; }
    double lots = RuleLots(), sl = gDRisk, tp = gDRisk * gDRR;
    if(!SizeTrade(sl, tp, lots, false) || lots <= 0) { gReason += " · " + (gBlock == "SMALL_ACCOUNT" ? gBlockDetail : L("хэмжээ: ", "size: ") + GateText(gBlock)); return; }
+   if(!PreTradeOk(lots, sl)) { gReason += " · " + GateText(gBlock) + (gBlockDetail != "" ? " (" + gBlockDetail + ")" : ""); return; }
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return;
    gOrderTryAt = TimeCurrent();
+   double prev = 0.0;
+   if(!ClaimGv(AsianLastGlobal(), (double)gDId, prev)) { gDLast = gDId; gReason += L(" · энэ дохиогоор орсон", " · this signal was taken"); return; }
    if(SendMarket(gDDir, lots, sl, tp, "xau-r:" + IntegerToString((long)exitAt) + ":" + IntegerToString(gDId)))
      {
+      TradeStateSave(OpenedTicket(), exitAt, gDId);
       gDLast = gDId;
-      GlobalVariableSet("xau_asian_last", (double)gDId);
       gReason += L(" · орлоо", " · entered");
      }
    else
+     {
+      ReleaseGv(AsianLastGlobal(), (double)gDId, prev);
       gReason += L(" · захиалга амжилтгүй: ", " · order failed: ") + trade.ResultRetcodeDescription();
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -2547,7 +2902,7 @@ void DayStep()
   {
    DayTimeExit();
    if(gState != "RUNNING" || gFinished != "") return;
-   if(gDLast < 0) gDLast = GlobalVariableCheck("xau_day_last") ? (long)GlobalVariableGet("xau_day_last") : 0;
+   if(gDLast < 0) gDLast = (long)GvOr(DayLastGlobal(), "xau_day_last");
    if(WeekendQuiet()) { gSignal = "NONE"; gReason = L("Амралтын өдөр, зах хаалттай", "Weekend, market closed"); return; }
    if(gDId <= 0 || gDDir == 0)
      {
@@ -2562,20 +2917,24 @@ void DayStep()
    if(TimeLocal() - gLastSyncOk > 30) return;
    if(CountPositions() + CountOrders() > 0) return;              // нэг удаад нэг арилжаа
    if(RealBlocked() || !TradingAllowed()) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
    if(!GateCheck(0)) return;                                     // цаг, мэдээ, хэлбэлзэл, spread, өдрийн хязгаар
    double slD = gDRisk, tpD = gDRisk * gDRR, lots = 0.0;
    if(slD <= StopsMin()) return;
    if(!SizeTrade(slD, tpD, lots, false)) return;                 // stop-ийг хөдөлгөхгүй: энэ нь setup-ийн өөрийнх нь түвшин
    if(!FitsDayBudget(lots, slD)) return;
+   if(!PreTradeOk(lots, slD)) return;                            // v3.94: алдагдлын хязгаар, netting, spread, нээлттэй эрсдэл
+   double prev = 0.0;
+   if(!ClaimGv(DayLastGlobal(), (double)gDId, prev)) { gDLast = gDId; return; }   // өөр чарт энэ дохиогоор орсон
    if(SendMarket(gDDir, lots, slD, tpD, "xau-bot:" + Num(slD, 2)))
      {
       gDLast = gDId;
-      GlobalVariableSet("xau_day_last", (double)gDId);
       Print("XauBot: day trader ", gSignal, L(" орлоо, лот ", " entered, lots "), Num(lots, 2), ", stop ", Num(slD, 2), ", target ", Num(tpD, 2));
      }
    else
+     {
+      ReleaseGv(DayLastGlobal(), (double)gDId, prev);
       Print(L("XauBot: захиалга амжилтгүй — ", "XauBot: order failed — "), trade.ResultRetcodeDescription());
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -2601,12 +2960,12 @@ void ReadingStep()
    if(CountPositions() + CountOrders() > 0) return;              // нэг удаад нэг арилжаа
    if(dir == 0) { gBlock = ""; gBlockDetail = ""; return; }
    if(RealBlocked() || !TradingAllowed()) return;
-   if(SpreadPoints() > MaxSpreadPoints) return;
    if(!GateCheck(0)) return;                                     // цаг, мэдээ, хэлбэлзэл, spread, өдрийн хязгаар
    if(gSiteAtr <= 0) { GateBlock("SITE_STOP", ""); return; }
    double slD = gSiteStopMult * gSiteAtr, tpD = slD * gSiteRR, lots = 0.0;
    if(!SizeTrade(slD, tpD, lots, false)) return;                 // stop-ийг ойртуулахгүй: судалсан дүрмийг өөрчилнө
    if(!FitsDayBudget(lots, slD)) return;
+   if(!PreTradeOk(lots, slD)) return;                            // v3.94: алдагдлын хязгаар, netting, spread, нээлттэй эрсдэл
    if(SendMarket(dir, lots, slD, tpD, "xau-bot:" + Num(slD, 2)))
       Print("XauBot: ", gSignal, L(" дүгнэлтээр орлоо, лот ", " entered on the reading, lots "), Num(lots, 2), ", stop ", Num(slD, 2), ", target ", Num(tpD, 2));
    else
@@ -2615,8 +2974,8 @@ void ReadingStep()
 
 //+------------------------------------------------------------------+
 //| Файлын гүүр: XauBot-Setup.bat-ийн суулгасан туслах (bridge.ps1)  |
-//| Common\Files\xaubot\<login>\request.json-ийг уншиж, вэб рүү       |
-//| илгээгээд хариуг response.json-д бичнэ.                          |
+//| Common\Files\xaubot\<login_magic_symbol>\request.json-ийг уншиж,|
+//| вэб рүү илгээгээд хариуг response.json-д бичнэ.                  |
 //+------------------------------------------------------------------+
 // Мөрийг JSON мөр болгох (хашилт, ташуу зураас, мөр шилжилт escape хийгдэнэ)
 string JsonEsc(string v)
@@ -2721,10 +3080,20 @@ void FileWaitStatus()
 
 // Нэг удаад нэг хүсэлт: өмнөхийн хариу ирсэн (эсвэл FILE_RESEND_SECONDS өнгөрсөн) үед л дараагийнхыг бичнэ.
 // Хариу ирсэн бол code, body-г бөглөж true буцаана. Хариу нь зөвхөн сүүлд бичсэн дугаартай (эсвэл түүнээс их) байвал авна.
+// v3.94: чарт бүр өөрийн хавтастай (данс_magic_symbol): нэг дансны хоёр чарт бие биеийнхээ хүсэлтийг дарж бичихгүй.
+string BridgeFolder()
+  {
+   string sym = _Symbol;
+   string bad = "\\/:*?\"<>| ";
+   for(int i = StringLen(sym) - 1; i >= 0; i--)
+      if(StringFind(bad, StringSubstr(sym, i, 1)) >= 0) StringSetCharacter(sym, i, '-');
+   return((string)AccountInfoInteger(ACCOUNT_LOGIN) + "_" + (string)MagicNumber + "_" + sym);
+  }
+
 bool FileSync(const string json, int &code, string &body)
   {
    if(gFileSince == 0) gFileSince = TimeLocal();
-   string dir = "xaubot\\" + (string)AccountInfoInteger(ACCOUNT_LOGIN);
+   string dir = "xaubot\\" + BridgeFolder();
    bool got = false;
    if(gFilePending)
      {
@@ -2775,7 +3144,8 @@ void Sync()
                  ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + JsonText(gReason, 280) + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
                  ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION +
                  ",\"gateOn\":" + (gGateOn ? "true" : "false") + ",\"block\":\"" + gBlock + "\",\"blockDetail\":\"" + JsonText(gBlockDetail, 100) + "\",\"tradesToday\":" + (string)gTradesToday +
-                 ",\"dayPnl\":" + Num(gDayPnl, 2) + ",\"dailyLossHit\":" + (gDailyLossHit ? "true" : "false");
+                 ",\"dayPnl\":" + Num(gDayPnl, 2) + ",\"dailyLossHit\":" + (gDailyLossHit ? "true" : "false") +
+                 ",\"guard\":\"" + gGuard + "\",\"guardDetail\":\"" + JsonText(gGuardDetail, 100) + "\"";   // v3.94: вэбээс үл хамаарах хамгаалалт
    string journal = JournalJson();
    if(journal != "") json += ",\"journal\":[" + journal + "]";
    json += "}";
@@ -2795,11 +3165,12 @@ void Sync()
       string resHeaders;
       string headers = "Content-Type: application/json\r\nX-Bot-Token: " + BotToken + "\r\n";
       ResetLastError();
-      code = WebRequest("POST", ServerUrl, headers, 5000, data, result, resHeaders);
+      code = WebRequest("POST", ServerUrl, headers, 2500, data, result, resHeaders);   // v3.94: 2.5 сек (арилжааны удирдлага өмнө нь хийгдсэн)
       if(code == -1)
         {
          int err = GetLastError();
-         if(err == 4014 && Transport == TRANSPORT_AUTO)
+         // AUTO: 4014 бол туслах руу шилжинэ. Туслахаар холбогдож байхдаа дахин оролдсон WebRequest өөр алдаа өгсөн ч туслахаар үргэлжилнэ.
+         if(Transport == TRANSPORT_AUTO && (err == 4014 || gUseFile))
            {
             gWebRetryAt = TimeLocal() + FILE_WEB_RETRY_SECONDS;
             if(!gUseFile)
@@ -2917,6 +3288,7 @@ void ShowStatus()
    s += L("Хэрэгсэл: ", "Tool: ") + (gMode == "BASKET" ? L("Багц", "Basket") : (gMode == "ASIAN" ? L("Азийн breakout", "Asian breakout") : (gMode == "READING" ? L("Дүгнэлт", "Reading") : (gMode == "DAY" ? "Day trader" : "Scalper")))) + "\n";
    s += L("Дохио: ", "Signal: ") + gSignal + " — " + gReason + "\n";
    s += GateLine() + "\n";
+   if(gGuard != "") s += "!!! " + GuardText() + (gGuardDetail != "" ? " (" + gGuardDetail + ")" : "") + "\n";   // v3.94
    if(gGateOn) s += L("Өнөөдөр: ", "Today: ") + (string)gTradesToday + (gGMaxTrades > 0 ? " / " + (string)gGMaxTrades : "") + L(" оролт · ", " entries · ") + Num(gDayPnl, 2) + (gDailyLossHit ? L(" · АЛДАГДЛЫН ХЯЗГААР", " · LOSS STOP") : "") + "\n";
    s += L("Нээлттэй: ", "Open: ") + (string)CountPositions() + " / " + (string)gMaxPos + L(" · лот ", " · lots ") + Num(gLots, 2);
    if(gState == "RUNNING") s += L(" · энэ удаа: ", " · this run: ") + Num(RunPnl(), 2);

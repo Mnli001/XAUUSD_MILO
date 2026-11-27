@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Bucket, JournalStats, JRow } from "@/lib/journalStats";
 import { weekdayName } from "@/lib/time";
 import type { Viewer } from "@/lib/viewer";
+import { DeleteTradeButton, JournalEntryForm, type EntryValues } from "./JournalEntryForm";
 
 export type JournalFilter = { src: "all" | "manual" | "robot"; days: "30" | "90" | "all"; login: string };
 
@@ -159,14 +160,42 @@ export function JournalSummary({ rows, s, v }: { rows: JRow[]; s: JournalStats; 
   );
 }
 
-export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: JournalStats; v: Viewer; filter: JournalFilter; logins: string[] }) {
+/** Writing trades by hand: today on the reader's clock, and the trade being edited, if any. */
+export type ManualEntry = { today: string; initial?: EntryValues | null };
+
+/**
+ * The journal: the form for writing a trade down (every signed-in member), the filters, the analysis and the trades.
+ * `locked` = no plan: only the written trades are loaded and shown, and one line says the MT5 ones come with a plan.
+ */
+export function JournalPanel({ rows, s, v, filter, logins, manual, locked = false }: { rows: JRow[]; s: JournalStats; v: Viewer; filter: JournalFilter; logins: string[]; manual?: ManualEntry; locked?: boolean }) {
   const { t } = v;
+  const editing = !!manual?.initial?.ticket;
+  const entry = manual && (
+    <details id="entry" className="card group scroll-mt-24" open={editing || rows.length === 0}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+        <span>
+          <span className="block text-base font-semibold text-zinc-100">{editing ? t("Арилжаа засах", "Edit a trade") : t("Арилжаа гараар нэмэх", "Add a trade by hand")}</span>
+          <span className="block text-sm text-zinc-400">{t("Робот холбоогүй ч журналаа хөтөлж, доорх анализыг авна.", "Keep your journal and get the analysis below without the robot.")}</span>
+        </span>
+        <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform group-open:rotate-180 motion-reduce:transition-none"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </summary>
+      <div className="mt-4 border-t pt-4" style={{ borderColor: "var(--hairline)" }}>
+        <JournalEntryForm key={manual.initial?.ticket ?? "new"} today={manual.today} initial={manual.initial} zone={v.zone} />
+      </div>
+    </details>
+  );
+  const lockedNote = locked && (
+    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border px-4 py-3 text-sm text-zinc-300" style={{ borderColor: "var(--hairline-gold)" }}>
+      <span className="min-w-0 flex-1">{t("Гараар бичсэн арилжаа танд үнэгүй. MT5 данснаас робот автоматаар илгээх арилжаа багцтай харагдана.", "Trades you write down are free. The trades the robot sends from your MT5 account show with a plan.")}</span>
+      <Link href="/plans" className="font-semibold whitespace-nowrap text-amber-300 hover:text-amber-200">{t("Багц", "Plans")} →</Link>
+    </p>
+  );
   const filters = (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
       <Chips label={t("Эх үүсвэр", "Source")} on={filter.src} items={[
         { key: "all", label: t("Бүгд", "All"), href: href(filter, { src: "all" }) },
         { key: "manual", label: t("Гараар", "By hand"), href: href(filter, { src: "manual" }) },
-        { key: "robot", label: t("Robot", "Robots"), href: href(filter, { src: "robot" }) },
+        { key: "robot", label: t("Робот", "Robots"), href: href(filter, { src: "robot" }) },
       ]} />
       <Chips label={t("Хугацаа", "Period")} on={filter.days} items={[
         { key: "30", label: t("30 өдөр", "30 days"), href: href(filter, { days: "30" }) },
@@ -185,14 +214,16 @@ export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: 
   if (!rows.length) {
     return (
       <div className="space-y-4">
+        {entry}
+        {lockedNote}
         {filters}
         <section className="card">
           <h2 className="card-title">{t("Trade алга", "No trades yet")}</h2>
           <p className="max-w-prose text-sm leading-relaxed text-zinc-300">
-            {t("MT5 дээр ажиллаж буй XauBot robot (v3.90 ба түүнээс шинэ) таны дансны хаасан бүх trade-ийг — гараар хийсэн ч, өөр robot-ийнх ч — сүүлийн 90 өдрөөс эхлэн энд автоматаар илгээнэ. Robot-оо шинэчлээд холбоно уу.",
-              "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.")}
+            {t("Хоёр замаар орно: дээрх маягтаар гараар бичих, эсвэл MT5 дээр ажиллаж буй XauBot робот (v3.90 ба түүнээс шинэ) таны дансны хаасан бүх trade-ийг — гараар хийсэн ч, өөр роботынх ч — сүүлийн 90 өдрөөс эхлэн энд автоматаар илгээнэ.",
+              "Two ways in: write a trade down with the form above, or let the XauBot robot on MT5 (v3.90 or newer) send every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back.")}
           </p>
-          <Link href="/bot" className="btn mt-4">{t("Bot руу очих", "Go to the bot")}</Link>
+          <Link href="/bot" className="btn-ghost mt-4">{t("Робот руу очих", "Go to the robot")}</Link>
         </section>
       </div>
     );
@@ -201,6 +232,8 @@ export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: 
   const recent = [...rows].sort((a, b) => b.closeTime.getTime() - a.closeTime.getTime()).slice(0, 50);
   return (
     <div className="space-y-4 sm:space-y-5">
+      {entry}
+      {lockedNote}
       {filters}
       <JournalSummary rows={rows} s={s} v={v} />
 
@@ -214,17 +247,29 @@ export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: 
             <th className="th text-right">{t("Нээсэн → хаасан", "Open → close")}</th>
             <th className="th">{t("Хэн", "By")}</th>
             <th className="th text-right">{t("Дүн", "Net")}</th>
+            <th className="th"><span className="sr-only">{t("Үйлдэл", "Actions")}</span></th>
           </tr></thead>
           <tbody>
             {recent.map((r, i) => (
-              <tr key={`${r.closeTime.getTime()}-${i}`} className="border-t border-white/5">
+              <tr key={`${r.ticket ?? r.closeTime.getTime()}-${i}`} className="border-t border-white/5">
                 <td className="td whitespace-nowrap text-zinc-400 tabular-nums">{v.dateTime(r.closeTime)}</td>
                 <td className="td text-zinc-200">{r.symbol}</td>
                 <td className={`td ${r.side === "BUY" ? "text-emerald-300" : "text-rose-300"}`}>{r.side}</td>
                 <td className="td text-right tabular-nums text-zinc-300">{r.lots}</td>
                 <td className="td text-right whitespace-nowrap tabular-nums text-zinc-400">{r.openPrice} → {r.closePrice}</td>
-                <td className="td text-zinc-400">{r.magic === "0" ? t("Гараар", "Hand") : "Robot"}</td>
+                <td className="td text-zinc-400">
+                  {r.source === "web" ? t("Бичсэн", "Written") : r.magic === "0" ? t("Гараар", "Hand") : t("Робот", "Robot")}
+                  {r.note && <span className="block max-w-[16rem] truncate text-xs text-zinc-500" title={r.note}>{r.note}</span>}
+                </td>
                 <td className={`td text-right tabular-nums ${tone(r.profit)}`}>{money(r.profit)}</td>
+                <td className="td whitespace-nowrap text-right">
+                  {r.source === "web" && r.ticket && (
+                    <span className="inline-flex items-center gap-3">
+                      <Link href={`/journal?edit=${encodeURIComponent(r.ticket)}#entry`} className="text-xs font-semibold text-amber-300 hover:text-amber-200">{t("Засах", "Edit")}</Link>
+                      <DeleteTradeButton ticket={r.ticket} />
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

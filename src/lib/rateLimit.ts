@@ -10,7 +10,8 @@ export type Limit = { max: number; windowMs: number };
 
 export const LIMITS = {
   loginIp: { max: 30, windowMs: 15 * 60e3 },
-  loginEmail: { max: 10, windowMs: 15 * 60e3 },
+  /** One email from one IP: an attacker elsewhere cannot use up the owner's attempts. */
+  loginIpEmail: { max: 10, windowMs: 15 * 60e3 },
   registerIp: { max: 10, windowMs: 60 * 60e3 },
   registerEmail: { max: 5, windowMs: 60 * 60e3 },
   telegramLink: { max: 5, windowMs: 60 * 60e3 },
@@ -43,7 +44,31 @@ export async function clearHits(scope: string, id: string): Promise<void> {
   await db.execute(sql`DELETE FROM rate_limits WHERE key = ${keyOf(scope, id)}`);
 }
 
-/** Drops counters whose window ended long ago; called from the scheduler or opportunistically. */
+/**
+ * A token bucket kept in this server's memory, for limits checked so often that a database write each time would
+ * cost more than the request (the robot's sync, every second or two). Each instance counts on its own, so with N
+ * instances behind the balancer a client gets up to N times the rate; that is fine for a flood guard.
+ * `take(key)` spends one request: 0 = allowed, otherwise how many seconds until one is free (for Retry-After).
+ */
+export function memoryLimiter(o: { perSecond: number; burst: number; maxKeys?: number }) {
+  const buckets = new Map<string, { tokens: number; at: number }>();
+  const maxKeys = o.maxKeys ?? 50_000;
+  return {
+    take(key: string, nowMs = Date.now()): number {
+      const b = buckets.get(key) ?? { tokens: o.burst, at: nowMs };
+      b.tokens = Math.min(o.burst, b.tokens + (Math.max(0, nowMs - b.at) / 1000) * o.perSecond);
+      b.at = nowMs;
+      buckets.delete(key); // re-inserted last: the map's first entries are the ones idle longest
+      buckets.set(key, b);
+      while (buckets.size > maxKeys) buckets.delete(buckets.keys().next().value as string);
+      if (b.tokens >= 1) { b.tokens -= 1; return 0; }
+      return Math.max(1, Math.ceil((1 - b.tokens) / o.perSecond));
+    },
+    clear: () => buckets.clear(),
+  };
+}
+
+/** Drops counters whose window ended long ago; called from the hourly scheduler job. */
 export async function pruneRateLimits(now = new Date(), olderThanMs = 24 * 60 * 60e3): Promise<void> {
   await db.execute(sql`DELETE FROM rate_limits WHERE window_start < ${new Date(now.getTime() - olderThanMs)}`);
 }

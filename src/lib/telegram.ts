@@ -254,7 +254,7 @@ const COMMAND = /^\/(\w+)(?:@\w+)?(?:\s|$)/;
 
 async function linkChat(chat: string, code: string, now: Date): Promise<void> {
   const linked = await db.transaction(async (tx) => {
-    const [user] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null })
+    const [user] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending })
       .where(and(eq(schema.users.telegramLinkCode, code), gt(schema.users.telegramLinkExpiresAt, now))).returning();
     // one chat belongs to one account, or that chat would get every signal twice
     if (user) await tx.update(schema.users).set({ telegramChatId: null }).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, user.id)));
@@ -282,6 +282,17 @@ async function linkChat(chat: string, code: string, now: Date): Promise<void> {
 }
 
 export const PENDING_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Kept in telegram_pending_username while a chat is linked through the email request (the pending columns are
+ * otherwise empty once a chat is linked; real usernames are [A-Za-z0-9_] only, so this can never be one).
+ * Such a chat gets signals, but cannot ask for /reset until it is linked again with the site's one-time code.
+ * Chats linked before this marker existed carry nothing and keep working.
+ * TODO(migration): a proper column, users.telegram_linked_via ('CODE' | 'EMAIL'), would replace this marker.
+ */
+export const EMAIL_LINKED = "~email-linked";
+/** Whether this linked chat proved it is the owner's with the site's one-time code (or was linked before that was tracked). */
+export const linkedByCode = (u: Pick<User, "telegramPendingUsername">) => u.telegramPendingUsername !== EMAIL_LINKED;
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 
 /** The display name the chat chose (free text: anyone can call themselves anything, so it is never shown alone). */
@@ -338,13 +349,13 @@ export type PendingTelegram = {
 /** The link request waiting for this user's yes or no, or null when there is none (or it has lapsed). */
 export function pendingTelegram(u: Pick<User, "telegramPendingChatId" | "telegramPendingName" | "telegramPendingExpiresAt"> & Partial<Pick<User, "telegramPendingUsername">>, now: Date): PendingTelegram | null {
   if (!u.telegramPendingChatId || !u.telegramPendingExpiresAt || u.telegramPendingExpiresAt.getTime() <= now.getTime()) return null;
-  const username = u.telegramPendingUsername ?? null;
+  const username = u.telegramPendingUsername && u.telegramPendingUsername !== EMAIL_LINKED ? u.telegramPendingUsername : null;
   const displayName = u.telegramPendingName || null;
   const verified = [username ? `@${username}` : null, `ID ${u.telegramPendingChatId}`].filter(Boolean).join(" · "); // i18n-ok: handle and number, the same in both languages
   return { name: displayName ? `${verified} — “${displayName}”` : verified, displayName, username, chatId: u.telegramPendingChatId };
 }
 
-const clearPending = { telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null };
+const clearPending = { telegramPendingChatId: null, telegramPendingName: null, telegramPendingExpiresAt: null, telegramPendingUsername: null as string | null };
 
 /** The account's owner said yes on the site: the waiting chat becomes theirs. False when nothing was waiting. */
 export async function confirmPendingTelegram(userId: string, now = new Date()): Promise<boolean> {
@@ -359,7 +370,8 @@ export async function confirmPendingTelegram(userId: string, now = new Date()): 
     await tx.update(schema.users).set({ telegramChatId: null }).where(and(eq(schema.users.telegramChatId, chat), ne(schema.users.id, userId)));
     // the same chat may have asked for other addresses too; those requests are spent
     await tx.update(schema.users).set(clearPending).where(and(eq(schema.users.telegramPendingChatId, chat), ne(schema.users.id, userId)));
-    const [done] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending }).where(eq(schema.users.id, userId)).returning();
+    // linked by email: signals yes, /reset only after the one-time code (see EMAIL_LINKED)
+    const [done] = await tx.update(schema.users).set({ telegramChatId: chat, telegramLinkCode: null, telegramLinkExpiresAt: null, ...clearPending, telegramPendingUsername: EMAIL_LINKED }).where(eq(schema.users.id, userId)).returning();
     return done;
   });
   if (!linked) return false;
@@ -386,9 +398,20 @@ export async function rejectPendingTelegram(userId: string): Promise<void> {
 
 /**
  * /reset from the chat linked to an account: a one-time link (30 minutes) to set a new site password.
- * Only the linked chat can ask, a few times an hour.
+ * Only the linked chat can ask, a few times an hour, and only when it was linked with the site's one-time code:
+ * a chat linked by the email request (one "yes" on the site) is asked to link with the code first. Never for an
+ * admin account: an admin changes their password on the site (Profile) or has the server's operator reset it.
  */
 async function sendResetLink(chat: string, u: User, now: Date, t: T): Promise<void> {
+  if (u.role === "ADMIN") {
+    console.warn(`[telegram] /reset refused for admin account ${u.id}`);
+    await sendMessage(chat, esc(t("Админы нууц үгийг Telegram-аар сэргээхгүй. Site-даа нэвтэрч Профайл хуудаснаас солино уу, эсвэл серверийн админаар сэргээлгэнэ үү.", "An admin's password is never reset through Telegram. Sign in and change it on the Profile page, or have the server's operator reset it.")));
+    return;
+  }
+  if (!linkedByCode(u)) {
+    await sendMessage(chat, esc(t("Энэ чат имэйлээр холбогдсон тул нууц үг сэргээх холбоос авахгүй. Site-ын Тохиргоо хуудсан дээр Telegram-аа салгаад, “Telegram холбох” товчийг дарж нээгдэх чатад Start-ыг дарна уу (нэг удаагийн код). Дараа нь /reset-ийг дахин илгээнэ үү.", "This chat was linked by email, so it cannot get a password reset link. On the site's Settings page, unlink Telegram, press “Link Telegram” and then Start in the chat that opens (a one-time code). Then send /reset again.")));
+    return;
+  }
   if (!(await hit("tg-reset", chat, LIMITS.telegramReset, now))) {
     await sendMessage(chat, esc(t("Хэт олон хүсэлт илгээлээ. Нэг цагийн дараа дахин оролдоно уу.", "Too many requests. Try again in an hour.")));
     return;

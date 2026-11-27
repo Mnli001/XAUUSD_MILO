@@ -322,7 +322,9 @@ export const macroSeries = pgTable("macro_series", {
 
 /**
  * Every closed trade on a member's MT5 account (their own and the robot's), reported by the robot from v3.90, for
- * the automatic journal. One row per closing deal; `magic` 0 is a trade placed by hand.
+ * the automatic journal, and the trades a member writes down by hand on the journal page. One row per closing deal;
+ * `magic` 0 is a trade placed by hand. `source` "web" rows are the written ones: login "web", a random ticket, the
+ * profit worked out from the prices (1 lot = 100 oz), and they alone may be edited or deleted.
  */
 export const journalTrades = pgTable("journal_trades", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -338,6 +340,9 @@ export const journalTrades = pgTable("journal_trades", {
   closeTime: ts("close_time").notNull(),
   profit: doublePrecision("profit").notNull(), // with swap and commission
   magic: text("magic").notNull().default("0"),
+  source: text("source").notNull().default("mt5"), // "mt5" = reported by the robot, "web" = written on the journal page
+  stopLoss: doublePrecision("stop_loss"), // written trades only, optional
+  note: text("note"), // written trades only, optional
 }, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] }), index("journal_user_close").on(t.userId, t.closeTime)]);
 export type JournalTrade = typeof journalTrades.$inferSelect;
 

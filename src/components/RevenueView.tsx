@@ -34,7 +34,7 @@ function MonthChart({ r, v }: { r: RevenueReport; v: Viewer }) {
         })}
       </div>
       <div className="mt-1.5 flex gap-0.5" aria-hidden>
-        {r.months.map((m) => <span key={m.key} className="flex-1 text-center text-[11px] text-zinc-500 tabular-nums">{m.key.slice(2).replace("-", "/")}</span>)}
+        {r.months.map((m) => <span key={m.key} className="flex-1 text-center text-xs text-zinc-500 tabular-nums">{m.key.slice(2).replace("-", "/")}</span>)}
       </div>
       <details className="mt-3">
         <summary className="cursor-pointer text-xs font-medium text-zinc-400 hover:text-zinc-200">{t("Тоогоор харах", "Show as a table")}</summary>

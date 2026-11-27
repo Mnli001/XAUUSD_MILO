@@ -304,6 +304,48 @@ test("/reset sends a one-time link to the linked chat only, a few times an hour"
   await handleUpdate(start("/reset", 555), now);
   expect(lastText()).toContain("Хэт олон хүсэлт");
 });
+test("/reset is never sent for an admin account", async () => {
+  const admin = await makeUser("boss@x.mn", "ADMIN");
+  await linkUser(admin.id, "555");
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  await handleUpdate(start("/reset", 555), new Date("2026-11-24T10:00:00Z"));
+  warn.mockRestore();
+  expect(lastText()).toContain("Telegram");
+  expect(lastText()).not.toContain("/reset/");
+  expect((await db.select().from(schema.passwordResets)).length).toBe(0);
+});
+test("a chat linked by email gets signals but no /reset until it is linked with the one-time code", async () => {
+  const u = await makeUser("a@x.mn");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("a@x.mn"), now);
+  expect(await confirmPendingTelegram(u.id, new Date(now.getTime() + 60_000))).toBe(true);
+  expect((await findUserById(u.id))!.telegramChatId).toBe("555");
+  expect(pendingTelegram((await findUserById(u.id))!, now)).toBeNull();
+  await handleUpdate(start("/reset", 555), now);
+  expect(lastText()).toContain("имэйлээр холбогдсон");
+  expect(lastText()).not.toContain("/reset/");
+  expect((await db.select().from(schema.passwordResets)).length).toBe(0);
+  // linking again with the site's code proves the chat is the owner's
+  await unlinkTelegram(u.id);
+  const code = await newLinkCode(u.id, now);
+  await handleUpdate(start(`/start ${code}`, 555), now);
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  await handleUpdate(start("/reset", 555), now);
+  warn.mockRestore();
+  expect(lastText()).toContain("https://xau.example/reset/");
+});
+test("a chat linked by code without unlinking first (code pressed in the same chat) may /reset", async () => {
+  const u = await makeUser("a@x.mn");
+  const now = new Date("2026-11-24T10:00:00Z");
+  await handleUpdate(say("a@x.mn"), now);
+  await confirmPendingTelegram(u.id, now);
+  const code = await newLinkCode(u.id, now);
+  await handleUpdate(start(`/start ${code}`, 555), now);
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  await handleUpdate(start("/reset", 555), now);
+  warn.mockRestore();
+  expect(lastText()).toContain("https://xau.example/reset/");
+});
 test("a linked chat that sends an email is not asked to link again", async () => {
   const u = await makeUser("a@x.mn");
   await linkUser(u.id, "555");

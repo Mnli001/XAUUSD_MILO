@@ -2,7 +2,11 @@ import type { Viewer } from "./viewer";
 import { sessionOfUbHour, ubHour, zoneWeekday, formatTime } from "./time";
 
 /** One closed trade as the analysis needs it. */
-export type JRow = { symbol: string; side: string; lots: number; openPrice: number; closePrice: number; openTime: Date; closeTime: Date; profit: number; magic: string };
+export type JRow = {
+  symbol: string; side: string; lots: number; openPrice: number; closePrice: number; openTime: Date; closeTime: Date; profit: number; magic: string;
+  /** "web" = written on the journal page (editable); anything else came from the MT5 account. */
+  source?: string; ticket?: string; stopLoss?: number | null; note?: string | null;
+};
 
 export type Bucket = { key: string; trades: number; wins: number; winPct: number; net: number; avg: number };
 export type Totals = Bucket & { avgWin: number | null; avgLoss: number | null; profitFactor: number | null; expectancy: number; maxLossStreak: number; best: number | null; worst: number | null };
@@ -69,8 +73,10 @@ export function journalStats(input: JRow[], v: Viewer) {
   const afterLossRows = rows.filter((r) => byClose.some((p) => p !== r && p.profit < 0 && p.closeTime <= r.openTime && r.openTime.getTime() - p.closeTime.getTime() <= REVENGE_MIN * 6e4));
   const med = median(rows.map((r) => r.lots));
   const bigRows = rows.filter((r) => med > 0 && r.lots > med * BIG_LOT_X);
-  const holdWin = avgOf(rows.filter((r) => r.profit > 0).map(minutes));
-  const holdLoss = avgOf(rows.filter((r) => r.profit < 0).map(minutes));
+  // A written trade with no closing time (closed = opened) says nothing about how long it was held.
+  const timed = rows.filter((r) => r.source !== "web" || minutes(r) > 0);
+  const holdWin = avgOf(timed.filter((r) => r.profit > 0).map(minutes));
+  const holdLoss = avgOf(timed.filter((r) => r.profit < 0).map(minutes));
   const behaviour = { afterLoss: bucket("afterLoss", afterLossRows), bigLots: bucket("bigLots", bigRows), holdWin: holdWin === null ? null : Math.round(holdWin), holdLoss: holdLoss === null ? null : Math.round(holdLoss) };
 
   const insights: Insight[] = [];

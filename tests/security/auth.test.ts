@@ -44,15 +44,25 @@ describe("sign-in", () => {
     expect(await authorizeCredentials({ email: "a@x.mn", password: "nope" }, ip("1.1.1.1"))).toBeNull();
   });
 
-  it("refuses an email after too many attempts, even with the right password, before bcrypt runs", async () => {
+  it("refuses an email from one IP after too many attempts, even with the right password, before bcrypt runs", async () => {
     await withPassword("a@x.mn", "password1");
     vi.spyOn(console, "warn").mockImplementation(() => {});
-    for (let i = 0; i < LIMITS.loginEmail.max; i++) {
-      expect(await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip(`10.0.0.${i}`))).toBeNull();
+    for (let i = 0; i < LIMITS.loginIpEmail.max; i++) {
+      expect(await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip("10.0.0.1"))).toBeNull();
     }
     const spy = vi.spyOn(bcrypt, "compare");
-    expect(await authorizeCredentials({ email: "a@x.mn", password: "password1" }, ip("10.0.1.1"))).toBe("limited");
+    expect(await authorizeCredentials({ email: "A@x.mn", password: "password1" }, ip("10.0.0.1"))).toBe("limited");
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("failures from other IPs cannot lock the owner out", async () => {
+    const u = await withPassword("victim@x.mn", "password1");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (let n = 0; n < 3; n++) {
+      for (let i = 0; i < LIMITS.loginIpEmail.max + 2; i++) await authorizeCredentials({ email: "victim@x.mn", password: "wrong" }, ip(`10.0.${n}.1`));
+      expect(await authorizeCredentials({ email: "victim@x.mn", password: "password1" }, ip(`10.0.${n}.1`))).toBe("limited");
+    }
+    expect(await authorizeCredentials({ email: "victim@x.mn", password: "password1" }, ip("5.5.5.5"))).toMatchObject({ id: u.id });
   });
 
   it("refuses an IP after too many attempts across many emails", async () => {
@@ -62,11 +72,11 @@ describe("sign-in", () => {
     expect(await authorizeCredentials({ email: "fresh@x.mn", password: "x" }, ip("8.8.8.8"))).toBeNull(); // another IP is fine
   });
 
-  it("a successful sign-in clears the email's count", async () => {
+  it("a successful sign-in clears the IP+email count", async () => {
     await withPassword("a@x.mn", "password1");
-    for (let i = 0; i < LIMITS.loginEmail.max - 1; i++) await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip("1.1.1.1"));
+    for (let i = 0; i < LIMITS.loginIpEmail.max - 1; i++) await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip("1.1.1.1"));
     expect(await authorizeCredentials({ email: "a@x.mn", password: "password1" }, ip("1.1.1.1"))).not.toBeNull();
-    for (let i = 0; i < LIMITS.loginEmail.max - 1; i++) await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip("1.1.1.1"));
+    for (let i = 0; i < LIMITS.loginIpEmail.max - 1; i++) await authorizeCredentials({ email: "a@x.mn", password: "wrong" }, ip("1.1.1.1"));
     expect(await authorizeCredentials({ email: "a@x.mn", password: "password1" }, ip("1.1.1.1"))).not.toBeNull();
   });
 

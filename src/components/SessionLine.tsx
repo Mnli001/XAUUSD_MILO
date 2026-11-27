@@ -61,7 +61,7 @@ export function SessionLine({ now, arrivals = [], big = false, v = MN_VIEWER }: 
           <span className="now-pulse absolute top-[calc(var(--y)-0.25rem)] left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-zinc-50 bg-amber-400" />
         </div>
       </div>
-      <div aria-hidden className="relative mt-0.5 h-4 text-[11px] text-zinc-500">
+      <div aria-hidden className="relative mt-0.5 h-4 text-xs text-zinc-500">
         {[0, 6, 12, 18, 24].map((h) => (
           <span key={h} className={`absolute ${h === 0 ? "" : h === 24 ? "-translate-x-full" : "-translate-x-1/2"}`} style={{ left: `${(h / 24) * 100}%` }}>{String(h).padStart(2, "0")}</span>
         ))}

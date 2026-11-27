@@ -1,8 +1,8 @@
 import { cache } from "react";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import "./i18n.server";
 import { getSessionUser } from "./auth";
-import { localeFromAcceptLanguage, translator, type T } from "./i18n";
+import { translator, type T } from "./i18n";
 import { COOKIE, parseLocale, parseTheme, parseTimeZone, type Prefs } from "./prefs";
 import { prefsOf } from "./prefsDb";
 import { viewer, type Viewer } from "./viewer";
@@ -15,8 +15,9 @@ export const getPrefs = cache(async (): Promise<Prefs> => {
   if (user) return prefsOf(user);
   const c = await cookies();
   const saved = c.get(COOKIE.locale)?.value;
-  // A first visit reads in the browser's own language; once chosen, the choice is kept in the cookie.
-  const locale = saved ? parseLocale(saved) : localeFromAcceptLanguage((await headers()).get("accept-language"));
+  // The site is for Mongolian traders: a first visit reads in Mongolian whatever the browser's language; once a
+  // language is chosen in the picker it is kept in the cookie.
+  const locale = saved ? parseLocale(saved) : "mn";
   return { locale, theme: parseTheme(c.get(COOKIE.theme)?.value), timeZone: parseTimeZone(c.get(COOKIE.timeZone)?.value) };
 });
 

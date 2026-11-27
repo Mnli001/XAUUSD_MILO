@@ -8,7 +8,7 @@ import type { T } from "@/lib/i18n";
 
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Robot-ыг VPS дээр 24/7 ажиллуулах", "Run the robot 24/7 on a VPS"), description: t("Хямд Windows VPS түрээслээд MT5, XauBot-ыг өдөр шөнөгүй ажиллуулах энгийн алхмууд.", "Plain steps to rent a cheap Windows VPS and keep MT5 and XauBot running day and night.") };
+  return { title: t("Роботыг VPS дээр 24/7 ажиллуулах", "Run the robot 24/7 on a VPS"), description: t("Хямд Windows VPS түрээслээд MT5, XauBot-ыг өдөр шөнөгүй ажиллуулах энгийн алхмууд.", "Plain steps to rent a cheap Windows VPS and keep MT5 and XauBot running day and night.") };
 }
 
 const MENU = "rounded-md border px-1.5 py-0.5 text-[0.92em] font-medium whitespace-nowrap text-zinc-200";
@@ -21,7 +21,7 @@ const steps = (t: T): { title: string; body: ReactNode }[] => [
     title: t("Windows VPS түрээслэх", "Rent a Windows VPS"),
     body: (
       <>
-        <p>{t("VPS бол интернэтэд байнга асаалттай байдаг түрээсийн компьютер. Таны компьютер унтарсан ч robot ажилласаар байна.", "A VPS is a rented computer that stays on in a data centre. The robot keeps working even when your own computer is off.")}</p>
+        <p>{t("VPS бол интернэтэд байнга асаалттай байдаг түрээсийн компьютер. Таны компьютер унтарсан ч робот ажилласаар байна.", "A VPS is a rented computer that stays on in a data centre. The robot keeps working even when your own computer is off.")}</p>
         <ul className="mt-3 list-disc space-y-1.5 ps-5 marker:text-zinc-600">
           <li>{t("Систем: Windows Server 2019 эсвэл 2022.", "System: Windows Server 2019 or 2022.")}</li>
           <li>{t("Хүчин чадал: 1–2 vCPU, 2 GB RAM, 30 GB+ диск. Нэг MT5-д хангалттай.", "Size: 1–2 vCPU, 2 GB RAM, 30 GB+ disk. Enough for one MT5.")}</li>
@@ -59,7 +59,7 @@ const steps = (t: T): { title: string; body: ReactNode }[] => [
     body: (
       <p>
         {t("VPS доторх browser-ээр энэ сайт руу нэвтэрч ", "In the VPS's browser, sign in to this site and open the ")}
-        <Link href="/bot" className={LINK}>{t("Bot хуудас", "Bot page")}</Link>
+        <Link href="/bot" className={LINK}>{t("Робот хуудас", "Robot page")}</Link>
         {t("-ыг нээнэ. Тэнд байгаа 3 алхмыг дагана: XauBot.ex5-ыг ", ". Follow its 3 steps: put XauBot.ex5 into ")}
         {menu("MQL5 → Experts")}
         {t(" хавтас руу хуулах, site-ын хаягийг ", ", allow the site's address under ")}
@@ -85,9 +85,9 @@ const steps = (t: T): { title: string; body: ReactNode }[] => [
     title: t("Утаснаасаа хянах", "Watch it from your phone"),
     body: (
       <p>
-        {t("Дохио, үр дүн Telegram-аар ирнэ. Robot online эсэх, эрсдэл, асаах/зогсоох нь ", "Signals and results arrive on Telegram. Whether the robot is online, its risk, and start or stop are on the ")}
-        <Link href="/bot" className={LINK}>{t("Bot хуудсанд", "Bot page")}</Link>
-        {t(" утаснаас ч харагдана. MT5-ын утасны app-аар нэг данс руугаа нэвтэрвэл robot-ын нээсэн арилжааг харж болно (утасны app өөрөө robot ажиллуулдаггүй).", ", from your phone too. Sign in to the same account in the MT5 phone app to see the trades the robot opened (the phone app cannot run the robot itself).")}
+        {t("Дохио, үр дүн Telegram-аар ирнэ. Робот online эсэх, эрсдэл, асаах/зогсоох нь ", "Signals and results arrive on Telegram. Whether the robot is online, its risk, and start or stop are on the ")}
+        <Link href="/bot" className={LINK}>{t("Робот хуудсанд", "Robot page")}</Link>
+        {t(" утаснаас ч харагдана. MT5-ын утасны app-аар нэг данс руугаа нэвтэрвэл роботын нээсэн арилжааг харж болно (утасны app өөрөө робот ажиллуулдаггүй).", ", from your phone too. Sign in to the same account in the MT5 phone app to see the trades the robot opened (the phone app cannot run the robot itself).")}
       </p>
     ),
   },
@@ -104,11 +104,11 @@ export default async function VpsGuidePage() {
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
         <p className="text-xs font-bold tracking-[0.14em] text-amber-400 uppercase">{t("Заавар", "Guide")}</p>
-        <h1 className="page-title mt-2">{t("Robot-ыг VPS дээр 24/7 ажиллуулах", "Run the robot 24/7 on a VPS")}</h1>
-        <p className="page-lede">{t("Robot таны MT5 дотор ажилладаг тул MT5 үргэлж асаалттай байх ёстой. Хамгийн хялбар нь сард ~$5–10-ийн Windows VPS. 20–30 минутад тохируулна.", "The robot runs inside your MT5, so MT5 must always be on. The easiest way is a ~$5–10 a month Windows VPS. It takes 20–30 minutes to set up.")}</p>
+        <h1 className="page-title mt-2">{t("Роботыг VPS дээр 24/7 ажиллуулах", "Run the robot 24/7 on a VPS")}</h1>
+        <p className="page-lede">{t("Робот таны MT5 дотор ажилладаг тул MT5 үргэлж асаалттай байх ёстой. Хамгийн хялбар нь сард ~$5–10-ийн Windows VPS. 20–30 минутад тохируулна.", "The robot runs inside your MT5, so MT5 must always be on. The easiest way is a ~$5–10 a month Windows VPS. It takes 20–30 minutes to set up.")}</p>
 
         <div className="glass-banner mt-6 text-sm leading-relaxed text-zinc-300">
-          <p><strong className="text-zinc-50">{t("Зөвхөн утастай юу?", "Only a phone?")}</strong> {t("Telegram дохиогоор гараар арилжаалж болно: орох үнэ, stop, target бүгд мессежид байгаа. Robot-д л Windows компьютер эсвэл VPS хэрэгтэй.", "You can trade the Telegram signals by hand: the entry, stop and target are all in the message. Only the robot needs a Windows PC or VPS.")}</p>
+          <p><strong className="text-zinc-50">{t("Зөвхөн утастай юу?", "Only a phone?")}</strong> {t("Telegram дохиогоор гараар арилжаалж болно: орох үнэ, stop, target бүгд мессежид байгаа. Роботод л Windows компьютер эсвэл VPS хэрэгтэй.", "You can trade the Telegram signals by hand: the entry, stop and target are all in the message. Only the robot needs a Windows PC or VPS.")}</p>
         </div>
 
         <ol className="mt-10 space-y-5">

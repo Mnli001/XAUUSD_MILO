@@ -8,7 +8,7 @@ import { saveSimpleBotAction, startBotAction, stopBotAction, closeAllAction, rot
 import { recordSentence, robotFileLabel, stamp, type BrokerRecord } from "@/lib/siteCopy";
 import { usePoll } from "./usePoll";
 import { Icon } from "./TodayIcons";
-import { ConnectSteps, CopyField, EX5_HREF } from "./BotConnect";
+import { ConnectSteps, CopyField, EX5_HREF, INSTALLER_HREF } from "./BotConnect";
 import { SETUP_STOP, SMALL_ACCOUNT_X, smallAccount } from "@/lib/lot";
 
 /** The robot file the Setup signals need (minRobotVersion("ASIAN") on the server, which the browser cannot load). */
@@ -28,11 +28,23 @@ const stopReasons = (t: T, file: string | null): Record<string, string> => ({
   DAILY_LOSS: t("өдрийн алдагдлын хязгаарт хүрсэн", "daily loss stop reached"),
   RISK_DAILY: t("эрсдэлийн менежер: өдрийн алдагдлын хязгаарт хүрсэн", "risk manager: today's loss limit reached"), RISK_MAX: t("эрсдэлийн менежер: нийт алдагдлын хязгаарт хүрсэн", "risk manager: overall loss limit reached"),
   REAL_NOT_ALLOWED: t("жинхэнэ данс зөвшөөрөгдөөгүй", "real account not allowed"), NO_ACCESS: t("хандах эрх дууссан", "access expired"), TOO_MANY_ACCOUNTS: t("нэг багцад 3 хүртэл MT5 данс холбоно", "a plan links up to 3 MT5 accounts"),
-  OLD_ROBOT: t(`robot-ын файл хуучин: шинэ XauBot.ex5${file ? ` (${file})` : ""} татаж солино уу`, `the robot file is old: download the new XauBot.ex5${file ? ` (${file})` : ""} and replace it`),
+  OLD_ROBOT: t(`роботын файл хуучин: шинэ XauBot.ex5${file ? ` (${file})` : ""} татаж солино уу`, `the robot file is old: download the new XauBot.ex5${file ? ` (${file})` : ""} and replace it`),
 });
+/**
+ * The robot's protective stops (XauBot v3.94), in plain words: what happened and what to do. Shown prominently when the
+ * live view carries one as `guard` (or as a block code from an older server).
+ */
+export const guardTexts = (t: T): Record<string, string> => ({
+  LOSS_DAY: t("Өдрийн алдагдлын хязгаар (5%) хүрсэн: өнөөдөр шинэ арилжаа нээхгүй, нээлттэй позицуудыг хаасан.", "Daily loss limit (5%) reached: no new trades today, and open positions were closed."),
+  LOSS_DD: t("Оргилоосоо 15%-ийн уналтад хүрсэн: робот түр зогссон. Дахин эхлүүлэхийн тулд роботын Inputs дээрх ResetLossLock-ийг асаана.", "A 15% fall from the peak was reached: the robot is paused. To resume, switch on ResetLossLock in the robot's Inputs."),
+  NETTING: t("Энэ нь netting данс: робот hedging данс шаарддаг. Брокероосоо hedging данс нээнэ үү.", "This is a netting account: the robot needs a hedging account. Open a hedging account with your broker."),
+  OPEN_RISK: t("Нээлттэй позицуудын нийт эрсдэл нэг арилжааны эрсдэлийн 3 дахинаас хэтрэх байсан тул шинэ арилжаа нээгээгүй.", "The open positions' total risk would have gone over 3× the per-trade risk, so no new trade was opened."),
+});
+
 /** The few reasons the robot holds back a Setup-signal entry that a user can act on, in plain words. */
 const plainBlocks = (t: T): Record<string, string> => ({
-  SMALL_ACCOUNT: t(`данс жижиг: хамгийн бага lot-ын эрсдэл таны сонгосноос ${SMALL_ACCOUNT_X} дахинаас их тул robot арилжааг алгаслаа. Cent данс хэрэглэнэ үү`, `the account is too small: the smallest lot risks over ${SMALL_ACCOUNT_X}× your choice, so the robot skipped the trade. Use a cent account`),
+  ...guardTexts(t),
+  SMALL_ACCOUNT: t(`данс жижиг: хамгийн бага lot ч таны сонгосон эрсдэлээс ${SMALL_ACCOUNT_X} дахинаас их эрсдэлтэй тул робот арилжааг алгаслаа (lot-ыг дээш нь тоймлодоггүй). Cent данс хэрэглэнэ үү`, `the account is too small: even the smallest lot risks over ${SMALL_ACCOUNT_X}× your choice, so the robot skipped the trade (it never rounds a lot up). Use a cent account`),
   RISK_SMALL: t("тавьсан эрсдэлд хамгийн бага lot ч багтахгүй байна: эрсдэлээ өсгөнө үү", "even the smallest lot does not fit your risk: raise the risk"),
   MARGIN: t("дансанд хангалттай чөлөөт мөнгө (margin) алга", "not enough free money (margin) in the account"),
 });
@@ -56,8 +68,8 @@ export function SmallAccountNote({ balance, riskPct }: { balance: number | null;
     <p role="note" className="rounded-xl bg-amber-400/10 px-3.5 py-2.5 text-sm leading-relaxed text-amber-200">
       <span className="font-semibold">{t("Данс жижиг байна", "This account is small")} ({money(balance)}). </span>
       {t(`Хамгийн бага 0.01 lot-той арилжааны stop ихэвчлэн ${stops} тул нэг арилжаа балансын ${range}-ийг эрсдэлд оруулна${pct ? `, таны сонгосон ${pct}-аас их` : ""}.`, `The smallest trade, 0.01 lot, usually has a ${stops} stop, so one trade risks ${range} of the balance${pct ? `, more than your ${pct}` : ""}.`)}
-      {pct && <> {t(`Доод lot-ын эрсдэл сонгосноос ${SMALL_ACCOUNT_X} дахинаас их бол robot тэр арилжааг алгасна.`, `The robot skips a trade when the smallest lot would risk over ${SMALL_ACCOUNT_X}× your choice.`)}</>}
-      {" "}{t("Cent данс (жишээ нь JustMarkets Standard Cent) нээвэл lot 100 дахин жижиг болж, сонгосон эрсдэлээрээ арилжаална.", "A cent account (for example JustMarkets Standard Cent) makes lots 100 times smaller, so trades keep to the risk you chose.")}
+      {pct && <> {t(`Робот lot-ыг хэзээ ч дээш нь тоймлохгүй: хамгийн бага lot ч сонгосон эрсдэлээс ${SMALL_ACCOUNT_X} дахинаас их эрсдэлтэй бол тэр арилжааг алгасна.`, `The robot never rounds a lot up: when even the smallest lot would risk over ${SMALL_ACCOUNT_X}× your choice, it skips that trade.`)}</>}
+      {" "}{t("Cent данс нээвэл lot 100 дахин жижиг болж, сонгосон эрсдэлээрээ арилжаална.", "A cent account makes lots 100 times smaller, so trades keep to the risk you chose.")}
     </p>
   );
 }
@@ -130,7 +142,7 @@ function PositionBar({ p, price }: { p: View["positions"][number]; price: number
 function TokenControl({ hasToken, token, pending, action, compact = false, disabled = false }: { hasToken: boolean; token?: string; pending: boolean; action: (f: FormData) => void; compact?: boolean; disabled?: boolean }) {
   const { t } = useViewer();
   const ask = (e: MouseEvent<HTMLButtonElement>) => {
-    if (hasToken && !window.confirm(t("Шинэ token үүсгэвэл хуучин token ажиллахаа больж, robot-од шинийг буулгах хэрэгтэй болно. Үргэлжлүүлэх үү?", "A new token stops the old one, and the new one must be pasted into the robot. Continue?"))) e.preventDefault();
+    if (hasToken && !window.confirm(t("Шинэ token үүсгэвэл хуучин token ажиллахаа больж, роботод шинийг буулгах хэрэгтэй болно. Үргэлжлүүлэх үү?", "A new token stops the old one, and the new one must be pasted into the robot. Continue?"))) e.preventDefault();
   };
   return (
     <div className={compact ? "" : "mt-3"}>
@@ -152,6 +164,10 @@ function TokenControl({ hasToken, token, pending, action, compact = false, disab
   );
 }
 
+/** How often the panel asks for the robot's state: while it runs (or is being connected), and while it is stopped. */
+export const POLL_FAST_MS = 5000;
+export const POLL_SLOW_MS = 30_000;
+
 export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = true }: { initial: View; origin: string; syncUrl: string; robot: RobotNeeds; setup: SetupToolText; installer?: boolean }) {
   const who = useViewer();
   const { t, zone } = who;
@@ -162,16 +178,26 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
   const [tokState, tokAction, tokPending] = useActionState<BotFormState, FormData>(rotateTokenAction, {});
   const [riskState, riskAction, riskPending] = useActionState<BotFormState, FormData>(saveSimpleBotAction, {});
 
-  // Every 2 s while the tab is in view, one request at a time; the server-rendered view covers the first paint.
   const load = useCallback(() =>
     fetch(`/api/bot/status?account=${encodeURIComponent(initial.account)}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d: View) => { setV(d); setStale(false); })
       .catch(() => setStale(true)), [initial.account]);
-  usePoll(load, 2000, true, false);
 
   // The connect card leads the page until the robot has reported at least once; it then folds into one line.
   const needsSetup = !v.hasToken || !v.lastSeenAt;
+  // One request at a time while the tab is in view: every 5 s while the robot runs (or is being connected, or closing
+  // trades), every 30 s while it is stopped. Start, Stop and Close all ask again at once. The server render is the first paint.
+  const fast = v.state === "RUNNING" || needsSetup || v.closeAllPending;
+  usePoll(load, fast ? POLL_FAST_MS : POLL_SLOW_MS, true, false);
+  const thenLoad = (act: (f: FormData) => Promise<void>) => async (f: FormData) => { await act(f); await load(); };
+
+  // The installer makes a new token, which cuts off a robot that is connected now: say so before the download starts.
+  const confirmInstaller = (e: MouseEvent<HTMLElement>) => {
+    const a = (e.target as HTMLElement).closest?.("a");
+    if (!a || !a.getAttribute("href")?.startsWith(INSTALLER_HREF) || !v.online) return;
+    if (!window.confirm(t("Энэ нь шинэ token үүсгэнэ: одоо ажиллаж буй робот тань дахин асах хүртлээ салгагдана. Үргэлжлүүлэх үү?", "This creates a new token; your running robot will disconnect until it restarts. Continue?"))) e.preventDefault();
+  };
   const [setupAtStart] = useState(needsSetup);
   const [doneSeen, setDoneSeen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -183,6 +209,9 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
   const c = v.config;
   const oldRobot = (v.robotVersion ?? (v.online ? 1 : robot.need)) < robot.need;
   const block = v.block ? BLOCK[v.block] : undefined;
+  // A protective stop the robot reports (status.guard / guardDetail): named in plain words, the detail as the robot gave it.
+  const guardCode = v.guard ?? (v.block && v.block in guardTexts(t) ? v.block : null);
+  const guard = guardCode ? { text: guardTexts(t)[guardCode] ?? guardCode, detail: v.guard ? v.guardDetail ?? null : v.blockDetail ?? null } : null;
 
   // The risk form: % of balance or a fixed lot. A dollar amount saved by the old form shows as % until it is saved again.
   const g = c.gate;
@@ -191,7 +220,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
   const [lots, setLots] = useState(String(c.rule.lots));
   const pctNum = Number(pct), lotsNum = Number(lots);
   const riskHelp = sizing === "PCT"
-    ? (v.balance !== null && pctNum > 0 ? t(`≈ ${money((v.balance * pctNum) / 100)} эрсдэл нэг арилжаанд (үлдэгдэл ${money(v.balance)})`, `≈ ${money((v.balance * pctNum) / 100)} at risk per trade (balance ${money(v.balance)})`) : t("Robot холбогдмогц эрсдэлийн дүнг доллараар харуулна.", "Once the robot connects, this shows the risk in dollars."))
+    ? (v.balance !== null && pctNum > 0 ? t(`≈ ${money((v.balance * pctNum) / 100)} эрсдэл нэг арилжаанд (үлдэгдэл ${money(v.balance)})`, `≈ ${money((v.balance * pctNum) / 100)} at risk per trade (balance ${money(v.balance)})`) : t("Робот холбогдмогц эрсдэлийн дүнг доллараар харуулна.", "Once the robot connects, this shows the risk in dollars."))
     : (lotsNum > 0 ? t(`Алт $1 хөдлөхөд ≈ ${money(lotsNum * 100)} ашиг эсвэл алдагдал`, `≈ ${money(lotsNum * 100)} profit or loss for every $1 gold moves`) : "");
 
   const accountField = <input type="hidden" name="account" value={v.account} />;
@@ -211,8 +240,10 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
             <Icon name="link" className="h-5 w-5 text-amber-400" />{t("MT5 холбох", "Connect MT5")}
           </h2>
           <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Windows компьютер эсвэл VPS дээрх MT5-аа нээгээд дансаараа нэвтэрнэ. Дараа нь:", "Open MT5 on your Windows computer or VPS and sign in to your account. Then:")}</p>
-          <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer}
-            tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} />} />
+          <div onClickCapture={confirmInstaller}>
+            <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer}
+              tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} />} />
+          </div>
           {v.balance !== null && <div className="mt-4"><SmallAccountNote balance={v.balance} riskPct={g.riskMode === "PCT" && g.riskValue > 0 ? g.riskValue : null} /></div>}
           {!needsSetup && <button type="button" className="btn mt-4" onClick={() => setDoneSeen(true)}>{t("Болсон", "Done")}</button>}
         </section>
@@ -228,7 +259,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
             </span>
           </div>
           {tokState.token && !guideOpen && <div className="mt-3"><TokenControl hasToken token={tokState.token} pending={false} action={tokAction} /></div>}
-          {guideOpen && <div id="connect-guide" className="mt-2 border-t border-zinc-800 pt-2"><ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer && !running} tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} disabled={running} />} /></div>}
+          {guideOpen && <div id="connect-guide" className="mt-2 border-t border-zinc-800 pt-2" onClickCapture={confirmInstaller}><ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer && !running} tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} disabled={running} />} /></div>}
         </section>
       )}
 
@@ -240,7 +271,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
           <StatusOrb tone={running ? (v.online ? "run" : "warn") : "stop"} />
           <div className="min-w-0">
             <h2 id="state-h" className={`font-display text-[26px] leading-tight sm:text-[36px] ${running ? (v.online ? "text-emerald-400" : "text-amber-300") : "text-zinc-100"}`}>
-              {running ? t("Bot ажиллаж байна", "Bot is running") : t("Bot зогссон", "Bot is stopped")}
+              {running ? t("Робот ажиллаж байна", "Robot is running") : t("Робот зогссон", "Robot is stopped")}
             </h2>
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs">
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-semibold ${v.online ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-400/15 text-amber-300"}`}>
@@ -254,6 +285,17 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
           </div>
         </div>
 
+        {guard && (
+          <div role="alert" data-testid="robot-guard" className="mt-5 flex gap-3 rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3.5 text-sm leading-relaxed text-red-100">
+            <Icon name="shield" className="mt-0.5 h-[18px] w-[18px] shrink-0 text-red-300" />
+            <span className="min-w-0">
+              <strong className="block font-semibold text-red-200">{t("Роботын хамгаалалт ажилласан", "The robot's safeguard has stepped in")}</strong>
+              {guard.text}
+              {guard.detail && <span className="mt-1 block text-xs text-red-200/80 tabular-nums">{guard.detail}</span>}
+            </span>
+          </div>
+        )}
+
         <dl className="mt-5 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
           {figures.map(([label, val, cls]) => (
             <div key={label} className="glass-tile min-w-0 px-3.5 py-3">
@@ -265,26 +307,26 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           {running
-            ? <form action={stopBotAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full px-8 text-base">■ {t("Зогсоох", "Stop")}</button></form>
-            : <form action={startBotAction} className="max-sm:w-full">{accountField}<button className="btn w-full px-10 text-base" disabled={!v.hasToken}>▶ {t("Эхлүүлэх", "Start")}</button></form>}
-          <form action={closeAllAction} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" style={{ borderColor: "rgb(234 131 112 / 0.4)" }} disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
+            ? <form action={thenLoad(stopBotAction)} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full px-8 text-base">■ {t("Зогсоох", "Stop")}</button></form>
+            : <form action={thenLoad(startBotAction)} className="max-sm:w-full">{accountField}<button className="btn w-full px-10 text-base" disabled={!v.hasToken}>▶ {t("Эхлүүлэх", "Start")}</button></form>}
+          <form action={thenLoad(closeAllAction)} className="max-sm:w-full">{accountField}<button className="btn-ghost w-full text-red-400" style={{ borderColor: "rgb(234 131 112 / 0.4)" }} disabled={v.positions.length === 0}>{t("Бүгдийг хаах", "Close all")}</button></form>
           {v.closeAllPending && <span role="status" className="text-xs font-medium text-amber-300">{t("Арилжаануудыг хааж байна…", "Closing trades…")}</span>}
         </div>
 
         <div className="mt-4 space-y-2 text-sm leading-relaxed">
           {!v.hasToken && <p className="text-zinc-400">{t("Эхлүүлэхийн өмнө MT5-аа дээрх хэсгээр холбоно уу: нэг товчоор эсвэл гараар.", "Connect your MT5 above before you start: in one click or by hand.")}</p>}
           {real && !c.allowReal && (
-            <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-red-300">{t("Энэ бол жинхэнэ данс. Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөөгүй тул bot арилжаа хийхгүй. Доорх «Эрсдэл» хэсгээс зөвшөөрнө үү.", "This is a real account. Real trading is not allowed, so the bot will not trade. Allow it in the Risk section below.")}</p>
+            <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-red-300">{t("Энэ бол жинхэнэ данс. Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөөгүй тул робот арилжаа хийхгүй. Доорх «Эрсдэл» хэсгээс зөвшөөрнө үү.", "This is a real account. Real trading is not allowed, so the robot will not trade. Allow it in the Risk section below.")}</p>
           )}
-          {real && c.allowReal && <p className="text-red-300">{t("Жинхэнэ данс: bot жинхэнэ мөнгөөр арилжаа хийнэ.", "Real account: the bot trades real money.")}</p>}
+          {real && c.allowReal && <p className="text-red-300">{t("Жинхэнэ данс: робот жинхэнэ мөнгөөр арилжаа хийнэ.", "Real account: the robot trades real money.")}</p>}
           {oldRobot && (
             <p role="alert" className="rounded-xl bg-amber-400/10 px-3.5 py-2.5 text-amber-200">
-              {t("Robot-ын шинэ файлаа татаж солино уу", "Download the new robot file and replace the old one")}: <a className="font-semibold underline" href={EX5_HREF}>XauBot.ex5{needFile ? ` (${needFile})` : ""}</a>
+              {t("Роботын шинэ файлаа татаж солино уу", "Download the new robot file and replace the old one")}: <a className="font-semibold underline" href={EX5_HREF}>XauBot.ex5{needFile ? ` (${needFile})` : ""}</a>
             </p>
           )}
-          {v.hasToken && !v.online && <p className="text-amber-300">{t("MT5 холбогдоогүй үед bot арилжаа хийхгүй. Robot холбогдмогц тушаалыг авна.", "While MT5 is not connected the bot places no trades. The robot picks up the command as soon as it connects.")}</p>}
+          {v.hasToken && !v.online && <p className="text-amber-300">{t("MT5 холбогдоогүй үед робот арилжаа хийхгүй. Робот холбогдмогц тушаалыг авна.", "While MT5 is not connected the robot places no trades. The robot picks up the command as soon as it connects.")}</p>}
           {running && v.online && !block && <p className="text-zinc-400">{v.positions.length > 0 ? t("Арилжаа нээлттэй. Stop, target эсвэл дүрмийн хаах цагт хаагдана.", "A trade is open. It closes at its stop, its target or the rule's closing time.") : t("Setup дохио гармагц орно. Stop, target, хаах цагийг дүрэм тогтооно.", "It enters as soon as a Setup signal appears. The rule sets the stop, the target and the closing time.")}</p>}
-          {running && block && <p className="text-amber-300">{t("Одоо орохгүй байгаа шалтгаан", "Why it is not entering now")}: {block}</p>}
+          {running && block && !guard && <p className="text-amber-300">{t("Одоо орохгүй байгаа шалтгаан", "Why it is not entering now")}: {block}</p>}
           {v.online && v.bid !== null && <p className="text-xs text-zinc-500 tabular-nums">{v.symbol ?? "XAUUSD"} · bid {v.bid} · ask {v.ask ?? "—"}</p>}
         </div>
       </section>
@@ -327,7 +369,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
         <label className="flex items-start gap-3 border-t border-zinc-800 pt-4 text-sm text-zinc-200">
           <input type="checkbox" name="allowReal" defaultChecked={c.allowReal} className="switch mt-0.5" />
           <span>{t("Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөх", "Allow trading on a real account")}
-            <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500">{t("Унтраалттай үед bot зөвхөн demo дансаар арилжаална. Асаавал MT5 дээрх robot-ын Inputs-д AllowRealAccount = true болгох хэрэгтэй.", "When off, the bot trades only on a demo account. If you switch it on, also set AllowRealAccount = true in the robot's Inputs in MT5.")}</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500">{t("Унтраалттай үед робот зөвхөн demo дансаар арилжаална. Асаавал MT5 дээрх роботын Inputs-д AllowRealAccount = true болгох хэрэгтэй.", "When off, the robot trades only on a demo account. If you switch it on, also set AllowRealAccount = true in the robot's Inputs in MT5.")}</span>
           </span>
         </label>
         {riskState.error && <p role="alert" className="text-sm text-red-400">{riskState.error}</p>}
@@ -379,10 +421,10 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = t
           <svg aria-hidden viewBox="0 0 12 12" className="ml-auto h-3 w-3 text-zinc-500 transition-transform group-open:rotate-180"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </summary>
         <div className="mt-3 max-w-prose space-y-3 text-sm leading-relaxed text-zinc-300">
-          <p>{t(`Bot өдөр бүр 3 setup-ийг дагана. Setup бүр өдөрт нэг удаа, нийт өдөрт 3 хүртэл арилжаа. Цаг ${zone}-аар:`, `The bot follows 3 setups every day. Each setup trades at most once a day, up to 3 trades a day in all. Times in ${zone}:`)}</p>
+          <p>{t(`Робот өдөр бүр 3 setup-ийг дагана. Setup бүр өдөрт нэг удаа, нийт өдөрт 3 хүртэл арилжаа. Цаг ${zone}-аар:`, `The robot follows 3 setups every day. Each setup trades at most once a day, up to 3 trades a day in all. Times in ${zone}:`)}</p>
           <ul className="list-disc space-y-1 pl-5 text-zinc-400">{setup.lines.map((l) => <li key={l}>{l}</li>)}</ul>
           {setup.record && <p className="text-zinc-400">{recordSentence(setup.record, t)}</p>}
-          <p className="text-amber-300">{t("Эхлээд demo дансаар туршаарай. Bot зөвхөн MT5 болон компьютер асаалттай үед ажиллана. Санхүүгийн зөвлөгөө биш.", "Try it on a demo account first. The bot works only while MT5 and the computer are on. Not financial advice.")}</p>
+          <p className="text-amber-300">{t("Эхлээд demo дансаар туршаарай. Робот зөвхөн MT5 болон компьютер асаалттай үед ажиллана. Санхүүгийн зөвлөгөө биш.", "Try it on a demo account first. The robot works only while MT5 and the computer are on. Not financial advice.")}</p>
         </div>
       </details>
     </div>

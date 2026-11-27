@@ -16,7 +16,7 @@ test("the mask reads as ***** and tells a screen reader why", () => {
 
 test("the plans card offers Plus, Pro and Max with their prices, each posting its own plan id", () => {
   const choose = vi.fn(async () => {});
-  render(<PlansCard t={mnT} choose={choose} payOn contact={null} />);
+  render(<PlansCard t={mnT} choose={choose} payOn contact={null} variant="full" />);
   for (const [name, price, plan] of [["Plus", "50,000₮", "PLUS"], ["Pro", "150,000₮", "PRO"], ["Max", "300,000₮", "MAX"]]) {
     const card = screen.getByRole("heading", { name }).closest("li")!;
     expect(within(card).getByText(price)).toBeInTheDocument();
@@ -26,10 +26,18 @@ test("the plans card offers Plus, Pro and Max with their prices, each posting it
 });
 
 test("with payments not set up yet, the plans still show but cannot be bought, and the admin contact is given", () => {
-  render(<PlansCard t={mnT} choose={async () => {}} payOn={false} contact={{ text: "Telegram: @admin", url: null }} />);
+  render(<PlansCard t={mnT} choose={async () => {}} payOn={false} contact={{ text: "Telegram: @admin", url: null }} variant="full" />);
   for (const b of screen.getAllByRole("button", { name: /сонгох/i })) expect(b).toBeDisabled();
   expect(screen.getByText(/удахгүй/)).toBeInTheDocument();
   expect(screen.getByText("Telegram: @admin")).toBeInTheDocument();
+});
+
+test("anywhere but the Plans page the paywall is one slim strip that links to the plans", () => {
+  render(<PlansCard t={mnT} choose={async () => {}} payOn contact={null} />);
+  const strip = screen.getByTestId("plans-strip");
+  expect(within(strip).getByRole("link", { name: "Багц сонгох" })).toHaveAttribute("href", "/plans");
+  expect(strip).toHaveTextContent("50,000₮-өөс");
+  expect(screen.queryAllByRole("button")).toHaveLength(0);
 });
 
 test("the locked hour strip keeps every hour and its session but hides the odds and the move", () => {

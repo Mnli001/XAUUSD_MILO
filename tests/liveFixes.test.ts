@@ -68,20 +68,53 @@ describe("robot orders", () => {
   it("the robot file is the new version and knows the order list", () => {
     const src = readFileSync("mt5/XauBot.mq5", "utf8");
     expect(src).toContain(`#define ROBOT_VERSION ${ROBOT_FILE_VERSION}`);
-    expect(src).toContain('#property version   "3.93"');
-    // v3.93: the file bridge. AUTO falls back to files on 4014 and retries WebRequest every 10 minutes; the same
-    // report goes out and the answer is read by the same code; replies older than the last request are not taken.
-    expect(src).toContain("if(err == 4014 && Transport == TRANSPORT_AUTO)");
+    expect(src).toContain('#property version   "3.94"');
+    // v3.93: the file bridge. AUTO falls back to files on 4014 (and stays on them while a WebRequest retry fails) and
+    // retries WebRequest every 10 minutes; the same report goes out and the answer is read by the same code; replies
+    // older than the last request are not taken. v3.94: one folder per chart (login_magic_symbol).
+    expect(src).toContain("if(Transport == TRANSPORT_AUTO && (err == 4014 || gUseFile))");
     expect(src).toContain("#define FILE_WEB_RETRY_SECONDS 600");
-    expect(src).toContain('string dir = "xaubot\\\\" + (string)AccountInfoInteger(ACCOUNT_LOGIN);');
+    expect(src).toContain('string dir = "xaubot\\\\" + BridgeFolder();');
+    expect(src).toContain('return((string)AccountInfoInteger(ACCOUNT_LOGIN) + "_" + (string)MagicNumber + "_" + sym);');
     expect(src).toContain('FileMove(dir + "\\\\request.tmp", FILE_COMMON, dir + "\\\\request.json", FILE_COMMON | FILE_REWRITE)');
     expect(src).toContain(',\\"body\\":\\"" + JsonEsc(json) + "\\"}"');
     expect(src).toContain("if(seq > 0 && seq >= gFileSeq)");
     expect(src).toContain('L("холбогдсон (туслах)", "connected (helper)")');
     expect(src).toContain('L("Туслах ажиллахгүй байна — XauBot-Setup.bat-ийг дахин ажиллуулна уу"');
-    // v3.92: a session order whose minimum lot would risk over 2.5x the intended risk (after the size factor) is skipped
-    expect(src).toContain("#define SMALL_ACCOUNT_X 2.5");
-    expect(src).toContain('if(minRisk > SMALL_ACCOUNT_X * want + 1e-9) return(GateBlock("SMALL_ACCOUNT"');
+    // v3.94, item 7: a 2.5 s WebRequest, and trade management runs before the network call on every timer tick
+    expect(src).toContain('WebRequest("POST", ServerUrl, headers, 2500, data, result, resHeaders)');
+    expect(src).not.toContain("headers, 5000,");
+    expect(src).toMatch(/void OnTimer\(\)\s*\{\s*if\(IsRuleTool\(\)\) return;\s*AsianTimeExit\(\);[^\n]*\n\s*LossGuard\(\);[\s\S]*?ManageRun\(\);[\s\S]*?Sync\(\);/);
+    // v3.94, item 1: a local kill switch in every live tool, kept in GlobalVariables keyed by login+magic+symbol
+    for (const part of [
+      "input double KillDailyLossPct     = 5.0;", "input double KillDrawdownPct      = 15.0;", "input double MaxOpenRiskX         = 3.0;",
+      'string base = "xb" + (string)AccountInfoInteger(ACCOUNT_LOGIN) + "_" + (string)MagicNumber + "_" + _Symbol + "_";',
+      'GvSet("kd", (double)gKDay);', 'GvSet("kl", 1.0);', 'GvSet("kp", gKPeak);',
+      "if(!dayLock && KillDailyLossPct > 0 && gKDayBal > 0 && dayLoss >= dayLimit)",
+      "if(!ddLock && KillDrawdownPct > 0 && gKPeak > 0 && ddPct >= KillDrawdownPct)",
+      "if((ddLock || dayLock) && !gClosing && CountPositions() + CountOrders() > 0)",
+      'if(gGuard != "") return(GateBlock(gGuard, gGuardDetail));',
+      "if(unit > 0 && open + add > MaxOpenRiskX * unit + 1e-6)",
+      '",\\"guard\\":\\"" + gGuard + "\\",\\"guardDetail\\":\\""',
+      'if(gGuard != "") { gBlock = gGuard; gBlockDetail = gGuardDetail; }',
+    ]) expect(src).toContain(part);
+    // every live entry path goes through the final check
+    expect(src.match(/PreTradeOk\(/g)!.length).toBeGreaterThanOrEqual(8);
+    // v3.94, item 2: the lot sent risks at most 1.2x the intended risk (after the size factor and halving); never rounded up
+    expect(src).toContain("#define SMALL_ACCOUNT_X 1.2");
+    expect(src).toContain("if(want > 0 && vmin <= SMALL_ACCOUNT_X * want + 1e-9) return(NormLots(vmin));");
+    expect(src).not.toContain("ApplyMul(");
+    expect(src).not.toContain("#define SMALL_ACCOUNT_X 2.5");
+    // v3.94, item 3: exit time and order id by ticket in GlobalVariables, the comment only as a fallback; swept when closed
+    for (const part of ["TradeStateSave(OpenedTicket(), exitAt, id);", "datetime own = TradeExitAt(ticket, cm);", "if(TradeOrderId(t, cm) == id || EndsWith(cm, tag)) return(true);", "if(t > 0 && !PositionSelectByTicket(t)) GlobalVariableDel(n);"]) expect(src).toContain(part);
+    // v3.94, item 4: netting accounts are refused
+    expect(src).toContain("bool netting = (AccountInfoInteger(ACCOUNT_MARGIN_MODE) != ACCOUNT_MARGIN_MODE_RETAIL_HEDGING);");
+    // v3.94, item 5: spread cap in dollars that follows the stop
+    expect(src).toContain("double SpreadCap(const double slDist) { return(MaxSpreadUsd > 0 ? MaxSpreadUsd : MathMax(0.60, 0.10 * slDist)); }");
+    expect(src).not.toContain("MaxSpreadPoints");
+    // v3.94, item 6: the duplicate-order mark is per login+magic+symbol and claimed atomically before the order goes out
+    expect(src).toContain('string OrderGlobal(const long id)    { return(GvName("o" + IntegerToString(id / ORDER_RULE_STEP))); }');
+    expect(src).toContain("if(!ClaimGv(OrderGlobal(id), (double)id, prev))");
     expect(src).toContain("!SizeTrade(s1, t1, lots, false, m)");
     expect(src).toContain('"jFrom"'); // the journal cursor
     expect(src).toContain('json += ",\\"journal\\":["');

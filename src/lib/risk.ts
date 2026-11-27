@@ -1,5 +1,5 @@
 import "./i18n.server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { deliver } from "./telegram";
 import { sendPush, type PushMessage } from "./push";
@@ -60,6 +60,31 @@ export function riskReading(rule: RiskRule, equity: number, now: Date) {
 }
 const round = (x: number) => Math.round(x * 100) / 100;
 
+/**
+ * Every robot report checks its account's rule, so rules are kept in memory for a short while (per server instance).
+ * Saving or removing a rule here forgets it at once; on other instances it is re-read within ruleTtlMs.
+ * Swapped in tests (0 = always read).
+ */
+export const riskTiming = { ruleTtlMs: process.env.NODE_ENV === "test" ? 0 : 30_000 };
+const ruleMemo = new Map<string, { at: number; rule: RiskRule | null }>();
+const MAX_MEMO = 10_000;
+const memoKey = (userId: string, login: string) => `${userId}:${login}`;
+export const forgetRiskRule = (userId: string, login: string) => { ruleMemo.delete(memoKey(userId, login)); };
+export const forgetRiskRules = () => ruleMemo.clear();
+function remember(userId: string, login: string, rule: RiskRule | null): void {
+  const key = memoKey(userId, login);
+  ruleMemo.delete(key);
+  ruleMemo.set(key, { at: Date.now(), rule });
+  while (ruleMemo.size > MAX_MEMO) ruleMemo.delete(ruleMemo.keys().next().value as string);
+}
+async function cachedRule(userId: string, login: string): Promise<RiskRule | null> {
+  const hit = ruleMemo.get(memoKey(userId, login));
+  if (hit && Date.now() - hit.at < riskTiming.ruleTtlMs) return hit.rule;
+  const rule = await getRiskRule(userId, login);
+  if (riskTiming.ruleTtlMs > 0) remember(userId, login, rule);
+  return rule;
+}
+
 export type RiskError = "accountSize" | "dailyLossPct" | "maxLossPct" | "profitTargetPct";
 export async function saveRiskRule(userId: string, login: string, input: RiskInput): Promise<{ error?: RiskError }> {
   const ok = (x: number, lo: number, hi: number) => Number.isFinite(x) && x > lo && x <= hi;
@@ -70,11 +95,13 @@ export async function saveRiskRule(userId: string, login: string, input: RiskInp
   const values = { ...input, breach: null, warned: "", updatedAt: new Date() };
   await db.insert(schema.riskRules).values({ userId, login, ...values })
     .onConflictDoUpdate({ target: [schema.riskRules.userId, schema.riskRules.login], set: values });
+  forgetRiskRule(userId, login);
   return {};
 }
 
 export async function deleteRiskRule(userId: string, login: string): Promise<void> {
   await db.delete(schema.riskRules).where(and(eq(schema.riskRules.userId, userId), eq(schema.riskRules.login, login)));
+  forgetRiskRule(userId, login);
 }
 
 export async function getRiskRule(userId: string, login: string): Promise<RiskRule | null> {
@@ -98,11 +125,10 @@ export function riskText(e: RiskEvent, r: ReturnType<typeof riskReading>, closeO
 type Deps = { send?: (chat: string, html: string) => Promise<boolean>; push?: (userId: string, msg: PushMessage) => Promise<number> };
 export type RiskVerdict = { stop: boolean; closeAll: boolean; reason?: "RISK_DAILY" | "RISK_MAX" };
 
-/** On each robot report: update the day, send what is new, and say whether the bot must stop (and close). */
-export async function applyRisk(userId: string, login: string, account: { equity: number }, now: Date, deps: Deps = {}): Promise<RiskVerdict> {
-  const rule = await getRiskRule(userId, login);
-  if (!rule || !(account.equity > 0)) return { stop: false, closeAll: false };
-  const r = riskReading(rule, account.equity, now);
+type RiskState = Pick<RiskRule, "dayKey" | "dayStartEquity" | "warned" | "breach">;
+
+/** The rule's day, warnings and breach after this reading, and the notices that are new. */
+function nextState(rule: RiskRule, r: ReturnType<typeof riskReading>): { state: RiskState; fresh: RiskEvent[]; closeNow: boolean } {
   const warned = new Set(rule.warned.split(",").filter((w) => w && (!w.includes(":") || w.endsWith(`:${r.dayKey}`))));
   let breach = rule.breach === "RISK_MAX" || rule.breach === `RISK_DAILY:${r.dayKey}` ? rule.breach : null;
   const fresh: RiskEvent[] = [];
@@ -116,20 +142,60 @@ export async function applyRisk(userId: string, login: string, account: { equity
     if (r.events.includes("max_warn") && !warned.has("max")) { warned.add("max"); fresh.push("max_warn"); }
   }
   if (r.events.includes("target") && !warned.has("target")) { warned.add("target"); fresh.push("target"); }
-  await db.update(schema.riskRules).set({ dayKey: r.dayKey, dayStartEquity: r.dayStartEquity, warned: [...warned].join(","), breach, updatedAt: now })
-    .where(and(eq(schema.riskRules.userId, userId), eq(schema.riskRules.login, login)));
-  if (fresh.length) {
-    const u = await findUserById(userId);
-    if (u) {
-      const v = viewer(prefsOf(u));
-      for (const e of fresh) {
-        const html = riskText(e, r, rule.closeOnBreach, v);
-        if (u.telegramChatId) await (deps.send ?? deliver)(u.telegramChatId, html).catch(() => false);
-        const [title, body] = html.split("\n").map((l) => l.replace(/<[^>]+>/g, ""));
-        await (deps.push ?? sendPush)(userId, { title, body, url: "/bot#risk", tag: `risk-${e}` }).catch(() => 0);
-      }
+  return { state: { dayKey: r.dayKey, dayStartEquity: r.dayStartEquity, warned: [...warned].join(","), breach }, fresh, closeNow };
+}
+
+const sameState = (a: RiskState, b: RiskState) => a.dayKey === b.dayKey && a.dayStartEquity === b.dayStartEquity && a.warned === b.warned && a.breach === b.breach;
+
+/**
+ * On each robot report: update the day, send what is new, and say whether the bot must stop (and close).
+ * Nothing is written while nothing changes. A change is written only if the row still holds what this reading started
+ * from, so when two server instances see the same breach at once, only the one whose write lands sends the notice;
+ * the other reads the rule again and finds nothing new.
+ */
+export async function applyRisk(userId: string, login: string, account: { equity: number }, now: Date, deps: Deps = {}): Promise<RiskVerdict> {
+  let rule = await cachedRule(userId, login);
+  if (!rule || !(account.equity > 0)) return { stop: false, closeAll: false };
+  let r = riskReading(rule, account.equity, now);
+  let next = nextState(rule, r);
+  for (let attempt = 0; !sameState(next.state, rule) && attempt < 2; attempt++) {
+    const rr = schema.riskRules;
+    const [won] = await db.update(rr).set({ ...next.state, updatedAt: now })
+      .where(and(
+        eq(rr.userId, userId), eq(rr.login, login),
+        eq(rr.dayKey, rule.dayKey), eq(rr.dayStartEquity, rule.dayStartEquity), eq(rr.warned, rule.warned),
+        rule.breach === null ? isNull(rr.breach) : eq(rr.breach, rule.breach),
+      )).returning({ one: sql<number>`1` });
+    if (won) {
+      const saved: RiskRule = { ...rule, ...next.state };
+      if (riskTiming.ruleTtlMs > 0) remember(userId, login, saved);
+      rule = saved;
+      await announce(userId, next.fresh, r, rule.closeOnBreach, deps);
+      break;
     }
+    // changed elsewhere (another instance, or the member saved new rules): start again from what is stored
+    forgetRiskRule(userId, login);
+    const stored = await cachedRule(userId, login);
+    if (!stored) return { stop: false, closeAll: false };
+    rule = stored;
+    r = riskReading(rule, account.equity, now);
+    next = nextState(rule, r);
+    if (sameState(next.state, rule)) break;
   }
+  const breach = next.state.breach;
   if (!breach) return { stop: false, closeAll: false };
-  return { stop: true, closeAll: closeNow, reason: breach === "RISK_MAX" ? "RISK_MAX" : "RISK_DAILY" };
+  return { stop: true, closeAll: next.closeNow, reason: breach === "RISK_MAX" ? "RISK_MAX" : "RISK_DAILY" };
+}
+
+async function announce(userId: string, fresh: RiskEvent[], r: ReturnType<typeof riskReading>, closeOnBreach: boolean, deps: Deps): Promise<void> {
+  if (!fresh.length) return;
+  const u = await findUserById(userId);
+  if (!u) return;
+  const v = viewer(prefsOf(u));
+  for (const e of fresh) {
+    const html = riskText(e, r, closeOnBreach, v);
+    if (u.telegramChatId) await (deps.send ?? deliver)(u.telegramChatId, html).catch(() => false);
+    const [title, body] = html.split("\n").map((l) => l.replace(/<[^>]+>/g, ""));
+    await (deps.push ?? sendPush)(userId, { title, body, url: "/bot#risk", tag: `risk-${e}` }).catch(() => 0);
+  }
 }

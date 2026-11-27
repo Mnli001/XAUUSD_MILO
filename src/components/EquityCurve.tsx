@@ -34,7 +34,7 @@ export function EquityCurve({ points, v = MN_VIEWER }: { points: { value: number
           <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="var(--color-zinc-600)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
           <polyline fill="none" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" stroke={color} points={line} vectorEffect="non-scaling-stroke" />
         </svg>
-        <span aria-hidden className={`pointer-events-none absolute left-1 text-[11px] text-zinc-500 ${y(0) < H * 0.15 ? "pt-0.5" : "-translate-y-full pb-0.5"}`} style={{ top: pct(y(0)) }}>$0</span>
+        <span aria-hidden className={`pointer-events-none absolute left-1 text-xs text-zinc-500 ${y(0) < H * 0.15 ? "pt-0.5" : "-translate-y-full pb-0.5"}`} style={{ top: pct(y(0)) }}>$0</span>
         <span aria-hidden className="absolute h-[13px] w-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] bg-zinc-900" style={{ left: "100%", top: pct(y(last)), borderColor: color, marginLeft: -7 }} />
       </div>
     </figure>

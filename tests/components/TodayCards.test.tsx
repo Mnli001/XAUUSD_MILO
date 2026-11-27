@@ -47,7 +47,7 @@ test("hours within half an hour of a high-impact release carry its name", () => 
 test("the direction card gives the side in words, the score, buyers against sellers and each timeframe", () => {
   const bias: TodaySnapshot["bias"] = { total: 34, buyerPct: 67, label: "ӨСӨХ хандлага", perTimeframe: { "1day": 40, "4h": -25, "1h": 10, "15min": null }, computedAt: new Date("2026-11-26T09:00:00Z") };
   render(<DirectionCard bias={bias} />);
-  const card = screen.getByRole("heading", { name: /Өнөөдрийн чиглэл/ }).closest("section")!;
+  const card = screen.getByRole("heading", { name: /Өдрийн чиглэл/ }).closest("section")!;
   expect(within(card).getByText("Өсөх")).toBeInTheDocument();
   expect(within(card).getByText("хандлага")).toBeInTheDocument();
   expect(within(card).getByText("+34")).toBeInTheDocument();

@@ -16,6 +16,8 @@ import { fillActuals, recordMoves } from "./ingest/actuals";
 import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
+import { pruneRateLimits } from "./rateLimit";
+import { runExclusive } from "./jobLock";
 
 export type Job = "fast" | "hourly" | "calendar";
 /** When each job last ran: fast = the start of its quarter hour (epoch ms), hourly = "YYYY-MM-DDTHH", calendar = "YYYY-MM-DD" (UTC). */
@@ -44,7 +46,8 @@ export function dueJobs(now: Date, s: SchedulerState): Job[] {
   return due;
 }
 
-async function run(job: Job, now: Date): Promise<void> {
+/** One job's work. Exported for tests; the scheduler calls it through runJob, under the job's lock. */
+export async function run(job: Job, now: Date): Promise<void> {
   const priceKey = process.env.TWELVEDATA_API_KEY;
   const fredKey = process.env.FRED_API_KEY;
   if (job === "calendar") {
@@ -52,6 +55,10 @@ async function run(job: Job, now: Date): Promise<void> {
     // the dollar, real yields and gold futures positioning, for the drivers page (a short window once history is in)
     try { console.log("[scheduler] macro", JSON.stringify(await ingestMacro(fredKey, now, (await hasMacroData()) ? 30 : 400))); } catch (e) { console.error("[scheduler] macro failed", e); }
     return;
+  }
+  if (job === "hourly") {
+    // sign-in and other attempt counters whose window ended a day ago
+    try { await pruneRateLimits(now); } catch (e) { console.error("[scheduler] rate limit prune failed", e); }
   }
   if (!priceKey) return;
   const result = await ingestPrices(new TwelveData(priceKey), { tfs: job === "fast" ? ["15min"] : ["1h", "4h", "1day"], now });
@@ -93,6 +100,20 @@ export async function bootstrap(): Promise<void> {
   console.log(failed.length ? `[bootstrap] finished, missing: ${failed.join(", ")}` : "[bootstrap] finished");
 }
 
+/** The slot a job runs for at `now`, as SchedulerState records it. */
+export const slotOf = (job: Job, now: Date): string =>
+  job === "fast" ? String(quarterOf(now)) : job === "hourly" ? now.toISOString().slice(0, 13) : now.toISOString().slice(0, 10);
+
+/**
+ * Runs a due job unless another server instance is running it now or already ran it for this slot
+ * (pg advisory lock + the slot kept in app_state, see jobLock.ts).
+ */
+export async function runJob(job: Job, now: Date, work: (job: Job, now: Date) => Promise<void> = run): Promise<"ran" | "busy" | "done"> {
+  const outcome = await runExclusive(job, slotOf(job, now), () => work(job, now));
+  if (outcome !== "ran") console.log(`[scheduler] ${job} skipped: ${outcome === "busy" ? "running on another instance" : "already ran for this slot"}`);
+  return outcome;
+}
+
 let started = false;
 
 /** In-process replacement for external cron services. Enabled with ENABLE_SCHEDULER=1 on an always-on server. */
@@ -111,7 +132,7 @@ export function startScheduler(): void {
         if (job === "fast") state.fast = quarterOf(now);
         else if (job === "hourly") state.hourly = now.toISOString().slice(0, 13);
         else state.calendar = now.toISOString().slice(0, 10);
-        try { await run(job, now); } catch (e) { console.error(`[scheduler] ${job} error`, e); }
+        try { await runJob(job, now); } catch (e) { console.error(`[scheduler] ${job} error`, e); }
       }
     } finally {
       busy = false;
@@ -119,7 +140,9 @@ export function startScheduler(): void {
   };
   console.log("[scheduler] started");
   // history first, so the regular jobs do not compete with it for the provider's rate limit
-  bootstrap()
+  // one instance loads the history; another one starting meanwhile goes straight to its ticks
+  runExclusive("bootstrap", null, bootstrap)
+    .then((o) => { if (o === "busy") console.log("[bootstrap] running on another instance"); })
     .catch((e) => console.error("[bootstrap] error", e))
     .finally(() => { void tick(); setInterval(tick, 60_000); });
 }

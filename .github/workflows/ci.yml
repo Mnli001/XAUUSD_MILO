@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xau_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d xau_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    # Dummy values only: the tests stub every outside service (Wire, Telegram, push, price providers).
+    # vitest.config.ts sets the same DATABASE_URL / AUTH_SECRET / CRON_SECRET for the test run itself.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/xau_test
+      AUTH_SECRET: ci-dummy-auth-secret
+      CRON_SECRET: ci-dummy-cron-secret
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # package.json engines: 22.x (LTS)
+          cache: npm
+
+      - run: npm ci
+
+      # The test database is migrated once, the way the README describes (drizzle-kit, from ./drizzle).
+      - name: Migrate the test database
+        run: npm run db:migrate
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Tests
+        run: npx vitest run

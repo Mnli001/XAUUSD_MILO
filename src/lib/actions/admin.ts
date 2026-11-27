@@ -72,3 +72,23 @@ export async function startPaperAction() {
   await startPaper(admin.id, new Date());
   revalidatePath("/admin/bot/paper");
 }
+
+/** The landing page's live record: one of this admin's own robot accounts, from a start date. */
+export async function setPublicRecordAction(_prev: AdminState, form: FormData): Promise<AdminState> {
+  const admin = await requireAdmin();
+  const t = await getT();
+  const { setPublicRecord } = await import("../publicRecord");
+  const r = await setPublicRecord(admin.id, String(form.get("login") ?? ""), String(form.get("since") ?? ""), new Date(), t);
+  if (r.error) return r;
+  revalidatePath("/admin/record");
+  revalidatePath("/");
+  return { ok: t("Хадгаллаа", "Saved") };
+}
+
+export async function clearPublicRecordAction() {
+  const admin = await requireAdmin();
+  const { clearPublicRecord } = await import("../publicRecord");
+  await clearPublicRecord(admin.id);
+  revalidatePath("/admin/record");
+  revalidatePath("/");
+}

@@ -272,7 +272,7 @@ export type DayOrderFields = { id: number; dir: number; risk: number; rr: number
 export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number; size?: number };
 /** The robot file the site serves (mt5/XauBot.mq5): its version number and the label people see. */
 export const ROBOT_FILE_VERSION = 16;
-export const ROBOT_FILE_LABEL = "3.93";
+export const ROBOT_FILE_LABEL = "3.94";
 /** Order freshness and price-run limits, the same ones Telegram uses (see ENTRY_FRESH_MS in lib/setup/build). */
 export const ORDER_MAX_AGE_SEC = 30 * 60;
 export const ORDER_SLIP_R = 0.3;
@@ -361,6 +361,12 @@ export const reportSchema = z.object({
   tradesToday: num.optional(),
   dayPnl: num.optional(),
   dailyLossHit: z.boolean().optional(),
+  // Robot v3.94 and newer: its own loss limits, kept on the computer whatever the web says. "" = none; LOSS_DAY = the
+  // daily loss limit was hit (the robot closed its trades, no entries until the next broker day); LOSS_DD = the drawdown
+  // limit from the peak equity was hit (no entries until reset on the robot); NETTING = a netting account, which the
+  // robot refuses to trade. guardDetail holds the numbers. Older robots send neither; the code is also sent as block.
+  guard: z.string().max(20).optional(),
+  guardDetail: z.string().max(MAX_REASON_CHARS).transform((s) => s.slice(0, 120)).optional(),
   // Robot v3.90 and newer: the account's closed trades after the command's jFrom, by hand or any robot, for the journal.
   journal: z.array(z.object({
     ticket: z.string().max(40), position: z.string().max(40).optional(), symbol: z.string().min(1).max(40), side,

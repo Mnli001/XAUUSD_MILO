@@ -28,7 +28,8 @@ describe("landing page affordances", () => {
   });
 
   it("the backtest is labelled as one and the results come from the data file", () => {
-    expect(LANDING).toMatch(/<BacktestResults curves=\{CURVES\} \/>/);
+    expect(LANDING).toMatch(/<BacktestResults curves=\{curves\} \/>/);
+    expect(LANDING).toMatch(/const curves = await loadCurves\(\)/);
     expect(LANDING).toMatch(/<BacktestNote /);
   });
 
@@ -36,6 +37,17 @@ describe("landing page affordances", () => {
     expect(LANDING).toMatch(/href="\/guide\/vps"/);
     expect(FOOTER).toMatch(/href="\/guide\/vps"/);
     expect(GUIDE).toMatch(/href="\/bot"/);
+  });
+
+  it("promises no outcome: no 'while you sleep', no 'never miss an entry'", () => {
+    for (const src of [LANDING, GUIDE, FOOTER]) expect(src).not.toMatch(/унтаж байсан ч|while you sleep|орох цэгээ алдахгүй|never miss an entry/i);
+  });
+
+  it("puts the live record and what was thrown away on the page, and names payment as QPay / bank app", () => {
+    expect(LANDING).toMatch(/id="record"/);
+    expect(LANDING).toMatch(/<RejectedIdeas /);
+    expect(LANDING).not.toMatch(/Wire-аар|through Wire/);
+    expect(LANDING).toMatch(/QPay \/ банкны апп/);
   });
 
   it("makes no claims the data cannot back", () => {

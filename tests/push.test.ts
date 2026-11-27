@@ -30,6 +30,43 @@ describe("push subscriptions", () => {
     expect(await db.select().from(schema.pushSubscriptions)).toHaveLength(0);
   });
 
+  it("accepts only the browsers' push services", async () => {
+    const a = await makeUser("a@x.mn");
+    const keys = { p256dh: "k", auth: "a" };
+    for (const endpoint of [
+      "https://fcm.googleapis.com/fcm/send/x",
+      "https://updates.push.services.mozilla.com/wpush/v2/x",
+      "https://wns2-par02p.notify.windows.com/w/?token=x",
+      "https://web.push.apple.com/QH-x",
+      "https://api.push.apple.com/3/device/x",
+    ]) expect(await savePushSubscription(a.id, { endpoint, keys })).toEqual({});
+    for (const endpoint of [
+      "https://evil.test/x",
+      "https://fcm.googleapis.com.evil.test/x",
+      "https://evilfcm.googleapis.com/x",
+      "https://notify.windows.com/x",
+      "https://push.apple.com.evil.test/x",
+      "https://user:pw@fcm.googleapis.com/x",
+      "https://fcm.googleapis.com:8443/x",
+      "https://127.0.0.1/x",
+      "not a url",
+    ]) expect((await savePushSubscription(a.id, { endpoint, keys })).error).toBe("invalid");
+  });
+
+  it("keeps at most five devices per user, replacing the oldest", async () => {
+    const a = await makeUser("a@x.mn"), b = await makeUser("b@x.mn");
+    await savePushSubscription(b.id, sub(99));
+    for (let n = 1; n <= 7; n++) expect(await savePushSubscription(a.id, sub(n))).toEqual({});
+    const mine = (await db.select().from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.userId, a.id))).map((r) => r.endpoint).sort();
+    expect(mine).toEqual([3, 4, 5, 6, 7].map((n) => sub(n).endpoint).sort());
+    // saving one again makes it the newest, so the next new device replaces another
+    await savePushSubscription(a.id, sub(3));
+    await savePushSubscription(a.id, sub(8));
+    const after = (await db.select().from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.userId, a.id))).map((r) => r.endpoint).sort();
+    expect(after).toEqual([3, 5, 6, 7, 8].map((n) => sub(n).endpoint).sort());
+    expect(await db.select().from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.userId, b.id))).toHaveLength(1);
+  });
+
   it("removes only the caller's own subscription", async () => {
     const a = await makeUser("a@x.mn"), b = await makeUser("b@x.mn");
     await savePushSubscription(a.id, sub(1));

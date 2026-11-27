@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { BacktestResults } from "@/components/BacktestResults";
-import { BacktestNote, KeyStats, ProofLine, RiskLadder, YearBars } from "@/components/BacktestFacts";
+import { BacktestHonesty, BacktestNote, KeyStats, ProofLine, RejectedIdeas, RiskLadder, YearBars, honestyText, outOfSampleText, rejectedIdeas } from "@/components/BacktestFacts";
 import { PlanFeatureList, planFeatures } from "@/components/PlanFeatures";
-import { CURVES, HERO_RISK, finalBalance, riskCurve, rrLabel, signedPct, underwater, usd } from "@/lib/backtestCurves";
+import { CURVES, HERO_RISK, finalBalance, riskCurve, rrLabel, signedPct, signedR, underwater, usd } from "@/lib/backtestCurves";
 import { existsSync } from "node:fs";
 import json from "@/data/backtest-curves.json";
-import { mnT } from "@/lib/i18n";
+import { enT, mnT } from "@/lib/i18n";
 import { MN_VIEWER } from "@/lib/viewer";
 import { SignalExample, exampleSignal } from "@/components/SignalExample";
 import type { SignalRow } from "@/lib/signalHistory";
@@ -44,17 +44,27 @@ describe("results section", () => {
     expect(t).toContain(signedPct(r.worstMonth));
   });
 
-  it("choosing 3% shows the 3% balance, return, CAGR and the deeper drawdown", () => {
+  it("choosing the top risk shows its balance, return, CAGR and the deeper drawdown, all from the file", () => {
+    const top = json.risks.at(-1)!;
     render(<BacktestResults curves={CURVES} />);
-    fireEvent.click(screen.getByRole("radio", { name: /^3%/ }));
-    expect(screen.getByRole("radio", { name: /^3%/ })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByTestId("final-balance")).toHaveTextContent("$23,403");
-    expect(screen.getByText("+1,460%")).toBeInTheDocument();
+    const radio = screen.getByRole("radio", { name: new RegExp("^" + String(top.risk).replace(".", "\\.") + "%") });
+    fireEvent.click(radio);
+    expect(radio).toHaveAttribute("aria-checked", "true");
+    const bal = usd(top.monthly.at(-1)!.eq);
+    expect(screen.getByTestId("final-balance")).toHaveTextContent(bal);
+    expect(screen.getByText(signedPct(top.finalPct, 0))).toBeInTheDocument();
     const t = tiles();
-    expect(t).toContain("+49.25%");
-    expect(t).toContain("−21.79%");
-    expect(t).toContain("−11.01%");
-    expect(screen.getByRole("img")).toHaveAccessibleName(/\$23,403.*−21\.79%/);
+    expect(t).toContain(signedPct(top.cagr));
+    expect(t).toContain("−" + top.maxDD.toFixed(2) + "%");
+    expect(t).toContain(signedPct(top.worstMonth));
+    const name = screen.getByRole("img").getAttribute("aria-label") ?? "";
+    expect(name).toContain(bal);
+    expect(name).toContain("−" + top.maxDD + "%");
+  });
+
+  it("says what the figure is, in the same block as the figure", () => {
+    render(<BacktestResults curves={CURVES} />);
+    expect(screen.getByTestId("backtest-honesty")).toHaveTextContent(/Түүхэн датан дээрх backtest.*forward шалгагдаагүй/);
   });
 
   it("the risk buttons are one radio group that arrow keys move through", () => {
@@ -70,39 +80,77 @@ describe("results section", () => {
 });
 
 describe("backtest facts", () => {
-  it("the proof line quotes $1,500 → the 1.5% balance with its drawdown", () => {
+  it("the proof line quotes the start → the hero-risk balance with its drawdown, and never stands alone", () => {
+    const r = riskCurve(HERO_RISK);
     render(<ProofLine t={mnT} />);
     const text = document.body.textContent ?? "";
-    expect(text).toContain("$1,500");
-    expect(text).toContain("$6,494");
-    expect(text).toMatch(/2019–2026/);
-    expect(text).toMatch(/1\.5% эрсдэлтэй/);
-    expect(text).toMatch(/−11\.1%/);
+    expect(text).toContain(usd(CURVES.start));
+    expect(text).toContain(usd(finalBalance(r)));
+    expect(text).toMatch(/2019–20\d\d/);
+    expect(text).toContain(HERO_RISK + "% эрсдэлтэй");
+    expect(text).toContain("−" + r.maxDD.toFixed(1) + "%");
+    expect(screen.getByTestId("backtest-honesty")).toHaveTextContent("forward шалгагдаагүй");
+  });
+  it("the honesty line quotes the file's own model when it has one, and the default differences when it does not", () => {
+    const withModel = { ...CURVES, model: { positionCap: 3, swapPerOzNight: 0.25, newsFilterFrom: "2023-11-29", dataGap: ["2019-12-16", "2020-03-29"], excluded: ["commission"] } };
+    expect(honestyText(mnT, withModel)).toMatch(/3 позиц.*swap \$0\.25.*2023-11-29.*COVID.*шимтгэл.*forward шалгагдаагүй/);
+    expect(honestyText(enT, withModel)).toMatch(/up to 3 positions.*not forward-tested/);
+    const bare = { ...withModel, model: undefined };
+    expect(honestyText(mnT, bare)).toBe("Түүхэн датан дээрх backtest · live системээс ялгаатай: мэдээний шүүлтүүр, 2020 оны COVID-ийн хэсэг, swap тооцоогүй · forward шалгагдаагүй");
+    render(<BacktestHonesty t={mnT} c={bare} />);
+    expect(screen.getByTestId("backtest-honesty")).toHaveClass("text-base");
+  });
+  it("the out-of-sample line names 2023 and that the rules were chosen on 2019–2022, from the file", () => {
+    const text = outOfSampleText(mnT, CURVES as never);
+    if (!(json as { outOfSample?: unknown }).outOfSample) { expect(text).toBeNull(); return; }
+    const y23 = CURVES.years.find((y) => y.year === 2023)!;
+    expect(text).toContain(signedR(y23.r, 2));
+    expect(text).toMatch(/2019–2022/);
   });
   it("labels every backtest as a backtest, with the past-results line", () => {
     render(<BacktestNote t={mnT} />);
     expect(screen.getByText("Түүхэн датан дээрх туршилт (backtest)")).toBeInTheDocument();
     expect(document.body.textContent).toMatch(/баталгаажуулахгүй/);
   });
-  it("shows every year with its sign in text and flags the thin 2019", () => {
+  it("shows every year with its sign in text, flags the thin 2019 and marks the losing year", () => {
     render(<YearBars t={mnT} />);
     expect(screen.getAllByRole("listitem")).toHaveLength(CURVES.years.length);
-    expect(screen.getByText("−0.7R")).toBeInTheDocument();
-    expect(screen.getByText("+33.1R")).toBeInTheDocument();
-    expect(screen.getByText(/5 арилжаа · өгөгдөл дутуу/)).toBeInTheDocument();
+    const best = CURVES.years.reduce((x, y) => (y.r > x.r ? y : x));
+    expect(screen.getByText(signedR(best.r, 2))).toBeInTheDocument();
+    const thin = CURVES.years.find((y) => y.trades < 20)!;
+    expect(screen.getByText(new RegExp(thin.trades + " арилжаа · өгөгдөл дутуу"))).toBeInTheDocument();
+    const losing = CURVES.years.filter((y) => y.r < 0 && y.trades >= 20);
+    expect(losing.length).toBeGreaterThan(0);
+    for (const y of losing) {
+      expect(screen.getByText(signedR(y.r, 2))).toBeInTheDocument();
+      expect(screen.getByText(String(y.year)).closest("li")).toHaveAttribute("data-losing", "true");
+    }
+    expect(screen.getAllByText(/алдагдалтай жил/)).toHaveLength(losing.length);
   });
   it("the key stats come from the file", () => {
     render(<KeyStats t={mnT} />);
     const text = document.body.textContent ?? "";
-    expect(text).toContain("~1.5");
-    expect(text).toContain("50.7%");
+    const s = json.stats;
+    expect(text).toContain("~" + s.perWeek.toFixed(1));
+    expect(text).toContain((Math.round(s.winRate * 10 + 1e-6) / 10).toFixed(1) + "%");
     expect(text).toContain("1:2–1:3");
-    expect(text).toContain("1.50");
+    expect(text).toContain(s.profitFactor.toFixed(2));
   });
   it("the risk ladder lists every risk with its fall", () => {
     render(<RiskLadder t={mnT} />);
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
-    expect(screen.getByText("уналт −21.8%")).toBeInTheDocument();
+    expect(screen.getByText("уналт −" + json.risks.at(-1)!.maxDD.toFixed(1) + "%")).toBeInTheDocument();
+  });
+  it("what we threw away lists the 19 failed rules and the rejected shapes, and what stayed", () => {
+    render(<RejectedIdeas t={mnT} />);
+    expect(screen.getByRole("heading", { name: "Бид юуг туршаад хаясан бэ" })).toBeInTheDocument();
+    const names = rejectedIdeas(mnT).map(([n]) => n).join(" | ");
+    expect(names).toMatch(/19 дүрэм/);
+    expect(names).toMatch(/Лондоны breakout/);
+    expect(names).toMatch(/reversion/);
+    expect(names).toMatch(/swing/);
+    expect(names).toMatch(/Breakeven/);
+    expect(document.body.textContent).toMatch(/Үлдсэн нь: .*3 сешний хүрээний breakout/);
   });
 });
 

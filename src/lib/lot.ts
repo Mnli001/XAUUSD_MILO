@@ -32,8 +32,11 @@ export function lotSize(i: { balance: number; riskPct: number; stop: number; tar
 export const SMALL_ACCOUNT_USD = 500;
 /** The session setups' stops usually sit $10–20 from the entry; $15 is the middle used to judge an account. */
 export const SETUP_STOP = { low: 10, mid: 15, high: 20 } as const;
-/** The robot skips a session trade when 0.01 lot would risk more than this many times the chosen risk (XauBot v3.92). */
-export const SMALL_ACCOUNT_X = 2.5;
+/**
+ * The robot never rounds a lot up past the chosen risk: it skips a session trade when even the smallest lot would risk
+ * more than this many times the chosen risk (XauBot v3.94; SMALL_ACCOUNT_X in mt5/XauBot.mq5).
+ */
+export const SMALL_ACCOUNT_X = 1.2;
 
 /** What 0.01 lot risks, as % of the balance, with a stop `stop` dollars away. */
 export const minLotRiskPct = (balance: number, stop: number) => r2(((MIN_LOT * OZ_PER_LOT * stop) / balance) * 100);

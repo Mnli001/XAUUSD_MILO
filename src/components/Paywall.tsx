@@ -25,21 +25,44 @@ export function UnlockLink({ t }: { t: T }) {
 const period = (id: PlanId, t: T) => ({ PLUS: t("1 сар", "1 month"), PRO: t("6 сар", "6 months"), MAX: t("1 жил", "1 year") })[id];
 const months: Record<PlanId, number> = { PLUS: 1, PRO: 6, MAX: 12 };
 
+/** How people pay, in their words: QPay or a bank app (the checkout behind it is Wire's; see src/lib/wire.ts). */
+export const payWays = (t: T) => t("QPay / банкны апп (мөн карт, Toki)", "QPay / a bank app (cards and Toki work too)");
+
+/**
+ * The paywall as one slim strip: what a plan opens, the lowest price, and the way to the Plans page. Every page that
+ * locks something shows this once; only the Plans page shows the full card.
+ */
+export function PlansStrip({ t }: { t: T }) {
+  return (
+    <aside className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-[20px] border px-4 py-3 sm:px-5" aria-label={t("Багц", "Plans")}
+      style={{ borderColor: "var(--hairline-gold)", background: "linear-gradient(90deg, rgb(217 181 102 / 0.1), transparent 70%), var(--panel-bg)" }} data-testid="plans-strip">
+      <svg aria-hidden viewBox="0 0 20 20" className="h-4 w-4 shrink-0 text-amber-400" fill="currentColor"><path fillRule="evenodd" d="M10 2a4 4 0 0 0-4 4v2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1V6a4 4 0 0 0-4-4Zm2 6V6a2 2 0 1 0-4 0v2h4Z" clipRule="evenodd" /></svg>
+      <p className="min-w-0 flex-1 text-sm leading-snug text-zinc-200">
+        {t("Дохио, робот, бүх тоо багцтай нээгдэнэ", "A plan opens the signals, the robot and every number")}
+        <span className="text-zinc-400 tabular-nums"> · {t(`${tugrik(PLANS.PLUS.amount)}-өөс`, `from ${tugrik(PLANS.PLUS.amount)}`)}</span>
+      </p>
+      <Link href="/plans" className="btn min-h-9 px-4 text-sm whitespace-nowrap max-sm:w-full">{t("Багц сонгох", "Choose a plan")}</Link>
+    </aside>
+  );
+}
+
 /**
  * The three plans side by side, each a form that posts its plan id. `payOn` is false until the Wire settings are
  * entered: the plans still show, the buttons wait, and the admin's contact is given instead.
+ * Anywhere but the Plans page (`variant="full"`) this is the slim strip, so a locked page carries one quiet line.
  */
-export function PlansCard({ t, choose, payOn, contact, until, compact = false }: {
-  t: T; choose: (form: FormData) => Promise<void>; payOn: boolean; contact: AdminContact | null; until?: string | null; compact?: boolean;
+export function PlansCard({ t, choose, payOn, contact, until, compact = false, variant = "strip" }: {
+  t: T; choose: (form: FormData) => Promise<void>; payOn: boolean; contact: AdminContact | null; until?: string | null; compact?: boolean; variant?: "full" | "strip";
 }) {
+  if (variant === "strip") return <PlansStrip t={t} />;
   const base = PLANS.PLUS.amount;
   return (
     <section className="card border-amber-400/25" aria-labelledby="plans-h">
-      <h2 id="plans-h" className="card-title">{until ? t("Багцаа сунгах", "Renew your plan") : t("Дохио, robot, бүх тоог нээх багц", "A plan opens the signals, the robot and every number")}</h2>
+      <h2 id="plans-h" className="card-title">{until ? t("Багцаа сунгах", "Renew your plan") : t("Дохио, робот, бүх тоог нээх багц", "A plan opens the signals, the robot and every number")}</h2>
       <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">
         {until
           ? t(`Таны эрх ${until} хүртэл. Одоо сунгавал үлдсэн хоног тань хасагдахгүй, дээр нь нэмэгдэнэ.`, `Your access runs until ${until}. Renew now and the days left are kept, the new ones added on top.`)
-          : t("Telegram дохио, MT5 robot, өсөх/унах магадлал, setup-ийн орох цэг — төлмөгц шууд нээгдэнэ.", "Telegram signals, the MT5 robot, rise/fall odds and setup entries open the moment you pay.")}
+          : t("Telegram дохио, MT5 робот, өсөх/унах магадлал, setup-ийн орох цэг — төлмөгц шууд нээгдэнэ.", "Telegram signals, the MT5 robot, rise/fall odds and setup entries open the moment you pay.")}
       </p>
       <ul className={`mt-4 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
         {PLAN_IDS.map((id) => {
@@ -70,7 +93,7 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
           {contact && <p className="mt-1 font-semibold text-amber-200">{contact.url ? <a href={contact.url} target="_blank" rel="noopener noreferrer" className="underline decoration-amber-400/50 underline-offset-4">{contact.text}</a> : contact.text}</p>}
         </div>
       )}
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t("Төлбөр Wire-аар: QPay, банкны app, карт, Toki. Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.", "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.")}</p>
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t(`Төлбөр: ${payWays(t)}. Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.`, `Payment: ${payWays(t)}. Information based on historical statistics, not financial advice.`)}</p>
     </section>
   );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getLiveView } from "@/lib/bot/liveDb";
 import { BotPanel } from "@/components/BotPanel";
@@ -44,10 +43,10 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
     reading: rule && view.equity ? (({ daily, max, target }) => ({ daily, max, target }))(riskReading(rule, view.equity, now)) : null,
     breach: rule?.breach === "RISK_MAX" ? "RISK_MAX" : rule?.breach === `RISK_DAILY:${now.toISOString().slice(0, 10)}` ? "RISK_DAILY" : null,
   } : null;
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const origin = `${proto}://${host}`;
+  // The address the robot is told to call comes from the configuration (APP_URL / Railway's domain), never from the
+  // request's Host headers, which the client controls. Unknown: "" and the address is not shown.
+  const site = siteUrl();
+  const origin = site ?? "";
   return (
     <div className="reveal space-y-4 sm:space-y-5">
       <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
@@ -61,7 +60,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
       {paid && view ? (
         <>
           {/* One flow: connect (until the robot has reported), status and Start/Stop, risk, trades, then what the system does. */}
-          <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} origin={origin} syncUrl={`${origin}/api/bot/sync`} robot={{ need: minRobotVersion("ASIAN") }} setup={setupText(v)} installer={!!siteUrl()} />
+          <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} origin={origin} syncUrl={site ? `${site}/api/bot/sync` : ""} robot={{ need: minRobotVersion("ASIAN") }} setup={setupText(v)} installer={!!siteUrl()} />
           {risk && <RiskCard view={risk} presets={PRESETS} />}
         </>
       ) : (

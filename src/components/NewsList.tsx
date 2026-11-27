@@ -35,7 +35,7 @@ export function ReactionRows({ stats, v = MN_VIEWER }: { stats: Reaction[] | und
   return (
     <table className="w-full max-w-sm border-collapse text-sm">
       <thead>
-        <tr className="text-left text-[11px] text-zinc-500">
+        <tr className="text-left text-xs text-zinc-500">
           <th className="pr-3 pb-1.5 font-medium">{t("Дараа", "After")}</th>
           <th className="pr-3 pb-1.5 text-right font-medium">{t("Дундаж хөдөлгөөн", "Avg move")}</th>
           <th className="pr-3 pb-1.5 font-medium">{t("Өссөн", "Rose")}</th>
@@ -93,7 +93,7 @@ function DayAxis({ list, now, isToday, v }: { list: EconomicEvent[]; now: Date; 
           <span className="absolute top-0.5 bottom-0.5 w-0.5 -translate-x-1/2 rounded-full bg-zinc-50" style={{ left: at(hm(v.time(now))) }} />
         )}
       </div>
-      <div className="relative h-4 text-[11px] text-zinc-500 tabular-nums">
+      <div className="relative h-4 text-xs text-zinc-500 tabular-nums">
         {[0, 6, 12, 18, 24].map((h) => (
           <span key={h} className={`absolute ${h === 0 ? "" : h === 24 ? "-translate-x-full" : "-translate-x-1/2"}`} style={{ left: `${(h / 24) * 100}%` }}>{String(h).padStart(2, "0")}</span>
         ))}
@@ -123,7 +123,7 @@ export function SurpriseRows({ stats, v = MN_VIEWER }: { stats: SurpriseStats | 
   );
   return (
     <table className="w-full max-w-sm border-collapse text-sm">
-      <thead><tr className="text-left text-[11px] text-zinc-500"><th className="pr-3 pb-1.5 font-medium">{t("Бодит нь", "Actual came in")}</th><th className="pr-3 pb-1.5 text-right font-medium">{t("60 мин дараа", "After 60 min")}</th><th className="pr-3 pb-1.5 font-medium" /><th className="pb-1.5 text-right font-medium">n</th></tr></thead>
+      <thead><tr className="text-left text-xs text-zinc-500"><th className="pr-3 pb-1.5 font-medium">{t("Бодит нь", "Actual came in")}</th><th className="pr-3 pb-1.5 text-right font-medium">{t("60 мин дараа", "After 60 min")}</th><th className="pr-3 pb-1.5 font-medium" /><th className="pb-1.5 text-right font-medium">n</th></tr></thead>
       <tbody>{row(t("Таамгаас дээш", "Above forecast"), stats.above)}{row(t("Таамгаас доош", "Below forecast"), stats.below)}</tbody>
     </table>
   );
@@ -169,7 +169,7 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER, surprises = ne
                     <summary className={`grid cursor-pointer grid-cols-[4.75rem_minmax(0,1fr)_auto] gap-x-3 gap-y-1.5 px-4 py-3 transition-colors hover:bg-zinc-800/30 sm:grid-cols-[5.5rem_minmax(0,1fr)_auto_auto] sm:items-center sm:px-5 ${past ? "opacity-55" : ""}`}>
                       <span className="pt-px">
                         <span className={`block text-[15px] leading-tight font-semibold tabular-nums ${past ? "text-zinc-400" : "text-zinc-50"}`}>{v.time(e.time)}</span>
-                        {(day === today || day === tomorrow) && <span className={`mt-0.5 block text-[11px] leading-tight ${next ? "font-semibold text-amber-400" : "text-zinc-500"}`}>{relativeText(e.time.getTime() - now.getTime(), t)}</span>}
+                        {(day === today || day === tomorrow) && <span className={`mt-0.5 block text-xs leading-tight ${next ? "font-semibold text-amber-400" : "text-zinc-500"}`}>{relativeText(e.time.getTime() - now.getTime(), t)}</span>}
                       </span>
                       <span className="min-w-0">
                         <span className="flex items-start gap-2">
@@ -182,11 +182,11 @@ export function NewsList({ events, reactions, now, v = MN_VIEWER, surprises = ne
                       <span className="col-span-2 col-start-2 grid grid-cols-3 gap-x-3 pl-[18px] text-xs sm:col-span-1 sm:col-start-3 sm:row-start-1 sm:flex sm:gap-x-5 sm:pl-0">
                         {([[t("Таамаг", "Forecast"), e.forecast], [t("Өмнөх", "Previous"), e.previous], [t("Бодит", "Actual"), e.actual]] as const).map(([k, val]) => (
                           <span key={k} className="min-w-0 sm:min-w-14 sm:text-right">
-                            <span className="block text-[11px] text-zinc-500">{k}</span>
+                            <span className="block text-xs text-zinc-500">{k}</span>
                             <span className="block truncate font-medium text-zinc-200 tabular-nums">{val ?? "—"}</span>
                             {k === t("Бодит", "Actual") && (() => {
                               const s = surprise(e.actual, e.forecast);
-                              return s ? <span className={`block text-[11px] ${s === "above" ? "text-emerald-400" : s === "below" ? "text-red-300" : "text-zinc-400"}`}>{s === "above" ? t("таамгаас дээш", "above forecast") : s === "below" ? t("таамгаас доош", "below forecast") : t("таамагтай тэнцүү", "as forecast")}</span> : null;
+                              return s ? <span className={`block text-xs ${s === "above" ? "text-emerald-400" : s === "below" ? "text-red-300" : "text-zinc-400"}`}>{s === "above" ? t("таамгаас дээш", "above forecast") : s === "below" ? t("таамгаас доош", "below forecast") : t("таамагтай тэнцүү", "as forecast")}</span> : null;
                             })()}
                           </span>
                         ))}

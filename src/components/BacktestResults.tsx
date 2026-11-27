@@ -2,6 +2,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useT } from "./PrefsProvider";
 import { HERO_RISK, finalBalance, riskCurve, signedPct, underwater, usd, type BacktestCurves } from "@/lib/backtestCurves";
+import { BacktestHonesty } from "./BacktestFacts";
 
 const W = 600, EQ_H = 200, DD_TOP = 216, DD_H = 64, H = DD_TOP + DD_H;
 
@@ -19,7 +20,7 @@ const kUsd = (v: number) => (v >= 1000 ? `$${(v / 1000).toLocaleString("en-US", 
  * line, the fall from each high below it on a scale shared by every risk (so a bigger risk visibly dips deeper), and the
  * figures for that risk. Every number comes from the backtest file; nothing is computed beyond the underwater line.
  */
-export function BacktestResults({ curves, initialRisk = HERO_RISK }: { curves: BacktestCurves; initialRisk?: number }) {
+export function BacktestResults({ curves, initialRisk = HERO_RISK }: { curves: BacktestCurves & { model?: unknown; assumptions?: unknown }; initialRisk?: number }) {
   const t = useT();
   const id = useId();
   const [risk, setRisk] = useState(initialRisk);
@@ -85,7 +86,7 @@ export function BacktestResults({ curves, initialRisk = HERO_RISK }: { curves: B
                 style={on ? { background: "var(--accent-bg)", boxShadow: "0 8px 20px -12px rgb(217 181 102 / 0.7)" } : undefined}
               >
                 <span>{r.risk}%</span>
-                {tag(r.risk) && <span className={`hidden text-[10px] leading-tight font-medium sm:block ${on ? "opacity-80" : "text-zinc-500"}`}>{tag(r.risk)}</span>}
+                {tag(r.risk) && <span className={`hidden text-xs leading-tight font-medium sm:block ${on ? "opacity-80" : "text-zinc-500"}`}>{tag(r.risk)}</span>}
               </button>
             );
           })}
@@ -95,12 +96,13 @@ export function BacktestResults({ curves, initialRisk = HERO_RISK }: { curves: B
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
         <p className="min-w-0">
           <span className="mb-1.5 block text-sm text-zinc-400">{t(`${usd(curves.start)}-оос эхэлсэн данс`, `An account that started with ${usd(curves.start)}`)}</span>
-          <span className="font-display block text-[44px] leading-none text-zinc-50 sm:text-[56px]" data-testid="final-balance">{usd(final)}</span>
+          <span className="font-display block text-[44px] leading-none text-zinc-50 tabular-nums sm:text-[56px]" data-testid="final-balance">{usd(final)}</span>
         </p>
         <p className="text-right">
           <span className="block text-sm text-zinc-400">{t("Нийт өсөлт", "Total growth")}</span>
           <span className="block text-2xl font-semibold text-amber-300 tabular-nums">{signedPct(c.finalPct, 0)}</span>
         </p>
+        <BacktestHonesty t={t} c={curves} size="sm" className="basis-full sm:text-[15px]" />
       </div>
 
       <figure className="m-0">
@@ -127,18 +129,18 @@ export function BacktestResults({ curves, initialRisk = HERO_RISK }: { curves: B
             {hover !== null && <line x1={x(hover)} x2={x(hover)} y1="0" y2={H} stroke="var(--color-zinc-400)" vectorEffect="non-scaling-stroke" />}
           </svg>
           {ticks.map((v) => (
-            <span key={v} aria-hidden className="pointer-events-none absolute left-1 -translate-y-full pb-0.5 text-[10px] text-zinc-500 tabular-nums" style={{ top: pctY(y(v)) }}>{kUsd(v)}</span>
+            <span key={v} aria-hidden className="pointer-events-none absolute left-1 -translate-y-full pb-0.5 text-xs text-zinc-500 tabular-nums" style={{ top: pctY(y(v)) }}>{kUsd(v)}</span>
           ))}
-          <span aria-hidden className="pointer-events-none absolute left-1 pt-1 text-[10px] font-medium text-zinc-300" style={{ top: pctY(DD_TOP + DD_H * 0.45) }}>{t("Уналт (сарын эцсээр)", "Fall from high (month end)")}</span>
-          <span aria-hidden className="pointer-events-none absolute right-1 -translate-y-full pb-0.5 text-[10px] font-semibold text-red-300 tabular-nums" style={{ top: pctY(ddY(-c.maxDD)) }}>{t(`хамгийн их −${c.maxDD}%`, `largest −${c.maxDD}%`)}</span>
-          <span aria-hidden className="pointer-events-none absolute right-1 text-[10px] text-zinc-500 tabular-nums" style={{ top: pctY(H - 14) }}>−{ddScale}%</span>
+          <span aria-hidden className="pointer-events-none absolute left-1 pt-1 text-xs font-medium text-zinc-300" style={{ top: pctY(DD_TOP + DD_H * 0.45) }}>{t("Уналт (сарын эцсээр)", "Fall from high (month end)")}</span>
+          <span aria-hidden className="pointer-events-none absolute right-1 -translate-y-full pb-0.5 text-xs font-semibold text-red-300 tabular-nums" style={{ top: pctY(ddY(-c.maxDD)) }}>{t(`хамгийн их −${c.maxDD}%`, `largest −${c.maxDD}%`)}</span>
+          <span aria-hidden className="pointer-events-none absolute right-1 text-xs text-zinc-500 tabular-nums" style={{ top: pctY(H - 14) }}>−{ddScale}%</span>
           {h && (
-            <span aria-hidden className="pointer-events-none absolute top-1 rounded-lg border px-2 py-1 text-[11px] whitespace-nowrap text-zinc-200 tabular-nums" style={{ left: `${(hover! / (pts.length - 1)) * 100}%`, transform: hover! > pts.length / 2 ? "translateX(calc(-100% - 6px))" : "translateX(6px)", borderColor: "var(--hairline)", background: "var(--glass-menu)" }}>
+            <span aria-hidden className="pointer-events-none absolute top-1 rounded-lg border px-2 py-1 text-xs whitespace-nowrap text-zinc-200 tabular-nums" style={{ left: `${(hover! / (pts.length - 1)) * 100}%`, transform: hover! > pts.length / 2 ? "translateX(calc(-100% - 6px))" : "translateX(6px)", borderColor: "var(--hairline)", background: "var(--glass-menu)" }}>
               {h.p.m} · <strong className="font-semibold text-zinc-50">{usd(h.p.eq)}</strong>{h.dd < -0.05 ? ` · ${signedPct(h.dd, 1)}` : ""}
             </span>
           )}
         </div>
-        <div aria-hidden className="relative mt-1 h-4 text-[10px] text-zinc-500 tabular-nums">
+        <div aria-hidden className="relative mt-1 h-4 text-xs text-zinc-500 tabular-nums">
           {years.map(([m, i], k) => (
             <span key={m} className={`absolute ${i === 0 ? "" : "-translate-x-1/2"} ${k % 2 ? "max-sm:hidden" : ""}`} style={{ left: `${(i / (pts.length - 1)) * 100}%` }}>{m.slice(0, 4)}</span>
           ))}

@@ -22,6 +22,7 @@ import { PriceAlertsCard, PriceAlertsLocked, type AlertRow } from "@/components/
 import { MAX_ACTIVE_ALERTS, listPriceAlerts } from "@/lib/priceAlerts";
 import { pushDeviceCount } from "@/lib/push";
 import { MAX_CONDITION_ALERTS, conditionLabel, listConditionAlerts } from "@/lib/conditionAlerts";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -29,9 +30,26 @@ export async function generateMetadata() {
   return { title: t("Өнөөдөр", "Today") };
 }
 
+/** A secondary block, folded by default: one slim line with its name and why you might open it; the card underneath. */
+function Fold({ id, title, hint, children }: { id: string; title: string; hint: string; children: ReactNode }) {
+  return (
+    <details id={id} className="group scroll-mt-24">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-2xl border px-4 py-2.5 transition-colors hover:bg-zinc-500/10 motion-reduce:transition-none [&::-webkit-details-marker]:hidden" style={{ borderColor: "var(--hairline)", background: "var(--glass-inset)" }}>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-zinc-100">{title}</span>
+          <span className="block text-xs text-zinc-500">{hint}</span>
+        </span>
+        <svg aria-hidden viewBox="0 0 12 12" className="h-3 w-3 shrink-0 text-zinc-500 transition-transform group-open:rotate-180 motion-reduce:transition-none"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </summary>
+      <div className="mt-3">{children}</div>
+    </details>
+  );
+}
+
 /*
- * Today, laid out as a cockpit: the greeting with the plan, bot and robot's month beside it; then price, direction and
- * the next release side by side; the 24 hours as one strip; setups, levels and the strategies read underneath.
+ * Today, in order of importance: the plan strip (without a plan); the greeting with the plan, bot and robot chips; price,
+ * the day's direction and the next release; today's signals; the 24 hours. Then three folded blocks for when you want
+ * more: key levels, the methods' vote (which may differ from the day's direction), alerts.
  * Without a plan the paid figures are never loaded into the page, so they cannot be read from it.
  */
 export default async function TodayPage() {
@@ -89,17 +107,23 @@ export default async function TodayPage() {
         <div className="min-w-0"><NextReleaseCard next={next} stats={next ? reactions.get(next.type) : undefined} v={v} /></div>
       </div>
 
+      <SetupsCard setups={paid ? dashSetups ?? [] : null} t={t} />
+
       <HourStrip cells={cells} locked={!paid} />
 
-      <div className="grid items-start gap-4 sm:gap-5 lg:grid-cols-3">
-        <SetupsCard setups={paid ? dashSetups ?? [] : null} t={t} />
-        {paid ? <KeyLevels levels={snap.levels} price={snap.price?.last} v={v} /> : <KeyLevelsLocked v={v} />}
-        {paid ? <ReasoningPanel initial={reasoning} compact narrow /> : <ReasoningLocked narrow />}
+      <div className="space-y-3">
+        <Fold id="levels" title={t("Гол түвшин", "Key levels")} hint={t("Өчигдрийн оргил, ёроол, pivot, өдрийн ATR", "Yesterday's high and low, pivots, daily ATR")}>
+          {paid ? <KeyLevels levels={snap.levels} price={snap.price?.last} v={v} /> : <KeyLevelsLocked v={v} />}
+        </Fold>
+        <Fold id="vote" title={t("Аргуудын санал (дэмжлэг)", "Methods' vote (support)")} hint={t("Өдрийн чиглэлээс зөрж болно: богино хугацааны уншилт, дохио биш", "May differ from the day's direction: a short-term read, not a signal")}>
+          {paid ? <ReasoningPanel initial={reasoning} compact /> : <ReasoningLocked />}
+        </Fold>
+        <Fold id="alerts" title={t("Үнийн сэрэмжлүүлэг", "Price alerts")} hint={t("Үнэ эсвэл нөхцөл биелэхэд Telegram, утсанд мэдэгдэнэ", "Telegram and phone notice when a price or condition is met")}>
+          {paid
+            ? <PriceAlertsCard alerts={alerts} price={snap.price?.last ?? null} channels={{ telegram: !!user.telegramChatId, push: devices > 0 }} max={MAX_ACTIVE_ALERTS} conditions={conditions} />
+            : <PriceAlertsLocked />}
+        </Fold>
       </div>
-
-      {paid
-        ? <PriceAlertsCard alerts={alerts} price={snap.price?.last ?? null} channels={{ telegram: !!user.telegramChatId, push: devices > 0 }} max={MAX_ACTIVE_ALERTS} conditions={conditions} />
-        : <PriceAlertsLocked />}
     </div>
   );
 }

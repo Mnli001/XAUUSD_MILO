@@ -15,7 +15,7 @@ const view = (o: Record<string, unknown> = {}, config: Partial<LiveConfig> = {})
   account: "", accounts: [], accountServer: null, state: "STOPPED", stopReason: null, startedAt: null, stoppedAt: null, closeAllPending: false,
   config: { ...DEFAULT_LIVE_CONFIG, ...config }, hasToken: false, online: false, lastSeenAt: null,
   accountMode: null, accountLogin: null, balance: null, equity: null, currency: "USD", symbol: null, bid: null, ask: null, signal: null, reason: null, runPnl: null,
-  robotVersion: null, plannedSeconds: null, elapsedSeconds: null, positions: [], gateOn: null, block: null, blockDetail: null, tradesToday: null, dayPnl: null, dailyLossHit: null,
+  robotVersion: null, plannedSeconds: null, elapsedSeconds: null, positions: [], gateOn: null, block: null, blockDetail: null, tradesToday: null, dayPnl: null, dailyLossHit: null, guard: null, guardDetail: null,
   deals: [], dealCount: 0, pnl24h: 0, ...o,
 }) as Props["initial"];
 const setup = { lines: ["Ази: хүрээ 07:00–15:00", "Нью-Йорк нээлт", "Нью-Йорк орой"], record: { n: 209, winPct: 48, profitFactor: 1.44, from: "2019-01", source: "JustMarkets XAUUSD", checkedOn: "2026-11-26" } }; // i18n-ok: sample rule lines
@@ -87,7 +87,7 @@ test("once connected the connect card is one line, and the status card shows the
   const row = screen.getByRole("region", { name: "MT5 холболт" });
   expect(row).toHaveTextContent(/MT5 холбогдсон.*данс ••••4567/);
   expect(within(row).getByRole("button", { name: "Шинэ token үүсгэх" })).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Bot зогссон" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Робот зогссон" })).toBeInTheDocument();
   expect(screen.getByText("$2,000.00")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Эхлүүлэх/ })).toBeEnabled();
   expect(screen.getByText("Одоогоор нээлттэй арилжаа алга.")).toBeInTheDocument();
@@ -97,7 +97,7 @@ test("once connected the connect card is one line, and the status card shows the
 test("a real account without permission says so next to Start; an old robot file asks for the new one", () => {
   panel(view({ ...connected, accountMode: "REAL", robotVersion: 12 }));
   expect(screen.getByText(/Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөөгүй/)).toBeInTheDocument();
-  expect(screen.getByText(/Robot-ын шинэ файлаа татаж солино уу/)).toBeInTheDocument();
+  expect(screen.getByText(/Роботын шинэ файлаа татаж солино уу/)).toBeInTheDocument();
 });
 
 test("the risk card offers % of balance or a fixed lot, with the dollar risk worked out from the balance", () => {
@@ -125,8 +125,9 @@ test("a small account gets a plain note with the smallest lot's risk and the cen
   const risk = notes.find((n) => n.closest("form"))!;
   expect(risk).toHaveTextContent("Данс жижиг байна ($200.00)");
   expect(risk).toHaveTextContent("5%–10%-ийг эрсдэлд оруулна, таны сонгосон 1%-аас их");
-  expect(risk).toHaveTextContent("2.5 дахинаас их бол robot тэр арилжааг алгасна");
-  expect(risk).toHaveTextContent("JustMarkets Standard Cent");
+  expect(risk).toHaveTextContent("1.2 дахинаас их эрсдэлтэй бол тэр арилжааг алгасна");
+  expect(risk).toHaveTextContent("дээш нь тоймлохгүй");
+  expect(risk).toHaveTextContent(/cent/i);
   cleanup();
   panel(view({ hasToken: true, balance: 300 })); // still onboarding, but the robot has reported a balance
   const card = screen.getByRole("heading", { name: /MT5 холбох/ }).closest("section")!;
@@ -138,4 +139,60 @@ test("a small account gets a plain note with the smallest lot's risk and the cen
 test("the robot's small-account skip reads in plain words", () => {
   panel(view({ ...connected, state: "RUNNING", block: "SMALL_ACCOUNT" }));
   expect(screen.getByText(/Одоо орохгүй байгаа шалтгаан/)).toHaveTextContent("данс жижиг");
+});
+
+test("the robot's safeguards (status.guard) show prominently in plain words with the robot's numbers", () => {
+  panel(view({ ...connected, guard: "LOSS_DD", guardDetail: "DD 15.2% от 2,310.00" }));
+  const alert = screen.getByTestId("robot-guard");
+  expect(alert).toHaveAttribute("role", "alert");
+  expect(alert).toHaveTextContent("15%-ийн уналтад хүрсэн");
+  expect(alert).toHaveTextContent("ResetLossLock");
+  expect(alert).toHaveTextContent("DD 15.2%");
+  cleanup();
+  for (const [code, words] of [["LOSS_DAY", "5%"], ["NETTING", "hedging"], ["OPEN_RISK", "3 дахинаас"]] as const) {
+    panel(view({ ...connected, state: "RUNNING", guard: code }));
+    expect(screen.getByTestId("robot-guard")).toHaveTextContent(words);
+    cleanup();
+  }
+  panel(view(connected));
+  expect(screen.queryByTestId("robot-guard")).toBeNull();
+});
+
+test("downloading the installer while a robot is connected asks first, since it makes a new token", () => {
+  panel(view({ ...connected }));
+  fireEvent.click(screen.getByRole("button", { name: "Холбох заавар" }));
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  const link = screen.getByRole("link", { name: "XauBot-Setup.bat татах" });
+  const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
+  link.dispatchEvent(ev);
+  expect(confirm).toHaveBeenCalledWith(expect.stringMatching(/шинэ token үүсгэнэ/));
+  expect(ev.defaultPrevented).toBe(true);
+  confirm.mockRestore();
+  cleanup();
+  // no robot connected yet: no question
+  panel(view());
+  const ask = vi.spyOn(window, "confirm");
+  const ev2 = new MouseEvent("click", { bubbles: true, cancelable: true });
+  screen.getByRole("link", { name: "XauBot-Setup.bat татах" }).dispatchEvent(ev2);
+  expect(ask).not.toHaveBeenCalled();
+  ask.mockRestore();
+});
+
+test("the panel asks for the robot's state every 5 s while it runs and every 30 s while it is stopped", async () => {
+  vi.useFakeTimers();
+  const f = vi.fn(async () => new Response(JSON.stringify(view({ ...connected })), { status: 200 }));
+  vi.stubGlobal("fetch", f);
+  panel(view({ ...connected }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+  expect(f).not.toHaveBeenCalled(); // stopped: nothing before 30 s
+  await act(async () => { await vi.advanceTimersByTimeAsync(20_500); });
+  expect(f).toHaveBeenCalledTimes(1);
+  cleanup();
+  f.mockClear();
+  f.mockImplementation(async () => new Response(JSON.stringify(view({ ...connected, state: "RUNNING" })), { status: 200 }));
+  panel(view({ ...connected, state: "RUNNING" }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(5_500); });
+  expect(f).toHaveBeenCalledTimes(1);
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
 });

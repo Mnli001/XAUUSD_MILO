@@ -13,7 +13,7 @@
  * What MT5 does not let it do: allow the site's address for WebRequest. MT5 keeps that list encrypted in common.ini,
  * and a startup config's [Experts] has no key for it (tried on a test terminal, build 6230: common.ini stayed byte
  * for byte the same). So the robot (Transport = AUTO, v3.93+) falls back to a FILE BRIDGE when WebRequest answers
- * 4014: it writes Common\Files\xaubot\<login>\request.json and reads response.json, and a small helper the script
+ * 4014: it writes Common\Files\xaubot\<login>_<magic>_<symbol>\request.json (one folder per chart) and reads response.json, and a small helper the script
  * installs (%LOCALAPPDATA%\XauBot\bridge.ps1, started hidden at sign-in by bridge.vbs in the Startup folder, no admin)
  * posts each request to the site and writes the answer back. The member has nothing to paste.
  *
@@ -130,9 +130,9 @@ export function bridgeScriptLines(origin: string): string[] {
     "  try { [System.IO.File]::WriteAllLines($LogFile, $script:Log.ToArray(), $Utf8) } catch {}",
     "}",
     "",
-    "# The account folder's name, shown as its last 4 digits only.",
+    "# A chart's folder is <login>_<magic>_<symbol>: only the login's last 4 digits are shown.",
     "function Get-Who([string]$Dir) {",
-    "  $n = Split-Path -Leaf $Dir",
+    "  $n = (Split-Path -Leaf $Dir).Split('_')[0]",
     "  if ($n.Length -gt 4) { return '...' + $n.Substring($n.Length - 4) }",
     "  return $n",
     "}",

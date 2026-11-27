@@ -96,7 +96,7 @@ export function OrderTicket({ view, price, now, nextHigh, picked, onDone }: {
         className={`flex min-h-16 flex-col items-center justify-center rounded-xl border-2 px-2 transition-colors ${on ? (buy ? "border-emerald-500 bg-emerald-500/15" : "border-red-500 bg-red-500/15") : "border-zinc-800 bg-zinc-950 hover:border-zinc-600"}`}>
         <span className={`text-xs font-bold tracking-wide ${buy ? "text-emerald-400" : "text-red-400"}`}>{buy ? "BUY" : "SELL"}</span>
         <span className="text-lg font-semibold text-zinc-50 tabular-nums">{p !== null ? px(p) : "—"}</span>
-        <span className="text-[11px] text-zinc-500">{buy ? "ask" : "bid"}</span>
+        <span className="text-xs text-zinc-500">{buy ? "ask" : "bid"}</span>
       </button>
     );
   };

@@ -1,9 +1,10 @@
 import "../i18n.server";
-import { and, asc, desc, eq, gte, lte, ne, sql, sum } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, max, ne, sql } from "drizzle-orm";
 import { db, schema } from "../db";
+import type { User } from "../db/schema";
 import { findUserById } from "../users";
 import { applyRisk, type RiskVerdict } from "../risk";
-import { journalFrom, storeJournal } from "../journal";
+import { JOURNAL_BACKFILL_DAYS, storeJournal } from "../journal";
 import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
@@ -18,6 +19,92 @@ import { deliver, esc, telegramConfigured } from "../telegram";
 import { translator } from "../i18n";
 
 export const ONLINE_WITHIN_MS = 15_000;
+
+/**
+ * Every robot reports every second or two, so what a report needs that rarely changes is kept in memory (per server
+ * instance) for a short while instead of being read each time:
+ * - ownerTtlMs: which user a token belongs to, and that user (access, language, Telegram). Rotating the token here
+ *   forgets it at once; another instance lets the old token work for at most this long.
+ * - journalTtlMs: where the robot's journal history should resume (forgotten when it sends new journal rows).
+ * - newsTtlMs: the HIGH-impact release times the news pause is worked out from.
+ * - seenEveryMs: a report that changes nothing a person can see (state, positions, signal, filter verdict, deals…)
+ *   writes nothing; last_seen_at (and the equity/price shown) is then refreshed at most this often. Kept well under
+ *   ONLINE_WITHIN_MS so a quiet robot never looks offline.
+ * The bot row itself (Start/Stop, settings) is read on every report, so a button pressed on the site reaches the
+ * robot on its next report from any instance. All 0 in tests (always read, always write) unless a test sets them.
+ */
+const TEST = process.env.NODE_ENV === "test";
+export const syncTiming = {
+  ownerTtlMs: TEST ? 0 : 30_000,
+  journalTtlMs: TEST ? 0 : 30_000,
+  newsTtlMs: TEST ? 0 : 60_000,
+  seenEveryMs: TEST ? 0 : 10_000,
+};
+/** At most this many rows of each kind are taken from one report; the rest are dropped (and logged). */
+export const MAX_REPORT_DEALS = 200;
+export const MAX_REPORT_POSITIONS = 100;
+
+const MAX_MEMO = 20_000;
+function remember<V>(m: Map<string, V>, key: string, value: V): void {
+  m.delete(key);
+  m.set(key, value);
+  while (m.size > MAX_MEMO) m.delete(m.keys().next().value as string);
+}
+const ownerMemo = new Map<string, { at: number; owner: User }>(); // by token hash
+const journalMemo = new Map<string, { at: number; latest: number | null }>(); // by user:login: the newest stored journal trade (ms)
+let newsMemo: { at: number; from: number; to: number; times: Date[] } | null = null;
+/** Forgets every in-memory copy (tests, or after a bulk change). */
+export function forgetSyncCaches(): void {
+  ownerMemo.clear();
+  journalMemo.clear();
+  newsMemo = null;
+}
+const forgetOwner = (userId: string) => { for (const [k, v] of ownerMemo) if (v.owner.id === userId) ownerMemo.delete(k); };
+
+/** The user a robot token belongs to (by its hash), from memory while fresh. */
+async function ownerOfToken(token: string): Promise<User | null> {
+  const hash = hashToken(token);
+  const hit = ownerMemo.get(hash);
+  if (hit && Date.now() - hit.at < syncTiming.ownerTtlMs) return hit.owner;
+  const [link] = await db.select({ userId: schema.botTokens.userId }).from(schema.botTokens).where(eq(schema.botTokens.tokenHash, hash));
+  const owner = link ? await findUserById(link.userId) : null;
+  if (owner && syncTiming.ownerTtlMs > 0) remember(ownerMemo, hash, { at: Date.now(), owner });
+  else ownerMemo.delete(hash);
+  return owner;
+}
+
+/**
+ * Cuts a report's deal and position lists to what one report may carry (MAX_REPORT_DEALS, MAX_REPORT_POSITIONS),
+ * logging what was dropped. Anything else is returned untouched; the schema then decides whether it is a report.
+ */
+export function capReport(body: unknown): unknown {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return body;
+  const b = body as { deals?: unknown; positions?: unknown };
+  const cut: string[] = [];
+  let out = body as Record<string, unknown>;
+  if (Array.isArray(b.deals) && b.deals.length > MAX_REPORT_DEALS) { cut.push(`deals ${b.deals.length}→${MAX_REPORT_DEALS}`); out = { ...out, deals: b.deals.slice(0, MAX_REPORT_DEALS) }; }
+  if (Array.isArray(b.positions) && b.positions.length > MAX_REPORT_POSITIONS) { cut.push(`positions ${b.positions.length}→${MAX_REPORT_POSITIONS}`); out = { ...out, positions: b.positions.slice(0, MAX_REPORT_POSITIONS) }; }
+  if (cut.length) console.warn(`[bot] report truncated: ${cut.join(", ")}`);
+  return out;
+}
+
+/** What a report shows a person, without the numbers that move on every tick (prices, equity, open profit, clocks). */
+function visibleFingerprint(status: unknown): string {
+  if (!status || typeof status !== "object") return "";
+  const { bid: _b, ask: _a, runPnl: _r, dayPnl: _d, elapsedSeconds: _e, account, positions, ...rest } = status as Record<string, unknown>;
+  void _b; void _a; void _r; void _d; void _e;
+  const acc = account && typeof account === "object" ? { ...(account as Record<string, unknown>), balance: undefined, equity: undefined } : account;
+  const pos = Array.isArray(positions) ? positions.map((p) => (p && typeof p === "object" ? { ...(p as Record<string, unknown>), profit: undefined } : p)) : positions;
+  return stableJson([rest, acc, pos]);
+}
+/** JSON with object keys sorted (jsonb hands keys back in its own order) and undefined left out. */
+function stableJson(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map((x) => (x === undefined ? "null" : stableJson(x))).join(",")}]`;
+  if (v && typeof v === "object" && !(v instanceof Date)) {
+    return `{${Object.keys(v).sort().filter((k) => (v as Record<string, unknown>)[k] !== undefined).map((k) => `${JSON.stringify(k)}:${stableJson((v as Record<string, unknown>)[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(v) ?? "null";
+}
 
 type Row = typeof schema.botLive.$inferSelect;
 const shape = (row: Row) => {
@@ -96,15 +183,28 @@ async function consensusFor(config: LiveConfig, now: Date): Promise<ConsensusCou
   } catch { return null; }
 }
 
+/** Margin read around the asked-for window, so one read serves every robot's news settings for a while. */
+const NEWS_MARGIN_MS = 24 * 3600e3;
+/** HIGH-impact release times covering [from, to], read at most once per syncTiming.newsTtlMs for all robots. */
+async function highEventsBetween(from: number, to: number, now: Date): Promise<Date[]> {
+  const m = newsMemo;
+  if (m && Date.now() - m.at < syncTiming.newsTtlMs && m.from <= from && m.to >= to) return m.times;
+  const lo = Math.min(from, now.getTime() - NEWS_MARGIN_MS), hi = Math.max(to, now.getTime() + BLACKOUT_HORIZON_MS + NEWS_MARGIN_MS);
+  const rows = await db.select({ time: schema.economicEvents.time }).from(schema.economicEvents).where(and(
+    eq(schema.economicEvents.impact, "HIGH"),
+    gte(schema.economicEvents.time, new Date(lo)),
+    lte(schema.economicEvents.time, new Date(hi)),
+  ));
+  const times = rows.map((r) => r.time);
+  if (syncTiming.newsTtlMs > 0) newsMemo = { at: Date.now(), from: lo, to: hi, times };
+  return times;
+}
+
 async function blackoutsFor(config: LiveConfig, now: Date): Promise<string> {
   const g = config.gate;
   if (!g.on || (g.newsBeforeMin <= 0 && g.newsAfterMin <= 0)) return "";
-  const rows = await db.select({ time: schema.economicEvents.time }).from(schema.economicEvents).where(and(
-    eq(schema.economicEvents.impact, "HIGH"),
-    gte(schema.economicEvents.time, new Date(now.getTime() - g.newsAfterMin * 6e4)),
-    lte(schema.economicEvents.time, new Date(now.getTime() + BLACKOUT_HORIZON_MS + g.newsBeforeMin * 6e4)),
-  ));
-  return blackoutWindows(rows.map((r) => r.time), g.newsBeforeMin, g.newsAfterMin, now);
+  const from = now.getTime() - g.newsAfterMin * 6e4, to = now.getTime() + BLACKOUT_HORIZON_MS + g.newsBeforeMin * 6e4;
+  return blackoutWindows((await highEventsBetween(from, to, now)).filter((t) => t.getTime() >= from && t.getTime() <= to), g.newsBeforeMin, g.newsAfterMin, now);
 }
 
 export async function startBot(userId: string, now: Date, login?: string): Promise<void> {
@@ -131,6 +231,7 @@ export async function rotateToken(userId: string): Promise<string> {
   await getLive(userId);
   const token = newToken();
   await db.insert(schema.botTokens).values({ userId, tokenHash: hashToken(token) }).onConflictDoUpdate({ target: schema.botTokens.userId, set: { tokenHash: hashToken(token) } });
+  forgetOwner(userId);
   return token;
 }
 
@@ -145,7 +246,10 @@ const masked = (login: string) => `••••${login.slice(-4)}`;
 
 /** The user's MT5 accounts that have connected, most recently seen first. */
 export async function listAccounts(userId: string, now: Date) {
-  return (await rowsOf(userId)).filter((r) => r.login !== "").map((r) => {
+  return accountsFrom(await rowsOf(userId), now);
+}
+function accountsFrom(rows: Row[], now: Date) {
+  return rows.filter((r) => r.login !== "").map((r) => {
     const status = r.status as Status | null;
     return {
       login: r.login,
@@ -208,15 +312,41 @@ const tooLarge = (body: unknown) => {
   try { return JSON.stringify(body ?? null).length > MAX_REPORT_CHARS; } catch { return true; }
 };
 
+/**
+ * Where this account's journal history resumes (epoch seconds, 0 when unknown), as journalFrom says: the newest
+ * stored journal trade, or JOURNAL_BACKFILL_DAYS back from now. The newest trade is kept in memory while fresh.
+ */
+async function journalFromCached(userId: string, login: string, now: Date): Promise<number> {
+  const key = `${userId}:${login}`;
+  let hit = journalMemo.get(key);
+  if (!hit || Date.now() - hit.at >= syncTiming.journalTtlMs) {
+    const jt = schema.journalTrades;
+    const rows = await db.select({ at: max(jt.closeTime) }).from(jt).where(and(eq(jt.userId, userId), eq(jt.login, login))).catch(() => null);
+    if (!rows) return 0; // not kept: the next report asks again
+    hit = { at: Date.now(), latest: rows[0]?.at ? new Date(rows[0].at).getTime() : null };
+    if (syncTiming.journalTtlMs > 0) remember(journalMemo, key, hit);
+  }
+  return Math.floor((hit.latest ?? now.getTime() - JOURNAL_BACKFILL_DAYS * 864e5) / 1000);
+}
+
 /** One round trip with the terminal: store what it reports, answer with what it should do. null = rejected. */
 export async function handleSync(token: string, body: unknown, now: Date): Promise<Command | null> {
   if (!token || tooLarge(body)) return null;
   // The token picks the user: it is looked up by its hash, which is unique. The report's account picks the bot.
-  const [link] = await db.select().from(schema.botTokens).where(eq(schema.botTokens.tokenHash, hashToken(token)));
-  if (!link) return null;
-  const owner = await findUserById(link.userId);
+  const owner = await ownerOfToken(token);
   if (!owner) return null;
-  const parsed = reportSchema.safeParse(body);
+  try {
+    return await syncFor(owner, body, now);
+  } catch (e) {
+    // the account was deleted while its owner was still in memory: from now on the token is unknown
+    const err = e as { code?: string; cause?: { code?: string } };
+    if ((err?.cause?.code ?? err?.code) === "23503") { ownerMemo.delete(hashToken(token)); return null; }
+    throw e;
+  }
+}
+
+async function syncFor(owner: User, body: unknown, now: Date): Promise<Command | null> {
+  const parsed = reportSchema.safeParse(capReport(body));
   if (!parsed.success) return null;
   const r: Report = parsed.data;
   const lang = robotLang(parseLocale(owner.locale));
@@ -236,7 +366,10 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
     // Deals already a day old when first seen (a robot reconnecting) are stored but not announced.
     for (const d of fresh) if (now.getTime() - d.closeTime.getTime() < 10 * 60_000) notify(owner, tradeClosedText(owner, d));
   }
-  if (r.journal?.length) await storeJournal(owner.id, live.login, r.journal).catch((e) => console.error("[journal] not kept", e));
+  if (r.journal?.length) {
+    await storeJournal(owner.id, live.login, r.journal).catch((e) => console.error("[journal] not kept", e));
+    journalMemo.delete(`${owner.id}:${live.login}`);
+  }
   await recordEntries(owner, live.login, r.positions, now).catch((e) => console.error("[bot] entry not recorded", e));
 
   let { state, closeAll, stopReason } = live;
@@ -251,22 +384,26 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   const cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, lang, await blackoutsFor(live.config, now), await consensusFor(live.config, now), orders.day, orders.session);
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
-  const jFrom = await journalFrom(owner.id, live.login, now).then((d) => Math.floor(d.getTime() / 1000)).catch(() => 0);
+  const jFrom = await journalFromCached(owner.id, live.login, now);
   const { deals: _deals, journal: _journal, account, ...rest } = r;
   void _deals; void _journal;
+  const status = { ...rest, account: { ...account, login: masked(account.login) } };
+  const server = account.server ?? live.server;
+  // Nothing a person would see has changed and the row was touched a moment ago: write nothing (see syncTiming).
   const isSteady =
-    process.env.NODE_ENV !== "test" &&
     state === live.state &&
     closeAll === live.closeAll &&
     stopReason === live.stopReason &&
+    server === live.server &&
     r.deals.length === 0 &&
     !r.journal?.length &&
-    r.positions.length === ((live.status as { positions?: unknown[] } | null)?.positions?.length ?? 0) &&
-    live.lastSeenAt &&
-    now.getTime() - live.lastSeenAt.getTime() < 5_000;
+    !!live.lastSeenAt &&
+    now.getTime() - live.lastSeenAt.getTime() >= 0 &&
+    now.getTime() - live.lastSeenAt.getTime() < syncTiming.seenEveryMs &&
+    visibleFingerprint(status) === visibleFingerprint(live.status);
 
   if (!isSteady) {
-    await update(owner.id, live.login, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, server: account.server ?? live.server, status: { ...rest, account: { ...account, login: masked(account.login) } } });
+    await update(owner.id, live.login, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, server, status });
   }
   return jFrom ? { ...cmd, jFrom } : cmd;
 }
@@ -274,18 +411,35 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
 type Status = Omit<Report, "deals">;
 export type LiveView = Awaited<ReturnType<typeof getLiveView>>;
 
-/** Everything the control page shows. */
+/** A bot that has no row yet, as getLive would create it (shown without writing it). */
+const unsavedBot = (userId: string): Row => ({ userId, login: "", server: null, state: "STOPPED", runId: null, closeAll: false, config: DEFAULT_LIVE_CONFIG, startedAt: null, stoppedAt: null, stopReason: null, lastSeenAt: null, status: null });
+
+/**
+ * Everything the control page shows. Read-only and two queries: the user's bots (with whether a token exists), and
+ * the chosen account's last 50 deals with the total count and the last 24 hours' profit worked out alongside.
+ * The page polls this (recommended every 5 s while running, 30 s while stopped).
+ */
 export async function getLiveView(userId: string, now: Date, login?: string) {
-  const live = await getLive(userId, login);
-  const mine = and(eq(schema.botDeals.userId, userId), eq(schema.botDeals.login, live.login));
-  const [link] = await db.select().from(schema.botTokens).where(eq(schema.botTokens.userId, userId));
+  const bl = schema.botLive, bd = schema.botDeals;
+  const rows = await db.select({ row: bl, hasToken: sql<boolean>`exists (select 1 from ${schema.botTokens} where ${schema.botTokens.userId} = ${userId})` })
+    .from(bl).where(eq(bl.userId, userId)).orderBy(sql`${bl.lastSeenAt} DESC NULLS LAST`, bl.login);
+  const bots = rows.map((x) => x.row);
+  const picked = (login !== undefined ? bots.find((b) => b.login === login) : undefined) ?? bots[0];
+  const live = shape(picked ?? unsavedBot(userId));
+  const hasToken = rows.length ? !!rows[0].hasToken : (await db.select({ u: schema.botTokens.userId }).from(schema.botTokens).where(eq(schema.botTokens.userId, userId))).length > 0;
   const status = live.status as Status | null;
-  const deals = await db.select().from(schema.botDeals).where(mine).orderBy(desc(schema.botDeals.closeTime)).limit(50);
-  const [{ total }] = await db.select({ total: sum(schema.botDeals.profit) }).from(schema.botDeals).where(and(mine, gte(schema.botDeals.closeTime, new Date(now.getTime() - 864e5))));
-  const [{ n }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.botDeals).where(mine);
+  const since = new Date(now.getTime() - 864e5);
+  const dealRows = picked ? await db.select({
+    deal: bd,
+    n: sql<number>`(count(*) over ())::int`,
+    total: sql<string | null>`sum(${bd.profit}) filter (where ${bd.closeTime} >= ${since}) over ()`,
+  }).from(bd).where(and(eq(bd.userId, userId), eq(bd.login, live.login))).orderBy(desc(bd.closeTime)).limit(50) : [];
+  const deals = dealRows.map((x) => x.deal);
+  const n = dealRows[0]?.n ?? 0;
+  const total = dealRows[0]?.total ?? null;
   return {
     account: live.login,
-    accounts: await listAccounts(userId, now),
+    accounts: accountsFrom(bots, now),
     accountServer: live.server,
     state: live.state,
     stopReason: live.stopReason,
@@ -293,7 +447,7 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     stoppedAt: live.stoppedAt,
     closeAllPending: live.closeAll,
     config: live.config,
-    hasToken: !!link?.tokenHash,
+    hasToken,
     online: !!live.lastSeenAt && now.getTime() - live.lastSeenAt.getTime() <= ONLINE_WITHIN_MS,
     lastSeenAt: live.lastSeenAt,
     accountMode: status?.account.mode ?? null,
@@ -318,6 +472,10 @@ export async function getLiveView(userId: string, now: Date, login?: string) {
     tradesToday: status?.tradesToday ?? null,
     dayPnl: status?.dayPnl ?? null,
     dailyLossHit: status?.dailyLossHit ?? null,
+    // The robot's own loss guard (v3.94+): "" none, LOSS_DAY, LOSS_DD or NETTING, with its numbers; null from older files.
+    // Kept in bot_live.status with the rest of the report, so no column is needed.
+    guard: status?.guard ?? null,
+    guardDetail: status?.guardDetail ?? null,
     deals,
     dealCount: n,
     pnl24h: Number(total ?? 0),

@@ -19,18 +19,22 @@ import { getTodaySnapshot } from "@/lib/snapshot";
 import { SYMBOL, loadCandles } from "@/lib/ingest/prices";
 import { biasLabelText } from "@/lib/analysis/bias";
 import { SIGNAL_WINDOW, signalWindowLabel } from "@/lib/siteCopy";
-import { CURVES, rrRange } from "@/lib/backtestCurves";
+import { rrRange, signedR } from "@/lib/backtestCurves";
+import { loadCurves } from "@/components/backtestCurves.server";
 import { BacktestResults } from "@/components/BacktestResults";
-import { BacktestNote, KeyStats, ProofLine, YearBars } from "@/components/BacktestFacts";
+import { BacktestNote, KeyStats, ProofLine, RejectedIdeas, RejectedLink, YearBars, outOfSampleText } from "@/components/BacktestFacts";
 import { PlanFeatureList } from "@/components/PlanFeatures";
 import { SignalExample, exampleSignal } from "@/components/SignalExample";
 import { PLANS, PLAN_IDS, tugrik, type PlanId } from "@/lib/plans";
 import type { Candle } from "@/lib/analysis/indicators";
+import { getPublicRecord, type PublicRecord } from "@/lib/publicRecord";
+import { LiveRecord } from "@/components/LiveRecord";
 
 export const dynamic = "force-dynamic";
 
 const M15 = 15 * 6e4;
 const MAX_EXAMPLE_BARS = 4000; // about six weeks of 15-minute candles
+const LINK = "font-semibold text-amber-300 underline decoration-amber-400/40 underline-offset-4 hover:text-amber-200";
 
 /** A section's small gold label and its headline. */
 function Head({ id, eyebrow, title, lede, center = false }: { id: string; eyebrow: string; title: string; lede?: ReactNode; center?: boolean }) {
@@ -45,21 +49,21 @@ function Head({ id, eyebrow, title, lede, center = false }: { id: string; eyebro
 
 /** The three steps from a forming setup to a trade on the reader's own MT5. */
 const steps = (t: T) => [
-  [t("Дохио бүрдэнэ", "A signal forms"), t("Ази, Нью-Йоркийн нээлт, Нью-Йоркийн орой гэсэн 3 сешний хүрээг алт эвдэхэд, өдөр ба 4 цагийн trend зөвшөөрвөл setup бүрдэнэ. Дүрэм тогтмол, таамаг биш.", "When gold breaks the range of one of 3 sessions (Asia, New York open, New York late) and the daily and 4-hour trends agree, a setup forms. Fixed rules, not guesses.")],
-  [t("2 минутад Telegram-д", "On Telegram within 2 minutes"), t("15 минутын лаа хаагдсанаас ~2 минутын дотор чарттай зураг, орох үнэ, stop, target бүхий текст ирнэ. Утсаараа гараар орж болно.", "Within ~2 minutes of the 15-minute candle closing, a chart picture and a text with entry, stop and target arrive. You can enter by hand from your phone.")],
-  [t("Robot таны MT5 дээр арилжаална", "The robot trades it on your MT5"), t("XauBot таны сонгосон эрсдэлээр lot-оо тооцож, stop, target-тай нь автоматаар нээж, хаана. Та унтаж байсан ч.", "XauBot sizes the lot from the risk you chose and opens and closes the trade with its stop and target, automatically. Even while you sleep.")],
+  [t("Дохио бүрдэнэ", "A signal forms"), t("Ази, Нью-Йоркийн нээлт, Нью-Йоркийн 2 дахь цаг гэсэн 3 сешний хүрээг алт эвдэхэд, өдөр ба 4 цагийн trend зөвшөөрвөл setup бүрдэнэ. Дүрэм тогтмол, таамаг биш.", "When gold breaks the range of one of 3 sessions (Asia, New York open, New York's second hour) and the daily and 4-hour trends agree, a setup forms. Fixed rules, not guesses.")],
+  [t("~2 минутад Telegram-д", "On Telegram within ~2 minutes"), t("15 минутын лаа хаагдсанаас ~2 минутын дотор чарттай зураг, орох үнэ, stop, target бүхий текст Telegram ботоос ирнэ. Утсаараа гараар орж болно.", "Within ~2 minutes of the 15-minute candle closing, the Telegram bot sends a chart picture and a text with entry, stop and target. You can enter by hand from your phone.")],
+  [t("Робот таны MT5 дээр арилжаална", "The robot trades it on your MT5"), t("XauBot таны сонгосон эрсдэлээр lot-оо тооцож, stop, target-тай нь нээж, хаана. Үүний тулд MT5 таны компьютер эсвэл VPS дээр асаалттай байх ёстой; унтарсан үед гарсан дохиог робот алгасна.", "XauBot sizes the lot from the risk you chose and opens and closes the trade with its stop and target. MT5 must be running on your computer or a VPS for that; a signal that comes while it is off is skipped.")],
 ] as const;
 
 /** Short questions people ask before paying, with plain answers. */
 const faq = (t: T, perWeek: string, minYear: { year: number; r: string }) => [
-  [t("Бусад signal group-ээс юугаараа ялгаатай вэ?", "How is this different from other signal groups?"), <>{t(`Дүрэм нь тогтмол бөгөөд 2019 оноос хойших broker-ын датан дээр шалгагдсан. Гарсан дохио бүрийн үр дүн, ашигтай нь ч алдагдалтай нь ч, энэ хуудсанд нээлттэй. Robot нь дохиог автоматаар арилжаалдаг тул орох цэгээ алдахгүй.`, `The rules are fixed and were tested on broker data since 2019. Every signal's result, winners and losers alike, is open on this page. The robot trades the signals automatically, so you never miss an entry.`)}</>],
-  [t("Компьютер заавал хэрэгтэй юу?", "Do I need a computer?"), <>{t("Дохио утсан дээр Telegram-аар ирнэ, гараар арилжаалахад утас л хангалттай. Robot ажиллахын тулд MT5 Windows компьютер эсвэл Windows VPS дээр асаалттай байх ёстой (MT5-ын утасны app robot ажиллуулдаггүй). Сард ~$5–10-ийн VPS хангалттай: ", "Signals arrive on Telegram on your phone, which is enough to trade them by hand. For the robot, MT5 must stay running on a Windows PC or a Windows VPS (the MT5 phone app cannot run robots). A ~$5–10 a month VPS is enough: ")}<Link href="/guide/vps" className="font-semibold text-amber-300 underline decoration-amber-400/40 underline-offset-4 hover:text-amber-200">{t("VPS заавар", "VPS guide")}</Link>.</>],
-  [t("Хамгийн багадаа хэдэн доллараар эхлэх вэ?", "What is the minimum deposit?"), <>{t("Cent данстай бол ~$50-оос. Жижиг дансанд энгийн дансны хамгийн бага lot (0.01) хэт том эрсдэл болдог тул robot тэр арилжааг алгасна. Cent данс (жишээ нь JustMarkets Standard Cent) дээр lot 100 дахин жижиг тул сонгосон эрсдэлээрээ арилжаална.", "From ~$50 with a cent account. On a small standard account even the smallest lot (0.01) is too much risk, so the robot skips that trade. On a cent account (for example JustMarkets Standard Cent) lots are 100 times smaller, so trades keep to the risk you chose.")}</>],
-  [t("Аль broker дээр ажиллах вэ?", "Which broker does it work with?"), <>{t("JustMarkets дээр туршсан. XAUUSD арилжаалдаг MT5-тай аль ч broker дээр ажиллана. Spread бага, алтны арилжааны нөхцөл сайтай broker сонгоорой.", "Tested on JustMarkets. It works with any MT5 broker that offers XAUUSD. Pick one with a low spread and good gold conditions.")}</>],
+  [t("Бусад signal group-ээс юугаараа ялгаатай вэ?", "How is this different from other signal groups?"), <>{t("Дүрэм нь тогтмол бөгөөд 2019 оноос хойших broker-ын датан дээр шалгагдсан. Шалгаад хаясан санаанууд, алдагдалтай жил ч энэ хуудсанд байгаа. Гарсан дохио бүрийн бодит үр дүн, ашигтай нь ч алдагдалтай нь ч, нээлттэй.", "The rules are fixed and were tested on broker data since 2019. The ideas we tested and threw away, and the losing year, are on this page too. Every real signal's result, winners and losers alike, is open.")}</>],
+  [t("Компьютер заавал хэрэгтэй юу?", "Do I need a computer?"), <>{t("Дохио утсан дээр Telegram-аар ирнэ, гараар арилжаалахад утас л хангалттай. Робот ажиллахын тулд MT5 Windows компьютер эсвэл Windows VPS дээр асаалттай байх ёстой (MT5-ын утасны апп робот ажиллуулдаггүй). Сард ~$5–10-ийн VPS хангалттай: ", "Signals arrive on Telegram on your phone, which is enough to trade them by hand. For the robot, MT5 must stay running on a Windows PC or a Windows VPS (the MT5 phone app cannot run robots). A ~$5–10 a month VPS is enough: ")}<Link href="/guide/vps" className={LINK}>{t("VPS заавар", "VPS guide")}</Link>.</>],
+  [t("Хамгийн багадаа хэдэн доллараар эхлэх вэ?", "What is the minimum deposit?"), <>{t("Cent данстай бол ~$50-оос. Жижиг дансанд энгийн дансны хамгийн бага lot (0.01) хэт том эрсдэл болдог тул робот тэр арилжааг алгасна. Cent данс дээр lot 100 дахин жижиг тул сонгосон эрсдэлээрээ арилжаална.", "From ~$50 with a cent account. On a small standard account even the smallest lot (0.01) is too much risk, so the robot skips that trade. On a cent account lots are 100 times smaller, so trades keep to the risk you chose.")}</>],
+  [t("Аль broker дээр ажиллах вэ?", "Which broker does it work with?"), <>{t("XAUUSD арилжаалдаг MT5-тай аль ч broker дээр ажиллана. Spread бага, алтны арилжааны нөхцөл сайтай broker сонгоорой.", "It works with any MT5 broker that offers XAUUSD. Pick one with a low spread and good gold conditions.")}</>],
   [t("Мөнгө алдаж болох уу?", "Can I lose money?"), <>{t(`Тийм. Арилжааны бараг тал нь stop-д хүрдэг, алдагдалтай сар, жил ч байдаг (${minYear.year}: ${minYear.r}). Арилжаа бүр stop-той, эрсдэл нь дансны тогтсон хувь тул нэг арилжаагаар их алдахгүй. Эрсдэлээ та өөрөө сонгоно: бага эрсдэл = бага ашиг, бага уналт.`, `Yes. About half the trades hit their stop, and there are losing months and years (${minYear.year}: ${minYear.r}). Every trade has a stop and risks a fixed share of the account, so no single trade costs much. You choose the risk: lower risk means smaller profit and smaller falls.`)}</>],
-  [t("Долоо хоногт хэдэн дохио ирэх вэ?", "How many signals a week?"), <>{t(`Дунджаар ~${perWeek}. Зарим долоо хоногт нэг ч биш, заримд 3–4. Чанартай setup-ийг хүлээдэг систем.`, `About ${perWeek} on average. Some weeks none, some 3–4. The system waits for a proper setup.`)}</>],
-  [t("Төлбөрөө яаж төлөх вэ? Буцаалт бий юу?", "How do I pay? Are there refunds?"), <>{t("Төгрөгөөр, Wire-аар: QPay, банкны app, карт, Toki. Төлбөр баталгаажмагц эрх шууд нээгдэнэ. Эрх нээгдсэний дараа буцаалт хийхгүй; давхар эсвэл алдаатай гүйлгээг шалгаж буцаана. Дэлгэрэнгүй ", "In tögrög through Wire: QPay, bank apps, cards, Toki. Access opens the moment the payment is confirmed. Payments are not refunded once access has opened; a duplicate or mistaken payment is checked and returned. Details in the ")}<Link href="/terms" className="font-semibold text-amber-300 underline decoration-amber-400/40 underline-offset-4 hover:text-amber-200">{t("үйлчилгээний нөхцөлд", "terms of service")}</Link>.</>],
-  [t("Яаж эхлэх вэ?", "How do I start?"), <>{t("1) Үнэгүй бүртгүүлнэ. 2) Багцаа сонгож төлнө. 3) Тохиргоо хуудсанд Telegram-аа холбоно. 4) Bot хуудасны 3 алхмаар XauBot-оо MT5-даа холбоно. Эхлээд demo эсвэл cent дансаар туршихыг зөвлөе.", "1) Register for free. 2) Choose a plan and pay. 3) Link Telegram on the Settings page. 4) Connect XauBot to your MT5 with the 3 steps on the Bot page. We suggest trying a demo or cent account first.")}</>],
+  [t("Долоо хоногт хэдэн дохио ирэх вэ?", "How many signals a week?"), <>{t(`Backtest-ээр дунджаар ~${perWeek}. Зарим долоо хоногт нэг ч биш, заримд 3–4. Чанартай setup-ийг хүлээдэг систем.`, `About ${perWeek} on average in the backtest. Some weeks none, some 3–4. The system waits for a proper setup.`)}</>],
+  [t("Төлбөрөө яаж төлөх вэ? Буцаалт бий юу?", "How do I pay? Are there refunds?"), <>{t("Төгрөгөөр, QPay / банкны аппаар (мөн карт, Toki). Төлбөр баталгаажмагц эрх шууд нээгдэнэ. Эрх нээгдсэний дараа буцаалт хийхгүй; давхар эсвэл алдаатай гүйлгээг шалгаж буцаана. Дэлгэрэнгүй ", "In tögrög, by QPay / a bank app (cards and Toki work too). Access opens the moment the payment is confirmed. Payments are not refunded once access has opened; a duplicate or mistaken payment is checked and returned. Details in the ")}<Link href="/terms" className={LINK}>{t("үйлчилгээний нөхцөлд", "terms of service")}</Link>.</>],
+  [t("Яаж эхлэх вэ?", "How do I start?"), <>{t("1) Үнэгүй бүртгүүлнэ. 2) Багцаа сонгож төлнө. 3) Тохиргоо хуудсанд Telegram ботоо холбоно. 4) Робот хуудасны алхмаар XauBot-оо MT5-даа холбоно. Эхлээд demo эсвэл cent дансаар туршихыг зөвлөе.", "1) Register for free. 2) Choose a plan and pay. 3) Link the Telegram bot on the Settings page. 4) Connect XauBot to your MT5 with the steps on the Robot page. We suggest trying a demo or cent account first.")}</>],
 ] as const;
 
 const months: Record<PlanId, number> = { PLUS: 1, PRO: 6, MAX: 12 };
@@ -70,21 +74,25 @@ export default async function LandingPage() {
   const user = await getSessionUser();
   if (user) redirect("/today");
   const now = new Date();
+  const curves = await loadCurves();
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let snap: Awaited<ReturnType<typeof getTodaySnapshot>> = { price: null, bias: null, hourly: null, levels: null };
   let day: Candle[] = [];
   let record: SignalRow[] = [];
+  let live: PublicRecord | null = null;
   try {
     const res = await Promise.all([
       getEvents(now, new Date(now.getTime() + 24 * 36e5)),
       getTodaySnapshot(SYMBOL, now),
       loadCandles(SYMBOL, "15min", 96),
       signalHistory(now, SIGNAL_WINDOW, { delayMs: PUBLIC_DELAY_MS }),
+      getPublicRecord(now).catch((err) => { console.warn("[landing] live record:", (err as Error).message); return null; }),
     ]);
     events = res[0];
     snap = res[1];
     day = res[2];
     record = res[3];
+    live = res[4];
   } catch (err) {
     console.warn("[landing] DB not reachable:", (err as Error).message);
   }
@@ -104,11 +112,14 @@ export default async function LandingPage() {
   const dir = snap.bias?.label === "ӨСӨХ хандлага" ? 1 : snap.bias?.label === "УНАХ хандлага" ? -1 : 0; // i18n-ok: compared with the stored label
   const closed = record.filter((r) => r.outcome.kind !== "OPEN");
   const sinceLaunch = record.length < SIGNAL_WINDOW;
-  const perWeek = CURVES.stats.perWeek.toFixed(1);
+  const firstSignal = record.length ? record.reduce((a, b) => (b.createdAt < a.createdAt ? b : a)).createdAt : null;
+  const perWeek = curves.stats.perWeek.toFixed(1);
+  const winPct = Math.round(curves.stats.winRate);
   const [rrLo, rrHi] = rrRange();
-  const fullYears = CURVES.years.filter((y) => y.trades >= 20);
+  const fullYears = curves.years.filter((y) => y.trades >= 20);
   const worst = fullYears.reduce((a, b) => (b.r < a.r ? b : a), fullYears[0]);
-  const minYear = { year: worst.year, r: `${worst.r < 0 ? "−" : "+"}${Math.abs(worst.r).toFixed(1)}R` };
+  const minYear = { year: worst.year, r: signedR(worst.r, 2) };
+  const oos = outOfSampleText(t, curves);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -117,6 +128,8 @@ export default async function LandingPage() {
         <section className="relative isolate overflow-hidden" aria-labelledby="hero-h">
           <GoldField className="gold-field absolute inset-0 -z-10 h-full w-full" />
           <div aria-hidden className="absolute inset-0 -z-10" style={{ background: "linear-gradient(90deg, var(--color-zinc-950) 0%, color-mix(in oklab, var(--color-zinc-950) 62%, transparent) 46%, transparent 75%), linear-gradient(0deg, var(--color-zinc-950) 0%, transparent 30%)" }} />
+          {/* On a phone the text runs the full width, over the brightest gold: an even veil keeps it readable. */}
+          <div aria-hidden className="absolute inset-0 -z-10 sm:hidden" style={{ background: "color-mix(in oklab, var(--color-zinc-950) 58%, transparent)" }} />
 
           <header className="mx-auto flex h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-8">
             <BrandName />
@@ -127,21 +140,28 @@ export default async function LandingPage() {
             <div className="min-w-0 space-y-6">
               <p className="inline-flex max-w-full items-center gap-2.5 rounded-full border border-amber-400/30 bg-zinc-950/60 px-4 py-2 backdrop-blur-xl">
                 <span className="now-pulse h-2 w-2 shrink-0 rounded-full bg-amber-400" />
-                <span className="truncate text-sm font-semibold text-amber-300">{t("XAUUSD · Telegram дохио · MT5 robot", "XAUUSD · Telegram signals · MT5 robot")}</span>
+                <span className="truncate text-sm font-semibold text-amber-300">{t("XAUUSD · Telegram дохио · MT5 робот", "XAUUSD · Telegram signals · MT5 robot")}</span>
               </p>
 
               <h1 id="hero-h" className="font-display text-[clamp(2.4rem,5.2vw,4rem)] leading-[1.02] text-zinc-50">
                 {t("Алтны дохио", "Gold signals")}{" "}<span className="whitespace-nowrap">{t("Telegram-д,", "on Telegram,")}</span>{" "}
-                <span className="gold-text">{t("арилжааг robot хийнэ.", "the robot places the trade.")}</span>
+                <span className="gold-text">{t("арилжааг робот хийнэ.", "the robot places the trade.")}</span>
               </h1>
 
-              <p className="max-w-[48ch] text-base leading-relaxed text-zinc-300 sm:text-xl">
-                {t("Тогтсон дүрмээр гарсан XAUUSD дохио чарт, орох үнэ, stop, target-тайгаа 2 минутад Telegram-д ирнэ. XauBot түүнийг таны MT5 дээр автоматаар арилжаална.", "Rule-based XAUUSD signals reach your Telegram within 2 minutes with a chart, entry, stop and target. XauBot trades them on your MT5 automatically.")}
+              <p className="max-w-[52ch] text-base leading-relaxed text-zinc-300 sm:text-xl">
+                {t("Сешний хүрээг алт эвдэн гарахад (breakout) тогтсон дүрмээр setup (арилжаа орох нөхцөл) бүрдэнэ. Чарт, орох үнэ, stop (алдагдал хаах үнэ), target (ашиг авах үнэ) бүхий дохио ~2 минутад Telegram-д ирж, XauBot түүнийг таны MT5 дээр арилжаална.",
+                  "When gold breaks out of a session's range, a setup forms by fixed rules. The signal reaches your Telegram within ~2 minutes with a chart, entry, stop and target, and XauBot trades it on your MT5.")}
               </p>
 
               <div className="glass-inset max-w-xl space-y-3 p-5 backdrop-blur-xl" style={{ background: "color-mix(in oklab, var(--color-zinc-950) 70%, transparent)" }}>
-                <ProofLine t={t} />
-                <BacktestNote t={t} />
+                <ProofLine t={t} c={curves} />
+                <BacktestNote t={t} c={curves} />
+                <p className="flex flex-wrap gap-x-5 gap-y-1 border-t pt-3" style={{ borderColor: "var(--hairline)" }}>
+                  <Link href="#record" className="inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-zinc-50 underline decoration-amber-400/60 underline-offset-4 hover:text-amber-200">
+                    <span aria-hidden className="live-dot h-1.5 w-1.5 rounded-full bg-emerald-400" />{t("Бодит дохионы бүртгэл", "The live signal record")} <span aria-hidden>↓</span>
+                  </Link>
+                  <RejectedLink t={t} />
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -184,27 +204,66 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/* The owner's own robot account, trade by trade, straight from its reports: real money moves (demo first), not a backtest. */}
+        <section id="live" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 pt-16 sm:px-8 sm:pt-24" aria-labelledby="live-h">
+          <Head id="live-h" eyebrow={t("Live · бодит арилжааны бүртгэл", "Live · real trading record")} title={t("Бодит арилжааны үр дүн (live)", "Real trading results (live)")}
+            lede={t("Backtest биш: XauBot эзэмшигчийн өөрийн MT5 данс дээр хаасан арилжаа бүр роботын тайлангаас автоматаар энд гарна.", "Not a backtest: every trade XauBot closes on the owner's own MT5 account appears here automatically from the robot's reports.")} />
+          <div className="hallmark mt-10 p-5 sm:p-8">
+            <LiveRecord initial={live} />
+          </div>
+        </section>
+
+        {/* The forward record comes first: what the live pipeline actually sent, a day late. */}
+        <section id="record" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="record-h">
+          <Head id="record-h" eyebrow={t("Бодит үр дүн · forward бүртгэл", "Live results · the forward record")}
+            title={sinceLaunch ? t("Эхэлснээс хойшх бодит дохио бүр", "Every real signal since launch") : t(`Сүүлийн ${SIGNAL_WINDOW} бодит дохио`, `The last ${SIGNAL_WINDOW} real signals`)}
+            lede={t("Энэ бол backtest биш, хамгийн гол нотолгоо: Telegram бот болон роботод очдог яг тэр систем (15 минутын лаа хаагдах → дүрэм шалгах → дохио) бодитоор гаргасан дохио бүр, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. R = нэг арилжаанд эрсдэлд оруулсан хэмжээ.",
+              "Not a backtest, and the proof that matters most: every signal the live pipeline (15-minute candle closes → rules checked → signal) actually sent to the Telegram bot and the robot, winners and losers, exactly as each one ended. R = the amount risked on one trade.")} />
+          <div className="hallmark mt-10 space-y-5 p-5 sm:p-8">
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-300">
+              <span className="inline-flex items-center gap-2 font-semibold text-zinc-50"><span aria-hidden className="live-dot h-2 w-2 rounded-full bg-emerald-400" />{t("Live систем", "Live pipeline")}</span>
+              {firstSignal && <span className="tabular-nums">{t(`Эхний бүртгэл: ${v.date(firstSignal)}`, `First entry: ${v.date(firstSignal)}`)}</span>}
+              <span>{t("Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "The last 24 hours go to plan holders live, so they appear here a day later.")}</span>
+            </p>
+            {closed.length > 0 ? (
+              <>
+                <SignalTotals rows={record} t={t} caption={signalWindowLabel(t)} />
+                <div className="table-card"><SignalHistoryTable rows={record.slice(0, 10)} v={v} now={now} /></div>
+              </>
+            ) : (
+              <p className="max-w-prose text-base leading-relaxed text-zinc-300">{t("Бүртгэл дөнгөж эхэлж байна: эхний дохио хаагдмагц энд ашигтай, алдагдалтайгаараа гарна. Цөөн дохионоос дүгнэлт хийхгүй байхыг зөвлөе.", "The record is just starting: the first signals appear here, won or lost, as soon as they close. Draw no conclusion from a handful.")}</p>
+            )}
+            <p className="text-sm text-zinc-400">{t("Spread, шимтгэл ороогүй. Бодит дохионы тоо цөөн тул статистикийн хувьд хараахан баталгаажаагүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. There are still few real signals, so this is not yet statistically settled. Past results do not guarantee future profit.")}</p>
+          </div>
+        </section>
+
         {/* If you had followed it since 2019: the one interactive part of the page. */}
-        <section id="results" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="results-h">
-          <Head id="results-h" eyebrow={t("Түүхэн үр дүн", "Historical results")} title={t("Хэрэв та 2019 оноос энэ системийг дагасан бол", "If you had followed this system since 2019")}
+        <section id="results" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 pb-16 sm:px-8 sm:pb-24" aria-labelledby="results-h">
+          <Head id="results-h" eyebrow={t("Түүхэн туршилт (backtest)", "Historical test (backtest)")} title={t("Хэрэв та 2019 оноос энэ дүрмийг дагасан бол", "If you had followed these rules since 2019")}
             lede={t("Эрсдэлээ сонгоод $1,500-ийн данс хэрхэн өссөнийг, замдаа хэр их уналт туулсныг хараарай. Их ашиг хүсвэл их уналтыг ч мэдэж сонгоно.", "Pick a risk and see how a $1,500 account grew, and how deep it fell on the way. Want bigger profit? Choose it knowing the bigger falls.")} />
           <div className="hallmark mt-10 p-5 sm:p-8">
-            <BacktestResults curves={CURVES} />
-            <BacktestNote t={t} className="mt-6 border-t pt-4" />
+            <BacktestResults curves={curves} />
+            {oos && <p className="mt-6 max-w-prose text-sm leading-relaxed text-zinc-300">{oos}</p>}
+            <BacktestNote t={t} c={curves} className="mt-4 border-t pt-4" />
           </div>
         </section>
 
         {/* Year by year, and how the system trades. */}
         <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 sm:px-8 sm:pb-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-14" aria-labelledby="years-h">
           <div className="min-w-0 space-y-8">
-            <Head id="years-h" eyebrow={t("Жил бүрээр", "Year by year")} title={t("Сайн жил ч, муу жил ч бий.", "Good years and flat ones.")}
-              lede={t("R гэдэг нь нэг арилжаанд эрсдэлд оруулсан хэмжээ. +20R = эрсдэлийн 20 дахин их ашиг.", "R is the amount risked on one trade. +20R = twenty times that risk in profit.")} />
-            <KeyStats t={t} />
+            <Head id="years-h" eyebrow={t("Жил бүрээр", "Year by year")} title={t("Сайн жил ч, муу жил ч бий.", "Good years and bad ones.")}
+              lede={t("R гэдэг нь нэг арилжаанд эрсдэлд оруулсан хэмжээ. +20R = эрсдэлийн 20 дахин их ашиг. Алдагдалтай жилийг нуулгүй тэмдэглэв.", "R is the amount risked on one trade. +20R = twenty times that risk in profit. The losing year is marked, not hidden.")} />
+            <KeyStats t={t} c={curves} />
           </div>
           <div className="card min-w-0">
-            <YearBars t={t} />
+            <YearBars t={t} c={curves} />
           </div>
         </section>
+
+        {/* What the research threw away. */}
+        <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-8 sm:pb-24">
+          <RejectedIdeas t={t} className="glass-banner p-6 sm:p-10" />
+        </div>
 
         {/* How it works. */}
         <section className="border-y py-16 sm:py-24" style={{ borderColor: "var(--hairline)", background: "var(--glass-inset)" }} aria-labelledby="how-h">
@@ -226,20 +285,6 @@ export default async function LandingPage() {
             <div className="min-w-0"><SignalExample row={example} bars={exampleBars} v={v} now={now} /></div>
           </div>
         </section>
-
-        {/* The live record, a day late. */}
-        {closed.length > 0 && (
-          <section id="record" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="record-h">
-            <Head id="record-h" eyebrow={t("Бодит үр дүн", "Live record")}
-              title={sinceLaunch ? t("Эхэлснээс хойшх бодит дохио бүр", "Every real signal since launch") : t(`Сүүлийн ${SIGNAL_WINDOW} бодит дохио`, `The last ${SIGNAL_WINDOW} real signals`)}
-              lede={t("Backtest биш: бодитоор гарсан дохио, ашигтай нь ч алдагдалтай нь ч, яг хэрхэн дууссанаараа. Сүүлийн 24 цагийнх багцтай хэрэглэгчдэд шууд очдог тул энд нэг өдрийн дараа гарна.", "Not a backtest: the signals that actually went out, winners and losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.")} />
-            <div className="mt-10 space-y-5">
-              <SignalTotals rows={record} t={t} caption={signalWindowLabel(t)} />
-              <div className="table-card"><SignalHistoryTable rows={record.slice(0, 10)} v={v} now={now} /></div>
-              <p className="text-sm text-zinc-500">{t("Spread, шимтгэл ороогүй. Өнгөрсөн үр дүн ирээдүйн ашгийг баталгаажуулахгүй.", "Spread and fees not included. Past results do not guarantee future profit.")}</p>
-            </div>
-          </section>
-        )}
 
         {/* What a plan opens, and what it costs. */}
         <section id="plans" className="mx-auto w-full max-w-6xl scroll-mt-6 px-4 py-16 sm:px-8 sm:py-24" aria-labelledby="plans-h">
@@ -264,7 +309,7 @@ export default async function LandingPage() {
                   </li>
                 );
               })}
-              <li className="px-1 text-xs leading-relaxed text-zinc-500">{t("Эхлээд үнэгүй бүртгүүлнэ, дараа нь багцаа сонгож Wire-аар (QPay, банкны app, карт, Toki) төлнө. Төлмөгц шууд нээгдэнэ.", "Register free first, then choose a plan and pay through Wire (QPay, bank apps, cards, Toki). It opens the moment you pay.")}</li>
+              <li className="px-1 text-sm leading-relaxed text-zinc-400">{t("Эхлээд үнэгүй бүртгүүлнэ, дараа нь багцаа сонгож QPay / банкны аппаар (мөн карт, Toki) төлнө. Төлмөгц шууд нээгдэнэ. Журналаа гараар хөтлөх нь бүртгэлтэй хэн бүхэнд үнэгүй.", "Register free first, then choose a plan and pay by QPay / a bank app (cards and Toki work too). It opens the moment you pay. Keeping your journal by hand is free for anyone registered.")}</li>
             </ul>
           </div>
         </section>
@@ -276,12 +321,12 @@ export default async function LandingPage() {
             <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 [t(`Долоо хоногт ~${perWeek} арилжаа`, `~${perWeek} trades a week`), t("Цөөн, гэхдээ тогтсон дүрмээр. Өдөр бүр дохио ирэхгүй.", "Few, but by fixed rules. Not a signal every day.")],
-                [t("~50% нь ашигтай", "~50% win"), t("Бараг тал нь stop-д хүрнэ. Энэ бол хэвийн.", "About half hit their stop. That is normal.")],
-                [t(`Ашиг нь алдагдлаас ${rrLo}–${rrHi} дахин их`, `Winners ${rrLo}–${rrHi}× the losers`), t("Ашиг эндээс ирдэг: цөөн ч том ашиг, жижиг алдагдал.", "That is where the profit comes from: bigger wins, small losses.")],
+                [t(`~${winPct}% нь ашигтай`, `~${winPct}% in profit`), t("Backtest-ээр бараг тал нь stop-д хүрсэн. Энэ бол хэвийн.", "In the backtest about half hit their stop. That is normal.")],
+                [t(`Target нь stop-оос ${rrLo}–${rrHi} дахин хол`, `Targets ${rrLo}–${rrHi}× the stop`), t("Тал нь алдсан ч ашигтай арилжаа нь алдагдлаасаа том: backtest-ийн ашиг эндээс гарсан.", "Half lose, but a winner is bigger than a loser: that is where the backtest's profit came from.")],
                 [t("Жижиг данс → cent данс", "Small account → cent account"), t("Хэдэн зуун доллартай бол cent данс нээвэл lot 100 дахин жижиг болж, эрсдэл зөв тохирно.", "With a few hundred dollars, a cent account makes lots 100 times smaller so the risk fits.")],
               ].map(([h, p]) => (
                 <li key={h} className="min-w-0">
-                  <p className="text-lg font-semibold text-zinc-50">{h}</p>
+                  <p className="text-lg font-semibold text-zinc-50 tabular-nums">{h}</p>
                   <p className="mt-1 text-sm leading-relaxed text-zinc-400">{p}</p>
                 </li>
               ))}
@@ -297,7 +342,7 @@ export default async function LandingPage() {
               <details key={q} className="group px-5 sm:px-6" style={{ borderColor: "var(--hairline)" }}>
                 <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold text-zinc-100 [&::-webkit-details-marker]:hidden">
                   <span>{q}</span>
-                  <svg aria-hidden viewBox="0 0 20 20" className="h-5 w-5 shrink-0 text-amber-400 transition-transform duration-200 group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4v12M4 10h12" /></svg>
+                  <svg aria-hidden viewBox="0 0 20 20" className="h-5 w-5 shrink-0 text-amber-400 transition-transform duration-200 group-open:rotate-45 motion-reduce:transition-none" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4v12M4 10h12" /></svg>
                 </summary>
                 <p className="pb-5 leading-relaxed text-zinc-400">{a}</p>
               </details>
@@ -311,10 +356,10 @@ export default async function LandingPage() {
             <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
               <div>
                 <h2 id="cta-h" className="font-display max-w-[22ch] text-[32px] leading-[1.05] sm:text-[46px]">{t("Дараагийн дохиог Telegram-аараа ав.", "Get the next signal on your Telegram.")}</h2>
-                <p className="mt-3 max-w-[52ch] text-base font-medium opacity-85">{t("Бүртгэл үнэгүй. Багцаа сонгож төлмөгц дохио, robot, бүх хуудас шууд нээгдэнэ.", "Registration is free. Choose a plan and pay, and the signals, the robot and every page open at once.")}</p>
+                <p className="mt-3 max-w-[52ch] text-base font-medium opacity-85">{t("Бүртгэл үнэгүй. Багцаа сонгож төлмөгц дохио, робот, бүх хуудас шууд нээгдэнэ.", "Registration is free. Choose a plan and pay, and the signals, the robot and every page open at once.")}</p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Link href="#plans" className="inline-flex min-h-14 items-center justify-center rounded-full bg-zinc-950 px-6 text-base font-bold whitespace-nowrap text-zinc-50 sm:px-8 transition-transform duration-200 active:scale-[0.97] max-sm:flex-1">{t("Багц сонгох", "Choose a plan")}</Link>
+                <Link href="#plans" className="inline-flex min-h-14 items-center justify-center rounded-full bg-zinc-950 px-6 text-base font-bold whitespace-nowrap text-zinc-50 sm:px-8 transition-transform duration-200 active:scale-[0.97] motion-reduce:transition-none max-sm:flex-1">{t("Багц сонгох", "Choose a plan")}</Link>
                 <Link href="/register" className="inline-flex min-h-14 items-center justify-center rounded-full border border-current/25 px-5 text-base font-bold whitespace-nowrap sm:px-7 max-sm:flex-1">{t("Үнэгүй бүртгүүлэх", "Register free")}</Link>
               </div>
             </div>

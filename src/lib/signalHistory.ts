@@ -1,4 +1,5 @@
 import { NOT_SENT, listSignals } from "./signals";
+import { SESSION_IDS } from "./setup/sessionRules";
 import { loadCandles, SYMBOL } from "./ingest/prices";
 import { signalOutcome, type Outcome } from "./signalOutcome";
 import type { Signal } from "./db/schema";
@@ -18,7 +19,9 @@ export const PUBLIC_DELAY_MS = 24 * 36e5;
  * `includeUnsent` they are listed too, marked `unsent`, and a caller that totals must leave those out.
  */
 export async function signalHistory(now: Date, limit = 60, o: { delayMs?: number; includeUnsent?: boolean } = {}): Promise<SignalRow[]> {
-  const signals = await listSignals(limit, o.delayMs ? new Date(now.getTime() - o.delayMs) : undefined, { includeUnsent: o.includeUnsent });
+  // Only the three session setups the system trades today; signals from retired rules stay in the database but are not shown.
+  const signals = (await listSignals(limit, o.delayMs ? new Date(now.getTime() - o.delayMs) : undefined, { includeUnsent: o.includeUnsent }))
+    .filter((s) => (SESSION_IDS as readonly string[]).includes(s.setupId));
   if (signals.length === 0) return [];
   const oldest = Math.min(...signals.map((s) => s.createdAt.getTime()));
   const bars = await loadCandles(SYMBOL, "15min", Math.min(MAX_BARS, Math.ceil((now.getTime() - oldest) / M15) + 8));

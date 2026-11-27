@@ -23,13 +23,13 @@ test("a paid user's chips show the plan with days left, the running bot and the 
   expect(plan).toHaveTextContent(/Pro · 142 хоног үлдсэн/);
   expect(plan).not.toHaveTextContent(/Сунгах/);
 
-  const b = chip(/^Bot/);
+  const b = chip(/^Робот(?!ын)/);
   expect(b).toHaveAttribute("href", "/bot");
   expect(b).toHaveTextContent(/Ажиллаж байна/);
   expect(b).toHaveTextContent(/2 position/);
   expect(within(b).getByText("−$12.40")).toBeInTheDocument();
 
-  const m = chip(/Bot-ын 30 хоног/);
+  const m = chip(/Роботын 30 хоног/);
   expect(m).toHaveAttribute("href", "/performance");
   expect(within(m).getByText("+$320.50")).toBeInTheDocument();
   expect(m).toHaveTextContent(/4 арилжаа · 75% ашигтай/);
@@ -38,11 +38,11 @@ test("a paid user's chips show the plan with days left, the running bot and the 
 test("without a plan the bot chip is masked and points to the plans; the robot's own month still shows", () => {
   render(<AccountChips v={v} plan={{ kind: "none" }} trades={month} bot={null} />);
   expect(chip(/Багц алга/)).toHaveTextContent(/Багц авах/);
-  const b = chip(/^Bot/);
+  const b = chip(/^Робот(?!ын)/);
   expect(b).toHaveAttribute("href", "/plans");
   expect(within(b).getByText("*****")).toBeInTheDocument();
   expect(b.textContent).not.toMatch(/\$|position/);
-  expect(within(chip(/Bot-ын 30 хоног/)).getByText("+$320.50")).toBeInTheDocument();
+  expect(within(chip(/Роботын 30 хоног/)).getByText("+$320.50")).toBeInTheDocument();
 });
 
 test("an expired plan says so; a plan ending within a week asks to renew; an admin has full access", () => {
@@ -59,17 +59,17 @@ test("an expired plan says so; a plan ending within a week asks to renew; an adm
 test("no robot trades yet and an unconnected bot point to the bot page to start", () => {
   const empty: TradeSummary = { month: { closed: 0, wins: 0, losses: 0, pnl: 0, winRate: null }, allTime: { closed: 0, pnl: 0 }, open: 0 };
   render(<AccountChips v={v} plan={{ kind: "admin" }} trades={empty} bot={{ connected: false, running: false, online: false, positions: 0, pnl24h: 0, account: null }} />);
-  expect(chip(/Bot-ын 30 хоног/)).toHaveAttribute("href", "/bot");
-  expect(chip(/Bot-ын 30 хоног/)).toHaveTextContent(/Арилжаа хараахан алга/);
+  expect(chip(/Роботын 30 хоног/)).toHaveAttribute("href", "/bot");
+  expect(chip(/Роботын 30 хоног/)).toHaveTextContent(/Арилжаа хараахан алга/);
   expect(chip(/MT5 холбогдоогүй/)).toHaveTextContent(/Тохируулах/);
 });
 
 test("a bot set to run whose MT5 has gone quiet is flagged, and a stopped bot says stopped", () => {
   const { unmount } = render(<AccountChips v={v} plan={{ kind: "admin" }} trades={month} bot={{ ...bot, online: false }} />);
-  expect(chip(/^Bot/)).toHaveTextContent(/MT5 холболт тасарсан/);
+  expect(chip(/^Робот(?!ын)/)).toHaveTextContent(/MT5 холболт тасарсан/);
   unmount();
   render(<AccountChips v={v} plan={{ kind: "admin" }} trades={month} bot={{ ...bot, running: false, positions: 0 }} />);
-  expect(chip(/^Bot/)).toHaveTextContent(/Зогссон/);
+  expect(chip(/^Робот(?!ын)/)).toHaveTextContent(/Зогссон/);
 });
 
 test("the setups card shows a live setup's side and levels, and an idle one's headline", () => {

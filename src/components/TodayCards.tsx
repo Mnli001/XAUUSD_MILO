@@ -85,7 +85,7 @@ export function LevelSpark({ closes, levels }: { closes: number[]; levels: Level
         <span className="now-pulse absolute right-0 h-2.5 w-2.5 translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-300" style={{ top: `${lastY}%` }} />
       </div>
       {lines.map((l, i) => (
-        <span key={l.name} data-level={l.name} className={`absolute right-0 -translate-y-1/2 text-[11px] font-medium whitespace-nowrap tabular-nums ${LINE_TEXT[l.tone]}`} style={{ top: `${labelY[i]}%` }}>
+        <span key={l.name} data-level={l.name} className={`absolute right-0 -translate-y-1/2 text-xs font-medium whitespace-nowrap tabular-nums ${LINE_TEXT[l.tone]}`} style={{ top: `${labelY[i]}%` }}>
           {l.name} {Math.round(l.price).toLocaleString("en-US")}
         </span>
       ))}
@@ -120,14 +120,14 @@ export function PriceCard({ price, closes, levels, v = MN_VIEWER }: Pick<TodaySn
 
 const DirTitle = ({ t }: { t: T }) => (
   <h2 id="bias-h" className="flex items-center gap-2 text-[13px] font-medium text-zinc-400">
-    <Icon name="bolt" className="h-4 w-4 text-amber-400" />{t("Өнөөдрийн чиглэл", "Today's direction")}
+    <Icon name="bolt" className="h-4 w-4 text-amber-400" />{t("Өдрийн чиглэл", "Today's direction")}
   </h2>
 );
 
 /** Which side leads today: the word, the score, buyers against sellers and the four timeframes. */
 export function DirectionCard({ bias, v = MN_VIEWER }: Pick<TodaySnapshot, "bias"> & { v?: Viewer }) {
   const { t } = v;
-  if (!bias) return <Empty title={t("Өнөөдрийн чиглэл", "Today's direction")} v={v} />;
+  if (!bias) return <Empty title={t("Өдрийн чиглэл", "Today's direction")} v={v} />;
   const dir = bias.label === "ӨСӨХ хандлага" ? 1 : bias.label === "УНАХ хандлага" ? -1 : 0; // i18n-ok: compared with the stored label
   const [head, ...rest] = biasLabelText(bias.label, t).split(" ");
   const tone = dir > 0 ? "text-emerald-400" : dir < 0 ? "text-red-400" : "text-zinc-100";

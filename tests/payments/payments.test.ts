@@ -292,6 +292,22 @@ describe("refunds and chargebacks", () => {
   it("an intent that is not ours is ignored", async () => {
     expect(await markRefunded("pi_unknown", now, { type: "charge.refunded" })).toBeNull();
   });
+  it("a refunded payment stays REFUNDED when polled again while Wire still reports the intent as succeeded", async () => {
+    const { u, p } = await paidFor();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const later = new Date(now.getTime() + 5 * DAY);
+    await markRefunded(p.providerRef!, later, { type: "charge.refunded" });
+    warn.mockRestore();
+    const access = (await accessOf(u.id))!.getTime();
+    const polled = new Date(later.getTime() + 60e3);
+    const r = await refreshPayment(p.id, polled, cfg, { force: true });
+    expect(r!.status).toBe("REFUNDED");
+    expect(r!.paidAt).toEqual(now);
+    await refreshByRef(p.providerRef!, polled, cfg);
+    expect((await accessOf(u.id))!.getTime()).toBe(access);
+    const [row] = await db.select().from(schema.payments).where(eq(schema.payments.id, p.id));
+    expect(row.status).toBe("REFUNDED");
+  });
 });
 
 describe("paymentsOf", () => {

@@ -82,7 +82,7 @@ export function DemoTerminal({ accounts, initial, levels, context }: { accounts:
 
   const a = view.account;
   const fig = (label: string, value: string, cls = "text-zinc-50") => (
-    <div className="min-w-0"><dt className="text-[11px] text-zinc-500">{label}</dt><dd className={`text-sm font-semibold tabular-nums sm:text-base ${cls}`}>{value}</dd></div>
+    <div className="min-w-0"><dt className="text-xs text-zinc-500">{label}</dt><dd className={`text-sm font-semibold tabular-nums sm:text-base ${cls}`}>{value}</dd></div>
   );
   const tabBtn = (k: Tab, label: string) => (
     <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}

@@ -52,7 +52,7 @@ function PlanChip({ plan, v }: { plan: PlanSummary; v: Viewer }) {
 }
 
 function BotChip({ bot, t }: { bot: BotSummary | null; t: T }) {
-  const label = t("Bot", "Bot");
+  const label = t("Робот", "Robot");
   if (bot === null) return <Chip href="/plans" icon="bot" label={label} tone="text-zinc-400"><Masked t={t} /></Chip>;
   if (!bot.connected && !bot.account) return <Chip href="/bot" icon="bot" label={`${label} · ${t("MT5 холбогдоогүй", "MT5 not connected")}`} tone="text-amber-300">{t("Тохируулах", "Set it up")}</Chip>;
   if (!bot.running) return <Chip href="/bot" icon="bot" label={label} tone="text-zinc-300">{t("Зогссон", "Stopped")}</Chip>;
@@ -65,7 +65,7 @@ function BotChip({ bot, t }: { bot: BotSummary | null; t: T }) {
 }
 
 function TradesChip({ j, t }: { j: TradeSummary; t: T }) {
-  const label = t("Bot-ын 30 хоног", "Bot · 30 days");
+  const label = t("Роботын 30 хоног", "Robot · 30 days");
   if (j.allTime.closed === 0 && j.open === 0) return <Chip href="/bot" icon="chart" label={label} tone="text-zinc-300">{t("Арилжаа хараахан алга", "No trades yet")}</Chip>;
   return (
     <Chip href="/performance" icon="chart" label={label}>

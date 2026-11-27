@@ -10,10 +10,10 @@ import { Avatar } from "./Avatar";
 
 const mainLinks = (t: T) => [
   ["/today", t("Өнөөдөр", "Today"), "M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8L17 7M7 17l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"],
-  ["/setup", "Setup", "M12 2.5v4m0 11v4M2.5 12h4m11 0h4M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 3.5v2"],
+  ["/setup", t("Дохио", "Signals"), "M12 2.5v4m0 11v4M2.5 12h4m11 0h4M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 3.5v2"],
   ["/chart", t("Чарт", "Chart"), "M7 4v3m0 8v5M5 7h4v8H5zM17 3v5m0 7v6M15 8h4v7h-4z"],
   ["/news", t("Мэдээ", "News"), "M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8h3m-3 3h6"],
-  ["/bot", t("Bot", "Bot"), "M12 3v3M8 6h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Zm-5 6v3m18-3v3M9.5 12v1m5-1v1M9.5 16h5"],
+  ["/bot", t("Робот", "Robot"), "M12 3v3M8 6h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Zm-5 6v3m18-3v3M9.5 12v1m5-1v1M9.5 16h5"],
 ] as const;
 const moreLinks = (t: T) => [
   ["/bot/history", t("Дохионы түүх", "Signal history"), "M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2"],
@@ -171,10 +171,10 @@ export function AppNav({ name, isAdmin, avatar = null }: { name: string; isAdmin
             const on = href === current;
             return (
               <Link key={href} href={href} aria-current={on ? "page" : undefined}
-                className={`relative flex min-h-[3.25rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[26px] text-[10.5px] font-medium transition-colors ${on ? "text-amber-400" : "text-zinc-400 hover:text-zinc-200"}`}
+                className={`relative flex min-h-[3.25rem] min-w-0 flex-col items-center justify-center gap-0.5 rounded-[26px] text-[12px] leading-tight font-medium tracking-[-0.01em] transition-colors ${on ? "text-amber-400" : "text-zinc-400 hover:text-zinc-200"}`}
                 style={on ? { background: "linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05))", boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 0 0 1px var(--hairline)" } : undefined}>
                 <svg aria-hidden viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={on ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-                <span className="max-w-full truncate px-0.5">{label}</span>
+                <span className="max-w-full px-0.5 text-center break-words">{label}</span>
               </Link>
             );
           })}

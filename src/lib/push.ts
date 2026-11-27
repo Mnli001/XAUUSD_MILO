@@ -1,5 +1,5 @@
 import * as webpush from "web-push";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 
 /**
@@ -49,6 +49,22 @@ export const pushTransport = {
 };
 
 const MAX_ENDPOINT = 1024;
+/** A user keeps at most this many devices; a new one replaces the one subscribed longest ago. */
+export const MAX_PUSH_DEVICES = 5;
+
+/**
+ * The browsers' own push services. The server POSTs to every stored endpoint, so an arbitrary https URL would let
+ * anyone make it call any host; only these are accepted.
+ */
+const PUSH_HOSTS = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com"];
+const PUSH_HOST_SUFFIXES = [".notify.windows.com", ".push.apple.com"];
+export function isPushServiceUrl(endpoint: string): boolean {
+  let u: URL;
+  try { u = new URL(endpoint); } catch { return false; }
+  if (u.protocol !== "https:" || u.username || u.password || (u.port && u.port !== "443")) return false;
+  const host = u.hostname.toLowerCase();
+  return PUSH_HOSTS.includes(host) || PUSH_HOST_SUFFIXES.some((s) => host.endsWith(s) && host.length > s.length);
+}
 
 /** Stores a browser's subscription (as `PushSubscription.toJSON()` gives it) for this user. */
 export async function savePushSubscription(userId: string, input: unknown): Promise<{ error?: "invalid" }> {
@@ -56,11 +72,18 @@ export async function savePushSubscription(userId: string, input: unknown): Prom
   const endpoint = typeof s?.endpoint === "string" ? s.endpoint : "";
   const p256dh = typeof s?.keys?.p256dh === "string" ? s.keys.p256dh : "";
   const auth = typeof s?.keys?.auth === "string" ? s.keys.auth : "";
-  let ok = endpoint.length > 0 && endpoint.length <= MAX_ENDPOINT && p256dh.length > 0 && p256dh.length <= 200 && auth.length > 0 && auth.length <= 100;
-  try { ok &&= new URL(endpoint).protocol === "https:"; } catch { ok = false; }
+  const ok = endpoint.length > 0 && endpoint.length <= MAX_ENDPOINT && p256dh.length > 0 && p256dh.length <= 200 && auth.length > 0 && auth.length <= 100 && isPushServiceUrl(endpoint);
   if (!ok) return { error: "invalid" };
-  await db.insert(schema.pushSubscriptions).values({ userId, endpoint, p256dh, auth })
-    .onConflictDoUpdate({ target: schema.pushSubscriptions.endpoint, set: { userId, p256dh, auth } });
+  const ps = schema.pushSubscriptions;
+  await db.transaction(async (tx) => {
+    // Saving again counts as the newest device, so the one kept longest without use is the one replaced.
+    // clock_timestamp(): microseconds, so two saves within one millisecond still have an order.
+    const now = sql`clock_timestamp()`;
+    await tx.insert(ps).values({ userId, endpoint, p256dh, auth, createdAt: now })
+      .onConflictDoUpdate({ target: ps.endpoint, set: { userId, p256dh, auth, createdAt: now } });
+    const extra = await tx.select({ id: ps.id }).from(ps).where(eq(ps.userId, userId)).orderBy(desc(ps.createdAt), desc(ps.id)).offset(MAX_PUSH_DEVICES);
+    if (extra.length) await tx.delete(ps).where(inArray(ps.id, extra.map((r) => r.id)));
+  });
   return {};
 }
 

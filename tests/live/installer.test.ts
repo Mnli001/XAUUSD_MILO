@@ -327,11 +327,12 @@ onWindows("bridge -Once: posts the robot's body with its token and writes the si
   const answer = JSON.stringify({ state: "RUNNING", runId: "r-1", lots: 0.01, lang: "mn", reason: "Холбогдлоо \"ok\"\nline\\x", orders: "1,2;3" });
   await withServer(() => ({ status: 200, body: answer }), async (origin, seen) => {
     const body = JSON.stringify({ account: { login: "51234567", mode: "DEMO", balance: 1000, equity: 1000 }, symbol: "XAUUSD", reason: "Ази \"x\"" });
-    const { responses, raw, log } = await bridgeOnce(origin, { "51234567": { url: `${origin}/api/bot/sync`, token: input.token, seq: 1795000000001, at: unixNow(), body } });
+    // the robot's folder per chart: <login>_<magic>_<symbol>
+    const { responses, raw, log } = await bridgeOnce(origin, { "51234567_20261121_XAUUSD.m": { url: `${origin}/api/bot/sync`, token: input.token, seq: 1795000000001, at: unixNow(), body } });
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ token: input.token, type: "application/json", path: "/api/bot/sync", body });
-    expect(responses["51234567"]).toEqual({ seq: 1795000000001, status: 200, body: answer });
-    expect(raw["51234567"].toString("latin1")).toMatch(/^[\x20-\x7e]*$/); // ASCII only: other letters as \uXXXX, which the robot decodes
+    expect(responses["51234567_20261121_XAUUSD.m"]).toEqual({ seq: 1795000000001, status: 200, body: answer });
+    expect(raw["51234567_20261121_XAUUSD.m"].toString("latin1")).toMatch(/^[\x20-\x7e]*$/); // ASCII only: other letters as \uXXXX, which the robot decodes
     expect(log).toContain("...4567: status 200");
     expect(log).not.toContain(input.token);
     expect(log).not.toContain("51234567");

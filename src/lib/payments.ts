@@ -1,5 +1,5 @@
 import { randomUUID, randomBytes } from "node:crypto";
-import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { Payment } from "./db/schema";
 import { PLANS, extendAccess, type PlanId } from "./plans";
@@ -51,13 +51,17 @@ export async function startPayment(userId: string, plan: PlanId, now: Date, cfg:
   }
 }
 
-/** Marks a paid payment PAID and extends the payer's access, exactly once however many checks race here. */
+/**
+ * Marks a paid payment PAID and extends the payer's access, exactly once however many checks race here.
+ * Only an open (PENDING) or lapsed (EXPIRED) payment can become PAID: PAID and REFUNDED are final, so a refunded
+ * intent that Wire still reports as succeeded never hands its days back.
+ */
 async function activate(id: string, now: Date): Promise<void> {
   let rewarded: string | null = null;
   await db.transaction(async (tx) => {
     const [won] = await tx.update(schema.payments).set({ status: "PAID", paidAt: now })
-      .where(and(eq(schema.payments.id, id), ne(schema.payments.status, "PAID"))).returning();
-    if (!won) return; // another check got here first
+      .where(and(eq(schema.payments.id, id), inArray(schema.payments.status, ["PENDING", "EXPIRED"]))).returning();
+    if (!won) return; // another check got here first, or the payment is already final
     if (!won.userId) {
       // the payer deleted their account while the payment was open and paid anyway: money in, nobody to give access to
       await tx.update(schema.payments).set({ adminNote: "paid after the account was deleted: refund by hand" }).where(eq(schema.payments.id, id));
@@ -77,12 +81,13 @@ async function activate(id: string, now: Date): Promise<void> {
 /**
  * Asks Wire about a payment's intent and acts on the answer: succeeded for the full amount in tögrög → access opens;
  * canceled, or unpaid past its time → EXPIRED. An EXPIRED payment is still checked, so money that arrives late is honoured.
+ * PAID and REFUNDED are final and are never asked about again.
  * `force` skips the few-seconds throttle (the webhook).
  */
 export async function refreshPayment(id: string, now: Date, cfg: WireConfig, o: { force?: boolean } = {}): Promise<Payment | null> {
   const [p] = await db.select().from(schema.payments).where(eq(schema.payments.id, id));
   if (!p) return null;
-  if (p.status === "PAID" || !p.providerRef) return p;
+  if (p.status === "PAID" || p.status === "REFUNDED" || !p.providerRef) return p;
   if (!o.force && p.checkedAt && now.getTime() - p.checkedAt.getTime() < MIN_CHECK_MS) return p;
 
   const r = await retrieveIntent(cfg, p.providerRef);

@@ -211,6 +211,13 @@
       "when": 1795769588936,
       "tag": "0029_demo_trade",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795771895662,
+      "tag": "0030_journal_manual",
+      "breakpoints": true
     }
   ]
 }
