@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.80"
+#property version   "3.90"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -17,6 +17,7 @@ input long   MagicNumber          = 20261121; // Роботын арилжааг
 input int    SyncSeconds          = 1;        // Вэбтэй холбогдох давтамж (сек) · Sync every (s)
 input int    EntryCooldownSeconds = 5;        // Хоёр арилжааны хоорондох зай (сек) · Gap between entries (s)
 input int    MaxSpreadPoints      = 600;      // Spread үүнээс их бол орохгүй (point) · No entry above this spread
+input bool   ShareJournal         = true;     // Дансны хаасан бүх арилжааг вэбийн журналд илгээх · Send closed trades to the web journal
 enum ENUM_XAU_LANG
   {
    LANG_WEB = 0, // Вэбийн тохиргоог дагах · Follow the web setting
@@ -95,7 +96,10 @@ double gOSlipR = 0.3;              // үнэ орох түвшнээс эрсд�
 datetime gOrderTryAt = 0;          // сүүлд захиалга илгээсэн цаг: брокерын хариу хоцорвол давхар илгээхгүй
 string gMode = "SCALPER";          // SCALPER: нэг нэгээр орно · BASKET: бүгдийг зэрэг нээж, нийт дүнгээр зэрэг хаана
 
-#define ROBOT_VERSION 15             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр)
+#define ROBOT_VERSION 16             // вэб энэ дугаараар роботын файл шинэ эсэхийг мэднэ (6: орох шүүлтүүр, 14: сешн бүрийн захиалга, SL/TP үнээр, 15: trend-ийн хэмжээ, 16: журнал)
+// v3.90: вэбийн журнал. Сервер jFrom (UTC unix секунд) илгээнэ: тэр цагаас хойш хаагдсан арилжааг 50-иар илгээнэ.
+long     gJFrom = 0;               // 0 = сервер журнал асуугаагүй (хуучин сервер)
+datetime gJournalAt = 0;           // сүүлд журнал илгээсэн цаг (компьютерийн): 30 секунд тутамд л түүх уншина
 
 // Орох шүүлтүүр (бүх хэрэгсэл арилжаа нээхээс өмнө давах ёстой). Вэбээс эсвэл Tester… input-аас.
 bool     gGateOn = true, gGTrend = true;
@@ -2359,6 +2363,61 @@ string PositionsJson()
    return(out);
   }
 
+// v3.90: дансны хаасан бүх арилжаа — гараар хийсэн ч, өөр роботынх ч — jFrom-оос хойш, хуучнаас нь эхлэн 50 хүртэл.
+// Every closed trade on the account (by hand or any robot) after the server's jFrom cursor, oldest first, for the web journal.
+string JournalJson()
+  {
+   string out = "";
+   if(!ShareJournal || gTester || gJFrom <= 0) return(out);
+   if(TimeLocal() - gJournalAt < 30) return(out);
+   gJournalAt = TimeLocal();
+   long off = (long)MathRound((double)(TimeTradeServer() - TimeGMT()) / 900.0) * 900;
+   datetime from = (datetime)(gJFrom + off);                     // серверийн цагаар
+   // Нээсэн deal нь эрт байж болох тул 60 хоногоор өмнөөс уншина
+   if(!HistorySelect(from - 60 * 86400, TimeCurrent() + 60)) return(out);
+   int total = HistoryDealsTotal();
+   int added = 0;
+   for(int i = 0; i < total && added < 50; i++)
+     {
+      ulong t = HistoryDealGetTicket(i);
+      if(t == 0) continue;
+      datetime closeAt = (datetime)HistoryDealGetInteger(t, DEAL_TIME);
+      if(closeAt < from) continue;
+      long type = HistoryDealGetInteger(t, DEAL_TYPE);
+      if(type != DEAL_TYPE_BUY && type != DEAL_TYPE_SELL) continue;  // мөнгө оруулах, шимтгэл зэрэг нь арилжаа биш
+      long entry = HistoryDealGetInteger(t, DEAL_ENTRY);
+      if(entry != DEAL_ENTRY_OUT && entry != DEAL_ENTRY_OUT_BY) continue;
+
+      long     posId = HistoryDealGetInteger(t, DEAL_POSITION_ID);
+      double   closePrice = HistoryDealGetDouble(t, DEAL_PRICE);
+      double   openPrice = closePrice;
+      datetime openAt = closeAt;
+      for(int j = i - 1; j >= 0; j--)                             // тухайн позицийн нээсэн deal
+        {
+         ulong o = HistoryDealGetTicket(j);
+         if(o == 0) continue;
+         if(HistoryDealGetInteger(o, DEAL_POSITION_ID) == posId && HistoryDealGetInteger(o, DEAL_ENTRY) == DEAL_ENTRY_IN)
+           {
+            openPrice = HistoryDealGetDouble(o, DEAL_PRICE);
+            openAt = (datetime)HistoryDealGetInteger(o, DEAL_TIME);
+            break;
+           }
+        }
+      string sym = HistoryDealGetString(t, DEAL_SYMBOL);
+      int    dg = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+      if(dg <= 0) dg = 5;
+      string side = (type == DEAL_TYPE_SELL) ? "BUY" : "SELL";    // BUY позицийг SELL deal хаадаг
+      double profit = HistoryDealGetDouble(t, DEAL_PROFIT) + HistoryDealGetDouble(t, DEAL_SWAP) + HistoryDealGetDouble(t, DEAL_COMMISSION);
+      if(out != "") out += ",";
+      out += "{\"ticket\":\"" + (string)t + "\",\"position\":\"" + (string)posId + "\",\"symbol\":\"" + JsonSafe(sym) + "\",\"side\":\"" + side +
+             "\",\"lots\":" + Num(HistoryDealGetDouble(t, DEAL_VOLUME), 2) + ",\"openPrice\":" + Num(openPrice, dg) + ",\"closePrice\":" + Num(closePrice, dg) +
+             ",\"openTime\":\"" + IsoUtc(openAt) + "\",\"closeTime\":\"" + IsoUtc(closeAt) + "\",\"profit\":" + Num(profit, 2) +
+             ",\"magic\":\"" + (string)HistoryDealGetInteger(t, DEAL_MAGIC) + "\"}";
+      added++;
+     }
+   return(out);
+  }
+
 // Сүүлийн 24 цагт хаагдсан, энэ роботын арилжаанууд (хамгийн сүүлийн 30)
 string DealsJson()
   {
@@ -2510,7 +2569,10 @@ void Sync()
                  ",\"signal\":\"" + gSignal + "\",\"reason\":\"" + JsonText(gReason, 280) + "\",\"runPnl\":" + Num(gState == "RUNNING" ? RunPnl() : 0.0, 2) +
                  ",\"positions\":[" + PositionsJson() + "],\"deals\":[" + DealsJson() + "],\"finished\":\"" + gFinished + "\",\"plannedSeconds\":" + (string)gPlannedSeconds + ",\"elapsedSeconds\":" + (string)ElapsedSeconds() + ",\"version\":" + (string)ROBOT_VERSION +
                  ",\"gateOn\":" + (gGateOn ? "true" : "false") + ",\"block\":\"" + gBlock + "\",\"blockDetail\":\"" + JsonText(gBlockDetail, 100) + "\",\"tradesToday\":" + (string)gTradesToday +
-                 ",\"dayPnl\":" + Num(gDayPnl, 2) + ",\"dailyLossHit\":" + (gDailyLossHit ? "true" : "false") + "}";
+                 ",\"dayPnl\":" + Num(gDayPnl, 2) + ",\"dailyLossHit\":" + (gDailyLossHit ? "true" : "false");
+   string journal = JournalJson();
+   if(journal != "") json += ",\"journal\":[" + journal + "]";
+   json += "}";
 
    uchar data[];
    int len = StringToCharArray(json, data, 0, WHOLE_ARRAY, CP_UTF8);
@@ -2589,6 +2651,7 @@ void Sync()
    gOrders    = JStr(body, "orders");
    if(JRaw(body, "oMaxAge") != "") gOMaxAge = (int)MathMax(60.0, JNum(body, "oMaxAge"));
    if(JRaw(body, "oSlipR") != "")  gOSlipR  = MathMax(0.0, JNum(body, "oSlipR"));
+   if(JRaw(body, "jFrom") != "")   gJFrom   = (long)JNum(body, "jFrom");   // вэб v3.90+: журналын заагч
    if(newMode != gMode) { gRuleLastBar = 0; gReadLastBar = 0; }
    gMode       = newMode;
 

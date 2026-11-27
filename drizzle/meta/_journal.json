@@ -176,6 +176,13 @@
       "when": 1795755537217,
       "tag": "0024_event_actuals",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795756150068,
+      "tag": "0025_journal_trades",
+      "breakpoints": true
     }
   ]
 }

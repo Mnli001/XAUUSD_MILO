@@ -110,6 +110,16 @@
   "file": "src/app/(app)/glossary/page.tsx"
  },
  {
+  "h": "1dbb5e0a",
+  "en": "Trade journal",
+  "file": "src/app/(app)/journal/page.tsx"
+ },
+ {
+  "h": "a2f45d27",
+  "en": "Your MT5 account's closed trades arrive here on their own, showing where you make and lose money.",
+  "file": "src/app/(app)/journal/page.tsx"
+ },
+ {
   "h": "cbf40866",
   "en": "News",
   "file": "src/app/(app)/news/page.tsx"
@@ -1880,6 +1890,11 @@
   "file": "src/components/AppNav.tsx"
  },
  {
+  "h": "2edb7f18",
+  "en": "Journal",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
   "h": "e0ccc31f",
   "en": "Main menu",
   "file": "src/components/AppNav.tsx"
@@ -2940,6 +2955,206 @@
   "file": "src/components/InviteCard.tsx"
  },
  {
+  "h": "e040e8e6",
+  "en": "Running total",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "70f4258e",
+  "en": "Running total over {0} closed trades: {1}",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "882428f8",
+  "en": "Net",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "89dc6f17",
+  "en": "Asia",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "e5087f3f",
+  "en": "London",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "7f3a0208",
+  "en": "New York",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "5bdb3ef4",
+  "en": "Off-hours",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "61e2a3f8",
+  "en": "Source",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "75afe364",
+  "en": "All",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "d748cd1d",
+  "en": "By hand",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "5e5681e4",
+  "en": "Robots",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "7a572af9",
+  "en": "30 days",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "2d8a9817",
+  "en": "90 days",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "923f702d",
+  "en": "All time",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "59f8a2fc",
+  "en": "Account",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "6d624270",
+  "en": "All accounts",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "d670d599",
+  "en": "The XauBot robot on MT5 (v3.80 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "363235d2",
+  "en": "Go to the bot",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "4f1f0daa",
+  "en": "Totals",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "e9ba479a",
+  "en": "Per trade",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "b13464d4",
+  "en": "Loss streak",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "3b1f277d",
+  "en": "Avg win",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "987f8e86",
+  "en": "avg loss",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "9c7f8847",
+  "en": "best",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "55cef8d4",
+  "en": "worst",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "c30e85ac",
+  "en": "What stands out",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "1bc79857",
+  "en": "By opening hour ({0})",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "9bfec677",
+  "en": "By side",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "392dcff5",
+  "en": "By instrument",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "2fdb5bba",
+  "en": "Habits",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "3e23f0f7",
+  "en": "Opened within 30 min of a loss",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "2230c7fc",
+  "en": "Larger than usual lot",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "143f655c",
+  "en": "Average time held",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "0b244ecf",
+  "en": "Winners",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "c98f4557",
+  "en": "min",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "fb80f7b7",
+  "en": "losers",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "232aa0c1",
+  "en": "Recent trades",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "87615d50",
+  "en": "Instrument",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "53ddadb4",
+  "en": "By",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
+  "h": "44e67b40",
+  "en": "Hand",
+  "file": "src/components/JournalView.tsx"
+ },
+ {
   "h": "872f13b2",
   "en": "This document is available in Mongolian and English only; the Mongolian text is the official one.",
   "file": "src/components/LegalDoc.tsx"
@@ -3142,11 +3357,6 @@
  {
   "h": "906e6426",
   "en": "Rose",
-  "file": "src/components/NewsList.tsx"
- },
- {
-  "h": "c98f4557",
-  "en": "min",
   "file": "src/components/NewsList.tsx"
  },
  {
@@ -3802,11 +4012,6 @@
  {
   "h": "ccd75993",
   "en": "{0} of {1} that came due in 30 days renewed",
-  "file": "src/components/RevenueView.tsx"
- },
- {
-  "h": "923f702d",
-  "en": "All time",
   "file": "src/components/RevenueView.tsx"
  },
  {
@@ -5975,6 +6180,41 @@
   "file": "src/lib/glossary.ts"
  },
  {
+  "h": "f00f1f5b",
+  "en": "{0} trades opened within {1} minutes of a loss: {2}% won, {3} in total. Take a break after a loss.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "576d1748",
+  "en": "You hold losing trades {0} minutes on average and winners {1}. Losses run while profits are cut early.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "b7f0c9a5",
+  "en": "{0} trades more than {1}× your usual lot size made {2} in total.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "a4f57bcc",
+  "en": "Your best session is {0}: {1} trades, {2}% won, {3}.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "c59fd4d0",
+  "en": "The {0} session lost {1} over {2} trades. Consider trading less then.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "03429844",
+  "en": "Trades opened at {0}:00 do worst: {1} trades, {2} ({3}).",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
+  "h": "16042d4e",
+  "en": "Your {0} trades lost {1} while the other side made money. Be pickier with {2}.",
+  "file": "src/lib/journalStats.ts"
+ },
+ {
   "h": "8cc88cb7",
   "en": "🔔 <b>XAUUSD reached {0}</b>",
   "file": "src/lib/priceAlerts.ts"
@@ -6813,26 +7053,6 @@
   "h": "f2d1d8fd",
   "en": "<b>Important releases · next 3 days</b> ({0})",
   "file": "src/lib/telegramCommands.ts"
- },
- {
-  "h": "89dc6f17",
-  "en": "Asia",
-  "file": "src/lib/time.ts"
- },
- {
-  "h": "e5087f3f",
-  "en": "London",
-  "file": "src/lib/time.ts"
- },
- {
-  "h": "7f3a0208",
-  "en": "New York",
-  "file": "src/lib/time.ts"
- },
- {
-  "h": "5bdb3ef4",
-  "en": "Off-hours",
-  "file": "src/lib/time.ts"
  },
  {
   "h": "3a56e759",

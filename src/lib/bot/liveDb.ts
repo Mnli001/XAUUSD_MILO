@@ -3,6 +3,7 @@ import { and, asc, desc, eq, gte, lte, ne, sql, sum } from "drizzle-orm";
 import { db, schema } from "../db";
 import { findUserById } from "../users";
 import { applyRisk, type RiskVerdict } from "../risk";
+import { journalFrom, storeJournal } from "../journal";
 import { recordTick } from "../feed";
 import { hasAccess } from "../access";
 import { mnT, type T } from "../i18n";
@@ -228,6 +229,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
     // Deals already a day old when first seen (a robot reconnecting) are stored but not announced.
     for (const d of fresh) if (now.getTime() - d.closeTime.getTime() < 10 * 60_000) notify(owner, tradeClosedText(owner, d));
   }
+  if (r.journal?.length) await storeJournal(owner.id, live.login, r.journal).catch((e) => console.error("[journal] not kept", e));
   await recordEntries(owner, live.login, r.positions, now).catch((e) => console.error("[bot] entry not recorded", e));
 
   let { state, closeAll, stopReason } = live;
@@ -242,14 +244,16 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   const cmd = commandFor({ state, runId: live.runId, closeAll, config: live.config }, r.account, r.version, lang, await blackoutsFor(live.config, now), await consensusFor(live.config, now), orders.day, orders.session);
   if (state === "RUNNING" && cmd.state === "STOPPED") { state = "STOPPED"; stopReason = cmd.reason; stoppedAt = now; }
 
-  const { deals: _deals, account, ...rest } = r;
-  void _deals;
+  const jFrom = await journalFrom(owner.id, live.login, now).then((d) => Math.floor(d.getTime() / 1000)).catch(() => 0);
+  const { deals: _deals, journal: _journal, account, ...rest } = r;
+  void _deals; void _journal;
   const isSteady =
     process.env.NODE_ENV !== "test" &&
     state === live.state &&
     closeAll === live.closeAll &&
     stopReason === live.stopReason &&
     r.deals.length === 0 &&
+    !r.journal?.length &&
     r.positions.length === ((live.status as { positions?: unknown[] } | null)?.positions?.length ?? 0) &&
     live.lastSeenAt &&
     now.getTime() - live.lastSeenAt.getTime() < 5_000;
@@ -257,7 +261,7 @@ export async function handleSync(token: string, body: unknown, now: Date): Promi
   if (!isSteady) {
     await update(owner.id, live.login, { state, closeAll, stopReason, stoppedAt, lastSeenAt: now, server: account.server ?? live.server, status: { ...rest, account: { ...account, login: masked(account.login) } } });
   }
-  return cmd;
+  return jFrom ? { ...cmd, jFrom } : cmd;
 }
 
 type Status = Omit<Report, "deals">;
