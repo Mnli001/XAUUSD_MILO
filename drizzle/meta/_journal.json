@@ -183,6 +183,13 @@
       "when": 1795756150068,
       "tag": "0025_journal_trades",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795757191939,
+      "tag": "0026_price_alert_symbol",
+      "breakpoints": true
     }
   ]
 }

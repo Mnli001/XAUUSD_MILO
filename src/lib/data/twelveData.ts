@@ -1,7 +1,9 @@
 import type { Candle, Timeframe } from "../analysis/indicators";
 import { type PriceProvider, ProviderError } from "./priceProvider";
 
-const SYMBOLS: Record<string, string> = { XAUUSD: "XAU/USD" };
+import { MARKETS } from "../marketList";
+
+const SYMBOLS: Record<string, string> = { XAUUSD: "XAU/USD", ...Object.fromEntries(MARKETS.map((m) => [m.symbol, m.feed])) };
 
 type Row = { datetime: string; open: string; high: string; low: string; close: string };
 

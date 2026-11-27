@@ -120,6 +120,41 @@
   "file": "src/app/(app)/journal/page.tsx"
  },
  {
+  "h": "77a70d38",
+  "en": "Other markets",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "920e5814",
+  "en": "Silver, the euro, Nasdaq and bitcoin next to gold: direction, yesterday's range and an hourly chart. Updated every hour. Setups and the robot work on gold only.",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "a9535ad6",
+  "en": "{0}: hourly chart",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "b3a46bdf",
+  "en": "{0} · hourly chart, EMA 50",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "693c4cba",
+  "en": "Gold's full chart",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "e2a52ecc",
+  "en": "{0} hourly candles",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
+  "h": "1555414a",
+  "en": "No data yet. It updates every hour.",
+  "file": "src/app/(app)/markets/page.tsx"
+ },
+ {
   "h": "cbf40866",
   "en": "News",
   "file": "src/app/(app)/news/page.tsx"
@@ -1890,6 +1925,11 @@
   "file": "src/components/AppNav.tsx"
  },
  {
+  "h": "fe52d4c6",
+  "en": "Markets",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
   "h": "2edb7f18",
   "en": "Journal",
   "file": "src/components/AppNav.tsx"
@@ -3035,8 +3075,8 @@
   "file": "src/components/JournalView.tsx"
  },
  {
-  "h": "d670d599",
-  "en": "The XauBot robot on MT5 (v3.80 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.",
+  "h": "24ee34de",
+  "en": "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.",
   "file": "src/components/JournalView.tsx"
  },
  {
@@ -3190,11 +3230,6 @@
   "file": "src/components/LiveQuote.tsx"
  },
  {
-  "h": "494a00ce",
-  "en": "spread",
-  "file": "src/components/LiveQuote.tsx"
- },
- {
   "h": "8240c7c8",
   "en": "Lot calculator",
   "file": "src/components/LotCalculator.tsx"
@@ -3243,6 +3278,16 @@
   "h": "90275473",
   "en": "XAUUSD: 1 lot = 100 oz, so a $1 move is $1 per 0.01 lot. Adjust if your broker's contract size differs. Spread and fees not included.",
   "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "7a6ccb01",
+  "en": "buyers",
+  "file": "src/components/MarketsView.tsx"
+ },
+ {
+  "h": "93ae68c7",
+  "en": "Yesterday",
+  "file": "src/components/MarketsView.tsx"
  },
  {
   "h": "ec266ec8",
@@ -3642,6 +3687,11 @@
  {
   "h": "b564e9d1",
   "en": "Tell me when gold reaches",
+  "file": "src/components/PriceAlertsCard.tsx"
+ },
+ {
+  "h": "c860b925",
+  "en": "Tell me when {0} reaches",
   "file": "src/components/PriceAlertsCard.tsx"
  },
  {
@@ -6215,8 +6265,23 @@
   "file": "src/lib/journalStats.ts"
  },
  {
-  "h": "8cc88cb7",
-  "en": "🔔 <b>XAUUSD reached {0}</b>",
+  "h": "6c94b6b3",
+  "en": "Gold",
+  "file": "src/lib/marketList.ts"
+ },
+ {
+  "h": "27a78440",
+  "en": "Silver",
+  "file": "src/lib/marketList.ts"
+ },
+ {
+  "h": "32a58749",
+  "en": "Euro / dollar",
+  "file": "src/lib/marketList.ts"
+ },
+ {
+  "h": "7e0c7f96",
+  "en": "🔔 <b>{0} reached {1}</b>",
   "file": "src/lib/priceAlerts.ts"
  },
  {
@@ -6230,8 +6295,8 @@
   "file": "src/lib/priceAlerts.ts"
  },
  {
-  "h": "c3fd6ce2",
-  "en": "🔔 XAUUSD reached {0}",
+  "h": "feea5727",
+  "en": "🔔 {0} reached {1}",
   "file": "src/lib/priceAlerts.ts"
  },
  {
@@ -6560,6 +6625,21 @@
   "file": "src/lib/setup/setups.ts"
  },
  {
+  "h": "1ab0b7e0",
+  "en": "Daily trend strength at least {0}",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "b22195d6",
+  "en": "Trend too weak, no trade today",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "d949ff6c",
+  "en": "A breakout came, but the daily trend score of {0} is below {1}. New York breakouts on weak-trend days did poorly in the past, so the day is passed.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
   "h": "361ad905",
   "en": "Stop at least {0} of the daily ATR",
   "file": "src/lib/setup/setups.ts"
@@ -6672,6 +6752,16 @@
  {
   "h": "facfcf3c",
   "en": "0.01 lot: risk {0}, reward {1}{2}",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "0576f274",
+  "en": "Strong trend: size this trade {0}× your usual (the robot does it)",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "c5b7cdc9",
+  "en": "Weak trend: size this trade {0}× your usual (the robot does it)",
   "file": "src/lib/signals.ts"
  },
  {

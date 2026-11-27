@@ -1,0 +1,1 @@
+ALTER TABLE "price_alerts" ADD COLUMN "symbol" text DEFAULT 'XAUUSD' NOT NULL;
