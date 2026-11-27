@@ -11,6 +11,27 @@ const MENU = "rounded bg-zinc-800 px-1.5 py-0.5 text-[13px] font-medium text-zin
 const LINK = "font-semibold text-zinc-50 underline decoration-amber-400 decoration-2 underline-offset-2";
 export const EX5_HREF = "/api/bot/download?file=ex5";
 const MQ5_HREF = "/api/bot/download?file=mq5";
+export const INSTALLER_HREF = "/api/bot/installer";
+
+/**
+ * The one-click way: a Windows installer that copies the robot into MT5, fills in its token and address and opens
+ * MT5 with the robot on a gold chart. Downloading it makes a new token. A plain link: the route answers with the file.
+ */
+export function OneClickInstall() {
+  const { t } = useViewer();
+  return (
+    <div className="mt-4 rounded-xl border border-amber-400/40 bg-amber-400/[0.06] p-4 sm:p-5">
+      <h3 className="flex items-center gap-2 font-semibold text-zinc-50">
+        {t("Нэг товчоор суулгах (Windows)", "One-click install (Windows)")}
+        <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">{t("Зөвлөе", "Recommended")}</span>
+      </h3>
+      <p className="mt-1 text-sm leading-relaxed text-zinc-300">{t("Файлыг татаад давхар товшино. Robot-ыг MT5-д хуулж, token болон site-ын хаягийг өөрөө бичээд MT5-ыг XAUUSD чарт дээр robot-тай нь нээнэ. Үлдэх ганц алхам болох site-ын хаягийг зөвшөөрөхийг яг хаана хийхийг зааж өгнө.", "Download the file and double-click it. It copies the robot into MT5, fills in the token and the site's address, and opens MT5 with the robot on an XAUUSD chart. For the one step left, allowing the site's address, it shows you exactly where to paste it.")}</p>
+      <a href={INSTALLER_HREF} className="btn mt-3 inline-flex">{t("XauBot-Setup.bat татах", "Download XauBot-Setup.bat")}</a>
+      <p className="mt-3 text-xs leading-relaxed text-amber-300">{t("Татах бүрт шинэ token үүсгэнэ: өмнөх token ажиллахаа болих тул өмнө нь тохируулсан robot-д шинэ token-оо дахин оруулна.", "Each download makes a new token: the previous one stops working, so a robot set up before needs the new token entered again.")}</p>
+      <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t("Файл гарын үсэггүй тул Windows SmartScreen анхааруулга гарч болно: «More info» → «Run anyway» дарна. Файлд таны token бичигдсэн тул түүнийг бусадтай хуваалцахгүй.", "The file is not signed, so Windows SmartScreen may warn you: click \"More info\" → \"Run anyway\". The file holds your token, so do not share it.")}</p>
+    </div>
+  );
+}
 
 /** Copies `value`; where the clipboard is not allowed, selects the text so it can be copied by hand. */
 export function CopyField({ value, label, tone = "plain" }: { value: string; label: string; tone?: "plain" | "secret" }) {
@@ -100,7 +121,7 @@ function Roundel({ n, state }: { n: number; state: "todo" | "part" | "done" }) {
  * The three steps, the token control in step 3, the live "waiting / connected" line and the troubleshooting list.
  * `tokenSlot` is the token form (it lives in the panel, which owns the action state).
  */
-export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot }: { origin: string; syncUrl: string; hasToken: boolean; online: boolean; tokenSlot: ReactNode }) {
+export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot, installer = true }: { origin: string; syncUrl: string; hasToken: boolean; online: boolean; tokenSlot: ReactNode; installer?: boolean }) {
   const { t, locale } = useViewer();
   const steps = locale === "en" ? connectStepsEn() : connectStepsMn();
   const trouble = locale === "en" ? troubleEn() : troubleMn();
@@ -108,6 +129,12 @@ export function ConnectSteps({ origin, syncUrl, hasToken, online, tokenSlot }: {
   const stateText = { todo: "", part: t("хагас хийгдсэн", "partly done"), done: t("хийгдсэн", "done") };
   return (
     <div>
+      {installer && (
+        <>
+          <OneClickInstall />
+          <h3 className="mt-6 text-sm font-semibold tracking-wide text-zinc-400 uppercase">{t("Гараар холбох — 3 алхам", "Connect by hand — 3 steps")}</h3>
+        </>
+      )}
       <ol className="relative mt-4">
         <span aria-hidden className="absolute top-4 bottom-4 left-[15px] w-[3px] rounded-full bg-zinc-800" />
         {steps.map((s, i) => (

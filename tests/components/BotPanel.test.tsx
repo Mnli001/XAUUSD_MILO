@@ -24,7 +24,7 @@ const connected = { hasToken: true, online: true, lastSeenAt: "2026-11-27T10:00:
 
 test("before the robot connects, the 3 connect steps lead the page with the site address and a token button", () => {
   panel(view());
-  const card = screen.getByRole("heading", { name: /Холбох — 3 алхам/ }).closest("section")!;
+  const card = screen.getByRole("heading", { name: /MT5 холбох/ }).closest("section")!;
   expect(within(card).getByRole("link", { name: /XauBot\.ex5/ })).toHaveAttribute("href", "/api/bot/download?file=ex5");
   expect(within(card).getByText("https://example.mn")).toBeInTheDocument();
   expect(within(card).getAllByText(/Allow WebRequest/).length).toBeGreaterThan(0);
@@ -32,6 +32,32 @@ test("before the robot connects, the 3 connect steps lead the page with the site
   expect(within(card).getByText("Холболтыг хүлээж байна…")).toBeInTheDocument();
   expect(within(card).getByText("Асуудал гарвал")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Эхлүүлэх/ })).toBeDisabled();
+});
+
+test("the one-click Windows installer comes first, says it makes a new token and warns about SmartScreen; the 3 steps follow as the manual way", () => {
+  panel(view());
+  const card = screen.getByRole("heading", { name: /MT5 холбох/ }).closest("section")!;
+  const link = within(card).getByRole("link", { name: "XauBot-Setup.bat татах" });
+  expect(link).toHaveAttribute("href", "/api/bot/installer");
+  expect(within(card).getByRole("heading", { name: /Нэг товчоор суулгах \(Windows\)/ })).toBeInTheDocument();
+  expect(within(card).getByText(/шинэ token үүсгэнэ/)).toBeInTheDocument();
+  expect(within(card).getByText(/SmartScreen.*More info.*Run anyway/)).toBeInTheDocument();
+  const manual = within(card).getByRole("heading", { name: /Гараар холбох/ });
+  // the installer is above the manual steps
+  expect(link.compareDocumentPosition(manual) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("without a site address the installer is not offered, only the manual steps", () => {
+  render(<BotPanel initial={view()} origin="https://example.mn" syncUrl="https://example.mn/api/bot/sync" robot={{ need: 13 }} setup={setup} installer={false} />);
+  expect(screen.queryByRole("link", { name: "XauBot-Setup.bat татах" })).toBeNull();
+  expect(screen.getByRole("link", { name: /XauBot\.ex5/ })).toBeInTheDocument();
+});
+
+test("while the bot runs, the connect guide does not offer the installer (it would replace the running robot's token)", () => {
+  panel(view({ ...connected, state: "RUNNING" }));
+  fireEvent.click(screen.getByRole("button", { name: "Холбох заавар" }));
+  expect(screen.getByRole("heading", { name: /Алхам 1/ })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "XauBot-Setup.bat татах" })).toBeNull();
 });
 
 test("creating a token shows it once with a Copy button and a warning", async () => {
@@ -57,7 +83,7 @@ test("with a token but no robot yet, step 3 shows as half done", () => {
 
 test("once connected the connect card is one line, and the status card shows the account", () => {
   panel(view(connected));
-  expect(screen.queryByRole("heading", { name: /Холбох — 3 алхам/ })).toBeNull();
+  expect(screen.queryByRole("heading", { name: /MT5 холбох/ })).toBeNull();
   const row = screen.getByRole("region", { name: "MT5 холболт" });
   expect(row).toHaveTextContent(/MT5 холбогдсон.*данс ••••4567/);
   expect(within(row).getByRole("button", { name: "Шинэ token үүсгэх" })).toBeInTheDocument();
@@ -103,7 +129,7 @@ test("a small account gets a plain note with the smallest lot's risk and the cen
   expect(risk).toHaveTextContent("JustMarkets Standard Cent");
   cleanup();
   panel(view({ hasToken: true, balance: 300 })); // still onboarding, but the robot has reported a balance
-  const card = screen.getByRole("heading", { name: /Холбох — 3 алхам/ }).closest("section")!;
+  const card = screen.getByRole("heading", { name: /MT5 холбох/ }).closest("section")!;
   expect(within(card).getByRole("note")).toHaveTextContent("Cent данс");
   cleanup();
   panel(view(connected)); // $2,000 at 1%: fine

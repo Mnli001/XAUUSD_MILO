@@ -152,7 +152,7 @@ function TokenControl({ hasToken, token, pending, action, compact = false, disab
   );
 }
 
-export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: View; origin: string; syncUrl: string; robot: RobotNeeds; setup: SetupToolText }) {
+export function BotPanel({ initial, origin, syncUrl, robot, setup, installer = true }: { initial: View; origin: string; syncUrl: string; robot: RobotNeeds; setup: SetupToolText; installer?: boolean }) {
   const who = useViewer();
   const { t, zone } = who;
   const needFile = robotFileLabel(robot.need);
@@ -208,10 +208,10 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
       {showConnect ? (
         <section className="card p-5 sm:p-7" aria-labelledby="connect-h" style={{ borderColor: "var(--hairline-gold)" }}>
           <h2 id="connect-h" className="flex items-center gap-2 font-display text-[22px] leading-tight text-zinc-50 sm:text-[26px]">
-            <Icon name="link" className="h-5 w-5 text-amber-400" />{t("Холбох — 3 алхам", "Connect — 3 steps")}
+            <Icon name="link" className="h-5 w-5 text-amber-400" />{t("MT5 холбох", "Connect MT5")}
           </h2>
           <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Windows компьютер эсвэл VPS дээрх MT5-аа нээгээд дансаараа нэвтэрнэ. Дараа нь:", "Open MT5 on your Windows computer or VPS and sign in to your account. Then:")}</p>
-          <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online}
+          <ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer}
             tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} />} />
           {v.balance !== null && <div className="mt-4"><SmallAccountNote balance={v.balance} riskPct={g.riskMode === "PCT" && g.riskValue > 0 ? g.riskValue : null} /></div>}
           {!needsSetup && <button type="button" className="btn mt-4" onClick={() => setDoneSeen(true)}>{t("Болсон", "Done")}</button>}
@@ -228,7 +228,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
             </span>
           </div>
           {tokState.token && !guideOpen && <div className="mt-3"><TokenControl hasToken token={tokState.token} pending={false} action={tokAction} /></div>}
-          {guideOpen && <div id="connect-guide" className="mt-2 border-t border-zinc-800 pt-2"><ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} disabled={running} />} /></div>}
+          {guideOpen && <div id="connect-guide" className="mt-2 border-t border-zinc-800 pt-2"><ConnectSteps origin={origin} syncUrl={syncUrl} hasToken={hasToken} online={v.online} installer={installer && !running} tokenSlot={<TokenControl hasToken={hasToken} token={tokState.token} pending={tokPending} action={tokAction} disabled={running} />} /></div>}
         </section>
       )}
 
@@ -272,7 +272,7 @@ export function BotPanel({ initial, origin, syncUrl, robot, setup }: { initial: 
         </div>
 
         <div className="mt-4 space-y-2 text-sm leading-relaxed">
-          {!v.hasToken && <p className="text-zinc-400">{t("Эхлүүлэхийн өмнө дээрх 3 алхмаар MT5-аа холбоно уу.", "Connect your MT5 with the 3 steps above before you start.")}</p>}
+          {!v.hasToken && <p className="text-zinc-400">{t("Эхлүүлэхийн өмнө MT5-аа дээрх хэсгээр холбоно уу: нэг товчоор эсвэл гараар.", "Connect your MT5 above before you start: in one click or by hand.")}</p>}
           {real && !c.allowReal && (
             <p role="alert" className="rounded-xl bg-red-500/10 px-3.5 py-2.5 text-red-300">{t("Энэ бол жинхэнэ данс. Жинхэнэ дансаар арилжаа хийхийг зөвшөөрөөгүй тул bot арилжаа хийхгүй. Доорх «Эрсдэл» хэсгээс зөвшөөрнө үү.", "This is a real account. Real trading is not allowed, so the bot will not trade. Allow it in the Risk section below.")}</p>
           )}

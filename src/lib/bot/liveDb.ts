@@ -134,6 +134,13 @@ export async function rotateToken(userId: string): Promise<string> {
   return token;
 }
 
+/** The user a robot token belongs to (looked up by its hash), or null. Callers check access. */
+export async function userForToken(token: string) {
+  if (!token) return null;
+  const [link] = await db.select().from(schema.botTokens).where(eq(schema.botTokens.tokenHash, hashToken(token)));
+  return link ? findUserById(link.userId) : null;
+}
+
 const masked = (login: string) => `••••${login.slice(-4)}`;
 
 /** The user's MT5 accounts that have connected, most recently seen first. */

@@ -14,6 +14,7 @@ import { ruleLine, type BrokerRecord } from "@/lib/siteCopy";
 import type { Viewer } from "@/lib/viewer";
 import { RiskCard, type RiskView } from "@/components/RiskCard";
 import { PRESETS, getRiskRule, riskReading } from "@/lib/risk";
+import { siteUrl } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -60,7 +61,7 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
       {paid && view ? (
         <>
           {/* One flow: connect (until the robot has reported), status and Start/Stop, risk, trades, then what the system does. */}
-          <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} origin={origin} syncUrl={`${origin}/api/bot/sync`} robot={{ need: minRobotVersion("ASIAN") }} setup={setupText(v)} />
+          <BotPanel key={view.account} initial={JSON.parse(JSON.stringify(view))} origin={origin} syncUrl={`${origin}/api/bot/sync`} robot={{ need: minRobotVersion("ASIAN") }} setup={setupText(v)} installer={!!siteUrl()} />
           {risk && <RiskCard view={risk} presets={PRESETS} />}
         </>
       ) : (
