@@ -53,3 +53,10 @@ test("deleting the account asks for the password; an admin is told it cannot be 
   expect(screen.queryByRole("button", { name: "Бүртгэлээ устгах" })).toBeNull();
   expect(screen.getByText(/Админ бүртгэлийг устгах боломжгүй/)).toBeInTheDocument();
 });
+
+test("with an active plan the delete form is replaced by when it can be deleted", () => {
+  render(<DeleteAccountForm isAdmin={false} activeUntil="2026-12-10 08:00" />);
+  expect(screen.queryByRole("button", { name: "Бүртгэлээ устгах" })).toBeNull();
+  expect(screen.queryByLabelText("Нууц үг")).toBeNull();
+  expect(screen.getByText(/2026-12-10 08:00 хүртэл идэвхтэй/)).toBeInTheDocument();
+});

@@ -131,8 +131,6 @@
  "670a776e": "Pobierz swój stary dziennik",
  "f0a730d4": "{0} transakcji, które wcześniej zapisałeś ręcznie, jest nadal przechowywanych. Pobierz je jako plik CSV, który otworzysz w Excelu. Godziny w {1}.",
  "ec186815": "Pobierz CSV",
- "8fc5c8b9": "To urządzenie",
- "4e8175bc": "Po wylogowaniu twój język, motyw i strefa czasowa zostają zachowane do następnego logowania.",
  "0837a3d6": "Setup",
  "698f7893": "Ostatnie 12 miesięcy",
  "47ab1f9a": "{0} → dziś",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "W zeszłym tygodniu brak sygnałów (w dni, gdy warunki nie są spełnione, system pozostaje z boku).",
  "17d2f0ae": "Zeszły tydzień: {0} sygnałów · wygrane {1} · przegrane {2}{3} · razem <b>{4}</b>",
  "37a376b8": "Od początku: {0} transakcji · {1}% zyskownych · razem <b>{2}</b>",
- "7685b1e4": "⏳ <b>Twój plan kończy się za {0} dni</b> ({2})."
+ "7685b1e4": "⏳ <b>Twój plan kończy się za {0} dni</b> ({2}).",
+ "eedee30c": "Twój plan jest aktywny do {0}, więc teraz nie można usunąć konta. Możesz je usunąć tutaj po zakończeniu planu.",
+ "6498aa5c": "Twój plan jest wciąż aktywny, więc nie można usunąć konta. Usuń je po zakończeniu planu."
 }

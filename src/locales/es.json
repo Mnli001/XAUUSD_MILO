@@ -131,8 +131,6 @@
  "670a776e": "Descarga tu diario antiguo",
  "f0a730d4": "Las {0} operaciones que anotaste a mano antes siguen guardadas. Descárgalas como archivo CSV que se abre en Excel. Las horas están en {1}.",
  "ec186815": "Descargar CSV",
- "8fc5c8b9": "Este dispositivo",
- "4e8175bc": "Al cerrar sesión, tu idioma, tema y zona horaria se conservan para el próximo inicio.",
  "0837a3d6": "Setup",
  "698f7893": "Últimos 12 meses",
  "47ab1f9a": "{0} → hoy",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Sin señales la semana pasada (el sistema no entra los días en que no se cumplen sus condiciones).",
  "17d2f0ae": "Semana pasada: {0} señales · ganadas {1} · perdidas {2}{3} · total <b>{4}</b>",
  "37a376b8": "Desde el inicio: {0} operaciones · {1}% con ganancia · total <b>{2}</b>",
- "7685b1e4": "⏳ <b>Tu plan termina en {0} días</b> ({2})."
+ "7685b1e4": "⏳ <b>Tu plan termina en {0} días</b> ({2}).",
+ "eedee30c": "Tu plan está activo hasta el {0}, así que ahora no se puede eliminar la cuenta. Podrás eliminarla aquí cuando termine el plan.",
+ "6498aa5c": "Tu plan sigue activo, así que no se puede eliminar la cuenta. Elimínala cuando termine el plan."
 }

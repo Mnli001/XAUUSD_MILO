@@ -131,8 +131,6 @@
  "670a776e": "Eski günlüğünüzü indirin",
  "f0a730d4": "Daha önce elle yazdığınız {0} işlem hâlâ saklanıyor. Excel'de açılan bir CSV dosyası olarak indirin. Saatler {1}.",
  "ec186815": "CSV indir",
- "8fc5c8b9": "Bu cihaz",
- "4e8175bc": "Çıkış yaptıktan sonra diliniz, temanız ve saat diliminiz bir sonraki girişe kadar korunur.",
  "0837a3d6": "Setup",
  "698f7893": "Son 12 ay",
  "47ab1f9a": "{0} → bugün",
@@ -1107,5 +1105,7 @@
  "b7186ad1": "Geçen hafta sinyal yok (koşulların oluşmadığı günlerde sistem dışarıda kalır).",
  "17d2f0ae": "Geçen hafta: {0} sinyal · kazanılan {1} · kaybedilen {2}{3} · toplam <b>{4}</b>",
  "37a376b8": "Başlangıçtan beri: {0} işlem · %{1} kârlı · toplam <b>{2}</b>",
- "7685b1e4": "⏳ <b>Planınız {0} gün içinde bitiyor</b> ({2})."
+ "7685b1e4": "⏳ <b>Planınız {0} gün içinde bitiyor</b> ({2}).",
+ "eedee30c": "Planınız {0} tarihine kadar aktif olduğu için hesap şimdi silinemez. Plan bittikten sonra buradan silebilirsiniz.",
+ "6498aa5c": "Planınız hâlâ aktif olduğu için hesap silinemez. Plan bittikten sonra silin."
 }
