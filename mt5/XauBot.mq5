@@ -5,7 +5,7 @@
 //| АНХААР: Scalper арга шалгагдаагүй. Ашиг баталгаагүй.             |
 //+------------------------------------------------------------------+
 #property copyright "XAU Analytics"
-#property version   "3.80"
+#property version   "3.81"
 #property description "Web-controlled robot: scalper, basket and Asian breakout, each behind an entry filter (trend, session, news, volatility, spread, daily limits). Unproven. Demo by default; real accounts need AllowRealAccount AND the switch on the web."
 
 #include <Trade\Trade.mqh>
@@ -446,6 +446,22 @@ int CountPositions()
       if(IsMine(PositionGetTicket(i))) n++;
    return(n);
   }
+
+// Setup дүрмийн (comment "xau-r:") нээлттэй позиц энэ чиглэлд байгаа эсэх. Байвал шинэ арилжаа хагас лотоор нээгдэнэ:
+// нэг чиглэлийн арилжаанууд хамт хөдөлдөг (r = 0.64) тул эрсдэл давхардахгүй (scripts/exposure-cap-research.ts).
+bool SameDirOpen(const int dir)
+  {
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong t = PositionGetTicket(i);
+      if(!IsMine(t)) continue;
+      if(StringFind(PositionGetString(POSITION_COMMENT), "xau-r:") != 0) continue;
+      long type = PositionGetInteger(POSITION_TYPE);
+      if((dir > 0 && type == POSITION_TYPE_BUY) || (dir < 0 && type == POSITION_TYPE_SELL)) return(true);
+     }
+   return(false);
+  }
+#define SAME_DIR_MUL 0.5
 
 // Нийт нээлттэй лот. Netting дансанд олон захиалга нэг позиц болж нийлдэг тул
 // арилжааны тоогоор биш, лотын нийлбэрээр хязгаарлана.
@@ -1286,7 +1302,7 @@ bool RuleOpen(const int dir, const double slDist, const double tpDist, const dat
    if(!GateCheck(dir)) return(false);
    double lots = RuleLots(), sl = slDist, tp = tpDist;
    if((!gTester || gRiskMode > 0) && !SizeTrade(sl, tp, lots, false)) return(false);   // дүрмийн stop-ийг хөдөлгөхгүй, зөвхөн хэмжээг тооцно (tester-т эрсдэлийн горимтой бол ч)
-   lots = ApplyMul(lots, gNextMul);
+   lots = ApplyMul(lots, gNextMul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0));
    gNextMul = 1.0;
    if(lots <= 0) return(false);
    if(!gTester && !FitsDayBudget(lots, sl)) return(false);
@@ -2188,7 +2204,7 @@ string TakeOrder(const long id, const int dir, const double entry, const double 
    if(TimeCurrent() >= exitAt) return(L("хаах цаг өнгөрсөн", "past the closing time"));
    double lots = RuleLots(), s1 = slD, t1 = tpD;
    if(!SizeTrade(s1, t1, lots, false) || lots <= 0) return(L("хэмжээ: ", "size: ") + GateText(gBlock));
-   lots = ApplyMul(lots, mul);                                   // сайтын трендийн хүчний коэффициент
+   lots = ApplyMul(lots, mul * (SameDirOpen(dir) ? SAME_DIR_MUL : 1.0));   // трендийн хүч; ижил чиглэлд нээлттэй бол хагас
    if(TimeCurrent() - gOrderTryAt < EntryCooldownSeconds) return(L("өмнөх захиалгын хариуг хүлээж байна", "waiting for the last order's reply"));
    gOrderTryAt = TimeCurrent();
    // Хаах цаг ба захиалгын id comment-д: дахин ачаалсан ч хаах цагаа мэдэж, нэг захиалгаар хоёр удаа орохгүй
