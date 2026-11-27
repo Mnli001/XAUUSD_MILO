@@ -15,10 +15,10 @@ describe("translator", () => {
 });
 
 describe("preference parsing", () => {
-  it("accepts the two languages and falls back to Mongolian", () => {
+  it("accepts the site's languages and falls back to Mongolian", () => {
     expect(parseLocale("en")).toBe("en");
     expect(parseLocale("mn")).toBe("mn");
-    expect(parseLocale("de")).toBe("mn");
+    expect(parseLocale("xx")).toBe("mn");
     expect(parseLocale(undefined)).toBe("mn");
   });
   it("accepts dark, light and system and falls back to dark", () => {

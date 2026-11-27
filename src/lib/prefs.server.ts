@@ -1,7 +1,8 @@
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import "./i18n.server";
 import { getSessionUser } from "./auth";
-import { translator, type T } from "./i18n";
+import { localeFromAcceptLanguage, translator, type T } from "./i18n";
 import { COOKIE, parseLocale, parseTheme, parseTimeZone, type Prefs } from "./prefs";
 import { prefsOf } from "./prefsDb";
 import { viewer, type Viewer } from "./viewer";
@@ -13,7 +14,10 @@ export const getPrefs = cache(async (): Promise<Prefs> => {
   const user = await getSessionUser();
   if (user) return prefsOf(user);
   const c = await cookies();
-  return { locale: parseLocale(c.get(COOKIE.locale)?.value), theme: parseTheme(c.get(COOKIE.theme)?.value), timeZone: parseTimeZone(c.get(COOKIE.timeZone)?.value) };
+  const saved = c.get(COOKIE.locale)?.value;
+  // A first visit reads in the browser's own language; once chosen, the choice is kept in the cookie.
+  const locale = saved ? parseLocale(saved) : localeFromAcceptLanguage((await headers()).get("accept-language"));
+  return { locale, theme: parseTheme(c.get(COOKIE.theme)?.value), timeZone: parseTimeZone(c.get(COOKIE.timeZone)?.value) };
 });
 
 export async function getT(): Promise<T> {

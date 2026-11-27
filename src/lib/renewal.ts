@@ -1,3 +1,4 @@
+import "./i18n.server";
 import { and, eq, gt, isNotNull, lte, ne, or, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { deliver, esc, siteUrl, telegramConfigured, telegramTiming } from "./telegram";
@@ -36,10 +37,15 @@ export async function emitRenewalReminders(now: Date, opts: { send?: Send } = {}
     const { t } = v;
     const days = Math.max(1, Math.ceil((m.accessUntil!.getTime() - now.getTime()) / DAY));
     const plan = await latestPaidPlan(m.id);
-    const name = plan ? PLANS[plan].name : t("Таны", "Your");
+    const until = esc(v.date(m.accessUntil!));
+    const plural = days === 1 ? "" : "s";
     const link = base ? `<a href="${esc(`${base}/plans`)}">${esc(t("Багц сунгах", "Renew your plan"))}</a>` : "";
+    // Named and unnamed plans are separate wordings so each language can order "your" / the name naturally.
+    const head = plan
+      ? t(`⏳ <b>${esc(PLANS[plan].name)} багц ${days} хоногийн дараа дуусна</b> (${until}).`, `⏳ <b>${esc(PLANS[plan].name)} plan ends in ${days} day${plural}</b> (${until}).`)
+      : t(`⏳ <b>Таны багц ${days} хоногийн дараа дуусна</b> (${until}).`, `⏳ <b>Your plan ends in ${days} day${plural}</b> (${until}).`);
     const text = [
-      t(`⏳ <b>${esc(name)} багц ${days} хоногийн дараа дуусна</b> (${esc(v.date(m.accessUntil!))}).`, `⏳ <b>${esc(name)} plan ends in ${days} day${days === 1 ? "" : "s"}</b> (${esc(v.date(m.accessUntil!))}).`),
+      head,
       t("Одоо сунгавал үлдсэн хугацаан дээр нэмэгдэнэ, нэг ч өдөр алдагдахгүй.", "Renewing now adds to the time you have left, so no day is lost."),
       link,
     ].filter(Boolean).join("\n");

@@ -1,0 +1,6397 @@
+[
+ {
+  "h": "745c9915",
+  "en": "Signal history",
+  "file": "src/app/(app)/bot/history/page.tsx"
+ },
+ {
+  "h": "d3f9611b",
+  "en": "Every signal the setups gave and how it ended. Green: closed in profit, red: closed at a loss. Target, Stop: which was reached first; On time: neither, closed at the set hour.",
+  "file": "src/app/(app)/bot/history/page.tsx"
+ },
+ {
+  "h": "551a8b42",
+  "en": "Signals from the last 24 hours (with entry, stop and target) reach plan holders live and on Telegram. The ones before that are here with their result.",
+  "file": "src/app/(app)/bot/history/page.tsx"
+ },
+ {
+  "h": "fe457282",
+  "en": "Results are worked out on the stored 15-minute candles with the Setup rules: whichever of the stop or the target is touched first, and a candle touching both counts as the stop. A signal that reaches neither is closed at the price at its rule's closing time:",
+  "file": "src/app/(app)/bot/history/page.tsx"
+ },
+ {
+  "h": "6b53aaa5",
+  "en": "R is the unit of risk (the distance to the stop). Spread and fees are not included, so real trades can differ a little. Not financial advice.",
+  "file": "src/app/(app)/bot/history/page.tsx"
+ },
+ {
+  "h": "d9cb851e",
+  "en": "Bot",
+  "file": "src/app/(app)/bot/page.tsx"
+ },
+ {
+  "h": "0c4348ad",
+  "en": "Start, stop, configure and watch the robot on your own MT5. Your token, settings and history are yours alone.",
+  "file": "src/app/(app)/bot/page.tsx"
+ },
+ {
+  "h": "00df38eb",
+  "en": "Chart",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "603f48ff",
+  "en": "Gold chart",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "df7b0ca1",
+  "en": "Live XAUUSD candles from M1 to W1, EMA 20/50/200 and today's R1, pivot and S1 levels. Your MT5 robot's trades are on the chart, their profit and loss in Bot history below (your robot only; the site's signals are on the Signal history page).",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "17bc4488",
+  "en": "What the words mean:",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "db886d05",
+  "en": "Today's sessions",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "9a87fe2a",
+  "en": "Today's R1, pivot and S1 lines show with a plan.",
+  "file": "src/app/(app)/chart/page.tsx"
+ },
+ {
+  "h": "1ed154dc",
+  "en": "This page could not load",
+  "file": "src/app/(app)/error.tsx"
+ },
+ {
+  "h": "2274d667",
+  "en": "It may be a passing fault. Try again; if it keeps happening, tell the admin{0}.",
+  "file": "src/app/(app)/error.tsx"
+ },
+ {
+  "h": "213e90fa",
+  "en": "Try again",
+  "file": "src/app/(app)/error.tsx"
+ },
+ {
+  "h": "1fc15551",
+  "en": "Go to Today",
+  "file": "src/app/(app)/error.tsx"
+ },
+ {
+  "h": "50793575",
+  "en": "Glossary",
+  "file": "src/app/(app)/glossary/page.tsx"
+ },
+ {
+  "h": "8178f213",
+  "en": "A plain explanation of every trading word the site uses. If you are new, start with “The basics”.",
+  "file": "src/app/(app)/glossary/page.tsx"
+ },
+ {
+  "h": "cb46d1cd",
+  "en": "Sections",
+  "file": "src/app/(app)/glossary/page.tsx"
+ },
+ {
+  "h": "cbf40866",
+  "en": "News",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "229a69ad",
+  "en": "High impact",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "50744018",
+  "en": "Medium impact",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "8443a509",
+  "en": "Low impact",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "1c2d8cd4",
+  "en": "News calendar",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "8da1a916",
+  "en": "The next 14 days, times in {0}. Tap a row to see how gold moved after this kind of release before.",
+  "file": "src/app/(app)/news/page.tsx"
+ },
+ {
+  "h": "20f64111",
+  "en": "Payment",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "b32cf034",
+  "en": "{0} plan",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "a2ee019c",
+  "en": "{0} days",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "a57f1ba2",
+  "en": "Ref",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "c802c24c",
+  "en": "Payment confirmed",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "bcf135b8",
+  "en": "Your access is open until {0}. Every number now shows.",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "97420003",
+  "en": "Next step: link Telegram",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "3596d1fc",
+  "en": "The moment a setup turns active, its entry, stop and target reach your phone. A linked Telegram also lets you reset a forgotten password.",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "862cb68c",
+  "en": "Link Telegram",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "4326df3b",
+  "en": "This invoice has expired",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "298bfa24",
+  "en": "If you did pay, access opens by itself within minutes. If not, start a new one.",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "b5ff0551",
+  "en": "Pay again",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "837cbabd",
+  "en": "Time left",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "5933a007",
+  "en": "Pay {0}",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "1a30cd36",
+  "en": "Wire's payment page opens: pick QPay, a bank app, a card, Toki and more. Come back here after paying and your access will be open.",
+  "file": "src/app/(app)/pay/[id]/page.tsx"
+ },
+ {
+  "h": "8f517045",
+  "en": "Performance",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "e1e7b894",
+  "en": "Count",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "f2bf7d3b",
+  "en": "Statistics worked out automatically from the trades your MT5 robot closed. Nothing to type in. They do not promise future profit.",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "f9c750a8",
+  "en": "MT5 account",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "570bfc7d",
+  "en": "Real",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "15dccc56",
+  "en": "Demo",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "9ba6799f",
+  "en": "The robot has not closed a trade on this account yet. Each trade it closes is added here by itself.",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "26344b33",
+  "en": "No MT5 robot is connected. Connect it on the Bot page and every trade it closes shows up here by itself.",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "77a90893",
+  "en": "Open the bot",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "31e08451",
+  "en": "Demo account: not real money. A real account can do differently.",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "6f881515",
+  "en": "Key figures",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "d6aef07f",
+  "en": "Total P&L",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "56e49e1a",
+  "en": "Every trade the robot closed, profit and loss added up",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "9fc4b4e1",
+  "en": "Win rate",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "620a31ab",
+  "en": "Share of trades closed in profit",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "e7b2d8a6",
+  "en": "Profit factor",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "a3ac7901",
+  "en": "Average per trade",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "4c97050f",
+  "en": "Total P&L divided by the number of trades",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "a88a1699",
+  "en": "Max drawdown",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "bd4e9bff",
+  "en": "Largest drop from a previous peak",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "48c2e63e",
+  "en": "Trades",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "0595d26e",
+  "en": "Closed trades counted",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "3628b043",
+  "en": "Cumulative P&L curve",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "c8ae37b8",
+  "en": "By session",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "5895017a",
+  "en": "By weekday",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "879d9c8a",
+  "en": "By opening hour",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "9e8593c7",
+  "en": "Only closed trades are counted, at the profit or loss the robot reported from MT5. The opening hour is the one the robot recorded, else the closing hour. Profit factor is not shown when there are no losing trades.",
+  "file": "src/app/(app)/performance/page.tsx"
+ },
+ {
+  "h": "88c56053",
+  "en": "Plans",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "f5240e27",
+  "en": "Paid",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "4360ca3e",
+  "en": "Refunded",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "bca9f3d2",
+  "en": "Expired",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "53e4b8bd",
+  "en": "Awaiting payment",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "95ee9910",
+  "en": "A plan opens the odds, the leading side, setup entries and the bot. It turns on the moment the payment is confirmed.",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "3b3b8f12",
+  "en": "Could not reach the payment system. Please wait a moment and try again.",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "e4f3f961",
+  "en": "Online payments are not set up yet.",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "0007ec99",
+  "en": "As an admin everything is open with no end date. You can still choose a plan to test.",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "30d81b4d",
+  "en": "Your payments",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "c35b0729",
+  "en": "Pay",
+  "file": "src/app/(app)/plans/page.tsx"
+ },
+ {
+  "h": "f2531474",
+  "en": "Profile — XAU Analytics",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "2185eb8c",
+  "en": "Admin · full access",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "1f89134f",
+  "en": "Active",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "c4d10975",
+  "en": "{0} days left",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "c9768045",
+  "en": "Ended {0}",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "e1333b55",
+  "en": "No plan",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "14fe8dd7",
+  "en": "no expiry (admin)",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "97ba761b",
+  "en": "until {0} ({1})",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "cd17328e",
+  "en": "Profile",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "dcffa3b4",
+  "en": "Admin",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "41285a2c",
+  "en": "Member since {0} · {1} days",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "7fce9580",
+  "en": "linked",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "b33bc1f7",
+  "en": "not linked",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "4b058728",
+  "en": "Settings",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "8b4f3c70",
+  "en": "Sign out",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "2b760ced",
+  "en": "At a glance",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "1eab5e32",
+  "en": "Plan",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "b2fb36c1",
+  "en": "until {0}",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "caf608ad",
+  "en": "no end date",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "484492b6",
+  "en": "Choose a plan",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "304ff7fb",
+  "en": "None",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "0fab0269",
+  "en": "Bot · 30 days",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "57a2e51b",
+  "en": "{0} trades{1}",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "13f6469b",
+  "en": "No trades yet",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "0fc448c1",
+  "en": "MT5 accounts",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "63212e3a",
+  "en": "{0} running",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "28a1effd",
+  "en": "Not connected",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "18d9a991",
+  "en": "Friends invited",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "3d3e2e8c",
+  "en": "{0} bought a plan · +{1} days",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "f55e4d5e",
+  "en": "Plan and payments",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "d335d05e",
+  "en": "{0}% of the plan left",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "fc678c31",
+  "en": "Renew plan",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "6a82e4a9",
+  "en": "Recent payments",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "4d18478f",
+  "en": "No payments yet.",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "25db363e",
+  "en": "Connections",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "e5c6530e",
+  "en": "Linked · signals paused",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "a1f5a9ea",
+  "en": "Linked · setup signals on",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "f8d6fd69",
+  "en": "Not linked: setup signals do not reach your phone",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "d7aff116",
+  "en": "Manage",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "8e08e589",
+  "en": "Link",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "88646505",
+  "en": "No robot connected",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "db89a899",
+  "en": "Connect",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "31857e22",
+  "en": "Real account",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "49dda24d",
+  "en": "Demo account",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "147eb74c",
+  "en": "running",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "6ee2f34e",
+  "en": "stopped",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "54eed4d0",
+  "en": "connected",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "ec8b9928",
+  "en": "offline",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "538b10e9",
+  "en": "Open",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "acb13c22",
+  "en": "Privacy and data",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "52b14f6d",
+  "en": "Terms accepted",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "4671ae97",
+  "en": "version",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "e4db741a",
+  "en": "Time zone",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "9a73db9b",
+  "en": "Language",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "37cb16ff",
+  "en": "Privacy policy",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "4c815df2",
+  "en": "Terms of service",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "122c1ed2",
+  "en": "Download old journal ({0})",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "4ba4aa55",
+  "en": "Your profile picture is visible only to you. Delete your account from the Settings page: all your data, the picture included, goes with it.",
+  "file": "src/app/(app)/profile/page.tsx"
+ },
+ {
+  "h": "7a5ff290",
+  "en": "Language, theme and time zone are saved to this device and to your account.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "14c463b9",
+  "en": "Your name, picture, plan, payments and connections are on the Profile page.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "59b4ae0b",
+  "en": "Access",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "9a06a894",
+  "en": "Open profile",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "d3c3480b",
+  "en": "Your plan is active. Renewing keeps the days left.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "930fcbd2",
+  "en": "Without a plan the odds, setups and the bot stay hidden.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "41a58676",
+  "en": "Telegram notifications",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "670a776e",
+  "en": "Download your old journal",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "f0a730d4",
+  "en": "The {0} trades you wrote down by hand earlier are still kept. Download them as a CSV file that opens in Excel. Times are in {1}.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "ec186815",
+  "en": "Download CSV",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "8fc5c8b9",
+  "en": "This device",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "4e8175bc",
+  "en": "After signing out, your language, theme and time zone are kept for the next sign-in.",
+  "file": "src/app/(app)/settings/page.tsx"
+ },
+ {
+  "h": "0837a3d6",
+  "en": "Setup",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "698f7893",
+  "en": "Last 12 months",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "47ab1f9a",
+  "en": "{0} → today",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "fb57aa71",
+  "en": "All stored data",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "107de162",
+  "en": "Asian and New York opening-range breakouts · 3 rules",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "b30f98d6",
+  "en": "Last candle",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "68cc88b7",
+  "en": "loading",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "dced8a09",
+  "en": "behind",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "dde20ebe",
+  "en": "Next key release",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "b26ce4ca",
+  "en": "Choose a setup",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "095ffc4a",
+  "en": "Best average result per trade over the last 12 months: {0} (+{1}R)",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "6fcbb36e",
+  "en": "The historical record comes from replaying the rule over the stored candles ({0}): a $0.30 spread, and a stop inside a candle counted before the target. R is the unit of risk (the distance to the stop). It does not guarantee future results and is not financial advice.",
+  "file": "src/app/(app)/setup/page.tsx"
+ },
+ {
+  "h": "e7c0775e",
+  "en": "Today",
+  "file": "src/app/(app)/today/page.tsx"
+ },
+ {
+  "h": "4b43dd4b",
+  "en": "Hello, {0}",
+  "file": "src/app/(app)/today/page.tsx"
+ },
+ {
+  "h": "744be623",
+  "en": "Sign in",
+  "file": "src/app/(public)/login/page.tsx"
+ },
+ {
+  "h": "56eac01a",
+  "en": "Password changed. Sign in with your new password.",
+  "file": "src/app/(public)/login/page.tsx"
+ },
+ {
+  "h": "ab921214",
+  "en": "Which side commands the market today?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "4984e17a",
+  "en": "Combines D1, H4, H1, and M15 trend, momentum, and market structure into one clear score showing true buyer vs seller strength.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "a1008bca",
+  "en": "Which hours see the strongest gold volatility?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "8710b9d6",
+  "en": "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "4fc0a7aa",
+  "en": "Hour by hour",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "96f6eab0",
+  "en": "When do high-impact economic releases drop?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "599af018",
+  "en": "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "0f5d3dae",
+  "en": "Is your trading edge genuinely growing?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "aa384248",
+  "en": "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c5495dd8",
+  "en": "Control your MT5 bot directly from the web?",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "6fb9f87f",
+  "en": "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "94581cd0",
+  "en": "The gold market, on Ulaanbaatar time",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "8546725b",
+  "en": "Gold market clarity,",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "d662dd2c",
+  "en": "hour by hour.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "2baf3970",
+  "en": "Track today's direction, hourly odds, and economic news reactions on Ulaanbaatar time — driven by clean, honest statistical data without market noise.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "2739c9e0",
+  "en": "Register",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "b93f943d",
+  "en": "No fake predictions",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "86a0fd04",
+  "en": "Real statistics",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "a25dae0f",
+  "en": "MT5 bot integrated",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "41660392",
+  "en": "The market right now",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "356b9df9",
+  "en": "Delayed",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "78aea115",
+  "en": "Loading data",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "01fb7bf2",
+  "en": "HOURLY ANALYSIS",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c87b0e63",
+  "en": "Hour-by-hour market pulse at a glance.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "74691d02",
+  "en": "Clean and structured: session, hour, probability of gold rising or falling historically, and the sample size. Hours with major news are clearly highlighted.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "71af41f6",
+  "en": "Historical probability",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "b4e73548",
+  "en": "Based on last 6 months real data",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "25d532c9",
+  "en": "News alerts",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "0937e732",
+  "en": "Important news hours highlighted",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "43430b20",
+  "en": "up",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "3db9b915",
+  "en": "down",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "a6b415e5",
+  "en": "Sample preview. View real statistics inside the platform.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c176a8e3",
+  "en": "KEY FEATURES",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "60ab0bbf",
+  "en": "5 essential checks before entering the market.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "44e4625f",
+  "en": "Register to see it",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "27525b29",
+  "en": "How the signals actually did",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "7bf0ea96",
+  "en": "Every signal given, the winners and the losers, exactly as each one ended. The last 24 hours go to plan holders live, so they appear here a day later.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "2dea44c6",
+  "en": "Spread and fees not included. Past results do not guarantee future profit.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "9bf2c47d",
+  "en": "100% Transparent",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "f6535d44",
+  "en": "Numbers, not advice.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "46c757cd",
+  "en": "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c1a2dd3c",
+  "en": "Sample size",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "414aa48b",
+  "en": "On every stat",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "c92d0b6a",
+  "en": "Signal record",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "ca5ab6a1",
+  "en": "Public here, a day late",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "8c2d1543",
+  "en": "Risk disclosure",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "d95f4a89",
+  "en": "Fully transparent",
+  "file": "src/app/(public)/page.tsx"
+ },
+ {
+  "h": "5982006c",
+  "en": "the site admin",
+  "file": "src/app/(public)/privacy/page.tsx"
+ },
+ {
+  "h": "6a3aaab2",
+  "en": "New password",
+  "file": "src/app/(public)/reset/[token]/ResetForm.tsx"
+ },
+ {
+  "h": "b11ff5ff",
+  "en": "8 characters or more",
+  "file": "src/app/(public)/reset/[token]/ResetForm.tsx"
+ },
+ {
+  "h": "73766b36",
+  "en": "Repeat the password",
+  "file": "src/app/(public)/reset/[token]/ResetForm.tsx"
+ },
+ {
+  "h": "b2990eb6",
+  "en": "Please wait…",
+  "file": "src/app/(public)/reset/[token]/ResetForm.tsx"
+ },
+ {
+  "h": "266ee2b4",
+  "en": "Save the password",
+  "file": "src/app/(public)/reset/[token]/ResetForm.tsx"
+ },
+ {
+  "h": "458f610f",
+  "en": "Set a new password",
+  "file": "src/app/(public)/reset/[token]/page.tsx"
+ },
+ {
+  "h": "e0ea147c",
+  "en": "Once the new password is saved, every device is signed out.",
+  "file": "src/app/(public)/reset/[token]/page.tsx"
+ },
+ {
+  "h": "c88b8efd",
+  "en": "This link is invalid or has expired (links last 30 minutes). Send /reset to the Telegram bot again, or contact the admin.",
+  "file": "src/app/(public)/reset/[token]/page.tsx"
+ },
+ {
+  "h": "92e23510",
+  "en": "Too early to judge",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "a8518b41",
+  "en": "Fewer than 30 trades, so the statistics are unreliable. Load a longer history or loosen the filters.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9780b033",
+  "en": "Losing",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "d22bcfff",
+  "en": "This configuration lost money in the past. Do not run a bot on these rules.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "0fbc5ae5",
+  "en": "Borderline",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "41c7973a",
+  "en": "Small profit or deep drawdown. Once real costs (slippage, swap) are added it may turn into a loss.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "d75dc529",
+  "en": "Reasonable",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "f9303701",
+  "en": "Profitable on past data. That is not a guarantee: it only justifies the next step, checking it in real time on a demo account.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "d3619e54",
+  "en": "Breakeven",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "bb14a2fd",
+  "en": "Time expired",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "5242c4d8",
+  "en": "Before the weekend",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "b81f8c97",
+  "en": "End of history",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "355c98c5",
+  "en": "Minimum score",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "24063429",
+  "en": "Risk, %",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "fd6a2bd7",
+  "en": "Trades per day",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "6ed64fb1",
+  "en": "Daily loss limit, %",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9e398a8f",
+  "en": "Start hour (UB)",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "8eabb6de",
+  "en": "End hour (UB)",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "df0bcf5b",
+  "en": "Before news, min",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "0ddf5008",
+  "en": "After news, min",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "d12e494b",
+  "en": "Starting balance, $",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "ed29bcdd",
+  "en": "Bot — backtest",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "cfe7d797",
+  "en": "Runs the trading rules over the historical data in the database. No live or demo orders are placed.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "cce775ae",
+  "en": "Paper trading →",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "b5bf4701",
+  "en": "Move the stop to entry at +1R",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "eaab0de3",
+  "en": "The 1-hour chart must agree too",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "478e91bd",
+  "en": "Run backtest",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "108eee7f",
+  "en": "Default settings",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "6ff98a76",
+  "en": "Changing the settings again and again to find the best number risks fitting them to the past.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "fe69d97e",
+  "en": "Press “Run backtest”. It takes a few seconds.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "062accf6",
+  "en": "Verdict",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "81606524",
+  "en": "Verdict:",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "f65e5b70",
+  "en": "Not enough historical data to test. Run",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9367b6bd",
+  "en": "first.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "87248424",
+  "en": "Period",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "a07f90e6",
+  "en": "Trades / signals",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "e28a12de",
+  "en": "Average R",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "3af55faf",
+  "en": "would have tripped on {0}",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "fd75714e",
+  "en": "not tripped",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "80e2f35a",
+  "en": "Account curve (P&L)",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "c8a4da82",
+  "en": "By month",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "a8761ba5",
+  "en": "Month",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "0e1bc547",
+  "en": "How they closed",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "31f83f71",
+  "en": "Last 50 trades",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "2dbb6432",
+  "en": "Opened (UB)",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9a61137e",
+  "en": "Side",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "61c9da81",
+  "en": "Lots",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9cbfed33",
+  "en": "Entry",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "34ce44a5",
+  "en": "Exit",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "41314139",
+  "en": "Reason",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "8841720a",
+  "en": "Limits of this test",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "85963d4d",
+  "en": "Decisions used only fully closed candles; when one candle reached both stop and target, it was counted as the stop.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "9ea240a5",
+  "en": "The spread was added to the entry price. Slippage, swap and broker commission are not included, so real results are likely to be worse.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "ed2651d8",
+  "en": "Past releases that are not in the database (for example earlier FOMC meetings) were not filtered.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "2ab3a1b2",
+  "en": "Past results do not guarantee future profit. Not financial advice.",
+  "file": "src/app/admin/bot/backtest/page.tsx"
+ },
+ {
+  "h": "022a5059",
+  "en": "Test a rule on past data.",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "ad897c38",
+  "en": "Paper trading",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "d74e3f63",
+  "en": "Test the chosen rule going forward, without money.",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "502c4a67",
+  "en": "Bot research",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "e17fef1b",
+  "en": "The page for running the bot is now separate for each user:",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "2716b1fa",
+  "en": ". Only rule research is here.",
+  "file": "src/app/admin/bot/page.tsx"
+ },
+ {
+  "h": "e3759427",
+  "en": "Test in progress",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "1728caae",
+  "en": "The verdict comes after {0} trades have accumulated. Numbers before that cannot be trusted.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "254b3fb9",
+  "en": "Passed",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "171265a2",
+  "en": "It cleared the criteria set in advance on new data. The next step is an MT5 demo account. This is not a guarantee of profit.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "5579c3d4",
+  "en": "Failed",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "b5d50a2f",
+  "en": "It did not meet the criteria on new data. There is no basis for building a bot on this rule.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "9d93f529",
+  "en": "No price data — check that cron is running",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "9d5b89b4",
+  "en": "Marking the Asian session range (until 15:00 UB)",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "cee956a7",
+  "en": "Waiting for a move out of the range (15:00–00:00 UB)",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "51361d2c",
+  "en": "Today's signal has fired",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "1e861a13",
+  "en": "No new trade today",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "b66638d9",
+  "en": "Bot — paper trading",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "ffa45059",
+  "en": "Tests the “Asian range breakout + daily trend” rule on new data in real time. No money is involved and no order is sent anywhere.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "9c55cea0",
+  "en": "The test has not started. Only signals after the moment it starts are counted.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "d5ea91d9",
+  "en": "The start time cannot be changed later, so a convenient period cannot be picked after the fact.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "b3310692",
+  "en": "Criteria:",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "423b1020",
+  "en": " or more trades, average R ≥",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "cd6858bc",
+  "en": "At most 1 trade a day, so it runs for about 3 months. Price data must keep updating without gaps.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "34ce3628",
+  "en": "Start the test",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "4e5ee9ce",
+  "en": "trades · started",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "74f3a7f6",
+  "en": "UB",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "a52ed98e",
+  "en": "Paper account",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "e32df45c",
+  "en": "Asian range:",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "194ea575",
+  "en": "Daily trend:",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "b6f978ea",
+  "en": "up (enters only on a break upward)",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "9db662b4",
+  "en": "down (enters only on a break downward)",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "df685688",
+  "en": "unclear (no trading)",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "7e95be4e",
+  "en": "Last closed candle:",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "2d5270bf",
+  "en": "Open trade",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "6d2aca08",
+  "en": "lots · entry",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "0f03e400",
+  "en": "Opened",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "c2113a00",
+  "en": "(UB) · current result",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "87e67ddd",
+  "en": "Paper account curve",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "a4689902",
+  "en": "Trades are recomputed from stored candles, so signals can be missed on days when price data was interrupted. A $0.30 spread is included; slippage and swap are not. Not financial advice.",
+  "file": "src/app/admin/bot/paper/page.tsx"
+ },
+ {
+  "h": "be0a061d",
+  "en": "High",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "09be5f96",
+  "en": "Medium",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "b1dd9521",
+  "en": "Low",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "1afe20fa",
+  "en": "CPI, NFP, GDP, PCE, PPI and retail sales dates come in automatically from FRED. FOMC and the forecast/actual figures are entered here by hand.",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "8819b41e",
+  "en": "Add a release",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "19a35a10",
+  "en": "No releases on record for the next 60 days.",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "219101e3",
+  "en": "manual",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "5f3a8bf0",
+  "en": "Forecast",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "ead1fb48",
+  "en": "Previous",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "f1aed197",
+  "en": "Actual",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "df10d8d3",
+  "en": "Delete this release",
+  "file": "src/app/admin/events/page.tsx"
+ },
+ {
+  "h": "10cbc013",
+  "en": "Admin menu",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "06b432b3",
+  "en": "Users",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "0004fb3b",
+  "en": "Revenue",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "45a8ed46",
+  "en": "Payments",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "1bcabce4",
+  "en": "To the app",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "c2954bc2",
+  "en": "Back",
+  "file": "src/app/admin/layout.tsx"
+ },
+ {
+  "h": "3352afdc",
+  "en": "Pending",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "4da1eff0",
+  "en": "Wire is connected, with the webhook on.",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "3e1f7580",
+  "en": "Wire is connected. No webhook secret (WIRE_WEBHOOK_SECRET) yet, so payments confirm only when the payment page checks.",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "6e736ccb",
+  "en": "Wire is not set up: add WIRE_API_KEY on Railway.",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "f97ed1aa",
+  "en": "Paid in total: {0}.",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "d35f356a",
+  "en": "Payments needing a look: {0} (refunds and the like, see the notes).",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "3b527379",
+  "en": "Date",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "e0a63e12",
+  "en": "User",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "244c9369",
+  "en": "Amount",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "005ef20f",
+  "en": "Status",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "6ab78533",
+  "en": "Access until",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "56d94fbb",
+  "en": "No payments yet",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "85593b22",
+  "en": "(deleted account)",
+  "file": "src/app/admin/payments/page.tsx"
+ },
+ {
+  "h": "341f2165",
+  "en": "Months follow Ulaanbaatar time. A reminder to those about to lapse, or who did not renew, brings renewals up.",
+  "file": "src/app/admin/revenue/page.tsx"
+ },
+ {
+  "h": "eef93e88",
+  "en": "Reset the password of {0} and sign them out everywhere?",
+  "file": "src/app/admin/users/ResetPasswordButton.tsx"
+ },
+ {
+  "h": "679a51e9",
+  "en": "Reset password",
+  "file": "src/app/admin/users/ResetPasswordButton.tsx"
+ },
+ {
+  "h": "901aca78",
+  "en": "Inactive",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "34c83614",
+  "en": "admin",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "2b4bde8b",
+  "en": "Open new users' access here by hand. Times are in UB time.",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "b4a8316e",
+  "en": "Search by email",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "c646a2c9",
+  "en": "Search",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "a213f280",
+  "en": "No users found.",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "238c8fff",
+  "en": "Access ends:",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "3b045de5",
+  "en": "no expiry",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "f691d28a",
+  "en": "days",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "0dd14817",
+  "en": "Revoke access",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "0fe07306",
+  "en": "Name",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "43352167",
+  "en": "Email",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "cdc6d0e1",
+  "en": "Registered",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "66beeb5f",
+  "en": "Access ends",
+  "file": "src/app/admin/users/page.tsx"
+ },
+ {
+  "h": "76fc465e",
+  "en": "Something went wrong",
+  "file": "src/app/error.tsx"
+ },
+ {
+  "h": "8c407226",
+  "en": "The page failed to load. Try again; if it keeps happening, tell the admin{0}.",
+  "file": "src/app/error.tsx"
+ },
+ {
+  "h": "9fb5d67d",
+  "en": "Go to the home page",
+  "file": "src/app/error.tsx"
+ },
+ {
+  "h": "46e2f9bc",
+  "en": "The site failed to load. Try again; if it keeps happening, tell the admin.",
+  "file": "src/app/global-error.tsx"
+ },
+ {
+  "h": "848c964b",
+  "en": "XAU Analytics — gold market analysis",
+  "file": "src/app/layout.tsx"
+ },
+ {
+  "h": "1c0309de",
+  "en": "Gold (XAUUSD) direction, hourly odds, setup signals, the news calendar and an MT5 robot, on Ulaanbaatar time.",
+  "file": "src/app/layout.tsx"
+ },
+ {
+  "h": "7e991d37",
+  "en": "Page not found",
+  "file": "src/app/not-found.tsx"
+ },
+ {
+  "h": "14ea8898",
+  "en": "There is no page at this address, or it is not yours to see. Check the link and try again.",
+  "file": "src/app/not-found.tsx"
+ },
+ {
+  "h": "e0ccc31f",
+  "en": "Main menu",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
+  "h": "00c6075a",
+  "en": "Menu",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
+  "h": "e5cba2bc",
+  "en": "All pages",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
+  "h": "866ff2f1",
+  "en": "Bottom menu",
+  "file": "src/components/AppNav.tsx"
+ },
+ {
+  "h": "e2619568",
+  "en": "Forgot password?",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "2b9fe887",
+  "en": "If your account is linked to Telegram, send ",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "0d858f89",
+  "en": " to our Telegram bot. It replies with a link to set a new password.",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "ac7efd3b",
+  "en": "If Telegram is not linked, ask the admin to reset it",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "81c0148c",
+  "en": "Ask the admin to reset your password",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "0e894d3b",
+  "en": ", giving the email you registered with.",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "b477e412",
+  "en": "You are registering through a friend's invite.",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "2cc30838",
+  "en": "Password",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "80e8a5ce",
+  "en": "I have read and accept the ",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "0f6700df",
+  "en": "privacy policy",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "4a26bcc9",
+  "en": " and the ",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "5101dd52",
+  "en": "terms of service",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "d2c39aee",
+  "en": ", and agree to my personal data being processed.",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "07494a6a",
+  "en": "No account?",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "0fa8342a",
+  "en": "Already registered?",
+  "file": "src/components/AuthForm.tsx"
+ },
+ {
+  "h": "896bef6d",
+  "en": "This picture could not be read. Choose a JPG, PNG or WebP picture.",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "12eb62ea",
+  "en": "Change profile picture",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "74119e7f",
+  "en": "Saving…",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "a1de2fdd",
+  "en": "Change",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "1df0eb9f",
+  "en": "Change picture",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "7a138429",
+  "en": "Add a picture",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "21a5901d",
+  "en": "Remove",
+  "file": "src/components/AvatarUploader.tsx"
+ },
+ {
+  "h": "a5a28604",
+  "en": "stopped by hand",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "bf4807e2",
+  "en": "profit target reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ab538e07",
+  "en": "loss limit reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b45fac8c",
+  "en": "the time the bot planned has run out",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "bf89222c",
+  "en": "direction reversed",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "43772c68",
+  "en": "no entry for 30 minutes (no signal, or the entry filter held it back)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a0589951",
+  "en": "daily loss stop reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3a19840f",
+  "en": "real account not allowed",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "e509e2ae",
+  "en": "access expired",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "725ec48f",
+  "en": "a plan links up to 3 MT5 accounts",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "439c64e8",
+  "en": "the robot file on MT5 is old: download the new XauBot.ex5{0} and replace it",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "44198924",
+  "en": "the daily loss stop was reached: trades closed, entries resume at {0}",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "87fcaed0",
+  "en": "today's entries are used up",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ae84686d",
+  "en": "this trade's risk is larger than what is left of the daily loss limit: lower the risk or raise the daily limit",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d8f3c955",
+  "en": "even the broker's minimum lot does not fit the chosen risk: raise the risk amount",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "04eb1419",
+  "en": "not enough free margin in the account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2eda7041",
+  "en": "no stop distance from the site reading yet",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ed651ed9",
+  "en": "the site's many-method reading does not back the entry side strongly enough",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "afc2d915",
+  "en": "outside the trading hours",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ccc4be94",
+  "en": "the broker's daily rollover, when spreads widen",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "501a93f7",
+  "en": "around a high-impact release",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ebefd73a",
+  "en": "loading indicator data",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ed711440",
+  "en": "the market is too quiet (low ATR)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c9ba259c",
+  "en": "the market is moving too violently (high ATR)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "74f5814e",
+  "en": "the spread is too wide",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "166f34ef",
+  "en": "the H1 and M15 trend disagree with the entry",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3f5ea1c3",
+  "en": "RSI is overstretched: it will not chase the move",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "04e1d44c",
+  "en": "price is too far from EMA20",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c9e4f0db",
+  "en": "Day trader",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "10dfd17c",
+  "en": "On the 15-minute chart: price sweeps liquidity, shifts structure (MSS), returns to the nearest fair value gap and reacts, and only then does it enter, and only if the site's other methods read the same way. The stop sits beyond the sweep, the target is twice the stop.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5ee7339b",
+  "en": "Reading",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ec8a23bd",
+  "en": "Follows the site's many-method reading directly: checked every 15 minutes, it enters when enough methods point one way. Stop = 1-hour ATR × 1.5, target = stop × 2. One trade at a time.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "320260b3",
+  "en": "Basket",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "05bfa9ac",
+  "en": "Opens many trades at once when a signal appears. Closes them all together once total profit reaches your amount.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8691e533",
+  "en": "Setup signals",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "13c00f7b",
+  "en": "The 3 setups on the Setup page (Asia, two New York openings): enters when price leaves a range in the trend's direction. One trade per setup a day, up to three a day in all. The rule sets the stop, the target (Asia 3R, New York 2R) and the closing time; no extra filters.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b83f675d",
+  "en": "not connected",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "04d26dcc",
+  "en": "Add another account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "094de9f0",
+  "en": "To add another account, sign in to it in MT5 (File → Login to Trade Account). It appears here as soon as the robot reaches the web, and starts out stopped. One MT5 is signed in to one account at a time, so running two accounts at once needs two separate MT5 installations.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "47c7036e",
+  "en": "Last {0} trades",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2609a95c",
+  "en": "A REAL ACCOUNT is connected.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "47a15e7b",
+  "en": "The bot will trade real money on this account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "424d0aed",
+  "en": " — but the “Real account” option is off, so it will not run even if you press Start",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "81ad0e44",
+  "en": "Bot status",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "91cebb39",
+  "en": "Bot is running",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f0207d87",
+  "en": "Bot is stopped",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "e76d62e9",
+  "en": "connection lost",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3147fc5b",
+  "en": "the panel is not updating",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ff1a8f7f",
+  "en": "No account yet",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4b7a788b",
+  "en": "Balance",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a1958972",
+  "en": "Equity",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "1bf1f547",
+  "en": "{0} open",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4103c5d6",
+  "en": "Last 24 hours",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0b498154",
+  "en": "This run",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "64645522",
+  "en": "Entries today",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6606fde3",
+  "en": "loss stop {0}%",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6e1cc53f",
+  "en": "Stop the bot",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "9e902546",
+  "en": "Start bot",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d20a2320",
+  "en": "Close all",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ac7441b7",
+  "en": "Closing trades…",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "43c35d88",
+  "en": "The bot places real trades in your MT5 account. Past results do not guarantee future profit: try it on a demo account first. Not financial advice.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ae8e3991",
+  "en": "While the MT5 robot is not connected, pressing Start places no trades. The robot picks up the command as soon as it connects.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8b3dc597",
+  "en": "Now",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c9450e48",
+  "en": "Waiting",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3dbf0aaf",
+  "en": "No data from the robot yet",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "74218a7c",
+  "en": "The entry filter is off: the bot enters on every signal.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "078af923",
+  "en": "Why it is not entering:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "613457ae",
+  "en": "The filter passes: it enters when a signal meets every condition.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "34220969",
+  "en": "Today (since {0})",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6f5882f3",
+  "en": "entries",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2bccfda4",
+  "en": "loss stop ({0}%) reached",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "136f5294",
+  "en": "loss stop at {0}%",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "1dc9d9eb",
+  "en": "This run's result:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "db77b55f",
+  "en": "Basket open. All trades close together at {0} profit or {1} loss.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6640d642",
+  "en": "Waiting for a signal. The whole basket opens as soon as one appears.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "7e03a907",
+  "en": "Trade open. It closes at its stop, its target or after 24 hours.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "67bfbe25",
+  "en": "Looking for a setup at every 15-minute close. It enters when sweep → shift → FVG → reaction lines up and the reading agrees.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "213a73da",
+  "en": "Trade open. It closes at its stop or its target.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b21ff495",
+  "en": "Checking the reading every 15 minutes. It enters when enough methods point one way.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b5225dad",
+  "en": "Trade open. It closes at its stop, its target or its setup's closing time (times below).",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5244167c",
+  "en": "The rule is running: it waits for each of the 3 setups' ranges to form and break. It does not stop until you press Stop.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "24b1f0a5",
+  "en": "Time planned by the bot: {0} s · elapsed {1} s",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "50e5bea6",
+  "en": "Waiting for the first trade — the time is worked out after entry",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "585b2521",
+  "en": "Open positions",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "69c5cbb4",
+  "en": "No open positions. When the bot enters, this shows where the price stands between the stop, the entry and the target.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3270cad7",
+  "en": "Tool and settings",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8a6979e4",
+  "en": "Saved",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "1b0ee674",
+  "en": "Bot tool",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ca55073f",
+  "en": "experimental",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0d98e4ca",
+  "en": "The robot file on MT5 is too old for this tool (older than {0}), so the bot will not start.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "399e6e46",
+  "en": "The robot file on MT5 is too old for this tool, so the bot will not start.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f8bfa5d9",
+  "en": "Download the new XauBot.ex5",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0a2d95f0",
+  "en": ", copy it over the old one in the Experts folder and reopen MT5.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4b276095",
+  "en": "Lots (per trade)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "796a4c7d",
+  "en": "Number of trades (at once)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5030f38c",
+  "en": "Close at $… profit",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "88f609d1",
+  "en": "Close at $… loss",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6eb0c900",
+  "en": "Trades open at once",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "1e86c372",
+  "en": "Stop at $… profit",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a9407eb7",
+  "en": "Stop at $… loss",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "cb811946",
+  "en": "Allow trading on a real account",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "801be8cc",
+  "en": "When off, the bot runs only on a demo account. The same option must also be switched on in the MT5 robot's settings.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ab4dda16",
+  "en": "The sequence: (1) price sweeps the last swing high or low and closes back, (2) it closes beyond the opposite swing (MSS), (3) it returns to the fair value gap that move left, or the order block if there is none, (4) a candle closes back out of it, (5) at least {0} more of the site's methods read that side than the other. The stop is usually $5–20 away: on a small account set your risk under \"Trade size and stop\" below; when the minimum lot does not fit, it does not enter. One or two trades a week on average: few, with a high bar.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ceeb28b8",
+  "en": "Checked on three years of 15-minute candles (with $0.30 cost). On its own the pattern showed no edge (Profit Factor 0.85–1.08). Only when the reading agreed: 161 trades in the first 70%, 45% won, PF 1.37; 55 trades in the last 30%, 45%, PF 1.49. Entries against the reading lost (PF 0.51–0.95). Limits: a calculation on candle data, not real trading; it was picked from several variants, so real results are likely to be lower. Demo account first.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2ac28783",
+  "en": "It enters when at least {0} methods back the side and outnumber the other (change the number in \"Methods that must agree\" below). The stop comes from the 1-hour ATR, so it is usually $10–25 away: at 0.01 lots a losing trade costs about that many dollars. That is a lot for a small account, so set your risk in $ or % under \"Trade size and stop\"; when the minimum lot does not fit, the robot does not enter.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "18293cf7",
+  "en": "More than half the trades closing at a loss is normal here: the profit comes from wins being twice the size of losses. It never trades against the reading. Calculations on past data are no guarantee they repeat; demo account first.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a73aea76",
+  "en": "Up to 3 trades a day (one per setup), each at {0} lots: ±{1} per trade for every $1 gold moves. The stop is the middle of the range. Times in {2}:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d5054994",
+  "en": "It works only while MT5 and the Windows computer or VPS are on.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c95ca661",
+  "en": "With the saved settings {0} trades open at once, {1} lots in total: ±{2} for every $1 gold moves.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c7e0000b",
+  "en": "To reach the profit, gold has to move about ${0} in your favour; to reach the loss limit, ${1} against you",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "52f3185c",
+  "en": " (the current spread of ${0} is included; the basket starts at {1} the moment it opens).",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "7564adec",
+  "en": " (not counting the spread).",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6d16afb2",
+  "en": "There is no time limit: it stays open until one of the amounts is reached. Each trade also carries an emergency stop twice as far as the loss limit (for when the computer goes off).",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0b604922",
+  "en": "With the saved settings at most {0} lots are open: ±{1} for every $1 gold moves, ±{2} for $10. A stop condition left empty does not apply. The bot works out how long to run.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f5c49db9",
+  "en": "Cannot be changed while running",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5f69a665",
+  "en": "Save settings",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0474b8db",
+  "en": "Entry filter",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "358b1016",
+  "en": "The Day trader, Reading and Basket tools must pass these checks before opening a trade, so the bot enters less often and only when more conditions line up. Setup signals follows the Setup page's rules exactly, so this filter does not apply to it. Set a number to 0 to switch that check off. Changes apply from the next entry.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "daf21857",
+  "en": "Ready-made settings",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2753cbe2",
+  "en": "One press fills and saves every field below; change any of them afterwards. All three size by percent of balance and protect a winning trade.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "813659c7",
+  "en": "Careful",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8cf85aaa",
+  "en": "10+ methods · 3 a day · 1% risk",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "c0cc603d",
+  "en": "Balanced",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "95ea7d05",
+  "en": "9+ methods · 5 a day · 2% risk",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f9bc18b4",
+  "en": "8+ methods · 8 a day · 3% risk",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "26e03720",
+  "en": "Filter on",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "43fa3c31",
+  "en": "Off switches every check below off, the daily limits too.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4f0de8cb",
+  "en": "Higher-timeframe trend must agree",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "fbbb0b71",
+  "en": "BUY: EMA20 above EMA50 on both H1 and M15. SELL: the reverse.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "fa216f95",
+  "en": "Trade size and stop",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3fdd8c71",
+  "en": "Fits an account of any size: say how much one trade may lose and the robot works out the lots from the stop distance. On a small account, when the lots come out below the broker's minimum (usually 0.01), the robot moves the stop closer and enters with the minimum; if the stop would be too close it skips that trade.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "64bcfee2",
+  "en": "How to size a trade",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ef8b4203",
+  "en": "Fixed lots (from the tool's field)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "7f07370d",
+  "en": "Dollars per trade",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "52ab0473",
+  "en": "Percent of balance",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "70a2094f",
+  "en": "Risk ($ or %)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ca5404a0",
+  "en": "e.g. 10",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a896aa1d",
+  "en": "Protect a winning trade",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d76c9127",
+  "en": "When profit reaches the size of the risk (+1R) the stop moves to the entry price, so the trade can no longer lose; from +1.5R it trails the price at a distance of 1R. Works for the Day trader and Reading tools; Setup signals and Basket close by their own rules.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5ceaa154",
+  "en": "Minutes before news",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8af21d87",
+  "en": "Minutes after news",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "b365bf7f",
+  "en": "M15 ATR at least, $",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4b606ba1",
+  "en": "M15 ATR at most, $",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "386325bf",
+  "en": "Spread ≤ % of ATR",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ce05566d",
+  "en": "RSI(14) cap",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2e211426",
+  "en": "From EMA20 ≤ ATR ×",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f9f7ff26",
+  "en": "Methods that must agree (of 14)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "ae25d44b",
+  "en": "Day trader: reading margin",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f7251586",
+  "en": "Entries a day, at most",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "46b14593",
+  "en": "Daily loss stop, % of balance",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "31101639",
+  "en": "With the saved settings it trades {0}–{1} ({2}). It opens nothing new from {3} minutes before a HIGH-impact release to {4} minutes after it, nor during the broker's daily rollover (23:45–00:30 server time). An RSI cap of 70 means no BUY above RSI 70 and no SELL below 30. The daily count restarts at {5}.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "365f6120",
+  "en": "The filter is meant to keep the bot out of poor conditions; it does not make the bot profitable. Check any setting in the MT5 Strategy Tester (the TesterGate… inputs) and on a demo account before putting real money on it.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "546a5eea",
+  "en": "Save filter",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4ee079a2",
+  "en": "The day trader's latest setups, and why",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "fc5a23de",
+  "en": "Each time the pattern completes it appears here. \"Sent\" means the reading agreed and the robot was told; \"skipped\" means the methods did not back it enough.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "dd60e539",
+  "en": "No setup has completed in the last four days.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d7a15fd6",
+  "en": "reading not recorded",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6261af7f",
+  "en": "sent",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "022ec9b7",
+  "en": "skipped",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "10faa342",
+  "en": "Swept the liquidity at {0} at {1} → shifted structure (MSS) at {2} → returned to the {3} {4}–{5} and reacted.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "e2f69b7b",
+  "en": "At that moment {0} of {1} methods read up and {2} down (margin {3}{4}).",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "94f0e861",
+  "en": "How trades ended, by the conditions at entry",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "bd30fe37",
+  "en": "Each time the robot opens a trade, the site keeps how many of its 16 methods backed that side. Closed trades are grouped by that number. Few trades prove nothing: do not read a pattern into fewer than 30.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "dcc4beda",
+  "en": "No closed trades recorded yet. They appear here once the robot has traded.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "e169ed0b",
+  "en": "By methods backing the side",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5039a46a",
+  "en": "no reading",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "460de14b",
+  "en": "{0} methods",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "0574902c",
+  "en": "Group",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "8e738acf",
+  "en": "Won",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f6860f65",
+  "en": "Trade history",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "48ea629e",
+  "en": "(last 50, total",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d593f77d",
+  "en": "No closed trades",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3201cae5",
+  "en": "Closed",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "21a5f1d6",
+  "en": "Connect the MT5 robot · token",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "6a6d841c",
+  "en": "Download the robot:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "5f1cdd71",
+  "en": "(source)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d7ca57e4",
+  "en": "Copy XauBot.ex5 into MT5's File → Open Data Folder → MQL5 → Experts, then press Refresh in the Navigator. Drag the robot onto a chart and enter the address and token below.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "2b07ac1a",
+  "en": "Connect the MT5 robot",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "018b192e",
+  "en": "Enter this address in the robot's settings:",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f2050653",
+  "en": "New token (shown only once, copy it now):",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "4568e480",
+  "en": "Download settings file (XauBot.set)",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "83328c51",
+  "en": "In MT5 drag the robot onto the chart, open the Inputs tab → Load → pick this file. The address and your token fill in by themselves. Do not share the file: this token belongs to your account only.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "339092cd",
+  "en": "A token exists. Creating a new one cancels the old one, and the new one must be entered in the robot.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "3096c6c5",
+  "en": "No token yet. Create one first.",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "f45dca35",
+  "en": "Create a new token",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "a23e449c",
+  "en": "Create token",
+  "file": "src/components/BotPanel.tsx"
+ },
+ {
+  "h": "d5411f54",
+  "en": "{0} trades",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "389ecdfe",
+  "en": " · {0}% in profit",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "911b1aaa",
+  "en": "Bot history",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "2552e856",
+  "en": "The robot has not closed a trade yet. Each one it closes shows here and on the chart, with its profit or loss.",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "35b9d98f",
+  "en": "Last 7 days",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "80d9c395",
+  "en": "All (last {0})",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "ef91530f",
+  "en": "Open → close",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "bc697d87",
+  "en": "Profit/loss",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "53754528",
+  "en": "On chart",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "e5c0b438",
+  "en": "Show more ({0})",
+  "file": "src/components/BotTradeHistory.tsx"
+ },
+ {
+  "h": "1d881ee1",
+  "en": "Timeframe",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "e75b310a",
+  "en": "Levels",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "75d617e1",
+  "en": "Bot trades",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "2e7e4ae3",
+  "en": "Loading…",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "f8c26f20",
+  "en": "M1 and M5 data did not come through just now. Try again in a few minutes, or pick another timeframe.",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "53d32b4c",
+  "en": "Could not load chart data. Reload the page.",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "88716f88",
+  "en": "Times in {0}.",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "14bdf872",
+  "en": "bot entry",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "b966a7cb",
+  "en": "closed, profit/loss",
+  "file": "src/components/CandleChart.tsx"
+ },
+ {
+  "h": "3d65bfcd",
+  "en": "No MT5 robot is connected. Connect it on the Bot page and every trade shows on the chart and here, with its profit or loss.",
+  "file": "src/components/ChartWorkspace.tsx"
+ },
+ {
+  "h": "5e52b851",
+  "en": "Privacy and terms",
+  "file": "src/components/ConsentBanner.tsx"
+ },
+ {
+  "h": "57c51e93",
+  "en": "We have published our ",
+  "file": "src/components/ConsentBanner.tsx"
+ },
+ {
+  "h": "31e9ae78",
+  "en": " and ",
+  "file": "src/components/ConsentBanner.tsx"
+ },
+ {
+  "h": "d6a6bf50",
+  "en": ". Please read what we keep about you and why, and accept them.",
+  "file": "src/components/ConsentBanner.tsx"
+ },
+ {
+  "h": "eb260af3",
+  "en": "I have read them and accept",
+  "file": "src/components/ConsentBanner.tsx"
+ },
+ {
+  "h": "d3bc070f",
+  "en": "out now",
+  "file": "src/components/Countdown.tsx"
+ },
+ {
+  "h": "122aece5",
+  "en": "{0}d ",
+  "file": "src/components/Countdown.tsx"
+ },
+ {
+  "h": "338eb632",
+  "en": "expired",
+  "file": "src/components/Countdown.tsx"
+ },
+ {
+  "h": "ecd52513",
+  "en": "Based on historical statistical calculations. Not financial advice — trade at your own risk.",
+  "file": "src/components/Disclaimer.tsx"
+ },
+ {
+  "h": "cda0a251",
+  "en": "Cumulative P&L curve, final value {0} dollars",
+  "file": "src/components/EquityCurve.tsx"
+ },
+ {
+  "h": "432952ed",
+  "en": "Type (e.g. FOMC)",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "24d471a9",
+  "en": "Title",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "64852cb7",
+  "en": "Impact",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "21a10ea2",
+  "en": "Date (UB time)",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "93cdf7e3",
+  "en": "Time (UB time)",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "4d2d5d68",
+  "en": "Save",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "d3a019d1",
+  "en": "Add release",
+  "file": "src/components/EventForm.tsx"
+ },
+ {
+  "h": "7958d052",
+  "en": "not enough data",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "de644cc1",
+  "en": "{0}% up",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "9e048d28",
+  "en": "{0}% down",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "04fca42a",
+  "en": "The next 24 hours",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "cdbdb3f7",
+  "en": "Each hour's chance to rise ▲ or fall ▼ · from the last 6 months' days with the same trend",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "6d1e9b1e",
+  "en": "Release",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "28b19af7",
+  "en": "now",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "77dd11f2",
+  "en": "Not enough data",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "2058e36e",
+  "en": " · all days",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "175eb228",
+  "en": "average",
+  "file": "src/components/HourStrip.tsx"
+ },
+ {
+  "h": "6d0cd9e1",
+  "en": "Invite a friend",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "494880d2",
+  "en": "When a friend who registers through this link buys any plan, you get +{0} days, added by itself. Once per friend.",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "fb4d80e0",
+  "en": "Invite link",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "8dc21305",
+  "en": "Copied",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "658f3664",
+  "en": "Copy",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "1d817b03",
+  "en": "Invited: {0} · Bought a plan: {1} · Earned: +{2} days",
+  "file": "src/components/InviteCard.tsx"
+ },
+ {
+  "h": "872f13b2",
+  "en": "This document is available in Mongolian and English only; the Mongolian text is the official one.",
+  "file": "src/components/LegalDoc.tsx"
+ },
+ {
+  "h": "284f33b7",
+  "en": "The price is refreshed from MT5 every second or two",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "0c552c52",
+  "en": "Live · MT5",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "7611aa6b",
+  "en": "With MT5 offline the price is the 5-minute candle refresh",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "cebb8633",
+  "en": "Not live · candle price",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "fb589fa4",
+  "en": "Last price",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "513083d0",
+  "en": "Updated",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "494a00ce",
+  "en": "spread",
+  "file": "src/components/LiveQuote.tsx"
+ },
+ {
+  "h": "8240c7c8",
+  "en": "Lot calculator",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "bcb3b52d",
+  "en": "Using the stop of {0}. ",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "350d3bc8",
+  "en": "You choose what share of the account a stop may cost.",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "006a866f",
+  "en": "Account balance ($)",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "bff1c4a4",
+  "en": "Risk (%)",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "d1943a02",
+  "en": "Distance to stop ($)",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "af86dcc4",
+  "en": "If the stop is hit",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "ab328d90",
+  "en": "If the target is reached",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "4b2168e4",
+  "en": "Even the smallest size, 0.01 lot, would lose {0}, {1}% of the account, if the stop is hit. Consider skipping this trade or rethinking the risk.",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "90275473",
+  "en": "XAUUSD: 1 lot = 100 oz, so a $1 move is $1 per 0.01 lot. Adjust if your broker's contract size differs. Spread and fees not included.",
+  "file": "src/components/LotCalculator.tsx"
+ },
+ {
+  "h": "ec266ec8",
+  "en": "Watch",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "f1c1cf51",
+  "en": "Forming",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "2c3d6fce",
+  "en": "Not now",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "9a23808e",
+  "en": "Renew",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "6a33c7a7",
+  "en": "Get a plan",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "2444dc69",
+  "en": "MT5 not connected",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "cc7373e9",
+  "en": "Set it up",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "863f19ee",
+  "en": "Stopped",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "452925ec",
+  "en": "Running",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "704ef1a6",
+  "en": "MT5 has gone quiet",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "83ddf841",
+  "en": "24h",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "be0cbe9c",
+  "en": "{0}% won",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "7ceb377f",
+  "en": "My dashboard",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "2d58bc49",
+  "en": "Setup page",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "6e3070f2",
+  "en": "Whether an entry is on now:",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "06afa7c5",
+  "en": "Setups could not be loaded",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "cada780b",
+  "en": "Buy",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "de897825",
+  "en": "Sell",
+  "file": "src/components/MyDashboard.tsx"
+ },
+ {
+  "h": "f6b5bcc2",
+  "en": "Not enough history",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "a7dd3a69",
+  "en": "After",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "05d3bf70",
+  "en": "Avg move",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "906e6426",
+  "en": "Rose",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "c98f4557",
+  "en": "min",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "745648ec",
+  "en": "Small sample size, exercise caution",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "c8e431b1",
+  "en": "No releases on record for this period. The calendar updates once a day.",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "58fe7ea3",
+  "en": "Next important release",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "4d56d846",
+  "en": "Tomorrow",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "1036ae7e",
+  "en": "release",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "9313fe77",
+  "en": "releases",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "099cdb53",
+  "en": ", impact",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "0e1b4a20",
+  "en": "How gold moved after this kind of release before (last 12 months):",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "8afbad3c",
+  "en": "Checking for your payment… This page updates by itself once you pay.",
+  "file": "src/components/PayStatus.tsx"
+ },
+ {
+  "h": "cc6ecad4",
+  "en": "opens with a plan",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "7c7eea59",
+  "en": "Choose a plan to open",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "36a5378a",
+  "en": "1 month",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "9fde1bc4",
+  "en": "6 months",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "4d0a98a5",
+  "en": "1 year",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "11b141e8",
+  "en": "Renew your plan",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "6a8a41fa",
+  "en": "A plan opens every number",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "e4a95c9d",
+  "en": "Your access runs until {0}. Renew now and the days left are kept, the new ones added on top.",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "35916a4e",
+  "en": "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "3c97826a",
+  "en": "{0} a month · {1}% less",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "1972cfda",
+  "en": "Choose {0}",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "b3c9be26",
+  "en": "Online payment opens soon.",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "70d2eeaa",
+  "en": "To buy now, contact the admin:",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "758f8503",
+  "en": "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.",
+  "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "837d7fc3",
+  "en": "Leans UP",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "7898e596",
+  "en": "Leans DOWN",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "3b0806db",
+  "en": "Methods disagree",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "e9330778",
+  "en": "Neutral",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "7bc5cac8",
+  "en": "Multi-strategy read",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "03dd914f",
+  "en": "Of {0} methods {1} say BUY, {2} say SELL, {3} are neutral",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "874fdb55",
+  "en": "{0} methods in all",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "f33c0541",
+  "en": "Read each method's reasoning",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "ebfdda6f",
+  "en": "Reference levels (sized by volatility)",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "7b3435ee",
+  "en": "Price now",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "e02d2a03",
+  "en": "The stop is 1.5 times the 1-hour ATR (${0}) away and the target twice as far. This is a ruler; it is not a tested rule and not a call to enter.",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "f724b517",
+  "en": "What each method sees",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "04c83daf",
+  "en": "Show all",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "4043bfcd",
+  "en": "Show less",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "58da0636",
+  "en": "Show all ({0})",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "d40c7d20",
+  "en": "What does this panel do in the system's decisions?",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "1d095a63",
+  "en": "The setup signals (Asia, New York · Setup page, Telegram, the MT5 robot's “Setup signals”) do not use this vote. They decide by their own tested rules: the daily and 4-hour trend scores (EMA50/200, EMA20 slope, RSI, MACD, swing structure), the session range, news windows and the range width.",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "ca566164",
+  "en": "Only the robot's “Reading” mode (it enters on the count of methods saying BUY or SELL), its “Day trader” mode (most methods must back the setup's side) and the Bot page's “Methods that must agree” filter use this panel. Otherwise it is a reference: the market seen from many angles.",
+  "file": "src/components/ReasoningPanel.tsx"
+ },
+ {
+  "h": "f4a12dae",
+  "en": "Revenue by month",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "18320daf",
+  "en": "Revenue over the last 6 months: {0}",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "cebcdf41",
+  "en": "{0}: {1}, {2} payments",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "1f58eb5f",
+  "en": "Show as a table",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "8b242db1",
+  "en": "New",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "197a1ed0",
+  "en": "Renewals",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "e28b5db7",
+  "en": "This month",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "f92b4490",
+  "en": "Last month {0}{1}",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "6c764d68",
+  "en": "Active subscribers",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "156fe1f6",
+  "en": "{0}% of {1} registered have paid",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "f8150ccb",
+  "en": "Renewal rate",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "fd7a491c",
+  "en": "No plans came due in the last 30 days",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "ccd75993",
+  "en": "{0} of {1} that came due in 30 days renewed",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "923f702d",
+  "en": "All time",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "67ba8592",
+  "en": "{0} payments from {1} people",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "6336fe8f",
+  "en": "By plan",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "dd5735e7",
+  "en": "Ending within 7 days",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "9bce3093",
+  "en": "No plans end this week.",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "9743849b",
+  "en": "ends",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "9415570b",
+  "en": "Did not renew (30 days)",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "75e47d81",
+  "en": "Nobody left in the last 30 days.",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "1a30bf3b",
+  "en": "ended",
+  "file": "src/components/RevenueView.tsx"
+ },
+ {
+  "h": "716db864",
+  "en": "Today's trading sessions on a 24-hour axis",
+  "file": "src/components/SessionLine.tsx"
+ },
+ {
+  "h": "2de3cf9f",
+  "en": "Personal details",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "87f6bf6e",
+  "en": "Change password",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "8eedf1f3",
+  "en": "Current password",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "c31c54c7",
+  "en": "New password (8 characters or more)",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "31018b9f",
+  "en": "Appearance",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "4eaf7c92",
+  "en": "Theme",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "45570065",
+  "en": "Dark",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "8ad2f8cf",
+  "en": "Light",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "b5256ada",
+  "en": "Follow device",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "26c8b8cd",
+  "en": "News times, hourly odds, bot trades and signal times are shown in this zone. The hours in the rules are converted to it as well.",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "f215619a",
+  "en": "Use this device's zone",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "5896578b",
+  "en": "Asian range breakout",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "ba18aa69",
+  "en": "New York opening breakout",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "c6b11076",
+  "en": "New York second-hour breakout",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "61583f3e",
+  "en": "Which setups to hear about",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "03ba4ee4",
+  "en": "Warn me 30 minutes before an important release",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "038c58fe",
+  "en": "Pause all signals (Telegram stays linked)",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "76a85421",
+  "en": "Delete account",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "e4f69707",
+  "en": "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "c8c2c9eb",
+  "en": "An admin account cannot be deleted.",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "0498d7af",
+  "en": "Delete my account",
+  "file": "src/components/SettingsForms.tsx"
+ },
+ {
+  "h": "620538d9",
+  "en": "No candle data",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "71dfc54d",
+  "en": "{0} setup: entry {1}, stop {2}, target {3}",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "29d3d028",
+  "en": "Last {0} candles, close {1}",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "31f39d2e",
+  "en": "Expected: up",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "addc3c17",
+  "en": "Expected: down",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "c555b49d",
+  "en": "hours ahead",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "a311e772",
+  "en": "Range",
+  "file": "src/components/SetupChart.tsx"
+ },
+ {
+  "h": "a7b2cec3",
+  "en": "Finished",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "ba4a3711",
+  "en": "Now · waiting",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "749ca0b9",
+  "en": "Now · trade on",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "102c7f3a",
+  "en": "Now · done",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "7b36288e",
+  "en": "Now · no trade today",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "5167ebfa",
+  "en": "Now · market closed",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "1b468bc7",
+  "en": "Waiting for",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "a1d17e31",
+  "en": "12 months",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "5e0e7d76",
+  "en": "Conditions · {0}/{1} met",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "9c2ac510",
+  "en": " (met)",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "ea1e182b",
+  "en": " (not met)",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "2be8f32f",
+  "en": "won",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "1e66046b",
+  "en": "avg",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "5487bbb7",
+  "en": "Not enough data (fewer than 30 trades)",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "ba45c98b",
+  "en": "{0}% closed in profit",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "3d95c3e3",
+  "en": "Read the full rule",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "57468949",
+  "en": "Best average result per trade over the last 12 months (+{0}R)",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "504af044",
+  "en": "Result",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "704e39b8",
+  "en": "MT5 robot: choose the “Setup signals” tool on the Bot page and it trades this and the other two setups by exactly these rules (one per session, up to three at once).",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "5af15524",
+  "en": "Whether an entry is on now, its side, entry, stop and target show with a plan.",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "3de02e5b",
+  "en": "Live signal results",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "0c0a5234",
+  "en": "Full history",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "9877aeb1",
+  "en": "Live signals and how they ended come with a plan.",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "7bd17201",
+  "en": "No signals yet. Each one appears here with how it ended.",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "ad066d9d",
+  "en": "Total",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "e7004209",
+  "en": "On time",
+  "file": "src/components/SetupParts.tsx"
+ },
+ {
+  "h": "8b67f168",
+  "en": "Target",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "4b7f7705",
+  "en": "Stop",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "6a745b3e",
+  "en": "Total result",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "63dc3640",
+  "en": "In profit",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "1bfc59a2",
+  "en": "{0} in profit",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "e8e91b36",
+  "en": "At a loss",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "da11e524",
+  "en": "{0} at a loss",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "7c0a4e0f",
+  "en": "Still open",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "b8f4959d",
+  "en": "No signals yet. Each time a setup becomes active it is recorded here with how it ended.",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "dfe4e404",
+  "en": "Time",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "7c5a8cf3",
+  "en": "Rule",
+  "file": "src/components/SignalHistory.tsx"
+ },
+ {
+  "h": "55727a24",
+  "en": "Setup active",
+  "file": "src/components/SoundToggle.tsx"
+ },
+ {
+  "h": "253cdd94",
+  "en": "Release near",
+  "file": "src/components/SoundToggle.tsx"
+ },
+ {
+  "h": "59143948",
+  "en": "Bot trade",
+  "file": "src/components/SoundToggle.tsx"
+ },
+ {
+  "h": "258a655b",
+  "en": "Alert sounds",
+  "file": "src/components/SoundToggle.tsx"
+ },
+ {
+  "h": "45b658cd",
+  "en": "While the site is open, a sound plays when a setup turns active, 5 minutes before and when a key release comes out, and when the robot opens or closes a trade. Saved in this browser only.",
+  "file": "src/components/SoundToggle.tsx"
+ },
+ {
+  "h": "b15bed5a",
+  "en": "Get signals on Telegram",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "af1156a0",
+  "en": "Linked",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "a8dc0817",
+  "en": "Not linked",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "25a0bc26",
+  "en": "The moment a setup becomes “Active”, a message with the entry, stop, target, the conditions met and the rule's historical record arrives on your phone. The system checks every 5 minutes. You open the trade yourself.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "8a342ee9",
+  "en": "Signals come with a plan. You can link now: they start arriving as soon as you have a plan, and if you forget your password you can send /reset to the bot.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "7327ffa1",
+  "en": "In Telegram open ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "d35a8919",
+  "en": ", send ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "b5dc0cc3",
+  "en": " and create a bot. At the end it gives you a token.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "d682d2e5",
+  "en": "On Railway, under ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "61a177d4",
+  "en": ", add a variable named ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "14f7d8ca",
+  "en": " with the token as its value.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "9b59cfb3",
+  "en": "After Railway redeploys, refresh this page and the “Link Telegram” button appears.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "cd92ea3c",
+  "en": "Commands you can send the bot: ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "69e2986c",
+  "en": " current bias and the next important release; ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "8a8f6f75",
+  "en": " pause signals; ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "39347ad8",
+  "en": " turn them back on.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "5830651f",
+  "en": "Send a test message",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "a3742172",
+  "en": "Unlink",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "8759f5ba",
+  "en": "Open Telegram and press Start",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "e39b9d15",
+  "en": "When the bot opens in Telegram, press ",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "1caf0dca",
+  "en": ". After the “Linked” reply arrives, refresh this page.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "06728ff7",
+  "en": " The link works for 30 minutes.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "bf0c7feb",
+  "en": "Preparing…",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "27820398",
+  "en": "Or open our bot in Telegram and send it the email you registered with. Then press “Yes, it's mine” on the request that appears here. No token or code to type.",
+  "file": "src/components/TelegramCard.tsx"
+ },
+ {
+  "h": "0e3bc73d",
+  "en": "A request to link Telegram",
+  "file": "src/components/TelegramConfirm.tsx"
+ },
+ {
+  "h": "85cb6846",
+  "en": " wrote your email to the bot on Telegram. If that was you, confirm. If not, decline: nothing is sent to them.",
+  "file": "src/components/TelegramConfirm.tsx"
+ },
+ {
+  "h": "3b084663",
+  "en": "Linking…",
+  "file": "src/components/TelegramConfirm.tsx"
+ },
+ {
+  "h": "9b96ec52",
+  "en": "Yes, it's mine",
+  "file": "src/components/TelegramConfirm.tsx"
+ },
+ {
+  "h": "c90f1e6b",
+  "en": "No, not me",
+  "file": "src/components/TelegramConfirm.tsx"
+ },
+ {
+  "h": "14d54f54",
+  "en": "What is {0}?",
+  "file": "src/components/TermHint.tsx"
+ },
+ {
+  "h": "3e9b401f",
+  "en": "All terms",
+  "file": "src/components/TermHint.tsx"
+ },
+ {
+  "h": "4954229d",
+  "en": "Day",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "41e31751",
+  "en": "4h",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "63eb9b9c",
+  "en": "1h",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "202ca912",
+  "en": "15m",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "5c9ca908",
+  "en": "Gold / US dollar",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "42929680",
+  "en": "24 hours",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "4626b939",
+  "en": "Today's direction",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "d22f9095",
+  "en": "score",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "4e7ce621",
+  "en": "Buyers",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "d5b8609f",
+  "en": "Sellers",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "eae93918",
+  "en": "Buyers {0}%, sellers {1}%",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "5e020234",
+  "en": "How the score is built · {0} {1}",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "25dace92",
+  "en": "Score −100…+100: trend (EMA20/50/200), momentum (RSI, MACD), structure (highs/lows). Weights: daily 35%, 4h 30%, 1h 20%, 15m 15%. Inside ±20 neither side leads.",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "4894ff20",
+  "en": "No important releases on record",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "d129cc69",
+  "en": "The last {0} times: gold moved ±${1} on average within an hour",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "10d2728b",
+  "en": "Key levels",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "662f3d27",
+  "en": "Yesterday's high",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "75f8b4cb",
+  "en": "Yesterday's low",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "302b30c7",
+  "en": "Daily ATR",
+  "file": "src/components/TodayCards.tsx"
+ },
+ {
+  "h": "c122087d",
+  "en": "Name updated",
+  "file": "src/lib/actions/admin.ts"
+ },
+ {
+  "h": "ce2eabc8",
+  "en": "Password changed. You were signed out on other devices.",
+  "file": "src/lib/actions/admin.ts"
+ },
+ {
+  "h": "7d03da0e",
+  "en": "{0}: temporary password. Give it to the user and ask them to change it on the Settings page after signing in.",
+  "file": "src/lib/actions/admin.ts"
+ },
+ {
+  "h": "7dbf917d",
+  "en": "Choose a picture",
+  "file": "src/lib/actions/avatar.ts"
+ },
+ {
+  "h": "e9137227",
+  "en": "The picture is too large",
+  "file": "src/lib/actions/avatar.ts"
+ },
+ {
+  "h": "0cc11a85",
+  "en": "Only JPG, PNG or WebP pictures",
+  "file": "src/lib/actions/avatar.ts"
+ },
+ {
+  "h": "4cc54aca",
+  "en": "Picture updated",
+  "file": "src/lib/actions/avatar.ts"
+ },
+ {
+  "h": "3f16ebe9",
+  "en": "Picture removed",
+  "file": "src/lib/actions/avatar.ts"
+ },
+ {
+  "h": "0cf7e9c3",
+  "en": "Settings saved",
+  "file": "src/lib/actions/bot.ts"
+ },
+ {
+  "h": "01de93b4",
+  "en": "Filter saved",
+  "file": "src/lib/actions/bot.ts"
+ },
+ {
+  "h": "83f7f8e3",
+  "en": "Too many attempts. Try again in 15 minutes.",
+  "file": "src/lib/actions/passwordReset.ts"
+ },
+ {
+  "h": "44ab7ef9",
+  "en": "The two passwords do not match",
+  "file": "src/lib/actions/passwordReset.ts"
+ },
+ {
+  "h": "f13baff8",
+  "en": "Password must be 8 characters or more",
+  "file": "src/lib/actions/passwordReset.ts"
+ },
+ {
+  "h": "e7bba204",
+  "en": "This link is invalid or has expired. Send /reset to the Telegram bot again.",
+  "file": "src/lib/actions/passwordReset.ts"
+ },
+ {
+  "h": "ba13d7ce",
+  "en": "Please read and accept the privacy policy and the terms",
+  "file": "src/lib/actions/register.ts"
+ },
+ {
+  "h": "b3246bdf",
+  "en": "Too many attempts. Try again in an hour.",
+  "file": "src/lib/actions/register.ts"
+ },
+ {
+  "h": "a3227488",
+  "en": "Wrong email or password",
+  "file": "src/lib/actions/session.ts"
+ },
+ {
+  "h": "fa6aa0b1",
+  "en": "That time zone is not known",
+  "file": "src/lib/actions/settings.ts"
+ },
+ {
+  "h": "05631be8",
+  "en": "Could not save",
+  "file": "src/lib/actions/settings.ts"
+ },
+ {
+  "h": "fdc6ad67",
+  "en": "An admin account cannot be deleted",
+  "file": "src/lib/actions/settings.ts"
+ },
+ {
+  "h": "08891eef",
+  "en": "Wrong password",
+  "file": "src/lib/actions/settings.ts"
+ },
+ {
+  "h": "9126abe6",
+  "en": "The Telegram bot is not set up.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "d5db016c",
+  "en": "The site address (APP_URL) is not set, so Telegram cannot be linked.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "310ac935",
+  "en": "Could not get the Telegram bot's name. Check the token.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "fbb4435e",
+  "en": "Could not reach Telegram. Check that the token is correct and try again.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "139a6136",
+  "en": "Telegram unlinked.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "99ee0382",
+  "en": "Telegram is not linked.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "6d70c576",
+  "en": "XAU Analytics: test message. Signals arrive here when a setup becomes active. You can send /status or /stop here.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "70b5b621",
+  "en": "Test message sent. Check Telegram.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "2efb4d96",
+  "en": "The bot was blocked or the chat deleted, so Telegram was unlinked. Link it again with “Link Telegram”.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "b328d842",
+  "en": "Telegram did not answer just now. Try again in a few minutes.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "0d2bd81f",
+  "en": "Telegram linked.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "7f637d40",
+  "en": "The request has expired. Send your email to the bot again.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "c1453dfa",
+  "en": "Request declined.",
+  "file": "src/lib/actions/telegram.ts"
+ },
+ {
+  "h": "ed13c0d9",
+  "en": "Invalid number of days",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "36b52bf3",
+  "en": "User not found",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "2d9c5696",
+  "en": "Enter a type",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "d426a550",
+  "en": "Enter a title",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "ad4d5404",
+  "en": "Invalid date",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "f0c16f69",
+  "en": "Invalid time",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "9e43df57",
+  "en": "Choose an impact",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "0a1a040c",
+  "en": "A release of this type at this time is already on record",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "d1a57464",
+  "en": "Current password is wrong",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "f5cd97da",
+  "en": "New password must be 8 characters or more",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "c0c27c17",
+  "en": "An admin's password cannot be reset here",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "da35da87",
+  "en": "Enter your name",
+  "file": "src/lib/admin.ts"
+ },
+ {
+  "h": "fa1745fd",
+  "en": "BULLISH bias",
+  "file": "src/lib/analysis/bias.ts"
+ },
+ {
+  "h": "f7abd67e",
+  "en": "BEARISH bias",
+  "file": "src/lib/analysis/bias.ts"
+ },
+ {
+  "h": "7521bb38",
+  "en": "NEUTRAL",
+  "file": "src/lib/analysis/bias.ts"
+ },
+ {
+  "h": "639f8073",
+  "en": "Trend following",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "3079cfef",
+  "en": "Momentum",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "3704082f",
+  "en": "Mean reversion",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "46a3777c",
+  "en": "Breakout",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "774ea49d",
+  "en": "Structure (ICT / SMC)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "74730781",
+  "en": "EMA 20 / 50 / 200 stack",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "130338a1",
+  "en": "Price {0} is above EMA20 ({1}) > EMA50 ({2}) > EMA200 ({3}). The three averages are lined up for a rise.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "7618ea29",
+  "en": "Price {0} is below EMA20 ({1}) < EMA50 ({2}) < EMA200 ({3}). The three averages are lined up for a fall.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "c1ba6895",
+  "en": "The averages are not in one order: EMA20 {0}, EMA50 {1}, EMA200 {2}, price {3}. The trend is not clean.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "40b88a48",
+  "en": "Golden / death cross (EMA50 vs EMA200)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "03787fa8",
+  "en": "EMA50 ({0}) and EMA200 ({1}) nearly touch. The cross is undecided.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "0356c866",
+  "en": "EMA50 ({0}) has been above EMA200 ({1}) for {2} bars (gap {3}%). The longer direction is up.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "e8c9abe1",
+  "en": "EMA50 ({0}) has been below EMA200 ({1}) for {2} bars (gap {3}%). The longer direction is down.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "9e68395f",
+  "en": "Ichimoku cloud",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d1f64cbd",
+  "en": "Cloud top",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "c0a90d79",
+  "en": "Cloud bottom",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "66936e1f",
+  "en": "Price is above the cloud ({0}) and Tenkan {1} is over Kijun {2}. The cloud is acting as support.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "8e00dea3",
+  "en": "Price is below the cloud ({0}) and Tenkan {1} is under Kijun {2}. The cloud is acting as resistance.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "58fb3829",
+  "en": "Price is inside the cloud ({0} – {1}). For Ichimoku that is a zone with no direction.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2aabed3f",
+  "en": "Price has left the cloud but Tenkan ({0}) and Kijun ({1}) do not confirm it.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "850f80b6",
+  "en": "The histogram is above zero ({0}) and growing. Upward force is building.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "706621eb",
+  "en": "The histogram is below zero ({0}) and deepening. Downward force is building.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "4ef90281",
+  "en": "The histogram is above zero ({0}) but shrinking. Upward force is fading.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "e3d744d7",
+  "en": "The histogram is below zero ({0}) but rising. Downward force is fading.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "f538c247",
+  "en": "RSI (14) momentum",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "761e905b",
+  "en": "RSI {0}: above 55 and short of 70. Buyers lead and it is not overheated.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "dd0cfc4d",
+  "en": "RSI {0}: below 45 and short of 30. Sellers lead and it is not washed out.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "77f440c9",
+  "en": "RSI {0}: at an extreme, so it is not read as momentum (see “RSI extreme” below).",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2821da76",
+  "en": "RSI {0}: between 45 and 55. Neither side leads.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "f189a779",
+  "en": "RSI extreme (70 / 30)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d7028d0d",
+  "en": "RSI {0}: over 70. Overbought; this method looks for a pullback.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2b178e6c",
+  "en": "RSI {0}: under 30. Oversold; this method looks for a bounce.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "3da78ba8",
+  "en": "RSI {0}: between 30 and 70. No extreme, so no reversal reading.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "37ddbcc6",
+  "en": "Upper band",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "9d92c238",
+  "en": "Middle",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "6d438165",
+  "en": "Lower band",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "80e871e1",
+  "en": "Price is at or past the upper band {0}. The way back to the middle {1} is ${2}.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "db0a7048",
+  "en": "Price is at or past the lower band {0}. The way back to the middle {1} is ${2}.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "46172bed",
+  "en": "Price is inside the bands, {0}% of the way up ({1} – {2}). Nothing says it is stretched.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d6f81913",
+  "en": "%K {0} crossed up through %D {1} in the 20 zone. A turn out of oversold.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "a10bd551",
+  "en": "%K {0} crossed down through %D {1} in the 80 zone. A turn out of overbought.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "a4e488d7",
+  "en": "%K {0}, %D {1}. No cross inside an extreme zone.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "8ba21117",
+  "en": "Donchian breakout (20 bars)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "220a7825",
+  "en": "20-bar high",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "819c7129",
+  "en": "20-bar low",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "bca1c1b7",
+  "en": "Price is ${0} past the 20-bar high {1}. A new high is a breakout.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "53f0ca3d",
+  "en": "Price is ${0} past the 20-bar low {1}. A new low is a breakdown.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "9b3bb023",
+  "en": "Price is inside the 20-bar range: ${0} to the high, ${1} to the low.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "5e216826",
+  "en": "Asian session range",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "171efc81",
+  "en": "Asian high",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "a0e8180d",
+  "en": "Asian low",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "1a361e8a",
+  "en": "Price is above the Asian high {0} (range ${1}). London and New York broke it upward.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "bf0e5c7f",
+  "en": "Price is below the Asian low {0} (range ${1}). London and New York broke it downward.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "fb096855",
+  "en": "Price is still inside the Asian range ({0} – {1}). No break yet.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2a18e6e9",
+  "en": "Market structure (BOS / CHoCH)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "21bf2bc9",
+  "en": "Last swing high",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "140554d5",
+  "en": "Last swing low",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "303f078d",
+  "en": "Highs {0} → {1} and lows {2} → {3} are rising, and price is past the last high (BOS up).",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "8878fcc4",
+  "en": "Highs {0} → {1} and lows {2} → {3} are rising. While the last low {4} holds, structure is up.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "0ae7e9c1",
+  "en": "Highs {0} → {1} and lows {2} → {3} are falling, and price is past the last low (BOS down).",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "eef1e8e6",
+  "en": "Highs {0} → {1} and lows {2} → {3} are falling. While the last high {4} holds, structure is down.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "61a40add",
+  "en": "Structure was rising, but price broke the last low {0} (CHoCH). It may be turning.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "e0bbcfc8",
+  "en": "Structure was falling, but price broke the last high {0} (CHoCH). It may be turning.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "977e1100",
+  "en": "Highs and lows do not move together (highs {0} → {1}, lows {2} → {3}). A range.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "31662f72",
+  "en": "Fair value gap (FVG)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2374632d",
+  "en": "FVG top",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "de58cb49",
+  "en": "FVG bottom",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "434c5d98",
+  "en": "Price is inside an unfilled bullish FVG ({0} – {1}). It is read as a demand zone.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "f8e89094",
+  "en": "An unfilled bullish FVG ({0} – {1}) sits below. A return to it is read as support.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "272056c1",
+  "en": "Price is inside an unfilled bearish FVG ({0} – {1}). It is read as a supply zone.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "4a6c876d",
+  "en": "An unfilled bearish FVG ({0} – {1}) sits above. A return to it is read as resistance.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "274ac2e7",
+  "en": "No valid unfilled FVG in the last 24 hours.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "0e7078b1",
+  "en": "Liquidity sweep (yesterday's high / low)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "6ddd55f6",
+  "en": "In the last 4 hours price spiked through yesterday's high {0} to {1} and closed back under it. Read as the stops above being taken.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "a4543c9c",
+  "en": "In the last 4 hours price spiked through yesterday's low {0} to {1} and closed back over it. Read as the stops below being taken.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "89926a4b",
+  "en": "Neither yesterday's high {0} nor its low {1} was swept in the last 4 hours.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "293c7366",
+  "en": "Pivot points (daily)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "82e86d86",
+  "en": "Price is sitting right on the pivot {0}. It waits for a side.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "13df603c",
+  "en": "Price is past R1 {0}. The next level is R2 {1}.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "c655b0c3",
+  "en": "Price is above the pivot {0}. The level above is R1 {1} (${2} away).",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d680f100",
+  "en": "Price is past S1 {0}. The next level is S2 {1}.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "37cd8964",
+  "en": "Price is below the pivot {0}. The level below is S1 {1} (${2} away).",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "7852f664",
+  "en": "Fibonacci retracement (38.2 – 61.8%)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "3850608b",
+  "en": "The up leg {0} → {1} has been retraced {2}%. Price is in the golden zone ({3} – {4}), read as a place to join the trend.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "9df2543a",
+  "en": "The down leg {0} → {1} has been retraced {2}%. Price is in the golden zone ({3} – {4}), read as a place to join the trend.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "7cd79ac9",
+  "en": "Only {0}% of the last leg ({1} – {2}) has been retraced. Price has not reached the golden zone {3} – {4}.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d6cca011",
+  "en": "{0}% of the last leg has been retraced: deeper than 61.8%. The leg is read as having lost its force.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "760a11b9",
+  "en": "Yesterday's high / low (support, resistance)",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "cba5a22e",
+  "en": "Price is above yesterday's high {0}. Resistance is read as having turned into support.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "c940fb9a",
+  "en": "Price is below yesterday's low {0}. Support is read as having turned into resistance.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "d78922fa",
+  "en": "Price is inside yesterday's range ({0} – {1}). Neither level is broken.",
+  "file": "src/lib/analysis/reasoning.ts"
+ },
+ {
+  "h": "2ac74c10",
+  "en": "Lots must be a number above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "0fd5d827",
+  "en": "Number of trades must be a whole number",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "3a2c4a18",
+  "en": "At least 1 trade",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "183c2228",
+  "en": "At most 200 trades",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "36aea2fa",
+  "en": "Stop must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "58812b07",
+  "en": "Target must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "d0f593e7",
+  "en": "Profit target must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "4c32b272",
+  "en": "Loss limit must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "a4bfb474",
+  "en": "At most {0} trades",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "8952117b",
+  "en": "The closing profit ($) must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "ee7690e6",
+  "en": "Enter the closing profit ($)",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "02836672",
+  "en": "The closing loss ($) must be above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "15305917",
+  "en": "Enter the closing loss ($)",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "2e3deb06",
+  "en": "The start hour must be 0–23",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "839aed03",
+  "en": "The end hour must be 0–23",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "701af448",
+  "en": "Minutes before news must be a whole number, 0–240",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "cdb0901f",
+  "en": "Minutes after news must be a whole number, 0–240",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "8da504c7",
+  "en": "The lowest ATR must be $0–100",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "4b5e34fc",
+  "en": "The highest ATR must be $0–200",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "e5549d8c",
+  "en": "The spread cap must be 0–100% of ATR",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "e1d40720",
+  "en": "The RSI cap must be 0 (off) or 55–95",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "94d61b83",
+  "en": "The stretch cap must be 0–20 ATR",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "0d5d4433",
+  "en": "Entries a day must be a whole number, 0–100",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "f60da2a1",
+  "en": "Methods that must agree: 0 (off) to 14",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "7d66a4f5",
+  "en": "The day trader's margin must be a whole number, 0–10",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "5e08f5e8",
+  "en": "The risk amount must be a number above 0",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "71d2fbbe",
+  "en": "The daily loss stop must be 0–50% of balance",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "8642eec8",
+  "en": "Enter the dollars to risk per trade",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "db9571ec",
+  "en": "Risk must be 0–50% of balance",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "9aa66ea3",
+  "en": "The lowest ATR must be below the highest",
+  "file": "src/lib/bot/live.ts"
+ },
+ {
+  "h": "7f3cf0cc",
+  "en": "The robot opened a trade",
+  "file": "src/lib/bot/liveDb.ts"
+ },
+ {
+  "h": "ca270868",
+  "en": "{0} of {1} methods backed this side",
+  "file": "src/lib/bot/liveDb.ts"
+ },
+ {
+  "h": "eb1eced9",
+  "en": "The robot closed a trade",
+  "file": "src/lib/bot/liveDb.ts"
+ },
+ {
+  "h": "65f39059",
+  "en": "US",
+  "file": "src/lib/data/calendarProvider.ts"
+ },
+ {
+  "h": "3a105ef1",
+  "en": "Symbol",
+  "file": "src/lib/export.ts"
+ },
+ {
+  "h": "27f4c033",
+  "en": "Profit $",
+  "file": "src/lib/export.ts"
+ },
+ {
+  "h": "1440c15d",
+  "en": "Note",
+  "file": "src/lib/export.ts"
+ },
+ {
+  "h": "173ac516",
+  "en": "BUY / SELL",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "7d8116e6",
+  "en": "BUY is a trade that profits if the price rises; SELL is a trade that profits if it falls. Gold can be traded either way.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "fba1c3b8",
+  "en": "Candle",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "c2222f9b",
+  "en": "One bar showing where the price opened and closed, and its high and low, over a set time (for example 15 minutes). Green rose, red fell.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "564871d1",
+  "en": "How much time one candle covers: 15m, 1h, 4h, 1 day. Longer frames show the overall direction, shorter ones the entry.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "c6ec2d10",
+  "en": "Trend",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "4a0939d9",
+  "en": "The price's overall direction. Higher highs and higher lows make an uptrend; lower highs and lower lows a downtrend.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "cef402bd",
+  "en": "Session (Asia, London, New York)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "62a6b854",
+  "en": "The trading hours of the world's main financial centres. Gold usually moves most in the London and New York hours. The site shows every time in your chosen time zone.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "bb9c8bee",
+  "en": "Spread",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "d312a67c",
+  "en": "The gap between the buy and the sell price. A hidden cost paid on every trade; it widens around news.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "aedd9068",
+  "en": "Lot",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "dd0f84d0",
+  "en": "Trade size. In gold 1 lot = 100 ounces, so a $1 move in gold is $100 on 1 lot and $1 on 0.01 lot. If you are new, start with the smallest lot.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "1e021ce0",
+  "en": "Stop loss",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "80b5f0e4",
+  "en": "The price that limits a loss: when it is reached the trade closes on its own. Setting one on every trade is how you know your risk.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "29acb3de",
+  "en": "Target (take profit)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "8cb9b491",
+  "en": "The price where profit is taken: when it is reached the trade closes in profit.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "d70c14b5",
+  "en": "R",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "19846ac2",
+  "en": "The amount risked on one trade: the distance from entry to the stop. +2R is a profit twice the risk, −1R a full loss at the stop. A positive average R means the method made money over time.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "6966b9c6",
+  "en": "R:R (risk : reward)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "3e20f254",
+  "en": "The amount risked against the profit aimed for. 1 : 2 means risking $10 to make $20. Below 1, the win rate has to be high to come out ahead.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "c3dc3a0c",
+  "en": "A practice account with no real money. Try the bot, the setups and your lot size here first, and move to a real account once you are used to them.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "b866b64c",
+  "en": "MetaTrader 5 (MT5)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "ce266a30",
+  "en": "The broker's trading app (computer and phone). The site's bot runs inside MT5 and trades in your account.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "c6827370",
+  "en": "Leading side",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "efa5aa8b",
+  "en": "Combines the trend on several timeframes into a score showing whether buyers or sellers have the upper hand. A lean, not a promise.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "35da4460",
+  "en": "EMA (20 / 50 / 200)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "71edeaf5",
+  "en": "A line through the average price of the last 20, 50 or 200 candles, weighting recent prices more. Price above it usually means an uptrend, below it a downtrend.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "8cb6a141",
+  "en": "RSI",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "c7b6ff6b",
+  "en": "Measures the speed of price moves from 0 to 100. Above 70 is read as overbought (risen too fast), below 30 as oversold.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "7c360a24",
+  "en": "MACD",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "089a9db9",
+  "en": "Shows whether momentum is building or fading, from the gap between two EMAs.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "2605f640",
+  "en": "Stochastic",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "020457af",
+  "en": "Where the price sits within the range of the last few candles, from 0 to 100. Above 80 is near the top of the range, below 20 near the bottom.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "2ea4b889",
+  "en": "Bollinger bands",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "1fb6d9eb",
+  "en": "Two bands set above and below an average by how much the price swings. Touching a band can mean the price has run far; narrow bands mean a quiet market.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "0f3a173e",
+  "en": "Ichimoku",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "234936ff",
+  "en": "A Japanese indicator that shows trend, support and resistance at once with a “cloud” and several lines. Price above the cloud leans up, below it leans down.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "ff1b0d08",
+  "en": "Donchian channel",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "06384e6d",
+  "en": "A channel drawn through the highest high and lowest low of the last few candles. A close outside it counts as a breakout.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "f3f4eda3",
+  "en": "Fibonacci",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "331e490c",
+  "en": "Levels at 38.2%, 50%, 61.8% and similar fractions of the last move. After a move, price often pulls back to one of them before carrying on.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "6b9c4bee",
+  "en": "ATR",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "d99a7498",
+  "en": "Average True Range: how far one candle moves on average, in dollars. It shows how lively the market is; a stop sized by ATR fits both quiet and wild days.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "118e95cb",
+  "en": "Pivot, R1, R2, S1, S2",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "b1108926",
+  "en": "Today's levels worked out from yesterday's high, low and close. R (resistance) is where a rise may stall, S (support) where a fall may stall, and the pivot sits between.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "32f75f5a",
+  "en": "How fast and how strongly the price is moving one way. Fading momentum can be a sign the move is ending.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "964a24df",
+  "en": "The price closing outside a range or level. A real breakout tends to carry on; a false one falls back into the range.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "0f698c47",
+  "en": "ICT / SMC (structure)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "29133c73",
+  "en": "A way of reading where large players (banks, funds) place orders, using highs, lows and liquidity. A break in structure (MSS, BOS) hints that the direction may be changing.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "edc2940c",
+  "en": "Liquidity, sweep (BSL / SSL)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "4ba93922",
+  "en": "Highs (BSL) and lows (SSL) where many traders' stops collect. A sweep is when the price briefly runs past such a level, takes those stops, and turns back.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "ffe158e8",
+  "en": "FVG (fair value gap)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "49288109",
+  "en": "A gap left inside three candles after a fast, strong move, where little traded. Price often comes back to fill it, so it is watched as an entry zone.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "d745e048",
+  "en": "NFP, CPI, FOMC",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "628dbbca",
+  "en": "US jobs (NFP), inflation (CPI) and the Federal Reserve's rate decision (FOMC). When they come out, gold can move hard within minutes and spreads can widen.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "97b026c5",
+  "en": "P&L",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "016e5442",
+  "en": "Profit and loss: what the trades made or lost, added up.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "1d307481",
+  "en": "The share of trades closed in profit. Not enough on its own: many small wins and a few big losses can still lose money. Read it with average R and profit factor.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "e3e3256c",
+  "en": "Total profit divided by total loss. Above 1 is profitable: 1.5 means $1.50 made for every $1 lost. Below 1 is a loss.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "26d5d06f",
+  "en": "Drawdown",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "1f75e4cc",
+  "en": "The largest drop from a previous peak of the account. It shows how much was lost in the worst stretch, and whether you could sit through it.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "01375045",
+  "en": "Sample size (n)",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "8aec6e93",
+  "en": "How many days or trades a percentage is based on. A small count can be chance; under 30 the site shows no percentage.",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "88fd63a3",
+  "en": "The basics",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "ad6faed9",
+  "en": "Indicators and levels",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "95fcb6d9",
+  "en": "Reading results",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "52967a64",
+  "en": "Not shown until there is a losing trade",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "673ca7b7",
+  "en": "${0} made for every $1 lost: a net loss overall",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "5ee1d2c7",
+  "en": "${0} made for every $1 lost",
+  "file": "src/lib/glossary.ts"
+ },
+ {
+  "h": "19b00b6d",
+  "en": "🎁 <b>A friend you invited bought a plan.</b> You got +{0} days{1}.",
+  "file": "src/lib/referralNotify.ts"
+ },
+ {
+  "h": "1021c00c",
+  "en": "in {0}",
+  "file": "src/lib/relativeTime.ts"
+ },
+ {
+  "h": "f26e970c",
+  "en": "{0} ago",
+  "file": "src/lib/relativeTime.ts"
+ },
+ {
+  "h": "c37c712e",
+  "en": "⏳ <b>{0} plan ends in {1} day{2}</b> ({3}).",
+  "file": "src/lib/renewal.ts"
+ },
+ {
+  "h": "7685b1e4",
+  "en": "⏳ <b>Your plan ends in {0} day{1}</b> ({2}).",
+  "file": "src/lib/renewal.ts"
+ },
+ {
+  "h": "0584cb08",
+  "en": "Renewing now adds to the time you have left, so no day is lost.",
+  "file": "src/lib/renewal.ts"
+ },
+ {
+  "h": "d9b530e3",
+  "en": "MT5 tester, 2019–2026, without the news filter, with the tester's entry filter on, on the broker's server-time candles. A research result, not live trades.",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "1cfea32c",
+  "en": "New York opening breakout ({0})",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "326438cb",
+  "en": "New York second-hour breakout ({0})",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "3fdfe9b0",
+  "en": "closed by {0}",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "ef33b71f",
+  "en": "held until {0} the next day ({1} on a Friday)",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "254b3614",
+  "en": "The highest and lowest price between {0} and {1} ({2}) set the range. When the daily and 4-hour trends point the same way, the first 15-minute close outside the range in that direction between {3} and {4} is the entry. No entry from 30 minutes before to 60 minutes after an important release. If the range is too narrow against the daily ATR, the day is passed. The stop is the middle of the range, the target is {5} times as far as the stop; if neither is hit the trade is {6}. One trade a day.",
+  "file": "src/lib/setup/build.ts"
+ },
+ {
+  "h": "1e884679",
+  "en": "Tomorrow's Asian range ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "01def8f1",
+  "en": "Next Asian range ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "cab3b421",
+  "en": "Next opening range ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "cd62c096",
+  "en": "Price data is behind",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "0945cc83",
+  "en": "Fresh prices",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "eae89182",
+  "en": "{0} trade is on",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "ee77b40b",
+  "en": "The stop or the target",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "87ad99c1",
+  "en": "Closing time ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "c81f0386",
+  "en": "Today's trade is done ({0}{1}R)",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "3baea7fb",
+  "en": "The range to close at {0} ({1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "d4032b58",
+  "en": "Entry window opens ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "2618349a",
+  "en": "Entry window closes ({0} {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "ea8af88b",
+  "en": "BUY",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "5c4ccd05",
+  "en": "SELL",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "348a34fd",
+  "en": "{0} possible: waiting for the 4-hour trend to turn",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "ffed4f05",
+  "en": "Waiting for the daily trend to become clear",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "06465bc5",
+  "en": "The daily trend to become clear",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "2d40c37e",
+  "en": "The 4-hour trend to turn {0} (now {1})",
+  "file": "src/lib/setup/now.ts"
+ },
+ {
+  "h": "b5cb638e",
+  "en": "Asian range",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "e80ce442",
+  "en": "Opening range",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "adf94fe7",
+  "en": "Market closed",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "f7afe8af",
+  "en": "The gold market reopens after the weekend. The {0} then forms between {1} and {2} ({3}).",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "0ac95089",
+  "en": "never",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "662e6b56",
+  "en": "The last 15-minute candle closed at {0}. This setup is not read until fresh prices arrive.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "5db8e326",
+  "en": "today {0} ({1})",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "43adc9ee",
+  "en": "tomorrow {0} ({1})",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "94aec663",
+  "en": "unclear",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "ce516cc2",
+  "en": "{0} complete ({1} {2})",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "36585b7b",
+  "en": "Daily trend: {0}",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "0525cbb1",
+  "en": "4-hour trend: {0}",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "7604a075",
+  "en": "4-hour trend: {0} · agrees with the daily",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "0dcabc21",
+  "en": "4-hour trend: {0} · the daily is {1}, so they disagree",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "fd070a7c",
+  "en": "The {0} is forming",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "d456a84b",
+  "en": "The range closes at {0} ({1}). After that, the first 15-minute close outside the range is what counts.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "c92c274a",
+  "en": "Range data is incomplete",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "ebb53f50",
+  "en": "Not enough 15-minute candles arrived for the range, so this setup is not counted today.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "a4213c0a",
+  "en": "above",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "9253c0f2",
+  "en": "below",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "0279b804",
+  "en": "The breakout came outside a news window",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "2573a1a5",
+  "en": "The breakout came during a news release, no trade today",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "a9a14ab2",
+  "en": "A breakout within 30 minutes before or 60 minutes after an important release is not taken, and neither is a late entry after it. Waiting for the next range.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "cc330795",
+  "en": "Closed {0} the range (outside a news window)",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "361ad905",
+  "en": "Stop at least {0} of the daily ATR",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "e89d54c7",
+  "en": "Range too narrow, no trade today",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "fb6a2f62",
+  "en": "A breakout came, but its stop of ${0} is too small for the day's usual move (ATR ${1}). Breakouts from ranges this narrow were mostly false in the past, so the day is passed.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "240edf34",
+  "en": "{0} closed: stop hit (−1R)",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "7fc172e0",
+  "en": "{0} closed: target hit (+{1}R)",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "aee8f2aa",
+  "en": "The trade hit its stop at {0} at {1}. No new entry. Waiting for the next range.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "61be4d0a",
+  "en": "The trade reached its target at {0} at {1}. No new entry. Waiting for the next range.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "c5a401c9",
+  "en": "{0} closed on time ({1}{2}R)",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "585e5976",
+  "en": "Neither the stop nor the target was hit, so it was closed at {0} at {1} ({2}).",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "3641c229",
+  "en": "{0}: broke {1} the range",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "fb286e26",
+  "en": "A 15-minute candle closed outside the range at {0}, in the direction of the trend. The stop is the middle of the range and the target is {1} times as far. It is held until {2} and closed then if neither is hit.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "9e87d436",
+  "en": "No breakout today",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "83cef22c",
+  "en": "The entry window closed at {0} ({1}). Waiting for the next range.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "c207cbb7",
+  "en": "Daily trend is unclear",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "712d0f77",
+  "en": "The 4-hour trend disagrees with the daily",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "9bd53346",
+  "en": "This rule takes a breakout only when the daily and 4-hour trends point the same way, and only in that direction. Until they agree there is no entry.",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "7842f293",
+  "en": "{0} possible: on a close {1} {2}",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "6e52c281",
+  "en": "If a 15-minute candle closes {0} {1}, the scenario is a {2} entry. A close out the other side is not taken. Stop at the middle of the range ({3}), target near {4}. The real levels are worked out from the closing price. The window runs until {5} ({6}).",
+  "file": "src/lib/setup/setups.ts"
+ },
+ {
+  "h": "f2aceb96",
+  "en": "Statistics, not financial advice.",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "7c5f3f63",
+  "en": "🟢 <b>BUY</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "19913561",
+  "en": "🔴 <b>SELL</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "85392af7",
+  "en": "Entry: around <b>{0}</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "facfcf3c",
+  "en": "0.01 lot: risk {0}, reward {1}{2}",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "c6c5e79b",
+  "en": "Historical record: not enough data ({0} trades)",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "92330cce",
+  "en": "Historical record: {0} trades, {1}% profitable, average {2}",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "69b703b0",
+  "en": "Check the current price on MT5 before entering.",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "f0510963",
+  "en": "🕒 {0} ({1}) candle, {2} minutes ago. Check the price on MT5 before entering.",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "353b1b84",
+  "en": "⚠️ <b>Important release in {0} minutes</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "12eac2ef",
+  "en": "Setups do not enter from 30 minutes before to 60 minutes after a release. Price can jump and spreads can widen.",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "3253bc8d",
+  "en": "✅ <b>Target hit</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "5e8cea27",
+  "en": "❌ <b>Stop hit</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "2d9c321b",
+  "en": "⏱ <b>Closed on time</b>",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "9fcdbcb9",
+  "en": "See the signal history",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "17704ede",
+  "en": "Result: <b>{0}{1}R</b> (0.01 lot: {2}{3})",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "ecde3c88",
+  "en": "Entry {0}{1}{2}",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "259f451d",
+  "en": "Target hit",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "66e9bca0",
+  "en": "Stop hit",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "e57f1bc7",
+  "en": "Closed on time",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "cac3d793",
+  "en": "entry",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "91b67d63",
+  "en": "new signal",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "fc4434b7",
+  "en": "Expected: {0}",
+  "file": "src/lib/signals.ts"
+ },
+ {
+  "h": "7501245e",
+  "en": "Last {0} signals",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "1b17cc3d",
+  "en": "if neither the stop nor the target is hit, it closes at {0}",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "19378952",
+  "en": "if neither is hit, it is held until {0} the next day (closed at {1} on a Friday)",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "a1e232aa",
+  "en": "{0}: range {1}–{2}, entries {3}–{4} ({5}), target {6}R, {7}.",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "04da45b0",
+  "en": "Range {0}–{1}",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "ca68015f",
+  "en": "MT5 tester research, {0} → {1} (≈{2} years)",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "324247a4",
+  "en": "Research on the Asian setup in the MT5 Strategy Tester over {0} history from {1} (checked {2}): {3} trades, {4}% won, Profit Factor {5}.{6} Past results do not guarantee the future; start on a demo account.",
+  "file": "src/lib/siteCopy.ts"
+ },
+ {
+  "h": "f18f7daf",
+  "en": "To link, send the email address you registered with on XAU Analytics here. Then sign in to the site and press “Yes, it's mine” on the request that appears. (Or press “Link Telegram” on the site's Settings page.)",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "03080996",
+  "en": "Open the Setup page",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "7cf1b054",
+  "en": "<b>Commands</b>",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "a769af2b",
+  "en": "/setup — the setup now: checks, entry/stop/target, chart",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "256e4478",
+  "en": "/history — the last 10 signals and how they ended",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "05107111",
+  "en": "/sample — a sample signal (what the picture and message look like)",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "171c31b2",
+  "en": "/news — important releases in the next 3 days",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "1349f856",
+  "en": "/status — current bias and the next important release",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "bdce8cd5",
+  "en": "/stop — pause signals",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "674fb05d",
+  "en": "/resume — turn signals back on",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "e44b1812",
+  "en": "/reset — a link to set a new site password if you forgot it",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "caa40262",
+  "en": "Signals are paused right now.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "be91d8f8",
+  "en": "A signal arrives here each time a setup becomes active.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "3a23e6dc",
+  "en": "Your plan has ended. Renew it on the site’s “Plans” page.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "4b8267a6",
+  "en": "You have no active plan. Choose one on the site’s “Plans” page.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "6d1a2c07",
+  "en": "<b>XAUUSD · right now</b>",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "ce0f99cf",
+  "en": "Bias: <b>{0}</b> ({1}{2}, buyers {3}%)",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "746d95ad",
+  "en": "Bias: no data yet",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "49a76576",
+  "en": "Price: {0} ({1} {2} candle{3})",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "1c8b43b5",
+  "en": "Next important release: <b>{0}</b> ({1}) · {2}",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "91afa349",
+  "en": "Next important release: none in the calendar",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "839e4bfb",
+  "en": "Signals: paused (/resume)",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "691e1955",
+  "en": "Signals: on (/stop)",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "9857f9e3",
+  "en": "Linked, {0}. Each time a setup becomes active, a message with the entry, stop and target arrives here.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "c4dbdd2a",
+  "en": "These are signals based on historical statistics, not financial advice.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "e5fcb347",
+  "en": "This link has expired (it lasts 30 minutes). Press “Link Telegram” on the site again.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "c9f74256",
+  "en": "Your access runs until {0}.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "9dca40fc",
+  "en": "Your access has expired: signals start once it is renewed.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "1efb8b8f",
+  "en": "Too many requests. Try again in an hour.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "e2023f50",
+  "en": "The site address is not set, so no link can be sent. Contact the admin.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "e57b56e5",
+  "en": "A link to set a new site password (valid for 30 minutes, works once):",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "ca2c98bc",
+  "en": "If you did not ask for this, ignore it, and do not forward it to anyone.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "cb60bdca",
+  "en": "Signals paused. Telegram stays linked. Send /resume to turn them back on.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "5dce00aa",
+  "en": "Signals are back on.",
+  "file": "src/lib/telegram.ts"
+ },
+ {
+  "h": "f695ecb1",
+  "en": "No setup right now.",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "c56e0440",
+  "en": "Watching",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "aaee4617",
+  "en": "NOW",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "4308e539",
+  "en": "Waiting for: {0}",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "5a4da4fb",
+  "en": "Entry {0} · Stop {1} · Target {2}",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "500446e6",
+  "en": "<b>Other setups</b>",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "6cc3ff49",
+  "en": "Record: {0} trades, {1}% profitable, average {2}{3}R",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "2f9de130",
+  "en": "There are no prices to build a sample from yet. Please try again a little later.",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "19a49da8",
+  "en": "Example: a made-up 1:2 trade at the current price",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "5060fb49",
+  "en": "SAMPLE SIGNAL",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "d2e67959",
+  "en": "No signals yet.",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "1715e508",
+  "en": "<b>Recent signals</b>",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "1d477bb3",
+  "en": "Won {0} · lost {1}{2} · total <b>{3}{4}R</b>{5}",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "d35ec4c9",
+  "en": "open",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "5ade6fc5",
+  "en": "No important releases in the next 3 days.",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "f2d1d8fd",
+  "en": "<b>Important releases · next 3 days</b> ({0})",
+  "file": "src/lib/telegramCommands.ts"
+ },
+ {
+  "h": "89dc6f17",
+  "en": "Asia",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "e5087f3f",
+  "en": "London",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "7f3a0208",
+  "en": "New York",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "5bdb3ef4",
+  "en": "Off-hours",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "3a56e759",
+  "en": "Monday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "fe18fbb0",
+  "en": "Tuesday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "e8239b77",
+  "en": "Wednesday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "99eb4fd7",
+  "en": "Thursday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "bc09cf52",
+  "en": "Friday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "0e68b936",
+  "en": "Saturday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "d0f065f9",
+  "en": "Sunday",
+  "file": "src/lib/time.ts"
+ },
+ {
+  "h": "32bd22b8",
+  "en": "Invalid email address",
+  "file": "src/lib/users.ts"
+ },
+ {
+  "h": "615ef541",
+  "en": "This email is already registered",
+  "file": "src/lib/users.ts"
+ },
+ {
+  "h": "e4fa0814",
+  "en": "⚠️ <b>Prices are late</b>\nThe last 15-minute candle closed {0}. No signals can fire until prices return. Check the Twelve Data key and limits.",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "0d9e71ae",
+  "en": "✅ Prices are arriving again.",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "648e2a2f",
+  "en": "📊 <b>Weekly report · XAUUSD</b>",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "b7186ad1",
+  "en": "No signals last week (the system stays out on days its conditions are not met).",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "17d2f0ae",
+  "en": "Last week: {0} signals · won {1} · lost {2}{3} · total <b>{4}</b>",
+  "file": "src/lib/watch.ts"
+ },
+ {
+  "h": "37a376b8",
+  "en": "Since the start: {0} trades · {1}% profitable · total <b>{2}</b>",
+  "file": "src/lib/watch.ts"
+ }
+]

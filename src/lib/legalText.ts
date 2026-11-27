@@ -7,7 +7,11 @@ import type { Locale } from "./i18n";
  * A draft: a lawyer should read it before it is relied on.
  */
 export type Section = { h: string; p: string[] };
-type Doc = Record<Locale, { title: string; lede: string; sections: Section[] }>;
+export type LegalDocText = { title: string; lede: string; sections: Section[] };
+type Doc = Record<"mn" | "en", LegalDocText>;
+
+/** The legal texts exist in Mongolian and English only; other readers get the English one (the page says so). */
+export const legalFor = (doc: Doc, locale: Locale): LegalDocText => (locale === "mn" ? doc.mn : doc.en);
 
 export const PRIVACY: Doc = {
   mn: {

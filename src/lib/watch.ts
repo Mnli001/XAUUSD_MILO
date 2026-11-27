@@ -1,3 +1,4 @@
+import "./i18n.server";
 import { and, asc, desc, eq, gte, isNotNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { hasAccess } from "./access";

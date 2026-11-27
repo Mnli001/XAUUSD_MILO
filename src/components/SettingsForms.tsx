@@ -3,6 +3,7 @@ import { useActionState, useRef } from "react";
 import { changeNameAction, changePasswordAction, type AdminState } from "@/lib/actions/admin";
 import { deleteAccountAction, savePrefsAction, saveSignalPrefsAction, type SettingsState } from "@/lib/actions/settings";
 import type { Prefs } from "@/lib/prefs";
+import { LOCALES, LOCALE_NAMES } from "@/lib/i18n";
 import { TIME_ZONES } from "@/lib/prefs";
 import { zoneShiftMs } from "@/lib/time";
 import { useT, useViewer } from "./PrefsProvider";
@@ -65,7 +66,12 @@ export function AppearanceForm({ prefs }: { prefs: Prefs }) {
   return (
     <form action={action} className="card space-y-4">
       <h2 className="card-title">{t("Харагдац", "Appearance")}</h2>
-      <Choice name="locale" label={t("Хэл", "Language")} value={prefs.locale} options={[["mn", "Монгол"], ["en", "English"]]} /* i18n-ok: each language under its own name */ />
+      <div>
+        <label className="label" htmlFor="locale">{t("Хэл", "Language")}</label>
+        <select className="input max-w-xs" id="locale" name="locale" defaultValue={prefs.locale} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
+          {LOCALES.map((l) => <option key={l} value={l} lang={l}>{LOCALE_NAMES[l]}</option>)}
+        </select>
+      </div>
       <Choice name="theme" label={t("Өнгөний горим", "Theme")} value={prefs.theme} options={[["dark", t("Бараан", "Dark")], ["light", t("Цайвар", "Light")], ["system", t("Төхөөрөмжийг дагах", "Follow device")]]} />
       <Feedback state={state} />
       <noscript><button className="btn">{t("Хадгалах", "Save")}</button></noscript>

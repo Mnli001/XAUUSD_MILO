@@ -17,6 +17,7 @@ import { botSummary, tradeSummary, latestPaidPlan, planSummary } from "@/lib/das
 import { botTrades } from "@/lib/botPerformance";
 import { getSetups } from "@/lib/setup/build";
 import { orderSetups } from "@/lib/setup/order";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -58,13 +59,18 @@ export default async function TodayPage() {
     <div className="reveal space-y-4 sm:space-y-5">
       {!paid && <PlansCard t={t} choose={choosePlanAction} payOn={payOn} contact={contact} compact />}
 
-      <header className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="min-w-0 xl:shrink-0">
+      {/* Greeting on the left, the language button in the top-right corner; the chips sit under the greeting on
+          narrower screens and between the two on the widest, where every language's greeting still has room. */}
+      <header className="relative z-30 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 2xl:grid-cols-[minmax(0,1fr)_auto_auto] 2xl:items-center">
+        <div className="min-w-0">
           <h1 className="sr-only">{t("Өнөөдөр", "Today")}</h1>
           <p className="font-display text-[26px] leading-tight text-zinc-50 sm:text-[30px]">{user.name ? t(`Сайн уу, ${user.name}`, `Hello, ${user.name}`) : t("Өнөөдөр", "Today")}</p>
           <p className="mt-1 text-sm text-zinc-500 tabular-nums">{weekdayName(zoneWeekday(now, v.timeZone), t)} · {v.date(now)} · {v.time(now)} {v.zone}</p>
         </div>
-        <AccountChips v={v} plan={planSummary(user, paidPlan, now)} trades={tradeSummary(closed, bot.positions, now)} bot={paid ? bot : null} />
+        <div className="col-start-2 row-start-1 2xl:col-start-3"><LanguageSwitch locale={v.locale} iconOnly /></div>
+        <div className="col-span-2 min-w-0 2xl:col-span-1 2xl:col-start-2 2xl:row-start-1">
+          <AccountChips v={v} plan={planSummary(user, paidPlan, now)} trades={tradeSummary(closed, bot.positions, now)} bot={paid ? bot : null} />
+        </div>
       </header>
 
       {/* Phones: price across, then direction and the next release as a pair. Wide screens: the three side by side. */}

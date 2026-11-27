@@ -18,6 +18,7 @@ import { InviteCard } from "@/components/InviteCard";
 import { Pnl } from "@/components/Timetable";
 import { Icon } from "@/components/TodayIcons";
 import type { Viewer } from "@/lib/viewer";
+import { LOCALE_NAMES } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
@@ -72,7 +73,7 @@ export default async function ProfilePage() {
   const used = plan.kind === "active" && planDays ? Math.min(100, Math.max(4, Math.round((plan.daysLeft / planDays) * 100))) : null;
   const memberDays = Math.max(1, Math.floor((now.getTime() - user.createdAt.getTime()) / DAY));
   const access = user.role === "ADMIN" ? t("хугацаагүй (админ)", "no expiry (admin)") : user.accessUntil ? t(`${v.dateTime(user.accessUntil)} хүртэл (${v.zone})`, `until ${v.dateTime(user.accessUntil)} (${v.zone})`) : "—";
-  const langName = v.locale === "en" ? "English" : "Монгол"; // i18n-ok: each language is named in itself
+  const langName = LOCALE_NAMES[v.locale];
   const statusWord = (s: string, expired: boolean) => (s === "PAID" ? t("Төлөгдсөн", "Paid") : s === "EXPIRED" || expired ? t("Хугацаа дууссан", "Expired") : t("Хүлээгдэж байна", "Awaiting payment"));
 
   return (
