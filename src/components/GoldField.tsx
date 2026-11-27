@@ -49,18 +49,23 @@ const MAX_PIXELS = 230_000; // the buffer's budget at full quality
 const MIN_PIXELS = 60_000;
 const FRAME_MS = 1000 / 30;
 
-/** Phones, low-memory devices and data saver get the still gradient: the field is decoration, not worth the battery. */
-function lowPower(): boolean {
-  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
-  return window.innerWidth < 640 || (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) || nav.connection?.saveData === true;
+/** Only data saver gets the still gradient. Phones and small devices still move, on a smaller buffer. */
+function saveData(): boolean {
+  const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+  return nav.connection?.saveData === true;
+}
+/** A lighter buffer on phones and low-memory devices; the loop halves it further if frames run long. */
+function startBudget(): number {
+  const nav = navigator as Navigator & { deviceMemory?: number };
+  return window.innerWidth < 640 || (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) ? MIN_PIXELS * 2 : MAX_PIXELS;
 }
 
-/** Decorative; one still frame under reduced motion; a still gradient when WebGL is unavailable or the device is small. */
+/** Decorative; slowed right down under reduced motion; a still gradient only with data saver or without WebGL. */
 export function GoldField({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
-    if (!canvas || lowPower()) return;
+    if (!canvas || saveData()) return;
     const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power", preserveDrawingBuffer: false });
     if (!gl) return;
     const sh = (type: number, src: string) => { const s = gl.createShader(type)!; gl.shaderSource(s, src); gl.compileShader(s); return s; };
@@ -77,7 +82,7 @@ export function GoldField({ className = "" }: { className?: string }) {
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
     const ur = gl.getUniformLocation(prog, "r"), ut = gl.getUniformLocation(prog, "t"), um = gl.getUniformLocation(prog, "m");
 
-    let budget = MAX_PIXELS;
+    let budget = Math.min(MAX_PIXELS, startBudget());
     const size = () => {
       const w = canvas.clientWidth || 1, hgt = canvas.clientHeight || 1;
       const k = Math.min(1, Math.sqrt(budget / (w * hgt)));
@@ -95,21 +100,16 @@ export function GoldField({ className = "" }: { className?: string }) {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0, onScreen = true, last = 0, clock = 40, slow = 0, measured = 0;
     const draw = () => { gl.uniform2f(ur, canvas.width, canvas.height); gl.uniform1f(ut, clock); gl.uniform2f(um, at.x, at.y); gl.drawArrays(gl.TRIANGLES, 0, 3); };
-    if (still) {
-      // Reduced motion: one frame, redrawn only when the size changes. No pointer light, no loop.
-      window.removeEventListener("pointermove", onMove);
-      const redraw = () => { size(); draw(); };
-      draw();
-      window.addEventListener("resize", redraw);
-      return () => window.removeEventListener("resize", redraw);
-    }
+    // Reduced motion: the field keeps drifting, but at a fifth of the speed and without following the pointer.
+    const speed = still ? 0.2 : 1;
+    if (still) window.removeEventListener("pointermove", onMove);
     const loop = (ms: number) => {
       raf = requestAnimationFrame(loop);
       if (!onScreen || document.hidden) { last = 0; return; }
       if (last && ms - last < FRAME_MS - 2) return; // 30 frames a second is plenty for a slow field
       const dt = last ? Math.min(100, ms - last) : FRAME_MS;
       last = ms;
-      clock += dt / 1000;
+      clock += (dt / 1000) * speed;
       at.x += (aim.x - at.x) * 0.08; at.y += (aim.y - at.y) * 0.08;
       draw();
       // Long gaps between frames mean a weak GPU: halve the buffer until it keeps up (no gl.finish, which stalls the page).
