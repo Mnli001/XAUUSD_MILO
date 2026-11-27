@@ -11,6 +11,7 @@ import { checkPriceAlerts } from "./priceAlerts";
 import { checkConditionAlerts } from "./conditionAlerts";
 import { ingestMacro } from "./ingest/macro";
 import { hasMacroData } from "./drivers";
+import { fillActuals, recordMoves } from "./ingest/actuals";
 import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
@@ -54,6 +55,11 @@ async function run(job: Job, now: Date): Promise<void> {
   if (!priceKey) return;
   const result = await ingestPrices(new TwelveData(priceKey), { tfs: job === "fast" ? ["15min"] : ["1h", "4h", "1day"], now });
   if (!result.ok) console.warn(`[scheduler] ${job} failed: ${result.error}`);
+  if (job === "hourly") {
+    // release figures from FRED once they are out, and gold's move after each release
+    try { const n = await fillActuals(fredKey, now); if (n) console.log(`[scheduler] ${n} release figure(s) filled`); } catch (e) { console.error("[scheduler] actuals failed", e); }
+    try { await recordMoves(now); } catch (e) { console.error("[scheduler] release moves failed", e); }
+  }
   // fresh 15-minute candles may have completed a setup, and a release may be coming: tell the people who asked to be told
   if (job === "fast") {
     const { signals, news } = await runTelegramJobs(now, result.ok);

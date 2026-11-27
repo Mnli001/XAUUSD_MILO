@@ -1600,8 +1600,8 @@
   "file": "src/app/admin/events/page.tsx"
  },
  {
-  "h": "1afe20fa",
-  "en": "CPI, NFP, GDP, PCE, PPI and retail sales dates come in automatically from FRED. FOMC and the forecast/actual figures are entered here by hand.",
+  "h": "e86de7bd",
+  "en": "CPI, NFP, GDP, PCE, PPI and retail sales dates, and their actual and previous figures once released, come in automatically from FRED (checked hourly). Enter the forecast here by hand: the site then measures how gold moved when the actual came in above or below it.",
   "file": "src/app/admin/events/page.tsx"
  },
  {
@@ -3140,6 +3140,36 @@
   "file": "src/components/NewsList.tsx"
  },
  {
+  "h": "005c37e5",
+  "en": "Too few releases with a forecast to compare yet.",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "ae55a2a3",
+  "en": "rose {0}%",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "87169922",
+  "en": "Actual came in",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "a6de4729",
+  "en": "After 60 min",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "0917fc9f",
+  "en": "Above forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "9d612a47",
+  "en": "Below forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
   "h": "c8e431b1",
   "en": "No releases on record for this period. The calendar updates once a day.",
   "file": "src/components/NewsList.tsx"
@@ -3170,8 +3200,28 @@
   "file": "src/components/NewsList.tsx"
  },
  {
+  "h": "b562667f",
+  "en": "above forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "e38ef6a7",
+  "en": "below forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "cd39fd0e",
+  "en": "as forecast",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
   "h": "0e1b4a20",
   "en": "How gold moved after this kind of release before (last 12 months):",
+  "file": "src/components/NewsList.tsx"
+ },
+ {
+  "h": "89abb8c0",
+  "en": "When the actual came in above or below the forecast (last 3 years):",
   "file": "src/components/NewsList.tsx"
  },
  {

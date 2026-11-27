@@ -80,6 +80,9 @@ export const economicEvents = pgTable("economic_events", {
   actual: text("actual"),
   source: text("source").notNull(),
   alertedAt: ts("alerted_at"), // when the Telegram "news soon" heads-up went out, so it goes out once
+  actualPeriod: text("actual_period"), // the FRED observation date `actual` was read from, so the same month is never used twice
+  move15: doublePrecision("move15"), // gold's move ($) 15 and 60 minutes after the release
+  move60: doublePrecision("move60"),
 }, (t) => [uniqueIndex("event_type_time").on(t.type, t.time), index("event_time").on(t.time)]);
 
 export const eventReactions = pgTable("event_reactions", {

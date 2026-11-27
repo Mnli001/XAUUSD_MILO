@@ -169,6 +169,13 @@
       "when": 1795755137745,
       "tag": "0023_macro_series",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795755537217,
+      "tag": "0024_event_actuals",
+      "breakpoints": true
     }
   ]
 }
