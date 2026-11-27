@@ -72,11 +72,11 @@ test("the report adds the member's own bot week and the releases due in the week
   const pushed: { userId: string; title: string; body: string; url: string; tag?: string }[] = [];
   expect(await sendWeeklyReport(monday, send, async (userId, m) => { pushed.push({ userId, ...m }); return 1; })).toBe(3);
   const text = sent.find((s) => s.chat === "111")!.html;
-  for (const part of ["Таны бот", "2 арилжаа", "+$8.50", "Ирэх 7 хоногийн чухал мэдээ", "Ажил эрхлэлтийн тайлан (NFP)", "12-04 21:30"]) expect(text).toContain(part);
+  for (const part of ["Таны bot", "2 арилжаа", "+$8.50", "Ирэх 7 хоногийн чухал мэдээ", "Ажил эрхлэлтийн тайлан (NFP)", "12-04 21:30"]) expect(text).toContain(part);
   expect(text).not.toContain("Жижиглэн");
   expect(text).not.toContain("CPI");
   const admin = sent.find((s) => s.chat === "999")!.html;
-  expect(admin).not.toContain("Таны бот"); // no robot, no bot line
+  expect(admin).not.toContain("Таны bot"); // no robot, no bot line
   expect(pushed).toEqual([{ userId: p.id, title: "📊 7 хоногийн тайлан · XAUUSD", body: expect.stringContaining("1 дохио"), url: "/performance", tag: "weekly" }]);
   expect(pushed[0].body).toContain("NFP");
 });

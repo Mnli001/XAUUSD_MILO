@@ -104,7 +104,7 @@ export function TimeZoneForm({ timeZone, now }: { timeZone: string; now: Date })
   return (
     <form action={action} className="card space-y-3">
       <h2 className="card-title">{t("Цагийн бүс", "Time zone")}</h2>
-      <p className="text-sm leading-relaxed text-zinc-400">{t("Мэдээний цаг, цагийн магадлал, ботын арилжаа, дохионы цагийг энэ бүсээр харуулна. Дүрмийн цагууд ч мөн энэ бүс рүү хөрвөнө.", "News times, hourly odds, bot trades and signal times are shown in this zone. The hours in the rules are converted to it as well.")}</p>
+      <p className="text-sm leading-relaxed text-zinc-400">{t("Мэдээний цаг, цагийн магадлал, bot-ын арилжаа, дохионы цагийг энэ бүсээр харуулна. Дүрмийн цагууд ч мөн энэ бүс рүү хөрвөнө.", "News times, hourly odds, bot trades and signal times are shown in this zone. The hours in the rules are converted to it as well.")}</p>
       <div>
         <label className="label" htmlFor="timeZone">{t("Цагийн бүс", "Time zone")}</label>
         <select ref={select} className="input" id="timeZone" name="timeZone" defaultValue={timeZone} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
@@ -150,7 +150,7 @@ export function DeleteAccountForm({ isAdmin, activeUntil = null }: { isAdmin: bo
   return (
     <section className="card border-red-500/50">
       <h2 className="card-title text-red-300">{t("Бүртгэл устгах", "Delete account")}</h2>
-      <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, ботын тохиргоо, token, ботын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
+      <p className="max-w-prose text-sm leading-relaxed text-zinc-300">{t("Бүртгэл, арилжааны журнал, bot-ын тохиргоо, token, bot-ын арилжааны түүх бүрмөсөн устана. Буцааж сэргээх боломжгүй. MT5 дээрх данс, арилжаанд хүрэхгүй.", "Your account, trade journal, bot settings, token and the bot's trade history are removed for good. It cannot be undone. Your MT5 account and its trades are not touched.")}</p>
       {isAdmin ? (
         <p className="mt-3 text-sm text-zinc-500">{t("Админ бүртгэлийг устгах боломжгүй.", "An admin account cannot be deleted.")}</p>
       ) : activeUntil ? (

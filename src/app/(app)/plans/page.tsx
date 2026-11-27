@@ -32,7 +32,7 @@ export default async function PlansPage({ searchParams }: { searchParams: Promis
     <div className="space-y-5 sm:space-y-6">
       <div>
         <h1 className="page-title">{t("Багц", "Plans")}</h1>
-        <p className="page-lede">{t("Багц авмагц өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот бүгд нээгдэнэ. Төлбөр баталгаажмагц шууд идэвхжинэ.", "A plan opens the odds, the leading side, setup entries and the bot. It turns on the moment the payment is confirmed.")}</p>
+        <p className="page-lede">{t("Багц авмагц өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, bot бүгд нээгдэнэ. Төлбөр баталгаажмагц шууд идэвхжинэ.", "A plan opens the odds, the leading side, setup entries and the bot. It turns on the moment the payment is confirmed.")}</p>
       </div>
       {pay === "error" && <p role="alert" className="card border-red-400/40 text-sm text-red-300">{t("Төлбөрийн системтэй холбогдож чадсангүй. Түр хүлээгээд дахин оролдоно уу.", "Could not reach the payment system. Please wait a moment and try again.")}</p>}
       {pay === "off" && <p role="alert" className="card text-sm text-zinc-300">{t("Онлайн төлбөр хараахан тохируулагдаагүй байна.", "Online payments are not set up yet.")}</p>}

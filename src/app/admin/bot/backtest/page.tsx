@@ -14,7 +14,7 @@ const VERDICT_TEXT: Record<Tone, string> = { on: "text-emerald-400", off: "text-
 
 const verdictOf = (t: T): Record<Verdict, { title: string; body: string; cls: Tone }> => ({
   INSUFFICIENT: { title: t("Дүгнэхэд эрт", "Too early to judge"), body: t("Арилжааны тоо 30-аас цөөн тул статистик найдваргүй. Илүү урт түүх татах эсвэл шүүлтүүрийг сулруулж үзнэ.", "Fewer than 30 trades, so the statistics are unreliable. Load a longer history or loosen the filters."), cls: "off" },
-  LOSING: { title: t("Алдагдалтай", "Losing"), body: t("Энэ тохиргоо өнгөрсөн хугацаанд мөнгө алдсан. Ийм дүрмээр бот ажиллуулж болохгүй.", "This configuration lost money in the past. Do not run a bot on these rules."), cls: "down" },
+  LOSING: { title: t("Алдагдалтай", "Losing"), body: t("Энэ тохиргоо өнгөрсөн хугацаанд мөнгө алдсан. Ийм дүрмээр bot ажиллуулж болохгүй.", "This configuration lost money in the past. Do not run a bot on these rules."), cls: "down" },
   MARGINAL: { title: t("Зааг дээр", "Borderline"), body: t("Ашиг бага эсвэл уналт их. Бодит зардал (slippage, swap) нэмэгдэхэд алдагдал руу орж магадгүй.", "Small profit or deep drawdown. Once real costs (slippage, swap) are added it may turn into a loss."), cls: "warn" },
   PROMISING: { title: t("Боломжийн", "Reasonable"), body: t("Өнгөрсөн дата дээр ашигтай гарсан. Энэ бол баталгаа биш: demo данс дээр бодит цагт шалгах дараагийн алхмын үндэслэл л юм.", "Profitable on past data. That is not a guarantee: it only justifies the next step, checking it in real time on a demo account."), cls: "on" },
 });
@@ -41,8 +41,8 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
   return (
     <div className="space-y-4 sm:space-y-5">
       <div>
-        <BackLink href="/admin/bot">{t("Бот", "Bot")}</BackLink>
-        <h1 className="page-title">{t("Бот — backtest", "Bot — backtest")}</h1>
+        <BackLink href="/admin/bot">{t("Bot", "Bot")}</BackLink>
+        <h1 className="page-title">{t("Bot — backtest", "Bot — backtest")}</h1>
         <p className="page-lede">{t("Арилжааны дүрмийг баазад байгаа түүхэн дата дээр ажиллуулж шалгана. Жинхэнэ болон demo захиалга өгөхгүй.", "Runs the trading rules over the historical data in the database. No live or demo orders are placed.")} <a href="/admin/bot/paper" className="font-medium whitespace-nowrap text-zinc-100 underline decoration-amber-400 decoration-2">{t("Цаасан арилжаа →", "Paper trading →")}</a></p>
       </div>
 

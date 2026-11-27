@@ -129,7 +129,7 @@ export function JournalPanel({ rows, s, v, filter, logins }: { rows: JRow[]; s: 
             {t("MT5 дээр ажиллаж буй XauBot robot (v3.90 ба түүнээс шинэ) таны дансны хаасан бүх trade-ийг — гараар хийсэн ч, өөр robot-ийнх ч — сүүлийн 90 өдрөөс эхлэн энд автоматаар илгээнэ. Robot-оо шинэчлээд холбоно уу.",
               "The XauBot robot on MT5 (v3.90 or newer) sends every closed trade on your account here on its own — by hand or by any other robot — starting 90 days back. Update the robot and connect it.")}
           </p>
-          <Link href="/bot" className="btn mt-4">{t("Бот руу очих", "Go to the bot")}</Link>
+          <Link href="/bot" className="btn mt-4">{t("Bot руу очих", "Go to the bot")}</Link>
         </section>
       </div>
     );

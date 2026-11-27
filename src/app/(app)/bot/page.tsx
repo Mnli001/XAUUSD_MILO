@@ -18,7 +18,7 @@ import { PRESETS, getRiskRule, riskReading } from "@/lib/risk";
 export const dynamic = "force-dynamic";
 export async function generateMetadata() {
   const t = await getT();
-  return { title: t("Бот", "Bot") };
+  return { title: t("Bot", "Bot") };
 }
 
 /** The Setup signals' text: the same rules and names as the Setup page, and the one dated research record. */
@@ -51,8 +51,8 @@ export default async function BotPage({ searchParams }: { searchParams: Promise<
     <div className="reveal space-y-4 sm:space-y-5">
       <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1 className="font-display text-[28px] leading-tight text-zinc-50 sm:text-[32px]">{t("Бот", "Bot")}</h1>
-          <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Робот сайтын Setup дохиог таны MT5 дээр автоматаар арилжаална: Telegram дохиотой яг адил орох үнэ, stop, target.", "The robot trades the site's Setup signals automatically on your own MT5: the same entries, stops and targets as the Telegram signals.")}</p>
+          <h1 className="font-display text-[28px] leading-tight text-zinc-50 sm:text-[32px]">{t("Bot", "Bot")}</h1>
+          <p className="mt-1 max-w-prose text-sm text-zinc-400">{t("Robot site-ын Setup дохиог таны MT5 дээр автоматаар арилжаална: Telegram дохиотой яг адил орох үнэ, stop, target.", "The robot trades the site's Setup signals automatically on your own MT5: the same entries, stops and targets as the Telegram signals.")}</p>
         </div>
         <Link href="/bot/history" className="btn-ghost ml-auto">{t("Дохионы түүх", "Signal history")}</Link>
       </header>

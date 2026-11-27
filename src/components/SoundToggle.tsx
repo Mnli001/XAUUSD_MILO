@@ -12,13 +12,13 @@ export function SoundToggle() {
   const [on, setOn] = useState<boolean | null>(null);
   const enabled = on ?? stored;
   const flip = () => { const next = !enabled; setSoundEnabled(next); setOn(next); if (next) { unlockSound(); playCue("signal"); } };
-  const cues: [Cue, string][] = [["signal", t("Setup идэвхжсэн", "Setup active")], ["news", t("Мэдээ ойртсон", "Release near")], ["trade", t("Ботын арилжаа", "Bot trade")]];
+  const cues: [Cue, string][] = [["signal", t("Setup идэвхжсэн", "Setup active")], ["news", t("Мэдээ ойртсон", "Release near")], ["trade", t("Bot-ын арилжаа", "Bot trade")]];
   return (
     <section className="card space-y-4" aria-labelledby="sound-h">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 id="sound-h" className="text-[15px] font-semibold text-zinc-100">{t("Дохионы дуу", "Alert sounds")}</h2>
-          <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Setup идэвхжих, чухал мэдээ гарахаас 5 минутын өмнө болон гарах үед, бот арилжаа нээх, хаахад сайт нээлттэй байвал дуу гарна. Энэ хөтөч дээр л хадгалагдана.", "While the site is open, a sound plays when a setup turns active, 5 minutes before and when a key release comes out, and when the robot opens or closes a trade. Saved in this browser only.")}</p>
+          <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Setup идэвхжих, чухал мэдээ гарахаас 5 минутын өмнө болон гарах үед, bot арилжаа нээх, хаахад site нээлттэй байвал дуу гарна. Энэ хөтөч дээр л хадгалагдана.", "While the site is open, a sound plays when a setup turns active, 5 minutes before and when a key release comes out, and when the robot opens or closes a trade. Saved in this browser only.")}</p>
         </div>
         <button type="button" role="switch" aria-checked={enabled} aria-labelledby="sound-h" onClick={flip}
           className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors ${enabled ? "border-amber-400 bg-amber-400" : "border-zinc-700 bg-zinc-800"}`}>

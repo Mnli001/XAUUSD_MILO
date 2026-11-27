@@ -11,7 +11,7 @@ import { MN_VIEWER } from "@/lib/viewer";
 test("the privacy policy names the operator, the contact and the version, with no placeholder left", () => {
   render(<LegalDoc v={MN_VIEWER} doc={PRIVACY.mn} fill={{ name: "Мөнх-Очир", contact: "t.me/admin", version: "2026-11-26" }} />);
   expect(screen.getByRole("heading", { level: 1, name: "Нууцлалын бодлого" })).toBeInTheDocument();
-  expect(screen.getByText(/Энэ сайтыг Мөнх-Очир ажиллуулдаг/)).toBeInTheDocument();
+  expect(screen.getByText(/Энэ site-ыг Мөнх-Очир ажиллуулдаг/)).toBeInTheDocument();
   expect(screen.getByText(/Хувилбар: 2026-11-26/)).toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/\{\w+\}/);
 });

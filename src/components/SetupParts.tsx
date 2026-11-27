@@ -241,7 +241,7 @@ export function SetupPanel({ s, candles, v, best, records }: { s: Setup; candles
       <div className={`grid gap-3 sm:grid-cols-2 ${records.length > 2 ? "xl:grid-cols-3" : ""}`}>
         {records.map((r) => <RecordBox key={r.title} title={r.title} h={r.h} t={t} note={r.note} />)}
       </div>
-      <RuleDetails s={s} t={t} extra={<p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("MT5 робот: Бот хуудсанд «Setup дохио» хэрэгслийг сонговол энэ болон бусад 2 setup-ийг яг энэ дүрмээр арилжаална (сешн бүрт нэг, нэг дор 3 хүртэл).", "MT5 robot: choose the “Setup signals” tool on the Bot page and it trades this and the other two setups by exactly these rules (one per session, up to three at once).")}</p>} />
+      <RuleDetails s={s} t={t} extra={<p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("MT5 robot: Bot хуудсанд «Setup дохио» хэрэгслийг сонговол энэ болон бусад 2 setup-ийг яг энэ дүрмээр арилжаална (сешн бүрт нэг, нэг дор 3 хүртэл).", "MT5 robot: choose the “Setup signals” tool on the Bot page and it trades this and the other two setups by exactly these rules (one per session, up to three at once).")}</p>} />
     </section>
   );
 }

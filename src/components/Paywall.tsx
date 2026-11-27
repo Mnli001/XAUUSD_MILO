@@ -39,7 +39,7 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
       <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">
         {until
           ? t(`Таны эрх ${until} хүртэл. Одоо сунгавал үлдсэн хоног тань хасагдахгүй, дээр нь нэмэгдэнэ.`, `Your access runs until ${until}. Renew now and the days left are kept, the new ones added on top.`)
-          : t("Өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, бот — төлмөгц шууд нээгдэнэ.", "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.")}
+          : t("Өсөх/унах магадлал, давамгай тал, setup-ийн орох цэг, bot — төлмөгц шууд нээгдэнэ.", "Rise/fall odds, the leading side, setup entries and the bot open the moment you pay.")}
       </p>
       <ul className={`mt-4 grid gap-3 ${compact ? "sm:grid-cols-3" : "md:grid-cols-3"}`}>
         {PLAN_IDS.map((id) => {
@@ -70,7 +70,7 @@ export function PlansCard({ t, choose, payOn, contact, until, compact = false }:
           {contact && <p className="mt-1 font-semibold text-amber-200">{contact.url ? <a href={contact.url} target="_blank" rel="noopener noreferrer" className="underline decoration-amber-400/50 underline-offset-4">{contact.text}</a> : contact.text}</p>}
         </div>
       )}
-      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t("Төлбөр Wire-аар: QPay, банкны апп, карт, Toki. Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.", "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.")}</p>
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500">{t("Төлбөр Wire-аар: QPay, банкны app, карт, Toki. Түүхэн статистикт суурилсан мэдээлэл, санхүүгийн зөвлөгөө биш.", "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.")}</p>
     </section>
   );
 }

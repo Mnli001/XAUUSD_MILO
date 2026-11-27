@@ -36,15 +36,15 @@ export default async function SettingsPage() {
         <AppearanceForm prefs={prefsOf(user)} />
         <TimeZoneForm timeZone={v.timeZone} now={new Date()} />
         <section className="card" aria-labelledby="profile-h">
-          <h2 id="profile-h" className="card-title">{t("Профайл", "Profile")}</h2>
-          <p className="mt-2 text-sm text-zinc-300">{t("Нэр, профайл зураг, багц, төлбөр, холболтууд Профайл хуудсанд.", "Your name, picture, plan, payments and connections are on the Profile page.")}</p>
+          <h2 id="profile-h" className="card-title">{t("Profile", "Profile")}</h2>
+          <p className="mt-2 text-sm text-zinc-300">{t("Нэр, profile зураг, багц, төлбөр, холболтууд Profile хуудсанд.", "Your name, picture, plan, payments and connections are on the Profile page.")}</p>
           <p className="mt-1 text-xs text-zinc-500">{t("Эрхийн хугацаа", "Access")}: {access}</p>
-          <Link href="/profile" className="btn-ghost mt-4">{t("Профайл нээх", "Open profile")}</Link>
+          <Link href="/profile" className="btn-ghost mt-4">{t("Profile нээх", "Open profile")}</Link>
         </section>
         {plan && (
           <section className="card" aria-labelledby="plan-h">
             <h2 id="plan-h" className="card-title">{t("Багц", "Plan")}</h2>
-            <p className="mt-2 text-sm text-zinc-300">{plan === "active" ? t("Таны багц идэвхтэй. Сунгавал үлдсэн хоног хасагдахгүй.", "Your plan is active. Renewing keeps the days left.") : t("Багцгүй үед өсөх/унах магадлал, setup, бот нууцлагдсан харагдана.", "Without a plan the odds, setups and the bot stay hidden.")}</p>
+            <p className="mt-2 text-sm text-zinc-300">{plan === "active" ? t("Таны багц идэвхтэй. Сунгавал үлдсэн хоног хасагдахгүй.", "Your plan is active. Renewing keeps the days left.") : t("Багцгүй үед өсөх/унах магадлал, setup, bot нууцлагдсан харагдана.", "Without a plan the odds, setups and the bot stay hidden.")}</p>
             <Link href="/plans" className="btn mt-4">{plan === "active" ? t("Багц сунгах", "Renew plan") : t("Багц сонгох", "Choose a plan")}</Link>
           </section>
         )}

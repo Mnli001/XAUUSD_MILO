@@ -27,7 +27,7 @@ export default async function ResetPage({ params }: { params: Promise<{ token: s
             <ResetForm token={token} />
           </>
         ) : (
-          <p role="alert" className="text-sm text-zinc-300">{t("Холбоос хүчингүй эсвэл хугацаа нь (30 минут) дууссан байна. Telegram ботод /reset гэж дахин бичнэ үү, эсвэл админтай холбогдоно уу.", "This link is invalid or has expired (links last 30 minutes). Send /reset to the Telegram bot again, or contact the admin.")}</p>
+          <p role="alert" className="text-sm text-zinc-300">{t("Холбоос хүчингүй эсвэл хугацаа нь (30 минут) дууссан байна. Telegram bot-од /reset гэж дахин бичнэ үү, эсвэл админтай холбогдоно уу.", "This link is invalid or has expired (links last 30 minutes). Send /reset to the Telegram bot again, or contact the admin.")}</p>
         )}
         <p className="text-center text-sm text-zinc-400"><Link className="font-semibold text-zinc-50 underline decoration-amber-400 decoration-2" href="/login">{t("Нэвтрэх", "Sign in")}</Link></p>
       </div>

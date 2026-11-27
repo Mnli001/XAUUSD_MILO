@@ -106,19 +106,19 @@ export function PushCard({ publicKey, paid }: { publicKey: string; paid: boolean
           </>
         )}
       </div>
-      {status === "denied" && <p className="mt-3 max-w-prose text-sm leading-relaxed text-amber-200">{t("Энэ сайтын мэдэгдлийг хөтөч дээр хориглосон байна. Хаягийн мөрний түгжээ дүрс → Мэдэгдэл → Зөвшөөрөх болгоод хуудсыг шинэчилнэ үү.", "Notifications for this site are blocked in the browser. Use the lock icon in the address bar → Notifications → Allow, then reload the page.")}</p>}
+      {status === "denied" && <p className="mt-3 max-w-prose text-sm leading-relaxed text-amber-200">{t("Энэ site-ын мэдэгдлийг хөтөч дээр хориглосон байна. Хаягийн мөрний түгжээ дүрс → Мэдэгдэл → Зөвшөөрөх болгоод хуудсыг шинэчилнэ үү.", "Notifications for this site are blocked in the browser. Use the lock icon in the address bar → Notifications → Allow, then reload the page.")}</p>}
       {status === "unsupported" && <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Энэ хөтөч push мэдэгдэл дэмжихгүй байна. Chrome, Edge, Firefox эсвэл Safari-ийн шинэ хувилбарыг ашиглана уу.", "This browser does not support push notifications. Use a recent Chrome, Edge, Firefox or Safari.")}</p>}
-      {status === "ios-install" && <p className="mt-3 max-w-prose text-sm leading-relaxed text-amber-200">{t("iPhone дээр мэдэгдэл авахын тулд эхлээд доорх алхмаар апп болгон суулгана.", "On iPhone, install it as an app first (steps below) to get notifications.")}</p>}
+      {status === "ios-install" && <p className="mt-3 max-w-prose text-sm leading-relaxed text-amber-200">{t("iPhone дээр мэдэгдэл авахын тулд эхлээд доорх алхмаар app болгон суулгана.", "On iPhone, install it as an app first (steps below) to get notifications.")}</p>}
       {note.ok && <p role="status" className="mt-3 text-sm text-emerald-400">{note.ok}</p>}
       {note.error && <p role="alert" className="mt-3 text-sm text-red-300">{note.error}</p>}
 
       <div className="mt-5 border-t border-zinc-800 pt-4">
-        <h3 className="text-sm font-semibold text-zinc-200">{t("Апп болгон суулгах", "Install as an app")}</h3>
+        <h3 className="text-sm font-semibold text-zinc-200">{t("App болгон суулгах", "Install as an app")}</h3>
         {installed ? (
-          <p className="mt-1 text-sm text-zinc-400">{t("Апп болгон суулгасан байна.", "Installed as an app.")}</p>
+          <p className="mt-1 text-sm text-zinc-400">{t("App болгон суулгасан байна.", "Installed as an app.")}</p>
         ) : prompt ? (
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <p className="max-w-prose text-sm text-zinc-400">{t("Нүүр дэлгэцэнд дүрс нь гарч, тусдаа цонхонд апп шиг нээгдэнэ.", "It gets an icon on your home screen and opens in its own window like an app.")}</p>
+            <p className="max-w-prose text-sm text-zinc-400">{t("Нүүр дэлгэцэнд дүрс нь гарч, тусдаа цонхонд app шиг нээгдэнэ.", "It gets an icon on your home screen and opens in its own window like an app.")}</p>
             <button type="button" className="btn-ghost" onClick={install}>{t("Суулгах", "Install")}</button>
           </div>
         ) : ios ? (
@@ -129,7 +129,7 @@ export function PushCard({ publicKey, paid }: { publicKey: string; paid: boolean
             <li>{t("Нүүр дэлгэцээс XAU-г нээгээд энд мэдэгдлээ асаана.", "Open XAU from the home screen and turn notifications on here.")}</li>
           </ol>
         ) : (
-          <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Хөтчийн цэснээс “Апп суулгах” эсвэл “Нүүр дэлгэцэнд нэмэх”-ийг сонгоно.", "Choose “Install app” or “Add to Home screen” from the browser menu.")}</p>
+          <p className="mt-1 max-w-prose text-sm leading-relaxed text-zinc-400">{t("Хөтчийн цэснээс “App суулгах” эсвэл “Нүүр дэлгэцэнд нэмэх”-ийг сонгоно.", "Choose “Install app” or “Add to Home screen” from the browser menu.")}</p>
         )}
       </div>
     </section>

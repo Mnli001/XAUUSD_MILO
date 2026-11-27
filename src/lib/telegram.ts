@@ -166,7 +166,7 @@ export async function botUsername(): Promise<string | null> {
 }
 
 const COMMANDS = {
-  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["reset", "Сайтын нууц үг сэргээх"], ["help", "Тусламж"]],
+  mn: [["setup", "Одоогийн setup, нөхцөл, чарт"], ["history", "Сүүлийн дохионы үр дүн"], ["news", "Дараагийн чухал мэдээ"], ["sample", "Жишээ дохио"], ["status", "Одоогийн чиглэл, дараагийн чухал мэдээ"], ["stop", "Дохиог түр зогсоох"], ["resume", "Дохиог дахин асаах"], ["reset", "Site-ын нууц үг сэргээх"], ["help", "Тусламж"]],
   en: [["setup", "The setup now, its checks and a chart"], ["history", "How recent signals ended"], ["news", "Upcoming important releases"], ["sample", "A sample signal"], ["status", "Current bias and the next important release"], ["stop", "Pause signals"], ["resume", "Turn signals back on"], ["reset", "Reset your site password"], ["help", "Help"]],
 } as const;
 
@@ -192,7 +192,7 @@ export async function unlinkTelegram(userId: string): Promise<void> {
 }
 
 const HOW_TO_LINK = {
-  mn: "Холбохын тулд XAU Analytics-д бүртгүүлсэн имэйл хаягаа энд бичээд илгээнэ үү. Дараа нь сайтдаа нэвтрэхэд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарна. (Эсвэл сайтын Тохиргоо хуудсан дээрх “Telegram холбох” товчийг дарж болно.)",
+  mn: "Холбохын тулд XAU Analytics-д бүртгүүлсэн имэйл хаягаа энд бичээд илгээнэ үү. Дараа нь site-даа нэвтрэхэд гарч ирэх хүсэлт дээр “Тийм, минийх” гэж дарна. (Эсвэл site-ын Тохиргоо хуудсан дээрх “Telegram холбох” товчийг дарж болно.)",
   en: "To link, send the email address you registered with on XAU Analytics here. Then sign in to the site and press “Yes, it's mine” on the request that appears. (Or press “Link Telegram” on the site's Settings page.)",
 };
 const NOT_ADVICE = (t: T) => t("Статистик, санхүүгийн зөвлөгөө биш.", "Statistics, not financial advice.");
@@ -212,7 +212,7 @@ function helpText(u: User, t: T): string {
     t("/status — одоогийн чиглэл, дараагийн чухал мэдээ", "/status — current bias and the next important release"),
     t("/stop — дохиог түр зогсоох", "/stop — pause signals"),
     t("/resume — дохиог дахин асаах", "/resume — turn signals back on"),
-    t("/reset — сайтын нууц үгээ мартсан бол шинэчлэх холбоос", "/reset — a link to set a new site password if you forgot it"),
+    t("/reset — site-ын нууц үгээ мартсан бол шинэчлэх холбоос", "/reset — a link to set a new site password if you forgot it"),
     "",
     u.signalsPaused ? t("Дохио одоо түр зогссон байна.", "Signals are paused right now.") : t("Setup идэвхжих бүрд дохио энд ирнэ.", "A signal arrives here each time a setup becomes active."),
   ].join("\n");
@@ -223,8 +223,8 @@ export async function statusText(u: User, now: Date, v: Viewer = viewer(prefsOf(
   const { t } = v;
   if (!hasAccess(u, now)) {
     return esc(u.accessUntil
-      ? t("Таны багцын хугацаа дууссан байна. Сайтын “Багц” хуудаснаас сунгаарай.", "Your plan has ended. Renew it on the site\u2019s “Plans” page.")
-      : t("Танд идэвхтэй багц алга. Сайтын “Багц” хуудаснаас сонгоорой.", "You have no active plan. Choose one on the site\u2019s “Plans” page."));
+      ? t("Таны багцын хугацаа дууссан байна. Site-ын “Багц” хуудаснаас сунгаарай.", "Your plan has ended. Renew it on the site\u2019s “Plans” page.")
+      : t("Танд идэвхтэй багц алга. Site-ын “Багц” хуудаснаас сонгоорой.", "You have no active plan. Choose one on the site\u2019s “Plans” page."));
   }
   const [snap, next] = await Promise.all([getTodaySnapshot(SYMBOL, now), getNextHighEvent(now)]);
   const lines = [t("<b>XAUUSD · одоогийн байдал</b>", "<b>XAUUSD · right now</b>")];
@@ -274,7 +274,7 @@ async function linkChat(chat: string, code: string, now: Date): Promise<void> {
   const [stale] = await db.update(schema.users).set({ telegramLinkCode: null, telegramLinkExpiresAt: null }).where(eq(schema.users.telegramLinkCode, code)).returning({ locale: schema.users.locale });
   if (stale) {
     const t = translator(parseLocale(stale.locale));
-    await sendMessage(chat, esc(t("Энэ холбоосны хугацаа (30 минут) дууссан байна. Сайт дээр “Telegram холбох” товчийг дахин дарна уу.", "This link has expired (it lasts 30 minutes). Press “Link Telegram” on the site again.")));
+    await sendMessage(chat, esc(t("Энэ холбоосны хугацаа (30 минут) дууссан байна. Site дээр “Telegram холбох” товчийг дахин дарна уу.", "This link has expired (it lasts 30 minutes). Press “Link Telegram” on the site again.")));
     return;
   }
   await sendMessage(chat, esc(`${HOW_TO_LINK.mn}\n\n${HOW_TO_LINK.en}`));
@@ -321,7 +321,7 @@ async function requestLinkByEmail(chat: string, email: string, from: Sender | un
   const base = siteUrl();
   const link = (label: string) => (base ? `\n<a href="${esc(`${base}/settings`)}">${esc(label)}</a>` : "");
   await sendMessage(chat, [
-    `${esc("Хэрэв энэ имэйл XAU Analytics-д бүртгэлтэй бол таны бүртгэлд баталгаажуулах хүсэлт очлоо. 30 минутын дотор сайтдаа нэвтэрч, гарч ирэх “Тийм, минийх” товчийг дарна уу. Дармагц энд мэдэгдэнэ.")}${link("Сайтыг нээх")}`, // i18n-ok: sent in both languages, the chat's owner is not known yet
+    `${esc("Хэрэв энэ имэйл XAU Analytics-д бүртгэлтэй бол таны бүртгэлд баталгаажуулах хүсэлт очлоо. 30 минутын дотор site-даа нэвтэрч, гарч ирэх “Тийм, минийх” товчийг дарна уу. Дармагц энд мэдэгдэнэ.")}${link("Site-ыг нээх")}`, // i18n-ok: sent in both languages, the chat's owner is not known yet
     `${esc("If this email is registered on XAU Analytics, a request to confirm has gone to that account. Within 30 minutes, sign in to the site and press “Yes, it's mine” on the request that appears. You will be told here as soon as you do.")}${link("Open the site")}`,
   ].join("\n\n"));
 }
@@ -394,14 +394,14 @@ async function sendResetLink(chat: string, u: User, now: Date, t: T): Promise<vo
   }
   const base = siteUrl();
   if (!base) {
-    await sendMessage(chat, esc(t("Сайтын хаяг тохируулагдаагүй тул холбоос илгээх боломжгүй. Админтай холбогдоно уу.", "The site address is not set, so no link can be sent. Contact the admin.")));
+    await sendMessage(chat, esc(t("Site-ын хаяг тохируулагдаагүй тул холбоос илгээх боломжгүй. Админтай холбогдоно уу.", "The site address is not set, so no link can be sent. Contact the admin.")));
     return;
   }
   const { createResetToken } = await import("./passwordReset");
   const token = await createResetToken(u.id, now);
   console.warn(`[telegram] password reset link sent for user ${u.id}`);
   await sendMessage(chat, [
-    esc(t("Сайтын нууц үгээ шинэчлэх холбоос (30 минут хүчинтэй, нэг удаа ажиллана):", "A link to set a new site password (valid for 30 minutes, works once):")),
+    esc(t("Site-ын нууц үгээ шинэчлэх холбоос (30 минут хүчинтэй, нэг удаа ажиллана):", "A link to set a new site password (valid for 30 minutes, works once):")),
     `<a href="${esc(`${base}/reset/${token}`)}">${esc(t("Нууц үг шинэчлэх", "Set a new password"))}</a>`,
     "",
     esc(t("Та өөрөө хүсээгүй бол энэ мессежийг үл тоомсорлоно уу, хэнд ч бүү дамжуул.", "If you did not ask for this, ignore it, and do not forward it to anyone.")),

@@ -17,11 +17,11 @@ export default async function BotResearchPage() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <div>
-        <h1 className="page-title">{t("Ботын судалгаа", "Bot research")}</h1>
-        <p className="page-lede">{t("Ботыг удирдах хуудас хэрэглэгч бүрд тусдаа болсон:", "The page for running the bot is now separate for each user:")} <Link href="/bot" className="font-medium text-zinc-100 underline decoration-amber-400 decoration-2">{t("Бот", "Bot")}</Link>{t(". Энд зөвхөн дүрмийн судалгаа байна.", ". Only rule research is here.")}</p>
+        <h1 className="page-title">{t("Bot-ын судалгаа", "Bot research")}</h1>
+        <p className="page-lede">{t("Bot-ыг удирдах хуудас хэрэглэгч бүрд тусдаа болсон:", "The page for running the bot is now separate for each user:")} <Link href="/bot" className="font-medium text-zinc-100 underline decoration-amber-400 decoration-2">{t("Bot", "Bot")}</Link>{t(". Энд зөвхөн дүрмийн судалгаа байна.", ". Only rule research is here.")}</p>
       </div>
       {/* The two research steps as stops on one line: the past first, then forward. */}
-      <nav aria-label={t("Ботын судалгаа", "Bot research")} className="table-card max-w-2xl">
+      <nav aria-label={t("Bot-ын судалгаа", "Bot research")} className="table-card max-w-2xl">
         <ol className="relative">
           <span aria-hidden className="pointer-events-none absolute top-8 bottom-8 left-[21px] z-[1] w-[3px] rounded-full bg-zinc-800 sm:left-[25px]" />
           {stops.map(([href, title, about]) => (

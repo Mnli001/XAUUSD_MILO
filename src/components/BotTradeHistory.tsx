@@ -35,9 +35,9 @@ export function BotTradeHistory({ trades, onPick, now }: { trades: BotChartTrade
   );
   return (
     <section className="space-y-4" aria-labelledby="history-h">
-      <h2 id="history-h" className="text-lg font-semibold text-zinc-100">{t("Ботын түүх", "Bot history")}</h2>
+      <h2 id="history-h" className="text-lg font-semibold text-zinc-100">{t("Bot-ын түүх", "Bot history")}</h2>
       {trades.length === 0 ? (
-        <p className="card text-sm text-zinc-400">{t("Робот одоогоор арилжаа хаагаагүй. Хаах бүрд ашиг, алдагдал нь энд болон чарт дээр гарна.", "The robot has not closed a trade yet. Each one it closes shows here and on the chart, with its profit or loss.")}</p>
+        <p className="card text-sm text-zinc-400">{t("Robot одоогоор арилжаа хаагаагүй. Хаах бүрд ашиг, алдагдал нь энд болон чарт дээр гарна.", "The robot has not closed a trade yet. Each one it closes shows here and on the chart, with its profit or loss.")}</p>
       ) : (
         <>
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -13,7 +13,7 @@ const mainLinks = (t: T) => [
   ["/setup", "Setup", "M12 2.5v4m0 11v4M2.5 12h4m11 0h4M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 3.5v2"],
   ["/chart", t("Чарт", "Chart"), "M7 4v3m0 8v5M5 7h4v8H5zM17 3v5m0 7v6M15 8h4v7h-4z"],
   ["/news", t("Мэдээ", "News"), "M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm3 8h3m-3 3h6"],
-  ["/bot", t("Бот", "Bot"), "M12 3v3M8 6h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Zm-5 6v3m18-3v3M9.5 12v1m5-1v1M9.5 16h5"],
+  ["/bot", t("Bot", "Bot"), "M12 3v3M8 6h8a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Zm-5 6v3m18-3v3M9.5 12v1m5-1v1M9.5 16h5"],
 ] as const;
 const moreLinks = (t: T) => [
   ["/bot/history", t("Дохионы түүх", "Signal history"), "M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2"],
@@ -25,7 +25,7 @@ const moreLinks = (t: T) => [
   ["/plans", t("Багц", "Plans"), "M4 7h16v12H4zM4 7l2-3h12l2 3M9 11h6"],
   ["/glossary", t("Нэр томьёо", "Glossary"), "M5 5.5A2.5 2.5 0 0 1 7.5 3H19v14H7.5A2.5 2.5 0 0 0 5 19.5m0-14v14m0 0A2.5 2.5 0 0 0 7.5 22H19v-5M9 7h6"],
   ["/settings", t("Тохиргоо", "Settings"), "M4 7h9m4 0h3M4 17h3m4 0h9M15 4.5v5M9 14.5v5"],
-  ["/profile", t("Профайл", "Profile"), "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"],
+  ["/profile", t("Profile", "Profile"), "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"],
 ] as const;
 
 const matches = (path: string, href: string) => path === href || path.startsWith(`${href}/`);
@@ -88,7 +88,7 @@ export function AppNav({ name, isAdmin, avatar = null }: { name: string; isAdmin
       </button>
       {open && (
         <div role="menu" className="glass-menu absolute bottom-full left-0 z-40 mb-1 w-56 rounded-[18px] p-1.5">
-          <Link role="menuitem" href="/profile" className={item}>{t("Профайл", "Profile")}</Link>
+          <Link role="menuitem" href="/profile" className={item}>{t("Profile", "Profile")}</Link>
           {isAdmin && <Link role="menuitem" href="/admin/users" className={`${item} text-amber-300`}>{t("Админ", "Admin")}</Link>}
           <form action={logoutAction}><button role="menuitem" className={`${item} w-full text-left text-zinc-400`}>{t("Гарах", "Sign out")}</button></form>
         </div>

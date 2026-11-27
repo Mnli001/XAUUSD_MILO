@@ -27,8 +27,8 @@ const stops = (t: T) => [
   [t("Өнөөдөр зах зээл аль талдаа байна вэ?", "Which side commands the market today?"), t("D1, H4, H1, M15 цагийн trend, momentum, зах зээлийн бүтцийг нэгтгэн худалдан авагч эсвэл худалдагчийн бодит хүчийг цэгцтэй тооцоолж харуулна.", "Combines D1, H4, H1, and M15 trend, momentum, and market structure into one clear score showing true buyer vs seller strength."), t("Өнөөдөр", "Today"), "var(--color-asia)"],
   [t("Алт хамгийн хүчтэй хөдөлдөг цагууд аль нь вэ?", "Which hours see the strongest gold volatility?"), t("Сүүлийн 6 сарын бодит түүхээс цаг бүрт алт өсөх эсвэл унах магадлалыг Улаанбаатарын цагаар нарийвчлан тооцно. Түүвэр хангалтгүй бол худал тоо харуулахгүй.", "Calculates the exact historical probability of gold rising or falling for each hour on Ulaanbaatar time from the last 6 months. Never fakes numbers when samples are insufficient."), t("Цагийн хуваарь", "Hour by hour"), "var(--color-london)"],
   [t("Эдийн засгийн хүчтэй мэдээнүүд хэзээ гарах вэ?", "When do high-impact economic releases drop?"), t("NFP, CPI, FOMC зэрэг алт савлуулах гол мэдээнүүд болон өмнө нь ижил мэдээний дараа алт 15, 30, 60 минутад дунджаар хэдэн ам.доллар хөдөлснийг шууд хянана.", "Track market-moving events like NFP, CPI, and FOMC, along with exactly how many dollars gold moved 15, 30, and 60 minutes after past releases."), t("Мэдээ", "News"), "var(--color-ny)"],
-  [t("Таны арилжааны чадвар бодитоор өсөж байна уу?", "Is your trading edge genuinely growing?"), t("MT5 роботын хаасан арилжаа бүрээс Win rate, P&L, Profit factor, Drawdown-ыг сешн, гариг, цагаар нь автоматаар задлан, юу ажиллаж байгааг харуулна. Гараар юу ч бичих шаардлагагүй.", "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in."), t("Гүйцэтгэл", "Performance"), "var(--color-zinc-400)"],
-  [t("MT5 роботоо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("Windows компьютер эсвэл VPS дээр ажиллаж буй MetaTrader 5-тайгаа холбогдож, ботынхоо төлөв, эрсдэл, эхлүүлэх/зогсоохыг гар утаснаасаа ч удирдана. Робот арилжаа хийхийн тулд MT5 тэр компьютер дээр асаалттай байх ёстой.", "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade."), t("Бот", "Bot"), "var(--color-zinc-400)"],
+  [t("Таны арилжааны чадвар бодитоор өсөж байна уу?", "Is your trading edge genuinely growing?"), t("MT5 robot-ын хаасан арилжаа бүрээс Win rate, P&L, Profit factor, Drawdown-ыг сешн, гариг, цагаар нь автоматаар задлан, юу ажиллаж байгааг харуулна. Гараар юу ч бичих шаардлагагүй.", "Every trade your MT5 robot closes is broken down automatically into Win Rate, P&L, Profit Factor and Drawdown by session, day and hour, showing what works. Nothing to type in."), t("Гүйцэтгэл", "Performance"), "var(--color-zinc-400)"],
+  [t("MT5 robot-оо вэбээс шууд удирдах уу?", "Control your MT5 bot directly from the web?"), t("Windows компьютер эсвэл VPS дээр ажиллаж буй MetaTrader 5-тайгаа холбогдож, bot-ынхоо төлөв, эрсдэл, эхлүүлэх/зогсоохыг гар утаснаасаа ч удирдана. Robot арилжаа хийхийн тулд MT5 тэр компьютер дээр асаалттай байх ёстой.", "Connect the MetaTrader 5 running on your Windows PC or VPS and watch the bot's state and risk, and start or stop it, even from your phone. MT5 must stay running on that PC or VPS for the robot to trade."), t("Bot", "Bot"), "var(--color-zinc-400)"],
 ] as const;
 
 /** Illustration only: shaped like the real table, labelled as a sample below it. */
@@ -131,7 +131,7 @@ export default async function LandingPage() {
                   <svg aria-hidden className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>{t("MT5 робот нэгтгэлтэй", "MT5 bot integrated")}</span>
+                  <span>{t("MT5 robot нэгтгэлтэй", "MT5 bot integrated")}</span>
                 </div>
               </div>
             </div>
@@ -409,7 +409,7 @@ export default async function LandingPage() {
                 </h2>
                 
                 <p className="max-w-[58ch] text-lg leading-relaxed font-medium opacity-90">
-                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Дохионы ашигтай, алдагдалтай бүх үр дүн, роботын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
+                  {t("Хувь бүрийн хажууд түүврийн тоо бий. Дата хангалтгүй бол тоо гаргахгүй. Дохионы ашигтай, алдагдалтай бүх үр дүн, robot-ын эрсдэлийг нуухгүй. Бүртгүүлээд багцаа сонгож төлмөгц эрх автоматаар нээгдэнэ.", "Every percentage shows its sample size. With too little data, no figure is shown. Every signal's result, winners and losers, and the robot's risks are not hidden. Register, choose a plan, and access opens the moment you pay.")}
                 </p>
                 
                 <div className="grid gap-4 pt-4 sm:grid-cols-2 lg:grid-cols-3">

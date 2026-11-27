@@ -52,7 +52,7 @@ export function AvatarUploader({ name, src }: { name: string; src: string | null
   const bad = !!(local.error ?? up.error ?? rm.error);
   return (
     <div className="flex flex-col items-center gap-3">
-      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={t("Профайл зураг солих", "Change profile picture")}
+      <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={t("Profile зураг солих", "Change profile picture")}
         className="group relative rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-400 disabled:opacity-60">
         <Avatar name={name} src={shown ?? null} size={112} className="text-[40px]" />
         <span aria-hidden className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 text-xs font-semibold text-zinc-50 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
