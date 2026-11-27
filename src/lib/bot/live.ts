@@ -244,6 +244,7 @@ export type Command = {
   orders: string;
   oMaxAge: number; // seconds an order stays valid after its bar closed (ENTRY_FRESH_MS)
   oSlipR: number; // no entry once price has run this share of the risk past the entry toward the target
+  jFrom?: number; // robot v3.90+: report closed trades after this time (UTC unix seconds) for the journal
 };
 
 /** The first robot file that knows each tool. Older files would run it as the scalper. */
@@ -270,8 +271,8 @@ export type DayOrderFields = { id: number; dir: number; risk: number; rr: number
 /** A session setup's order with its own prices (lib/setup/build AsianOrder). */
 export type SessionOrderFields = DayOrderFields & { legacyId: number; entry: number; sl: number; tp: number; size?: number };
 /** The robot file the site serves (mt5/XauBot.mq5): its version number and the label people see. */
-export const ROBOT_FILE_VERSION = 15;
-export const ROBOT_FILE_LABEL = "3.81";
+export const ROBOT_FILE_VERSION = 16;
+export const ROBOT_FILE_LABEL = "3.91";
 /** Order freshness and price-run limits, the same ones Telegram uses (see ENTRY_FRESH_MS in lib/setup/build). */
 export const ORDER_MAX_AGE_SEC = 30 * 60;
 export const ORDER_SLIP_R = 0.3;
@@ -360,6 +361,11 @@ export const reportSchema = z.object({
   tradesToday: num.optional(),
   dayPnl: num.optional(),
   dailyLossHit: z.boolean().optional(),
+  // Robot v3.90 and newer: the account's closed trades after the command's jFrom, by hand or any robot, for the journal.
+  journal: z.array(z.object({
+    ticket: z.string().max(40), position: z.string().max(40).optional(), symbol: z.string().min(1).max(40), side,
+    lots: num, openPrice: num, closePrice: num, openTime: z.coerce.date(), closeTime: z.coerce.date(), profit: num, magic: z.string().max(40),
+  })).max(100).optional(),
 });
 export type Report = z.infer<typeof reportSchema>;
 

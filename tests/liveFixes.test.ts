@@ -68,7 +68,9 @@ describe("robot orders", () => {
   it("the robot file is the new version and knows the order list", () => {
     const src = readFileSync("mt5/XauBot.mq5", "utf8");
     expect(src).toContain(`#define ROBOT_VERSION ${ROBOT_FILE_VERSION}`);
-    expect(src).toContain('#property version   "3.81"');
+    expect(src).toContain('#property version   "3.91"');
+    expect(src).toContain('"jFrom"'); // the journal cursor
+    expect(src).toContain('json += ",\\"journal\\":["');
     for (const part of ['JStr(body, "orders")', "OrderTaken(id)", "SendMarketAt(", "gOSlipR"]) expect(src).toContain(part);
     // the time exit runs whatever tool is selected
     expect(src).toMatch(/void OnTimer\(\)\s*\{\s*if\(IsRuleTool\(\)\) return;\s*AsianTimeExit\(\);/);

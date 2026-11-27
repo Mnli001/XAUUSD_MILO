@@ -267,6 +267,7 @@ export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export const priceAlerts = pgTable("price_alerts", {
   id: id(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  symbol: text("symbol").notNull().default("XAUUSD"), // gold, or one of lib/marketList's instruments
   level: doublePrecision("level").notNull(),
   direction: text("direction").notNull(), // "above" | "below"
   createdAt: ts("created_at").notNull().defaultNow(),
@@ -318,3 +319,24 @@ export const macroSeries = pgTable("macro_series", {
   date: text("date").notNull(), // YYYY-MM-DD
   value: doublePrecision("value").notNull(),
 }, (t) => [primaryKey({ columns: [t.series, t.date] })]);
+
+/**
+ * Every closed trade on a member's MT5 account (their own and the robot's), reported by the robot from v3.90, for
+ * the automatic journal. One row per closing deal; `magic` 0 is a trade placed by hand.
+ */
+export const journalTrades = pgTable("journal_trades", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  login: text("login").notNull(),
+  ticket: text("ticket").notNull(),
+  position: text("position"),
+  symbol: text("symbol").notNull(),
+  side: text("side").notNull(), // the position's side: BUY or SELL
+  lots: doublePrecision("lots").notNull(),
+  openPrice: doublePrecision("open_price").notNull(),
+  closePrice: doublePrecision("close_price").notNull(),
+  openTime: ts("open_time").notNull(),
+  closeTime: ts("close_time").notNull(),
+  profit: doublePrecision("profit").notNull(), // with swap and commission
+  magic: text("magic").notNull().default("0"),
+}, (t) => [primaryKey({ columns: [t.userId, t.login, t.ticket] }), index("journal_user_close").on(t.userId, t.closeTime)]);
+export type JournalTrade = typeof journalTrades.$inferSelect;

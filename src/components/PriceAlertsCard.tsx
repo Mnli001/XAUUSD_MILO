@@ -4,17 +4,20 @@ import { useActionState, useEffect, useRef } from "react";
 import { useT } from "./PrefsProvider";
 import { createPriceAlertAction, deletePriceAlertAction, type AlertState } from "@/lib/actions/alerts";
 import { ConditionAlerts, type ConditionRow } from "./ConditionAlerts";
+import { GOLD, digitsOf } from "@/lib/marketList";
 
 export type AlertRow = { id: string; level: number; direction: "above" | "below"; set: string; fired: string | null; firedPrice: number | null };
 
-const px = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (v: number, d: number) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 
 /**
  * "Tell me when gold reaches …": a level to set, the alerts still waiting (nearest first) and the last few that fired.
  * `channels` says where a fired alert goes, so the reader knows whether to turn something on.
  */
-export function PriceAlertsCard({ alerts, price, channels, max, conditions = null }: { alerts: AlertRow[]; price: number | null; channels: { telegram: boolean; push: boolean }; max: number; conditions?: { rows: ConditionRow[]; max: number } | null }) {
+export function PriceAlertsCard({ alerts, price, channels, max, conditions = null, symbol = GOLD, name = "" }: { alerts: AlertRow[]; price: number | null; channels: { telegram: boolean; push: boolean }; max: number; conditions?: { rows: ConditionRow[]; max: number } | null; symbol?: string; name?: string }) {
   const t = useT();
+  const digits = digitsOf(symbol);
+  const px = (v: number) => fmt(v, digits);
   const [state, action, pending] = useActionState<AlertState, FormData>(createPriceAlertAction, {});
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => { if (state.ok) form.current?.reset(); }, [state]);
@@ -35,8 +38,9 @@ export function PriceAlertsCard({ alerts, price, channels, max, conditions = nul
         <div>
           <form ref={form} action={action} className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
-              <label className="label" htmlFor="alert-level">{t("Алт энэ үнэд хүрэхэд мэдэгдэх", "Tell me when gold reaches")}</label>
-              <input id="alert-level" name="level" className="input tabular-nums" type="number" inputMode="decimal" step="0.01" min="0" required placeholder={price !== null ? price.toFixed(2) : "3620.00"} />
+              <label className="label" htmlFor="alert-level">{symbol === GOLD ? t("Алт энэ үнэд хүрэхэд мэдэгдэх", "Tell me when gold reaches") : t(`${name || symbol} энэ үнэд хүрэхэд мэдэгдэх`, `Tell me when ${name || symbol} reaches`)}</label>
+              <input type="hidden" name="symbol" value={symbol} />
+              <input id="alert-level" name="level" className="input tabular-nums" type="number" inputMode="decimal" step={(10 ** -digits).toFixed(digits)} min="0" required placeholder={price !== null ? price.toFixed(digits) : "3620.00"} />
             </div>
             <button className="btn shrink-0" disabled={pending || waiting.length >= max}>{t("Тавих", "Set")}</button>
           </form>

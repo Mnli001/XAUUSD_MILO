@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => path }));
 vi.mock("@/lib/actions/session", () => ({ logoutAction: async () => {} }));
 import { AppNav, currentHref } from "@/components/AppNav";
 
-const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот", "Дохионы түүх", "Макро", "Дасгал", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Профайл"];
+const ALL = ["Өнөөдөр", "Setup", "Чарт", "Мэдээ", "Бот", "Дохионы түүх", "Макро", "Зах зээл", "Дасгал", "Журнал", "Гүйцэтгэл", "Багц", "Нэр томьёо", "Тохиргоо", "Профайл"];
 
 test("the section you are in is marked as current, in both the rail and the phone tab bar", () => {
   path = "/news";
@@ -30,7 +30,7 @@ test("Signal history is its own page: on it, Signal history is current and Bot i
   expect(currentHref("/botx", ["/bot"])).toBeNull();
 });
 
-test("on a phone, the Menu button drops down every page (there is no journal any more), and closes again", () => {
+test("on a phone, the Menu button drops down every page, and closes again", () => {
   path = "/today";
   render(<AppNav name="Ану" isAdmin={false} />);
   expect(within(screen.getByRole("navigation", { name: "Доод цэс" })).getAllByRole("link")).toHaveLength(5);
@@ -44,7 +44,7 @@ test("on a phone, the Menu button drops down every page (there is no journal any
   const links = within(all).getAllByRole("link");
   expect(links.slice(0, -1).map((a) => a.textContent)).toEqual(ALL);
   expect(links.at(-1)).toHaveAttribute("href", "/profile"); // the account row: picture and name lead to the profile
-  expect(within(all).queryByRole("link", { name: "Журнал" })).toBeNull();
+  expect(within(all).getByRole("link", { name: "Журнал" })).toHaveAttribute("href", "/journal"); // the automatic one, from the robot
   expect(within(all).getByRole("link", { name: "Өнөөдөр" })).toHaveAttribute("aria-current", "page");
   expect(within(all).getByRole("link", { name: "Дохионы түүх" })).toHaveAttribute("href", "/bot/history");
   expect(within(all).getByRole("button", { name: "Гарах" })).toBeInTheDocument();

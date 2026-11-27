@@ -12,6 +12,7 @@ import { checkConditionAlerts } from "./conditionAlerts";
 import { ingestMacro } from "./ingest/macro";
 import { hasMacroData } from "./drivers";
 import { fillActuals, recordMoves } from "./ingest/actuals";
+import { runMarkets } from "./markets";
 import { loadCandles as loadStored } from "./ingest/prices";
 import { db, schema } from "./db";
 import { and, count, eq } from "drizzle-orm";
@@ -69,6 +70,10 @@ async function run(job: Job, now: Date): Promise<void> {
       const [bar] = await loadStored(SYMBOL, "15min", 1);
       if (bar) { const n = await checkPriceAlerts({ high: bar.high, low: bar.low, price: bar.close, at: new Date(bar.time.getTime() + 15 * 6e4), from: bar.time }); if (n) console.log(`[scheduler] ${n} price alert(s) fired`); }
     } catch (e) { console.error("[scheduler] price alerts failed", e); }
+    // silver, the euro, Nasdaq and bitcoin: hourly bars once an hour, at half past, away from gold's hourly fetch
+    if (now.getUTCMinutes() >= 30 && now.getUTCMinutes() < 45) {
+      try { console.log("[scheduler] markets", await runMarkets(new TwelveData(priceKey), now)); } catch (e) { console.error("[scheduler] markets failed", e); }
+    }
     try { const n = await checkConditionAlerts(now); if (n) console.log(`[scheduler] ${n} condition alert(s) fired`); } catch (e) { console.error("[scheduler] condition alerts failed", e); }
     try { const f = await watchFeed(now); if (f) console.log(`[scheduler] price feed ${f}`); } catch (e) { console.error("[scheduler] feed watch failed", e); }
     try { const n = await sendWeeklyReport(now); if (n) console.log(`[scheduler] weekly report sent to ${n}`); } catch (e) { console.error("[scheduler] weekly report failed", e); }
