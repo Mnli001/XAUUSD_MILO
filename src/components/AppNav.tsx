@@ -18,6 +18,7 @@ const mainLinks = (t: T) => [
 const moreLinks = (t: T) => [
   ["/bot/history", t("Дохионы түүх", "Signal history"), "M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4M12 8v4l3 2"],
   ["/drivers", t("Макро", "Macro"), "M4 18l5-6 4 3 7-9M15 6h5v5"],
+  ["/practice", t("Дасгал", "Practice"), "M6 4l13 8-13 8V4Z"],
   ["/performance", t("Гүйцэтгэл", "Performance"), "M4 19h16M7 16V9m5 7V5m5 11v-4"],
   ["/plans", t("Багц", "Plans"), "M4 7h16v12H4zM4 7l2-3h12l2 3M9 11h6"],
   ["/glossary", t("Нэр томьёо", "Glossary"), "M5 5.5A2.5 2.5 0 0 1 7.5 3H19v14H7.5A2.5 2.5 0 0 0 5 19.5m0-14v14m0 0A2.5 2.5 0 0 0 7.5 22H19v-5M9 7h6"],

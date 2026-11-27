@@ -405,6 +405,21 @@
   "file": "src/app/(app)/plans/page.tsx"
  },
  {
+  "h": "ec65ee90",
+  "en": "Practice",
+  "file": "src/app/(app)/practice/page.tsx"
+ },
+ {
+  "h": "18bf142b",
+  "en": "Practice (bar replay)",
+  "file": "src/app/(app)/practice/page.tsx"
+ },
+ {
+  "h": "8496bde3",
+  "en": "Replay a past day bar by bar and practise entering setups with no money at risk. Which day it is stays hidden until the end.",
+  "file": "src/app/(app)/practice/page.tsx"
+ },
+ {
   "h": "f2531474",
   "en": "Profile — XAU Analytics",
   "file": "src/app/(app)/profile/page.tsx"
@@ -3293,6 +3308,101 @@
   "h": "758f8503",
   "en": "Paid through Wire: QPay, bank apps, cards, Toki. Information based on historical statistics, not financial advice.",
   "file": "src/components/Paywall.tsx"
+ },
+ {
+  "h": "8977e548",
+  "en": "Practice chart",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "d9223d0b",
+  "en": "Day: {0}",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "553f6b87",
+  "en": "Hidden day",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "719d8338",
+  "en": "Loading a day…",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "72acbc8b",
+  "en": "Could not load a day. Try again.",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "44f9bf2d",
+  "en": "Pause",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "29ab6f83",
+  "en": "Play",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "9bff933d",
+  "en": "Next bar",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "0a6b8020",
+  "en": "Speed",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "66c0075e",
+  "en": "Stop ($)",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "25a1eaef",
+  "en": "Target ($)",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "ea5d936f",
+  "en": "New day",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "e9150560",
+  "en": "Keys: Space play/pause · → next bar · B buy · S sell. If one bar reaches both the stop and the target, the stop counts. Money is on 0.01 lot.",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "979732ce",
+  "en": "None yet. Press BUY or SELL to enter.",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "cd86acc3",
+  "en": "Close",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "3963dbba",
+  "en": "This day's result",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "b6451b0d",
+  "en": "{0} trades · {1}% profitable",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "50a7f87d",
+  "en": "by hand",
+  "file": "src/components/Practice.tsx"
+ },
+ {
+  "h": "c262d6f2",
+  "en": "The day is over. Press “New day” to practise again.",
+  "file": "src/components/Practice.tsx"
  },
  {
   "h": "509917e8",
